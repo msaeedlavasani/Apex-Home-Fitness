@@ -8,7 +8,11 @@
     "dashboard": "Dashboard",
     "workout": "Workout",
     "profile": "Profile",
-    "quiz": "Quiz"
+    "quiz": "Quiz",
+    "history": "History",
+    "analytics": "Analytics",
+    "back": "Back",
+    "navLabel": "Main navigation"
   },
   "Dashboard": {
     "greeting": {
@@ -59,6 +63,7 @@
     "progress": "{completed} of {total} sets done",
     "workTime": "Work",
     "restTime": "Rest",
+    "repsDone": "Reps done",
     "actions": {
       "start": "Start",
       "pause": "Pause",
@@ -67,7 +72,9 @@
       "skipRest": "Skip rest",
       "previous": "Previous",
       "next": "Next",
-      "restart": "Restart"
+      "restart": "Restart",
+      "increase": "Increase {label}",
+      "decrease": "Decrease {label}"
     },
     "complete": {
       "title": "Workout complete!",

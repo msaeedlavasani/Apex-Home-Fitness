@@ -2,14 +2,17 @@
 module.exports = {
   // Class-based dark mode: toggling `dark` on <html> enables `dark:` variants
   // (ThemeProvider in src/components/providers/ThemeProvider.tsx manages this).
-  darkMode: 'class',
+  // `[data-theme="dark"]` is accepted as an alternative hook for platforms that
+  // prefer an attribute-based switch.
+  darkMode: ['class', '[data-theme="dark"]'],
   content: [
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   // Custom design-system classes defined in globals.css (@layer components /
   // @layer utilities) are JIT tree-shaken unless used in markup. Safelisting
-  // them guarantees the glassmorphism/surface utilities always ship in CSS.
+  // them guarantees the glassmorphism/surface/elevation utilities always
+  // ship in CSS.
   safelist: [
     'glass',
     'glass-strong',
@@ -17,13 +20,21 @@ module.exports = {
     'card-surface',
     'list-row',
     'no-scrollbar',
+    'surface-1',
+    'surface-2',
+    'surface-3',
+    'surface-4',
+    'surface-5',
   ],
   theme: {
     extend: {
       fontFamily: {
-        // Apple SF Pro-first system stack — resolves to the real SF Pro on
-        // Apple devices, with Persian fallbacks (Vazirmatn / IRANSansX / Tahoma)
-        // so RTL content keeps rendering correctly.
+        // Multi-platform stack. On Apple devices the real SF Pro (system font,
+        // first in the list) wins; everywhere else it falls back to the
+        // self-hosted Inter / Roboto webfonts linked via next/font
+        // (layout.tsx exposes them as --font-inter / --font-roboto).
+        // Persian fallbacks (Vazirmatn / IRANSansX / Tahoma) keep RTL content
+        // rendering correctly.
         sans: [
           '-apple-system',
           'BlinkMacSystemFont',
@@ -31,6 +42,8 @@ module.exports = {
           '"SF Pro Text"',
           '"SF Pro Rounded"',
           '"Helvetica Neue"',
+          'var(--font-inter)',
+          'var(--font-roboto)',
           'Segoe UI',
           'Roboto',
           'Arial',
@@ -47,8 +60,29 @@ module.exports = {
           '"SF Pro Display"',
           '"SF Pro Text"',
           '"Helvetica Neue"',
+          'var(--font-inter)',
+          'var(--font-roboto)',
           'Segoe UI',
           'Roboto',
+          'Arial',
+          'Vazirmatn',
+          'IRANSansX',
+          'Tahoma',
+          'sans-serif',
+        ],
+        // Material platform: Roboto first (Android/M3), Inter as the
+        // cross-platform fallback, SF Pro as the Apple-system fallback.
+        'material-sans': [
+          'var(--font-roboto)',
+          'Roboto',
+          'var(--font-inter)',
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"Helvetica Neue"',
+          'Segoe UI',
           'Arial',
           'Vazirmatn',
           'IRANSansX',
@@ -113,6 +147,93 @@ module.exports = {
           'gray-5': 'var(--apple-gray-5)',
           'gray-6': 'var(--apple-gray-6)',
         },
+        // Material 3 color roles (dynamic color baseline). Every `material-*`
+        // utility (e.g. bg-material-primary, text-material-on-surface,
+        // bg-material-surface-container-low) resolves to a CSS custom property
+        // defined in globals.css, flipping automatically between light and
+        // dark — no static color values live in the config.
+        material: {
+          // Primary / secondary / tertiary role pairs
+          primary: 'var(--material-primary)',
+          'on-primary': 'var(--material-on-primary)',
+          'primary-container': 'var(--material-primary-container)',
+          'on-primary-container': 'var(--material-on-primary-container)',
+          secondary: 'var(--material-secondary)',
+          'on-secondary': 'var(--material-on-secondary)',
+          'secondary-container': 'var(--material-secondary-container)',
+          'on-secondary-container': 'var(--material-on-secondary-container)',
+          tertiary: 'var(--material-tertiary)',
+          'on-tertiary': 'var(--material-on-tertiary)',
+          'tertiary-container': 'var(--material-tertiary-container)',
+          'on-tertiary-container': 'var(--material-on-tertiary-container)',
+          // Error
+          error: 'var(--material-error)',
+          'on-error': 'var(--material-on-error)',
+          'error-container': 'var(--material-error-container)',
+          'on-error-container': 'var(--material-on-error-container)',
+          // Background / surface
+          background: 'var(--material-background)',
+          'on-background': 'var(--material-on-background)',
+          surface: 'var(--material-surface)',
+          'on-surface': 'var(--material-on-surface)',
+          'surface-variant': 'var(--material-surface-variant)',
+          'on-surface-variant': 'var(--material-on-surface-variant)',
+          'surface-dim': 'var(--material-surface-dim)',
+          'surface-bright': 'var(--material-surface-bright)',
+          'surface-container-lowest': 'var(--material-surface-container-lowest)',
+          'surface-container-low': 'var(--material-surface-container-low)',
+          'surface-container': 'var(--material-surface-container)',
+          'surface-container-high': 'var(--material-surface-container-high)',
+          'surface-container-highest': 'var(--material-surface-container-highest)',
+          // Outline / inverse
+          outline: 'var(--material-outline)',
+          'outline-variant': 'var(--material-outline-variant)',
+          'inverse-surface': 'var(--material-inverse-surface)',
+          'inverse-on-surface': 'var(--material-inverse-on-surface)',
+          'inverse-primary': 'var(--material-inverse-primary)',
+          // Misc M3 roles
+          shadow: 'var(--material-shadow)',
+          scrim: 'var(--material-scrim)',
+          'surface-tint': 'var(--material-surface-tint)',
+        },
+        // Apex brand + workout state tokens (DESIGN_SYSTEM.md §2 / §5).
+        // All resolve to CSS custom properties that flip with .dark, so
+        // `bg-apex-state-start`, `text-apex-primary-text`, etc. are safe on
+        // every platform and in both modes.
+        apex: {
+          primary: 'var(--apex-primary)',
+          'primary-hover': 'var(--apex-primary-hover)',
+          'primary-active': 'var(--apex-primary-active)',
+          'on-primary': 'var(--apex-on-primary)',
+          'primary-text': 'var(--apex-primary-text)',
+          'primary-soft': 'var(--apex-primary-soft)',
+          'primary-soft-strong': 'var(--apex-primary-soft-strong)',
+          'focus-ring': 'var(--apex-focus-ring)',
+          bg: 'var(--apex-bg)',
+          'bg-secondary': 'var(--apex-bg-secondary)',
+          surface: 'var(--apex-surface)',
+          'surface-raised': 'var(--apex-surface-raised)',
+          text: 'var(--apex-text)',
+          'text-secondary': 'var(--apex-text-secondary)',
+          'text-tertiary': 'var(--apex-text-tertiary)',
+          border: 'var(--apex-border)',
+          fill: 'var(--apex-fill)',
+          'state-idle': 'var(--apex-state-idle)',
+          'state-idle-soft': 'var(--apex-state-idle-soft)',
+          'state-start': 'var(--apex-state-start)',
+          'state-start-soft': 'var(--apex-state-start-soft)',
+          'state-start-border': 'var(--apex-state-start-border)',
+          'state-rest': 'var(--apex-state-rest)',
+          'state-rest-soft': 'var(--apex-state-rest-soft)',
+          'state-rest-border': 'var(--apex-state-rest-border)',
+          'state-success': 'var(--apex-state-success)',
+          'state-success-soft': 'var(--apex-state-success-soft)',
+          'state-success-border': 'var(--apex-state-success-border)',
+          'state-alert': 'var(--apex-state-alert)',
+          'state-alert-soft': 'var(--apex-state-alert-soft)',
+          'state-alert-border': 'var(--apex-state-alert-border)',
+          'state-alert-text': 'var(--apex-state-alert-text)',
+        },
       },
       borderRadius: {
         // Continuous corner scale for cards/panels (Apple HIG):
@@ -130,6 +251,15 @@ module.exports = {
         apple: '0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06)',
         'apple-lg': '0 4px 12px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.10)',
         'apple-glow': '0 0 0 1px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 122, 255, 0.16)',
+        // Material 3 elevation shadows (1–5). Resolved through CSS variables
+        // (--elevation-1 … --elevation-5 in globals.css) so the values can be
+        // tuned per platform / light-dark without touching markup. Usage:
+        // `shadow-elevation-2`, `dark:shadow-elevation-4`, …
+        'elevation-1': 'var(--elevation-1)',
+        'elevation-2': 'var(--elevation-2)',
+        'elevation-3': 'var(--elevation-3)',
+        'elevation-4': 'var(--elevation-4)',
+        'elevation-5': 'var(--elevation-5)',
       },
       backdropBlur: {
         xs: '2px',
@@ -137,6 +267,9 @@ module.exports = {
       transitionTimingFunction: {
         // Apple's standard ease curve
         'apple-ease': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        // Material 3 motion tokens (standard + emphasized)
+        'material-standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'material-emphasized': 'cubic-bezier(0.2, 0, 0, 1)',
       },
     },
   },

@@ -4,6 +4,7 @@ import {useFormatter, useLocale, useTranslations} from 'next-intl';
 import Link from 'next/link';
 import {useMemo, useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
+import {AppShell} from '@/components/layout/AppShell';
 import {
   CalendarDays,
   Check,
@@ -165,24 +166,17 @@ export default function DashboardPage() {
   });
 
   return (
-    <main className="min-h-screen min-h-dvh bg-slate-50 text-slate-900">
-      {/* Safe-area aware container: keeps content clear of notches, the
-          home indicator and landscape camera cutouts (iPad / iPhone). */}
-      <div className="mx-auto w-full max-w-md pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(3rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:max-w-lg sm:pt-[max(2.5rem,env(safe-area-inset-top))] md:max-w-xl">
-        {/* Header */}
-        <header className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
-            {t(greetingKey)}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-            {format.dateTime(today, {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">{t('weekLabel')}</p>
-        </header>
+    <AppShell
+      overline={t(greetingKey)}
+      title={format.dateTime(today, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      })}
+      subtitle={t('weekLabel')}
+    >
+      {/* Page content — the platform shell owns safe areas & navigation. */}
+      <div className="mx-auto w-full max-w-md px-4 sm:max-w-lg md:max-w-xl">
 
         {/* Weekly calendar */}
         <section
@@ -363,7 +357,7 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
-    </main>
+    </AppShell>
   );
 }
 

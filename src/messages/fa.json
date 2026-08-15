@@ -8,7 +8,11 @@
     "dashboard": "داشبورد",
     "workout": "تمرین",
     "profile": "پروفایل",
-    "quiz": "کوییز"
+    "quiz": "کوییز",
+    "history": "تاریخچه",
+    "analytics": "آمار",
+    "back": "بازگشت",
+    "navLabel": "ناوبری اصلی"
   },
   "Dashboard": {
     "greeting": {
@@ -59,6 +63,7 @@
     "progress": "{completed} از {total} ست انجام شد",
     "workTime": "تمرین",
     "restTime": "استراحت",
+    "repsDone": "تکرار انجام‌شده",
     "actions": {
       "start": "شروع",
       "pause": "توقف",
@@ -67,7 +72,9 @@
       "skipRest": "رد کردن استراحت",
       "previous": "قبلی",
       "next": "بعدی",
-      "restart": "شروع مجدد"
+      "restart": "شروع مجدد",
+      "increase": "افزایش {label}",
+      "decrease": "کاهش {label}"
     },
     "complete": {
       "title": "تمرین کامل شد!",

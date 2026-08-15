@@ -1,4 +1,6 @@
 import type {Metadata, Viewport} from 'next';
+import {headers} from 'next/headers';
+import {Inter, Roboto} from 'next/font/google';
 import {NextIntlClientProvider} from 'next-intl';
 import {getTranslations} from 'next-intl/server';
 import {notFound} from 'next/navigation';
@@ -7,8 +9,33 @@ import {notFound} from 'next/navigation';
 // import {routing} from '../../../i18n/routing';
 import {routing} from '@/i18n/routing';
 import {ThemeProvider, ThemeScript} from '@/components/providers/ThemeProvider';
+import {PlatformProvider} from '@/components/ui/platform/context/PlatformProvider';
+import {detectPlatform} from '@/components/ui/platform/lib/platform';
 import PWALoader from '@/components/PWALoader';
 import '../globals.css';
+
+/**
+ * Multi-platform typography linking.
+ * - SF Pro is an Apple system font and cannot be self-hosted; the font
+ *   stacks in tailwind.config.js keep it first so Apple devices render
+ *   the real SF Pro.
+ * - Inter (closest cross-platform match) and Roboto (Android/M3) are
+ *   self-hosted via next/font, so non-Apple devices get a real webfont.
+ *   Both are served from the same origin, which satisfies the CSP's
+ *   `font-src 'self' data:` policy.
+ */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const roboto = Roboto({
+  weight: ['400', '500', '700'],
+  subsets: ['latin'],
+  variable: '--font-roboto',
+  display: 'swap',
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
@@ -134,15 +161,27 @@ export default async function LocaleLayout({
   // Enable RTL for Persian ('fa'); LTR for English ('en')
   const dir = locale === 'fa' ? 'rtl' : 'ltr';
 
+  // Resolve the requesting device's platform (iOS / Android / web) from the
+  // User-Agent so the layout shell (AppShell) renders the matching native
+  // chrome on the very first paint — no flash, no layout shift. The
+  // PlatformProvider re-detects on mount (touch capability, manual override)
+  // and mirrors it onto <html data-platform="ios|material">.
+  const userAgent = headers().get('user-agent');
+
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
+    // data-platform="ios" is the default platform for the multi-platform
+    // design system; PlatformProvider flips it to "material" at runtime when
+    // the Android layout is active (see globals.css platform-switch tokens).
+    <html lang={locale} dir={dir} data-platform="ios" suppressHydrationWarning>
       <head>
         {/* Applies the persisted/system theme class to <html> before hydration (prevents FOUC) */}
         <ThemeScript />
       </head>
-      <body>
+      <body className={`${inter.variable} ${roboto.variable}`}>
         <ThemeProvider>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <PlatformProvider defaultPlatform={userAgent ? detectPlatform(userAgent) : 'web'}>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </PlatformProvider>
         </ThemeProvider>
         {/* Registers /service-worker.js for offline + installability (production only). */}
         <PWALoader />

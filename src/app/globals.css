@@ -3,18 +3,33 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   Apple System Design (HIG) — Design Tokens
-   Semantic colors are CSS custom properties that flip automatically
-   between light (`:root`) and dark (`.dark` on <html>, managed by
-   ThemeProvider). Tailwind maps them via `apple-*` utilities, e.g.
-   `bg-apple-grouped-background`, `text-apple-label`,
-   `text-apple-label-secondary`, `bg-apple-fill`, `border-apple-separator`.
+   Multi-Platform Design System — Design Tokens
+   ────────────────────────────────────────────────────────────────
+   Two platform namespaces, both resolved from CSS custom properties
+   so every utility flips automatically between Light (:root) and
+   Dark (.dark on <html>, managed by ThemeProvider):
+
+     • apple-*    → Apple HIG tokens    (bg-apple-grouped-background,
+                   text-apple-label, border-apple-separator, …)
+     • material-* → Material 3 tokens   (bg-material-primary,
+                   text-material-on-surface, shadow-elevation-2, …)
+
+   Platform switching: set `data-platform="ios"` (default) or
+   `data-platform="material"` on <html>. Neutral semantic variables
+   (--surface-glass-*, --surface-card-*, --surface-elevation-*) then
+   resolve to iOS-style glassmorphism or Material 3 elevations, so the
+   same `.glass` / `.card-surface` / `.surface-N` classes render
+   natively on both platforms.
    ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   LIGHT MODE — Apple HIG tokens (iOS) + Material 3 tokens (baseline)
+   ──────────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light;
 
-  /* ── Backgrounds ─────────────────────────────────────────── */
+  /* ── Apple: Backgrounds ─────────────────────────────────── */
   --apple-background: #ffffff;
   --apple-background-secondary: #f2f2f7;
   --apple-background-tertiary: #ffffff;
@@ -22,23 +37,23 @@
   --apple-grouped-background-secondary: #ffffff;
   --apple-grouped-background-tertiary: #f2f2f7;
 
-  /* ── Labels ──────────────────────────────────────────────── */
+  /* ── Apple: Labels ──────────────────────────────────────── */
   --apple-label: #000000;
   --apple-label-secondary: rgba(60, 60, 67, 0.6);
   --apple-label-tertiary: rgba(60, 60, 67, 0.3);
   --apple-label-quaternary: rgba(60, 60, 67, 0.18);
 
-  /* ── Fills ───────────────────────────────────────────────── */
+  /* ── Apple: Fills ───────────────────────────────────────── */
   --apple-fill: rgba(120, 120, 128, 0.2);
   --apple-fill-secondary: rgba(120, 120, 128, 0.16);
   --apple-fill-tertiary: rgba(118, 118, 128, 0.12);
   --apple-fill-quaternary: rgba(116, 116, 128, 0.08);
 
-  /* ── Separators ──────────────────────────────────────────── */
+  /* ── Apple: Separators ──────────────────────────────────── */
   --apple-separator: rgba(60, 60, 67, 0.29);
   --apple-separator-opaque: #c6c6c8;
 
-  /* ── Accent colors (light) ───────────────────────────────── */
+  /* ── Apple: Accent colors (light) ───────────────────────── */
   --apple-red: #ff3b30;
   --apple-orange: #ff9500;
   --apple-yellow: #ffcc00;
@@ -52,19 +67,149 @@
   --apple-pink: #ff2d55;
   --apple-brown: #a2845e;
 
-  /* ── System grays (light) ────────────────────────────────── */
+  /* ── Apple: System grays (light) ────────────────────────── */
   --apple-gray: #8e8e93;
   --apple-gray-2: #aeaeb2;
   --apple-gray-3: #c7c7cc;
   --apple-gray-4: #d1d1d6;
   --apple-gray-5: #e5e5ea;
   --apple-gray-6: #f2f2f7;
+
+  /* ── Apex brand (coral/orange) — DESIGN_SYSTEM.md §2.1 ──── */
+  --apex-primary: #ff4500;
+  --apex-primary-hover: #e63e00;
+  --apex-primary-active: #cc3800;
+  --apex-on-primary: #ffffff;
+  --apex-primary-text: #d93d00;
+  --apex-primary-soft: rgba(255, 69, 0, 0.10);
+  --apex-primary-soft-strong: rgba(255, 69, 0, 0.18);
+  --apex-focus-ring: rgba(255, 69, 0, 0.35);
+  --apex-gradient-brand: linear-gradient(135deg, #ff4500 0%, #ff9500 100%);
+
+  /* ── Apex neutrals (semantic) — DESIGN_SYSTEM.md §2.2 ───── */
+  --apex-bg: #ffffff;
+  --apex-bg-secondary: #f2f2f7;
+  --apex-surface: #ffffff;
+  --apex-surface-raised: #ffffff;
+  --apex-text: #000000;
+  --apex-text-secondary: rgba(60, 60, 67, 0.60);
+  --apex-text-tertiary: rgba(60, 60, 67, 0.30);
+  --apex-text-disabled: rgba(60, 60, 67, 0.18);
+  --apex-border: rgba(60, 60, 67, 0.29);
+  --apex-fill: rgba(120, 120, 128, 0.20);
+
+  /* ── Apex workout states — DESIGN_SYSTEM.md §5 ──────────── */
+  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.16);
+  --apex-state-start: #ff4500;            --apex-state-start-soft: rgba(255, 69, 0, 0.10);
+  --apex-state-start-border: rgba(255, 69, 0, 0.35);
+  --apex-state-rest: #ff9500;             --apex-state-rest-soft: rgba(255, 149, 0, 0.12);
+  --apex-state-rest-border: rgba(255, 149, 0, 0.35);
+  --apex-state-success: #34c759;          --apex-state-success-soft: rgba(52, 199, 89, 0.12);
+  --apex-state-success-border: rgba(52, 199, 89, 0.35);
+  --apex-state-alert: #ff3b30;            --apex-state-alert-soft: rgba(255, 59, 48, 0.12);
+  --apex-state-alert-border: rgba(255, 59, 48, 0.40);
+  --apex-state-alert-text: #d70015;
+
+  /* ── Workout components (rings / timers / counters) ─────── */
+  --workout-ring-track: rgba(120, 120, 128, 0.18);
+  --workout-ring-glow-opacity: 0.45;
+
+  /* ── Material 3: Baseline light palette (M3 default seed) ── */
+  --material-primary: #6750a4;
+  --material-on-primary: #ffffff;
+  --material-primary-container: #EADDFF;
+  --material-on-primary-container: #21005d;
+  --material-secondary: #625b71;
+  --material-on-secondary: #ffffff;
+  --material-secondary-container: #e8def8;
+  --material-on-secondary-container: #1d192b;
+  --material-tertiary: #7d5260;
+  --material-on-tertiary: #ffffff;
+  --material-tertiary-container: #ffd8e4;
+  --material-on-tertiary-container: #31111d;
+  --material-error: #b3261e;
+  --material-on-error: #ffffff;
+  --material-error-container: #f9dedc;
+  --material-on-error-container: #410e0b;
+  --material-background: #fef7ff;
+  --material-on-background: #1d1b20;
+  --material-surface: #fef7ff;
+  --material-on-surface: #1d1b20;
+  --material-surface-variant: #e7e0ec;
+  --material-on-surface-variant: #49454f;
+  --material-surface-dim: #ded8e1;
+  --material-surface-bright: #fef7ff;
+  --material-surface-container-lowest: #ffffff;
+  --material-surface-container-low: #f7f2fa;
+  --material-surface-container: #f3edf7;
+  --material-surface-container-high: #ece6f0;
+  --material-surface-container-highest: #e6e0e9;
+  --material-outline: #79747e;
+  --material-outline-variant: #cac4d0;
+  --material-inverse-surface: #322f35;
+  --material-inverse-on-surface: #f5eff7;
+  --material-inverse-primary: #d0bcff;
+  --material-shadow: #000000;
+  --material-scrim: #000000;
+  --material-surface-tint: #6750a4;
+
+  /* ── Material 3: Elevation shadows (spec values, mode-agnostic) ── */
+  --elevation-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --elevation-2: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --elevation-3: 0px 1px 3px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --elevation-4: 0px 2px 3px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --elevation-5: 0px 4px 4px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+  /* ── Neutral platform tokens — default = iOS (glassmorphism) ── */
+  --app-background: var(--apple-grouped-background);
+  --app-foreground: var(--apple-label);
+
+  /* Glass: medium (default) */
+  --surface-glass-bg: rgba(255, 255, 255, 0.65);
+  --surface-glass-blur: 20px;
+  --surface-glass-saturate: 180%;
+  --surface-glass-border: rgba(255, 255, 255, 0.45);
+  --surface-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  /* Glass: strong (nav bars, sheets) */
+  --surface-glass-strong-bg: rgba(255, 255, 255, 0.8);
+  --surface-glass-strong-blur: 32px;
+  --surface-glass-strong-border: rgba(255, 255, 255, 0.55);
+  --surface-glass-strong-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 16px 40px rgba(0, 0, 0, 0.08);
+
+  /* Glass: subtle (chips, badges) */
+  --surface-glass-subtle-bg: rgba(242, 242, 247, 0.5);
+  --surface-glass-subtle-blur: 12px;
+  --surface-glass-subtle-border: rgba(0, 0, 0, 0.05);
+
+  /* Solid card surface */
+  --surface-card-bg: var(--apple-grouped-background-secondary);
+  --surface-card-border: var(--apple-separator);
+  --surface-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.04);
+
+  /* Elevation scale (iOS: layered glass — blur/opacity grow with level) */
+  --surface-elevation-1-bg: rgba(255, 255, 255, 0.55);
+  --surface-elevation-2-bg: rgba(255, 255, 255, 0.62);
+  --surface-elevation-3-bg: rgba(255, 255, 255, 0.7);
+  --surface-elevation-4-bg: rgba(255, 255, 255, 0.78);
+  --surface-elevation-5-bg: rgba(255, 255, 255, 0.85);
+  --surface-elevation-blur: 16px;
+  --surface-elevation-border: rgba(255, 255, 255, 0.45);
+  --surface-elevation-1-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.05);
+  --surface-elevation-2-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --surface-elevation-3-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.1);
+  --surface-elevation-4-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 24px 48px rgba(0, 0, 0, 0.12);
+  --surface-elevation-5-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.16);
 }
+
+/* ────────────────────────────────────────────────────────────────
+   DARK MODE — Apple HIG tokens (iOS) + Material 3 tokens
+   ──────────────────────────────────────────────────────────────── */
 
 .dark {
   color-scheme: dark;
 
-  /* ── Backgrounds ─────────────────────────────────────────── */
+  /* ── Apple: Backgrounds ─────────────────────────────────── */
   --apple-background: #000000;
   --apple-background-secondary: #1c1c1e;
   --apple-background-tertiary: #2c2c2e;
@@ -72,23 +217,23 @@
   --apple-grouped-background-secondary: #1c1c1e;
   --apple-grouped-background-tertiary: #2c2c2e;
 
-  /* ── Labels ──────────────────────────────────────────────── */
+  /* ── Apple: Labels ──────────────────────────────────────── */
   --apple-label: #ffffff;
   --apple-label-secondary: rgba(235, 235, 245, 0.6);
   --apple-label-tertiary: rgba(235, 235, 245, 0.3);
   --apple-label-quaternary: rgba(235, 235, 245, 0.18);
 
-  /* ── Fills ───────────────────────────────────────────────── */
+  /* ── Apple: Fills ───────────────────────────────────────── */
   --apple-fill: rgba(120, 120, 128, 0.36);
   --apple-fill-secondary: rgba(120, 120, 128, 0.32);
   --apple-fill-tertiary: rgba(118, 118, 128, 0.24);
   --apple-fill-quaternary: rgba(118, 118, 128, 0.18);
 
-  /* ── Separators ──────────────────────────────────────────── */
+  /* ── Apple: Separators ──────────────────────────────────── */
   --apple-separator: rgba(84, 84, 88, 0.6);
   --apple-separator-opaque: #38383a;
 
-  /* ── Accent colors (dark) ────────────────────────────────── */
+  /* ── Apple: Accent colors (dark) ────────────────────────── */
   --apple-red: #ff453a;
   --apple-orange: #ff9f0a;
   --apple-yellow: #ffd60a;
@@ -102,18 +247,176 @@
   --apple-pink: #ff375f;
   --apple-brown: #ac8e68;
 
-  /* ── System grays (dark) ─────────────────────────────────── */
+  /* ── Apple: System grays (dark) ─────────────────────────── */
   --apple-gray: #8e8e93;
   --apple-gray-2: #636366;
   --apple-gray-3: #48484a;
   --apple-gray-4: #3a3a3c;
   --apple-gray-5: #2c2c2e;
   --apple-gray-6: #1c1c1e;
+
+  /* ── Apex brand (coral/orange) — DESIGN_SYSTEM.md §2.1 ──── */
+  --apex-primary: #ff6b3d;
+  --apex-primary-hover: #ff7f57;
+  --apex-primary-active: #e65c2e;
+  --apex-on-primary: #1c1c1e;
+  --apex-primary-text: #ff8a5c;
+  --apex-primary-soft: rgba(255, 107, 61, 0.16);
+  --apex-primary-soft-strong: rgba(255, 107, 61, 0.28);
+  --apex-focus-ring: rgba(255, 107, 61, 0.45);
+  --apex-gradient-brand: linear-gradient(135deg, #ff6b3d 0%, #ff9f0a 100%);
+
+  /* ── Apex neutrals (semantic) ───────────────────────────── */
+  --apex-bg: #000000;
+  --apex-bg-secondary: #1c1c1e;
+  --apex-surface: #1c1c1e;
+  --apex-surface-raised: #2c2c2e;
+  --apex-text: #ffffff;
+  --apex-text-secondary: rgba(235, 235, 245, 0.60);
+  --apex-text-tertiary: rgba(235, 235, 245, 0.30);
+  --apex-text-disabled: rgba(235, 235, 245, 0.18);
+  --apex-border: rgba(84, 84, 88, 0.60);
+  --apex-fill: rgba(120, 120, 128, 0.36);
+
+  /* ── Apex workout states ────────────────────────────────── */
+  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.24);
+  --apex-state-start: #ff6b3d;            --apex-state-start-soft: rgba(255, 107, 61, 0.16);
+  --apex-state-start-border: rgba(255, 107, 61, 0.40);
+  --apex-state-rest: #ff9f0a;             --apex-state-rest-soft: rgba(255, 159, 10, 0.18);
+  --apex-state-rest-border: rgba(255, 159, 10, 0.40);
+  --apex-state-success: #30d158;          --apex-state-success-soft: rgba(48, 209, 88, 0.16);
+  --apex-state-success-border: rgba(48, 209, 88, 0.40);
+  --apex-state-alert: #ff453a;            --apex-state-alert-soft: rgba(255, 69, 58, 0.18);
+  --apex-state-alert-border: rgba(255, 69, 58, 0.45);
+  --apex-state-alert-text: #ff6961;
+
+  /* ── Workout components (rings / timers / counters) ─────── */
+  --workout-ring-track: rgba(120, 120, 128, 0.30);
+  --workout-ring-glow-opacity: 0.5;
+
+  /* ── Material 3: Baseline dark palette ──────────────────── */
+  --material-primary: #d0bcff;
+  --material-on-primary: #381e72;
+  --material-primary-container: #4f378b;
+  --material-on-primary-container: #EADDFF;
+  --material-secondary: #ccc2dc;
+  --material-on-secondary: #332d41;
+  --material-secondary-container: #4a4458;
+  --material-on-secondary-container: #e8def8;
+  --material-tertiary: #efb8c8;
+  --material-on-tertiary: #492532;
+  --material-tertiary-container: #633b48;
+  --material-on-tertiary-container: #ffd8e4;
+  --material-error: #f2b8b5;
+  --material-on-error: #601410;
+  --material-error-container: #8c1d18;
+  --material-on-error-container: #f9dedc;
+  --material-background: #141218;
+  --material-on-background: #e6e0e9;
+  --material-surface: #141218;
+  --material-on-surface: #e6e0e9;
+  --material-surface-variant: #49454f;
+  --material-on-surface-variant: #cac4d0;
+  --material-surface-dim: #141218;
+  --material-surface-bright: #3b383e;
+  --material-surface-container-lowest: #0f0d13;
+  --material-surface-container-low: #1c1b1f;
+  --material-surface-container: #201f24;
+  --material-surface-container-high: #2b2930;
+  --material-surface-container-highest: #36343b;
+  --material-outline: #938f99;
+  --material-outline-variant: #49454f;
+  --material-inverse-surface: #e6e0e9;
+  --material-inverse-on-surface: #322f35;
+  --material-inverse-primary: #6750a4;
+  --material-shadow: #000000;
+  --material-scrim: #000000;
+  --material-surface-tint: #d0bcff;
+
+  /* ── iOS dark: neutral platform tokens ──────────────────── */
+  --surface-glass-bg: rgba(28, 28, 30, 0.55);
+  --surface-glass-border: rgba(255, 255, 255, 0.12);
+  --surface-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --surface-glass-strong-bg: rgba(28, 28, 30, 0.72);
+  --surface-glass-strong-border: rgba(255, 255, 255, 0.16);
+
+  --surface-glass-subtle-bg: rgba(28, 28, 30, 0.4);
+  --surface-glass-subtle-border: rgba(255, 255, 255, 0.08);
+
+  --surface-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  --surface-elevation-1-bg: rgba(28, 28, 30, 0.5);
+  --surface-elevation-2-bg: rgba(28, 28, 30, 0.56);
+  --surface-elevation-3-bg: rgba(28, 28, 30, 0.62);
+  --surface-elevation-4-bg: rgba(28, 28, 30, 0.7);
+  --surface-elevation-5-bg: rgba(28, 28, 30, 0.78);
+  --surface-elevation-border: rgba(255, 255, 255, 0.1);
+  --surface-elevation-1-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --surface-elevation-2-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --surface-elevation-3-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --surface-elevation-4-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 24px 48px rgba(0, 0, 0, 0.5);
+  --surface-elevation-5-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 32px 64px rgba(0, 0, 0, 0.55);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Base layer — HIG-aligned defaults
-   ═══════════════════════════════════════════════════════════════ */
+/* ────────────────────────────────────────────────────────────────
+   PLATFORM SWITCH — Material 3 (Android / web)
+   Set `data-platform="material"` on <html> to re-resolve every
+   neutral surface token from glassmorphism → M3 elevations.
+   (These blocks come after :root/.dark and win by cascade order;
+   var(--material-*) references resolve dynamically per light/dark.)
+   ──────────────────────────────────────────────────────────────── */
+
+[data-platform='material'] {
+  color-scheme: light;
+  --app-background: var(--material-background);
+  --app-foreground: var(--material-on-background);
+
+  /* Glass classes become M3 elevated surfaces */
+  --surface-glass-bg: var(--material-surface-container-low);
+  --surface-glass-blur: 0px;
+  --surface-glass-saturate: 100%;
+  --surface-glass-border: var(--material-outline-variant);
+  --surface-glass-shadow: var(--elevation-1);
+
+  --surface-glass-strong-bg: var(--material-surface-container-high);
+  --surface-glass-strong-blur: 0px;
+  --surface-glass-strong-border: var(--material-outline-variant);
+  --surface-glass-strong-shadow: var(--elevation-3);
+
+  --surface-glass-subtle-bg: var(--material-surface-container-lowest);
+  --surface-glass-subtle-blur: 0px;
+  --surface-glass-subtle-border: var(--material-outline-variant);
+
+  /* Solid card surface */
+  --surface-card-bg: var(--material-surface-container-low);
+  --surface-card-border: var(--material-outline-variant);
+  --surface-card-shadow: var(--elevation-1);
+
+  /* Elevation scale (M3: surface containers + tonal elevation shadows) */
+  --surface-elevation-1-bg: var(--material-surface-container-low);
+  --surface-elevation-2-bg: var(--material-surface-container);
+  --surface-elevation-3-bg: var(--material-surface-container-high);
+  --surface-elevation-4-bg: var(--material-surface-container-highest);
+  --surface-elevation-5-bg: var(--material-surface-container-highest);
+  --surface-elevation-blur: 0px;
+  --surface-elevation-border: var(--material-outline-variant);
+  --surface-elevation-1-shadow: var(--elevation-1);
+  --surface-elevation-2-shadow: var(--elevation-2);
+  --surface-elevation-3-shadow: var(--elevation-3);
+  --surface-elevation-4-shadow: var(--elevation-4);
+  --surface-elevation-5-shadow: var(--elevation-5);
+}
+
+[data-platform='material'].dark {
+  color-scheme: dark;
+  /* All --material-* references above resolve to the dark palette
+     automatically; only the color-scheme needs re-asserting. */
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Base layer — platform-aware defaults
+   ──────────────────────────────────────────────────────────────── */
 
 @layer base {
   html {
@@ -122,9 +425,10 @@
   }
 
   body {
-    /* Grouped background (like iOS Settings) + semantic label color */
-    background-color: var(--apple-grouped-background);
-    color: var(--apple-label);
+    /* Neutral tokens: iOS grouped background by default, M3 background
+       on the material platform — flips automatically with .dark. */
+    background-color: var(--app-background);
+    color: var(--app-foreground);
     font-family: theme('fontFamily.sans');
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -136,9 +440,23 @@
     min-height: 100dvh;
   }
 
-  /* Tight, Apple-like display tracking for headings */
+  /* Material platform: Roboto first (Android/M3), Inter as fallback */
+  [data-platform='material'] body {
+    font-family: theme('fontFamily.material-sans');
+  }
+
+  /* Tight, Apple-like display tracking for headings (iOS) */
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
+  }
+  /* M3 type scale uses normal tracking */
+  [data-platform='material'] h1,
+  [data-platform='material'] h2,
+  [data-platform='material'] h3,
+  [data-platform='material'] h4,
+  [data-platform='material'] h5,
+  [data-platform='material'] h6 {
+    letter-spacing: 0;
   }
 
   /* systemBlue-tinted selection (light / dark aware) */
@@ -184,73 +502,93 @@
 
 /* ═══════════════════════════════════════════════════════════════
    Components layer — glassmorphism + surface utilities
-   Use together with the built-in `backdrop-blur-*` scale
-   (backdrop-blur-sm → backdrop-blur-3xl) for custom variants.
+   Every class reads neutral CSS variables, so the same markup
+   renders as iOS frosted glass by default or as a Material 3
+   elevated surface when <html data-platform="material">.
+   Use together with the built-in `backdrop-blur-*` scale for
+   custom one-off variants.
    ═══════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Frosted glass — medium blur, translucent (light/dark aware) */
+  /* Frosted glass — medium blur, translucent (iOS) / elevated surface (M3) */
   .glass {
-    background-color: rgba(255, 255, 255, 0.65);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
-  }
-  .dark .glass {
-    background-color: rgba(28, 28, 30, 0.55);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+    background-color: var(--surface-glass-bg);
+    -webkit-backdrop-filter: blur(var(--surface-glass-blur)) saturate(var(--surface-glass-saturate));
+    backdrop-filter: blur(var(--surface-glass-blur)) saturate(var(--surface-glass-saturate));
+    border: 1px solid var(--surface-glass-border);
+    box-shadow: var(--surface-glass-shadow);
   }
 
   /* Frosted glass — heavy blur, more opaque (nav bars, sheets) */
   .glass-strong {
-    background-color: rgba(255, 255, 255, 0.8);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
-    backdrop-filter: blur(32px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 16px 40px rgba(0, 0, 0, 0.08);
-  }
-  .dark .glass-strong {
-    background-color: rgba(28, 28, 30, 0.72);
-    border-color: rgba(255, 255, 255, 0.16);
+    background-color: var(--surface-glass-strong-bg);
+    -webkit-backdrop-filter: blur(var(--surface-glass-strong-blur)) saturate(var(--surface-glass-saturate));
+    backdrop-filter: blur(var(--surface-glass-strong-blur)) saturate(var(--surface-glass-saturate));
+    border: 1px solid var(--surface-glass-strong-border);
+    box-shadow: var(--surface-glass-strong-shadow);
   }
 
   /* Frosted glass — light blur, subtle (inline chips, badges) */
   .glass-subtle {
-    background-color: rgba(242, 242, 247, 0.5);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-  }
-  .dark .glass-subtle {
-    background-color: rgba(28, 28, 30, 0.4);
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: var(--surface-glass-subtle-bg);
+    -webkit-backdrop-filter: blur(var(--surface-glass-subtle-blur));
+    backdrop-filter: blur(var(--surface-glass-subtle-blur));
+    border: 1px solid var(--surface-glass-subtle-border);
   }
 
-  /* Apple-style solid card surface (light/dark aware, 16pt corners) */
+  /* Solid card surface (16pt corners, light/dark aware) */
   .card-surface {
-    background-color: var(--apple-grouped-background-secondary);
+    background-color: var(--surface-card-bg);
     border-radius: 1rem;
-    border: 1px solid var(--apple-separator);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.04);
-  }
-  .dark .card-surface {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--surface-card-border);
+    box-shadow: var(--surface-card-shadow);
   }
 
   /* Grouped list row (inset card style, like iOS Settings) */
   .list-row {
-    background-color: var(--apple-grouped-background-secondary);
-    border-bottom: 1px solid var(--apple-separator);
+    background-color: var(--surface-card-bg);
+    border-bottom: 1px solid var(--surface-card-border);
   }
   .list-row:last-child {
     border-bottom: none;
   }
+
+  /* Material 3 elevation scale (1–5) — also maps to layered iOS glass
+     on the default platform. Usage: <div class="surface-3"> */
+  .surface-1,
+  .surface-2,
+  .surface-3,
+  .surface-4,
+  .surface-5 {
+    border-radius: 1rem;
+    border: 1px solid var(--surface-elevation-border);
+    -webkit-backdrop-filter: blur(var(--surface-elevation-blur)) saturate(160%);
+    backdrop-filter: blur(var(--surface-elevation-blur)) saturate(160%);
+  }
+  .surface-1 {
+    background-color: var(--surface-elevation-1-bg);
+    box-shadow: var(--surface-elevation-1-shadow);
+  }
+  .surface-2 {
+    background-color: var(--surface-elevation-2-bg);
+    box-shadow: var(--surface-elevation-2-shadow);
+  }
+  .surface-3 {
+    background-color: var(--surface-elevation-3-bg);
+    box-shadow: var(--surface-elevation-3-shadow);
+  }
+  .surface-4 {
+    background-color: var(--surface-elevation-4-bg);
+    box-shadow: var(--surface-elevation-4-shadow);
+  }
+  .surface-5 {
+    background-color: var(--surface-elevation-5-bg);
+    box-shadow: var(--surface-elevation-5-shadow);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Utilities layer — misc HIG helpers
+   Utilities layer — misc helpers
    ═══════════════════════════════════════════════════════════════ */
 
 @layer utilities {
@@ -261,5 +599,20 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Breathing scale for the progress ring / low-time timer.
+     Disabled automatically by the global prefers-reduced-motion rule. */
+  @keyframes workout-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.03);
+    }
+  }
+  .animate-workout-pulse {
+    animation: workout-pulse 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
   }
 }

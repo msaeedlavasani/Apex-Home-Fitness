@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucide-react';
 import { useWorkoutEngine, type WorkoutExercise, type WorkoutPhase, type WorkoutSummary } from './useWorkoutEngine';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
+import { cn } from '@/lib/cn';
+import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } from './index';
 
 /**
  * WorkoutPlayer
@@ -14,15 +16,18 @@ import { useHaptic } from '@/hooks/useHaptic';
  *
  * Renders the workout state machine (READY / EXERCISING / RESTING / COMPLETED)
  * with:
- *   - a phase badge and overall progress bar (sets completed),
- *   - the current exercise name, set counter and reps,
- *   - a big countdown/elapsed timer,
+ *   - a phase badge and position indicator,
+ *   - a large CircularProgressRing + CountdownTimer hero (color-coded:
+ *     coral/`work` while exercising, amber/`rest` while recovering — see
+ *     DESIGN_SYSTEM.md §5 state colors),
+ *   - a big-thumb RepSetCounter to tally reps per set (resets every set),
  *   - controls: Start, Pause/Resume, Complete set, Skip rest,
  *     Previous/Next exercise and Restart.
  *
  * All user-facing strings go through the `WorkoutPlayer` next-intl namespace
  * (`messages/en.json` / `messages/fa.json`), so the component is fully
- * localized and RTL-aware out of the box.
+ * localized and RTL-aware out of the box. Colors/surfaces consume the Apex
+ * design tokens and therefore support Light/Dark and all three platforms.
  */
 
 function formatTime(totalSeconds: number): string {
@@ -32,19 +37,25 @@ function formatTime(totalSeconds: number): string {
   return `${mm}:${ss.toString().padStart(2, '0')}`;
 }
 
-const PHASE_BADGE_STYLES: Record<WorkoutPhase, string> = {
-  READY: 'bg-neutral-100 text-neutral-700',
-  EXERCISING: 'bg-emerald-100 text-emerald-700',
-  RESTING: 'bg-amber-100 text-amber-700',
-  COMPLETED: 'bg-indigo-100 text-indigo-700',
-};
-
 const BUTTON_BASE =
-  'inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2.5';
+  'inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--app-background)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2.5';
 
-const BUTTON_PRIMARY = 'bg-emerald-600 text-white hover:bg-emerald-700';
-const BUTTON_SECONDARY = 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200';
-const BUTTON_GHOST = 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800';
+const BUTTON_PRIMARY =
+  'bg-[color:var(--apex-primary)] text-[color:var(--apex-on-primary)] hover:bg-[color:var(--apex-primary-hover)] active:bg-[color:var(--apex-primary-active)]';
+
+const BUTTON_SECONDARY =
+  'bg-[color:var(--apex-fill)] text-[color:var(--apex-text)] hover:opacity-80';
+
+const BUTTON_GHOST =
+  'text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)] hover:text-[color:var(--apex-text)]';
+
+/** Phase → Apex workout-state tone (DESIGN_SYSTEM.md §5). */
+const PHASE_TONE: Record<WorkoutPhase, keyof typeof WORKOUT_TONES> = {
+  READY: 'neutral',
+  EXERCISING: 'work',
+  RESTING: 'rest',
+  COMPLETED: 'success',
+};
 
 export interface WorkoutPlayerProps {
   /** The workout plan to play. */
@@ -75,6 +86,10 @@ export function WorkoutPlayer({
   const t = useTranslations('WorkoutPlayer');
 
   const { trigger: haptic } = useHaptic({ enabled: hapticsEnabled });
+
+  // ---- Reps counted in the current set (resets on set/exercise change) ----
+
+  const [repsDone, setRepsDone] = useState(0);
 
   // ---- Audio + haptics callbacks -----------------------------------------
 
@@ -111,6 +126,7 @@ export function WorkoutPlayer({
     progress,
     isRunning,
     secondsLeft,
+    phaseDurationSeconds,
     phaseElapsedSeconds,
     totalElapsedSeconds,
     start,
@@ -127,6 +143,11 @@ export function WorkoutPlayer({
     onPhaseChange: handlePhaseChange,
     onSetComplete: handleSetComplete,
   });
+
+  // A new set (or a jump to another exercise) starts a fresh rep tally.
+  useEffect(() => {
+    setRepsDone(0);
+  }, [currentExerciseIndex, currentSet]);
 
   // Unlock the shared AudioContext on the first user interaction so the
   // synthesized cues are allowed to play from the very first Start click.
@@ -157,7 +178,7 @@ export function WorkoutPlayer({
 
   if (!currentExercise) {
     return (
-      <div className={`w-full rounded-2xl bg-white p-4 text-center text-sm text-neutral-500 shadow-lg ring-1 ring-neutral-200 sm:p-6 ${className}`}>
+      <div className={cn('card-surface w-full p-4 text-center text-sm text-[color:var(--apex-text-secondary)] sm:p-6', className)}>
         {t('empty')}
       </div>
     );
@@ -165,49 +186,52 @@ export function WorkoutPlayer({
 
   const isResting = phase === 'RESTING';
   const displaySeconds = secondsLeft ?? phaseElapsedSeconds;
-  const progressPercent = Math.round(progress * 100);
+
+  // Ring: timed phases fill as the countdown elapses; open-ended phases
+  // show overall workout progress.
+  const ringProgress =
+    phaseDurationSeconds != null && phaseDurationSeconds > 0
+      ? Math.min(1, Math.max(0, 1 - (secondsLeft ?? 0) / phaseDurationSeconds))
+      : progress;
+
+  const ringTone = isResting ? 'rest' : 'work';
+  const phaseTone = WORKOUT_TONES[PHASE_TONE[phase]];
+  const phaseLabel = isResting ? t('restTime') : t('workTime');
 
   return (
     <div
-      className={`w-full rounded-2xl bg-white p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg ring-1 ring-neutral-200 sm:p-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] ${className}`}
+      className={cn(
+        'card-surface w-full p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-[color:var(--apex-text)] sm:p-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]',
+        className
+      )}
     >
       {/* ---- Header: phase badge + position ---- */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${PHASE_BADGE_STYLES[phase]}`}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ backgroundColor: phaseTone.soft, color: phaseTone.text }}
         >
           {isResting && <Timer className="h-3.5 w-3.5" aria-hidden="true" />}
           {phase === 'COMPLETED' && <Trophy className="h-3.5 w-3.5" aria-hidden="true" />}
           {t(`phase.${phase.toLowerCase()}`)}
         </span>
-        <span className="text-sm text-neutral-500">
+        <span className="text-sm text-[color:var(--apex-text-secondary)]">
           {t('exerciseOf', { current: currentExerciseIndex + 1, total: totalExercises })}
         </span>
       </div>
 
-      {/* ---- Overall progress ---- */}
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-neutral-100" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
-        <div
-          className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-      <p className="mt-2 text-xs text-neutral-500">
-        {t('progress', { completed: completedSets, total: totalSets })}
-      </p>
-
       {phase === 'COMPLETED' ? (
         /* ---- Completion summary ---- */
         <div className="mt-8 text-center">
-          <Trophy className="mx-auto h-12 w-12 text-indigo-500" aria-hidden="true" />
-          <h2 className="mt-4 text-2xl font-bold text-neutral-900">{t('complete.title')}</h2>
-          <p className="mt-2 text-sm text-neutral-500">
+          <Trophy className="mx-auto h-12 w-12 text-[color:var(--apex-state-success)]" aria-hidden="true" />
+          <h2 className="mt-4 text-2xl font-bold">{t('complete.title')}</h2>
+          <p className="mt-2 text-sm text-[color:var(--apex-text-secondary)]">
             {t('complete.subtitle', { total: totalSets })}
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-[color:var(--apex-text-secondary)]">
             {t('complete.time', { time: formatTime(totalElapsedSeconds) })}
           </p>
-          <button type="button" onClick={restart} className={`${BUTTON_BASE} ${BUTTON_PRIMARY} mt-6`}>
+          <button type="button" onClick={restart} className={cn(BUTTON_BASE, BUTTON_PRIMARY, 'mt-6')}>
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
             {t('actions.restart')}
           </button>
@@ -216,8 +240,8 @@ export function WorkoutPlayer({
         <>
           {/* ---- Current exercise ---- */}
           <div className="mt-6 text-center">
-            <h2 className="break-words text-xl font-bold text-neutral-900 sm:text-2xl">{currentExercise.name}</h2>
-            <p className="mt-1 text-sm text-neutral-500">
+            <h2 className="break-words text-xl font-bold sm:text-2xl">{currentExercise.name}</h2>
+            <p className="mt-1 text-sm text-[color:var(--apex-text-secondary)]">
               {t('setOf', { current: currentSet, total: currentExercise.sets })}
               {currentExercise.reps ? ` · ${t('reps', { count: currentExercise.reps })}` : ''}
             </p>
@@ -230,33 +254,67 @@ export function WorkoutPlayer({
                 return (
                   <span
                     key={i}
-                    className={`h-2.5 w-2.5 rounded-full ${
+                    className={cn(
+                      'h-2.5 w-2.5 rounded-full',
                       isDone
-                        ? 'bg-emerald-500'
+                        ? 'bg-[color:var(--apex-state-success)]'
                         : isCurrent
-                          ? 'bg-emerald-300 ring-2 ring-emerald-200'
-                          : 'bg-neutral-200'
-                    }`}
+                          ? 'bg-[color:var(--apex-state-start)] ring-2 ring-[color:var(--apex-state-start-border)]'
+                          : 'bg-[color:var(--apex-fill)]'
+                    )}
                   />
                 );
               })}
             </div>
           </div>
 
-          {/* ---- Timer ---- */}
+          {/* ---- Hero: progress ring + countdown ---- */}
           <div className="mt-8 flex flex-col items-center">
-            <span className="text-xs font-medium uppercase tracking-widest text-neutral-400">
-              {isResting ? t('restTime') : t('workTime')}
-            </span>
-            <span className="mt-1 font-mono text-5xl font-bold leading-none tabular-nums text-neutral-900 sm:text-6xl">
-              {formatTime(displaySeconds)}
-            </span>
+            <CircularProgressRing
+              progress={ringProgress}
+              tone={ringTone}
+              pulse={isResting && isRunning}
+              ariaLabel={phaseLabel}
+            >
+              <div className="flex flex-col items-center px-8 text-center">
+                <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--apex-text-secondary)]">
+                  {phaseLabel}
+                </span>
+                <CountdownTimer
+                  seconds={displaySeconds}
+                  mode={secondsLeft != null ? 'countdown' : 'countup'}
+                  tone={ringTone}
+                  size="xl"
+                  className="mt-2"
+                  ariaLabel={`${phaseLabel} ${formatTime(displaySeconds)}`}
+                />
+              </div>
+            </CircularProgressRing>
+
+            <p className="mt-4 text-sm text-[color:var(--apex-text-secondary)]">
+              {t('progress', { completed: completedSets, total: totalSets })}
+            </p>
+          </div>
+
+          {/* ---- Reps tallied in this set (large touch targets) ---- */}
+          <div className="mt-8">
+            <RepSetCounter
+              label={t('repsDone')}
+              value={repsDone}
+              onChange={setRepsDone}
+              min={0}
+              max={currentExercise.reps ?? 999}
+              size="lg"
+              haptics={hapticsEnabled}
+              decreaseAriaLabel={t('actions.decrease', { label: t('repsDone') })}
+              increaseAriaLabel={t('actions.increase', { label: t('repsDone') })}
+            />
           </div>
 
           {/* ---- Controls ---- */}
           <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-2.5 sm:gap-2">
             {phase === 'READY' && (
-              <button type="button" onClick={start} className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}>
+              <button type="button" onClick={start} className={cn(BUTTON_BASE, BUTTON_PRIMARY)}>
                 <Play className="h-4 w-4" aria-hidden="true" />
                 {t('actions.start')}
               </button>
@@ -267,7 +325,7 @@ export function WorkoutPlayer({
                 <button
                   type="button"
                   onClick={isRunning ? pause : resume}
-                  className={`${BUTTON_BASE} ${BUTTON_SECONDARY}`}
+                  className={cn(BUTTON_BASE, BUTTON_SECONDARY)}
                 >
                   {isRunning ? (
                     <Pause className="h-4 w-4" aria-hidden="true" />
@@ -281,7 +339,7 @@ export function WorkoutPlayer({
                   <button
                     type="button"
                     onClick={completeSet}
-                    className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}
+                    className={cn(BUTTON_BASE, BUTTON_PRIMARY)}
                   >
                     <Check className="h-4 w-4" aria-hidden="true" />
                     {t('actions.completeSet')}
@@ -292,7 +350,7 @@ export function WorkoutPlayer({
                   <button
                     type="button"
                     onClick={skipRest}
-                    className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}
+                    className={cn(BUTTON_BASE, BUTTON_PRIMARY)}
                   >
                     <SkipForward className="h-4 w-4" aria-hidden="true" />
                     {t('actions.skipRest')}
@@ -303,7 +361,7 @@ export function WorkoutPlayer({
                   type="button"
                   onClick={previousExercise}
                   disabled={currentExerciseIndex === 0}
-                  className={`${BUTTON_BASE} ${BUTTON_GHOST}`}
+                  className={cn(BUTTON_BASE, BUTTON_GHOST)}
                 >
                   {t('actions.previous')}
                 </button>
@@ -311,7 +369,7 @@ export function WorkoutPlayer({
                   type="button"
                   onClick={nextExercise}
                   disabled={currentExerciseIndex >= totalExercises - 1}
-                  className={`${BUTTON_BASE} ${BUTTON_GHOST}`}
+                  className={cn(BUTTON_BASE, BUTTON_GHOST)}
                 >
                   {t('actions.next')}
                 </button>

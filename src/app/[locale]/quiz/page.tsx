@@ -23,7 +23,7 @@ export default function QuizPage() {
     <main className="flex min-h-screen min-h-dvh items-start justify-center bg-slate-50 py-10 text-slate-900">
       <div className="w-full max-w-lg px-4">
         <OnboardingQuiz
-          locale={locale}
+          locale={locale as 'en' | 'fa'}
           onSubmit={() => router.push(`/${locale}/dashboard`)}
         />
       </div>

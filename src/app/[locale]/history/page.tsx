@@ -1,9 +1,15 @@
-import HistoryPage from '../../HistoryPage';
+import {AppShell} from '@/components/layout/AppShell';
+import {getTranslations} from 'next-intl/server';
 
-/**
- * /dashboard/history — dashboard sub-route.
- * Renders the HistoryPage component (see src/app/[locale]/HistoryPage.tsx).
- */
-export default function HistoryRoute() {
-  return <HistoryPage />;
+export default async function HistoryPage({params}: {params: Promise<{locale: string}>}) {
+  const {locale} = await params;
+  const t = await getTranslations({locale, namespace: 'Nav'});
+
+  return (
+    <AppShell title={t('history')}>
+      <div className="p-6 text-center">
+        <p className="text-slate-500">Your workout history will appear here.</p>
+      </div>
+    </AppShell>
+  );
 }
