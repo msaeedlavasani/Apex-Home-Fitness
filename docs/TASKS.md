@@ -17,6 +17,15 @@
 4. **[x] responsive و RTL:** تثبیت layout، navigation، focus و touch target در viewportهای اصلی.
 5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
+## تسک‌های پیشنهادی بعدی (Batch 13 candidates) 🧭
+1. **[ ] ساخت empty-state data cards برای History و Analytics:** نمایش باکس‌های داده، skeleton و empty-state دوزبانه حتی بدون داده.
+2. **[ ] اعمال فونت Vazirmatn:** استفاده از فونت وزیر در تمام صفحات فارسی با حفظ stack انگلیسی.
+3. **[ ] افزودن sidebar و back به Profile:** یکپارچه‌سازی پوسته پروفایل در en/fa و desktop/mobile.
+4. **[ ] رفع ۴۰۴ FAQ:** ساخت route دوزبانه FAQ و اتصال لینک Profile.
+5. **[ ] اصلاح ترتیب روزهای کوییز فارسی:** شنبه، یکشنبه، دوشنبه، سه‌شنبه، چهارشنبه، پنجشنبه، جمعه.
+6. **[ ] افزودن language switcher سراسری:** نمایش آیکون/دو پرچم کوچک در همه صفحات با حفظ مسیر locale.
+7. **[ ] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی، با regression پنجشنبه/جمعه در هر دو locale.
+
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.
 2. **[x] محافظ‌های AI و Rate Limit:** اعمال سقف درخواست روزانه و مدیریت هم‌زمانی (Concurrency).
