@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {createRateLimitStore, type RateLimitStore} from './rateLimitStore';
 
 export const GENERATE_PROGRAM_INPUT_SCHEMA = z
   .object({
@@ -37,67 +38,83 @@ const WINDOW_MS = 60_000;
 const IP_WINDOW_LIMIT = 5;
 const USER_WINDOW_LIMIT = 3;
 const DAILY_USER_LIMIT = 10;
+const DAILY_WINDOW_MS = 86_400_000;
 
-interface Counter {
-  count: number;
-  resetAt: number;
-}
+/**
+ * How long the per-user concurrency lock lives before auto-expiring.
+ * AI generation is capped at `AI_GENERATION_TIMEOUT_MS` (45 s); the lock adds
+ * a buffer for persistence so a crashed instance cannot block a user forever.
+ */
+export const CONCURRENCY_LOCK_TTL_MS = 60_000;
 
-const ipCounters = new Map<string, Counter>();
-const userCounters = new Map<string, Counter>();
-const dailyCounters = new Map<string, Counter>();
-const activeUsers = new Set<string>();
-
-function pruneExpired(counterMap: Map<string, Counter>, now: number): void {
-  counterMap.forEach((counter, key) => {
-    if (counter.resetAt <= now) counterMap.delete(key);
-  });
-}
-
-function consume(counterMap: Map<string, Counter>, key: string, limit: number, now: number): boolean {
-  pruneExpired(counterMap, now);
-  const current = counterMap.get(key);
-  if (!current || current.resetAt <= now) {
-    counterMap.set(key, {count: 1, resetAt: now + WINDOW_MS});
-    return true;
-  }
-  if (current.count >= limit) return false;
-  current.count += 1;
-  return true;
-}
-
-function consumeDaily(key: string, now: number): boolean {
-  pruneExpired(dailyCounters, now);
-  const day = new Date(now).toISOString().slice(0, 10);
-  const dailyKey = `${day}:${key}`;
-  const current = dailyCounters.get(dailyKey);
-  if (!current) {
-    dailyCounters.set(dailyKey, {count: 1, resetAt: now + 86_400_000});
-    return true;
-  }
-  if (current.count >= DAILY_USER_LIMIT) return false;
-  current.count += 1;
-  return true;
-}
+const LOCK_KEY_PREFIX = 'ai-generation:concurrent:';
 
 export type SecurityRejection = 'ip_rate_limit' | 'user_rate_limit' | 'daily_limit' | 'concurrent_request';
+
+// Store singleton — created lazily so importing this module never reads env.
+let store: RateLimitStore | null = null;
+
+/** Returns the active rate-limit store (created once from env on first use). */
+export function getRateLimitStore(): RateLimitStore {
+  if (!store) store = createRateLimitStore();
+  return store;
+}
+
+/** Test hook: swap in an isolated store (e.g. a fresh in-memory store). */
+export function setRateLimitStoreForTesting(next: RateLimitStore): void {
+  store = next;
+}
+
+/** Test hook: drop the store so the next call rebuilds it from env. */
+export function resetRateLimitStoreForTesting(): void {
+  store = null;
+}
+
+// Per-process token registry. Acquire and release always happen within a
+// single HTTP request handled by one instance, so a local map is sufficient —
+// it never needs to be shared.
+const lockTokens = new Map<string, string>();
 
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   return forwarded?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
 }
 
-export function acquireGenerationSlot(userId: string, ip: string, now = Date.now()): SecurityRejection | null {
-  if (!consume(ipCounters, ip, IP_WINDOW_LIMIT, now)) return 'ip_rate_limit';
-  if (!consume(userCounters, userId, USER_WINDOW_LIMIT, now)) return 'user_rate_limit';
-  if (!consumeDaily(userId, now)) return 'daily_limit';
-  if (activeUsers.has(userId)) return 'concurrent_request';
-  activeUsers.add(userId);
+/**
+ * Enforces IP / user / daily windows and the per-user concurrency lock through
+ * the configured shared store. Returns `null` when the request may proceed.
+ *
+ * Ordering is preserved from the in-memory implementation: IP, then user, then
+ * daily counters are consumed before the concurrency lock, so a request
+ * rejected with `concurrent_request` still consumes one slot from each window.
+ */
+export async function acquireGenerationSlot(userId: string, ip: string, now = Date.now()): Promise<SecurityRejection | null> {
+  const active = getRateLimitStore();
+
+  const ipCheck = await active.incrementWindow(`ip:${ip}`, WINDOW_MS, IP_WINDOW_LIMIT, now);
+  if (!ipCheck.allowed) return 'ip_rate_limit';
+
+  const userCheck = await active.incrementWindow(`user:${userId}`, WINDOW_MS, USER_WINDOW_LIMIT, now);
+  if (!userCheck.allowed) return 'user_rate_limit';
+
+  const day = new Date(now).toISOString().slice(0, 10);
+  const dailyCheck = await active.incrementWindow(`daily:${day}:${userId}`, DAILY_WINDOW_MS, DAILY_USER_LIMIT, now);
+  if (!dailyCheck.allowed) return 'daily_limit';
+
+  const token = await active.acquireLock(`${LOCK_KEY_PREFIX}${userId}`, CONCURRENCY_LOCK_TTL_MS, now);
+  if (token === null) return 'concurrent_request';
+
+  lockTokens.set(userId, token);
   return null;
 }
 
-export function releaseGenerationSlot(userId: string): void {
-  activeUsers.delete(userId);
+/** Releases the concurrency lock acquired by `acquireGenerationSlot`. */
+export async function releaseGenerationSlot(userId: string): Promise<void> {
+  const token = lockTokens.get(userId);
+  lockTokens.delete(userId);
+  if (token !== undefined) {
+    await getRateLimitStore().releaseLock(`${LOCK_KEY_PREFIX}${userId}`, token);
+  }
 }
 
 export const AI_GENERATION_TIMEOUT_MS = 45_000;

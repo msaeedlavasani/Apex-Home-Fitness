@@ -22,12 +22,24 @@
  * the user id, multiple accounts on one device never collide and records
  * survive a sign-out / sign-in cycle.
  *
+ * Conflict & retry policy:
+ *   - `workoutStates` writes are read-merge-write: a write is merged against
+ *     the stored snapshot with the deterministic policy from
+ *     `./conflictPolicy.ts` (LWW position + monotonic progress union inside
+ *     one session, monotonic `version` counter to break timestamp ties), so
+ *     completed work never regresses even when two tabs/devices write the
+ *     same day's snapshot.
+ *   - `exerciseLogs` retries are capped: a row is only picked up again while
+ *     `syncAttempts < MAX_SYNC_ATTEMPTS` and it was not permanently rejected
+ *     (`giveUp`), so a broken row can never spin the sync loop forever.
+ *
  * All functions are browser-only. They are safe to import from Client
  * Components and other client services; calling them during SSR throws a
  * clear error instead of silently failing.
  */
 
 import Dexie, { type EntityTable } from 'dexie';
+import { mergeWorkoutStates } from './conflictPolicy';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,6 +118,13 @@ export interface WorkoutStateRecord {
   isComplete: boolean;
   /** Epoch ms of the last write. */
   updatedAt: number;
+  /**
+   * Monotonic per-record write counter maintained by this layer. Breaks
+   * `updatedAt` ties deterministically when two writers stamp the same
+   * millisecond (see `conflictPolicy.ts`). Optional: legacy rows written
+   * before this field existed read as 0.
+   */
+  version?: number;
 }
 
 /**
@@ -136,6 +155,12 @@ export interface ExerciseLogRecord {
   lastSyncError: string | null;
   /** Epoch ms when Supabase confirmed the upload. */
   syncedAt: number | null;
+  /**
+   * True when the row was permanently rejected (e.g. a 4xx validation error
+   * from the server) and must not be retried automatically. Missing on rows
+   * queued before this field existed → false.
+   */
+  giveUp?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -228,22 +253,44 @@ export async function clearActiveProgram(userId: string): Promise<void> {
 // Today's workout state
 // ---------------------------------------------------------------------------
 
-/** Persists a workout snapshot for `userId` + `dateKey` (upsert). */
+/**
+ * Persists a workout snapshot for `userId` + `dateKey` (upsert).
+ *
+ * The write is conflict-aware: the incoming snapshot is merged against the
+ * stored one using the deterministic policy in `./conflictPolicy.ts` inside
+ * a read-write transaction, so completed work never regresses across tabs or
+ * (future) devices, while the per-record `version` counter keeps the
+ * ordering total even when two writers stamp the same millisecond.
+ */
 export async function saveWorkoutState(
   userId: string,
   dateKey: string,
   state: Omit<WorkoutStateRecord, 'workoutKey' | 'userId' | 'dateKey' | 'updatedAt'>,
 ): Promise<WorkoutStateRecord> {
   assertBrowserContext();
-  const record: WorkoutStateRecord = {
-    ...state,
-    workoutKey: workoutKeyFor(userId, dateKey),
-    userId,
-    dateKey,
-    updatedAt: Date.now(),
-  };
-  await offlineDb.workoutStates.put(record);
-  return record;
+  const key = workoutKeyFor(userId, dateKey);
+  let saved: WorkoutStateRecord | undefined;
+  await offlineDb.transaction('rw', offlineDb.workoutStates, async () => {
+    const existing = await offlineDb.workoutStates.get(key);
+    const updatedAt = Date.now();
+    const incoming: WorkoutStateRecord = {
+      ...state,
+      workoutKey: key,
+      userId,
+      dateKey,
+      updatedAt,
+      version: (existing?.version ?? 0) + 1,
+    };
+    saved = existing
+      ? {
+          ...mergeWorkoutStates(incoming, existing),
+          updatedAt,
+          version: (existing.version ?? 0) + 1,
+        }
+      : incoming;
+    await offlineDb.workoutStates.put(saved);
+  });
+  return saved!;
 }
 
 /** Loads a workout snapshot for `userId` + `dateKey`. */
@@ -274,6 +321,10 @@ export async function saveTodayWorkoutState(
  * Applies a partial patch to a saved workout snapshot and returns the
  * refreshed record. Used by the workout player to persist incremental
  * progress (phase changes, completed sets, elapsed time).
+ *
+ * Like {@link saveWorkoutState}, the patch is merged against the stored
+ * snapshot with the deterministic conflict policy inside a read-write
+ * transaction — an older or partial write can never regress progress.
  */
 export async function updateWorkoutState(
   userId: string,
@@ -282,11 +333,28 @@ export async function updateWorkoutState(
 ): Promise<WorkoutStateRecord | undefined> {
   assertBrowserContext();
   const key = workoutKeyFor(userId, dateKey);
-  const current = await offlineDb.workoutStates.get(key);
-  if (!current) return undefined;
-  const updated: WorkoutStateRecord = { ...current, ...patch, updatedAt: Date.now() };
-  await offlineDb.workoutStates.put(updated);
-  return updated;
+  let saved: WorkoutStateRecord | undefined;
+  await offlineDb.transaction('rw', offlineDb.workoutStates, async () => {
+    const current = await offlineDb.workoutStates.get(key);
+    if (!current) return;
+    const updatedAt = Date.now();
+    const incoming: WorkoutStateRecord = {
+      ...current,
+      ...patch,
+      workoutKey: key,
+      userId,
+      dateKey,
+      updatedAt,
+      version: (current.version ?? 0) + 1,
+    };
+    saved = {
+      ...mergeWorkoutStates(incoming, current),
+      updatedAt,
+      version: (current.version ?? 0) + 1,
+    };
+    await offlineDb.workoutStates.put(saved);
+  });
+  return saved;
 }
 
 /** Clears a workout snapshot (e.g. after a completed workout was synced). */
@@ -305,7 +373,31 @@ export async function enqueueExerciseLog(log: ExerciseLogRecord): Promise<void> 
   await offlineDb.exerciseLogs.put(log);
 }
 
-/** Returns pending (unsynced) logs for a user, oldest first, capped at `limit`. */
+/**
+ * Max failed-upload attempts before a row is left in the outbox untouched
+ * (still visible for diagnostics, no longer retried). Prevents a permanently
+ * broken row from spinning the sync loop forever.
+ */
+export const MAX_SYNC_ATTEMPTS = 10;
+
+/**
+ * Deterministic retry decision for an outbox row: it is picked up again only
+ * while it was never permanently rejected (`giveUp`) and its attempt counter
+ * is still below {@link MAX_SYNC_ATTEMPTS}.
+ */
+export function shouldRetryExerciseLog(
+  row: Pick<ExerciseLogRecord, 'syncAttempts' | 'giveUp'>,
+): boolean {
+  return !row.giveUp && row.syncAttempts < MAX_SYNC_ATTEMPTS;
+}
+
+/**
+ * Returns pending (unsynced) logs for a user, oldest first, capped at
+ * `limit`. Only rows that still qualify for retry are returned — rows
+ * permanently rejected (`giveUp`) or exhausted their attempt budget
+ * (`syncAttempts >= MAX_SYNC_ATTEMPTS`) stay in the outbox for diagnostics
+ * but are not retried.
+ */
 export async function getPendingExerciseLogs(
   userId: string,
   limit = 100,
@@ -314,7 +406,7 @@ export async function getPendingExerciseLogs(
   const rows = await offlineDb.exerciseLogs
     .where('synced')
     .equals(0)
-    .and((row) => row.userId === userId)
+    .and((row) => row.userId === userId && shouldRetryExerciseLog(row))
     .limit(limit)
     .toArray();
   return rows.sort((a, b) => a.completedAt - b.completedAt);
@@ -345,9 +437,16 @@ export async function markExerciseLogsSynced(ids: string[], syncedAt: number): P
 
 /**
  * Records a failed upload attempt: bumps `syncAttempts`, stores the error and
- * keeps `synced = 0` so the row is retried on the next sync cycle.
+ * keeps `synced = 0` so the row is retried on the next sync cycle — unless
+ * `options.giveUp` is set (permanent rejection, e.g. a 4xx validation error):
+ * the row is then flagged so it is never picked up again (see
+ * {@link shouldRetryExerciseLog}).
  */
-export async function markExerciseLogsFailed(ids: string[], error: string): Promise<void> {
+export async function markExerciseLogsFailed(
+  ids: string[],
+  error: string,
+  options: { giveUp?: boolean } = {},
+): Promise<void> {
   assertBrowserContext();
   await offlineDb.transaction('rw', offlineDb.exerciseLogs, async () => {
     for (const id of ids) {
@@ -358,6 +457,7 @@ export async function markExerciseLogsFailed(ids: string[], error: string): Prom
         synced: 0,
         syncAttempts: row.syncAttempts + 1,
         lastSyncError: error.slice(0, 500),
+        ...(options.giveUp ? { giveUp: true } : {}),
       });
     }
   });

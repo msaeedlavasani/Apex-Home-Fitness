@@ -13,9 +13,9 @@
 2. **[x] یکپارچه‌سازی نهایی Design System:** بازبینی توکن‌های Semantic و تست Dynamic Type.
 3. **[x] مستندسازی API:** تکمیل داکیومنت‌های داخلی برای Routeهای هوش مصنوعی.
 4. **[x] اجرای کامل E2E در CI با secrets و runtime مستندشده.
-5. **[ ] مقاوم‌سازی Rate Limit برای محیط چنداینستنسی با storage مشترک.
-6. **[ ] اضافه‌کردن idempotency برای جلوگیری از ثبت برنامه تکراری.
-7. **[ ] پوشش timeout برای عملیات دیتابیس و persistence.
+5. **[x] مقاوم‌سازی Rate Limit برای محیط چنداینستنسی با storage مشترک.
+6. **[x] اضافه‌کردن idempotency برای جلوگیری از ثبت برنامه تکراری.
+7. **[x] پوشش timeout برای عملیات دیتابیس و persistence.
 
 ---
 
@@ -36,5 +36,5 @@
 
 ## بدهی‌های فنی (Technical Debt) ⚠️
 1. **Unified Asset Pipeline:** نیاز به یک سیستم واحد برای مدیریت و بهینه‌سازی خودکار ویدیوها و انیمیشن‌های Lottie.
-2. **Advanced Conflict Resolution:** بهبود منطق همگام‌سازی آفلاین برای سناریوهای پیچیده چند‌دستگاهی.
-3. **Unit Test Coverage:** افزایش پوشش تست برای منطق‌های محاسباتی سنگین در `gamificationService`.
+2. **[x] Advanced Conflict Resolution:** policy قطعی تعارض، merge، retry و idempotency برای همگام‌سازی آفلاین.
+3. **[x] Unit Test Coverage:** پوشش unit برای منطق‌های XP، level، streak، badge و reward در `gamificationService`.

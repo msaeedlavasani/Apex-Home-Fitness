@@ -5,6 +5,12 @@ import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
 import { NextResponse } from 'next/server';
 
 import {
+  IDEMPOTENCY_CODES,
+  IDEMPOTENCY_KEY_HEADER,
+  idempotencyKeyErrorMessage,
+  isValidIdempotencyKey,
+} from '@/lib/ai/idempotency';
+import {
   AI_GENERATION_TIMEOUT_MS,
   GENERATE_PROGRAM_INPUT_SCHEMA,
   MEDICAL_DISCLAIMER,
@@ -15,7 +21,15 @@ import {
   securityMessage,
 } from '@/lib/ai/requestSecurity';
 import { prisma } from '@/lib/prisma';
-import { persistProgramForUser } from '@/services/programService';
+import {
+  HISTORY_QUERY_TIMEOUT_MS,
+  TIMEOUT_CODES,
+  TimeoutError,
+  timeoutErrorMessage,
+  withTimeout,
+} from '@/lib/timeout';
+import { beginIdempotentGeneration, markIdempotentGenerationFailed } from '@/services/generationIdempotency';
+import { persistProgramForUser, persistProgramForUserWithIdempotency } from '@/services/programService';
 import {
   getSupabaseAuthUser,
   syncUserWithSupabase,
@@ -212,8 +226,18 @@ function formatWorkoutHistory(sessions: HistorySession[]): string {
 export async function POST(req: Request) {
   let generationUserId: string | null = null;
   let slotAcquired = false;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let idempotencyRecordId: string | null = null;
   try {
+    // Idempotency contract: the optional `Idempotency-Key` header must match
+    // the documented format when present (see `src/lib/ai/idempotency.ts`).
+    const idempotencyKey = req.headers.get(IDEMPOTENCY_KEY_HEADER);
+    if (idempotencyKey !== null && !isValidIdempotencyKey(idempotencyKey)) {
+      return NextResponse.json(
+        {error: idempotencyKeyErrorMessage(), code: IDEMPOTENCY_CODES.INVALID_KEY},
+        {status: 400},
+      );
+    }
+
     let requestBody: unknown;
     try {
       requestBody = await req.json();
@@ -242,8 +266,44 @@ export async function POST(req: Request) {
       );
     }
 
-    const rejection = acquireGenerationSlot(user.id, getClientIp(req));
+    // Idempotency: claim the key (or classify the retry) BEFORE rate limiting,
+    // so replays of completed generations and duplicates of in-flight ones
+    // never consume generation quota and never re-run the AI:
+    //   - replay  → the exact 200 response of the original request,
+    //   - in_progress → 409 (a generation with this key is already running),
+    //   - conflict → 409 (key already bound to a different request body).
+    // Only a `claimed` key proceeds to generation and persistence.
+    if (idempotencyKey !== null) {
+      const outcome = await beginIdempotentGeneration(user.id, idempotencyKey, parsedInput.data);
+      if (outcome.kind === 'replay') {
+        return NextResponse.json(outcome.responsePayload);
+      }
+      if (outcome.kind === 'in_progress') {
+        return NextResponse.json(
+          {
+            error: 'A generation with this Idempotency-Key is already in progress. Please retry shortly.',
+            code: IDEMPOTENCY_CODES.IN_PROGRESS,
+          },
+          {status: 409},
+        );
+      }
+      if (outcome.kind === 'conflict') {
+        return NextResponse.json(
+          {
+            error: 'This Idempotency-Key was already used with a different request.',
+            code: IDEMPOTENCY_CODES.CONFLICT,
+          },
+          {status: 409},
+        );
+      }
+      idempotencyRecordId = outcome.record.id;
+    }
+
+    const rejection = await acquireGenerationSlot(user.id, getClientIp(req));
     if (rejection) {
+      // The key was claimed — release it (FAILED) so the client can retry once
+      // the limit resets instead of being stuck in IN_PROGRESS forever.
+      if (idempotencyRecordId) await markIdempotentGenerationFailed(idempotencyRecordId);
       const status = rejection === 'daily_limit' ? 429 : rejection === 'concurrent_request' ? 409 : 429;
       return NextResponse.json({error: securityMessage(rejection)}, {status});
     }
@@ -259,8 +319,9 @@ export async function POST(req: Request) {
 
     // Recent WorkoutSession history (newest first) — completion status and
     // actual performance (sets / reps / duration) drive the AI's
-    // progression/regression adjustments.
-    const recentSessions = await prisma.workoutSession.findMany({
+    // progression/regression adjustments. Bounded so a stuck database cannot
+    // hold the generation slot open indefinitely.
+    const historyQuery = prisma.workoutSession.findMany({
       where: { userId: user.id },
       orderBy: { startedAt: 'desc' },
       take: HISTORY_SESSION_LIMIT,
@@ -281,6 +342,10 @@ export async function POST(req: Request) {
           },
         },
       },
+    });
+    const recentSessions = await withTimeout(historyQuery, HISTORY_QUERY_TIMEOUT_MS, {
+      message: 'Workout history query timed out',
+      code: TIMEOUT_CODES.PERSISTENCE,
     });
 
     const workoutHistory = formatWorkoutHistory(recentSessions);
@@ -322,39 +387,69 @@ export async function POST(req: Request) {
       system: systemPrompt,
     });
 
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('AI generation timeout')), AI_GENERATION_TIMEOUT_MS);
+    // The generation is bounded by the AI budget; `withTimeout` rejects with a
+    // coded `TimeoutError` and swallows any late completion/rejection of the
+    // underlying OpenAI request (no unhandled rejections).
+    const result = await withTimeout(generation, AI_GENERATION_TIMEOUT_MS, {
+      message: 'AI generation timeout',
+      code: TIMEOUT_CODES.AI,
     });
-    const result = await Promise.race([generation, timeout]);
     const generated = {
       ...result.object,
       disclaimer: result.object.disclaimer.trim() || MEDICAL_DISCLAIMER,
     };
 
     // Persist the validated program into `Program` / `ProgramExercise`,
-    // linked to the current authenticated user (transactional).
-    const program = await persistProgramForUser(user.id, {
-      program: generated,
-      level,
-      goal,
-    });
+    // linked to the current authenticated user (transactional). With an
+    // idempotency key, the record is finalized to SUCCEEDED in the same
+    // transaction so retries replay the exact same program — a duplicate
+    // program is never persisted.
+    const program = idempotencyRecordId
+      ? await persistProgramForUserWithIdempotency(user.id, {
+          program: generated,
+          level,
+          goal,
+          idempotencyRecordId,
+        })
+      : await persistProgramForUser(user.id, {
+          program: generated,
+          level,
+          goal,
+        });
 
     return NextResponse.json({
       program, // persisted DB record (Program + ProgramExercise links)
       generated, // full validated AI output (warmups, cooldowns, progression, adjustments…)
     });
   } catch (error) {
+    // Any failure after the key was claimed must flip the record to FAILED so
+    // a retry with the same key re-executes instead of hanging on 409.
+    if (idempotencyRecordId) {
+      try {
+        await markIdempotentGenerationFailed(idempotencyRecordId);
+      } catch {
+        // Best-effort cleanup — never mask the original error.
+      }
+    }
     if (error instanceof UnauthenticatedError) {
       return NextResponse.json({error: 'Authentication required'}, {status: 401});
     }
-    if (error instanceof Error && error.message === 'AI generation timeout') {
-      return NextResponse.json({error: 'Program generation timed out. Please try again.'}, {status: 504});
+    // Differentiated, safe timeout response: AI generation and persistence
+    // (history query / program save) share the 504 status but carry distinct
+    // stable `code`s so clients can tell them apart. No internal details leak.
+    if (error instanceof TimeoutError) {
+      return NextResponse.json(
+        {error: timeoutErrorMessage(error.code), code: error.code},
+        {status: 504},
+      );
     }
     // Log only a stable error category; never include prompts, profiles, or API details.
     console.error('Program generation failed:', error instanceof Error ? error.name : 'unknown');
     return NextResponse.json({error: 'Failed to generate program'}, {status: 500});
   } finally {
-    if (timeoutId) clearTimeout(timeoutId);
-    if (slotAcquired && generationUserId) releaseGenerationSlot(generationUserId);
+    // Lock cleanup is preserved: the concurrency slot is always released, even
+    // on timeout — the bounded DB operations above ensure it cannot be held
+    // indefinitely by a stuck database.
+    if (slotAcquired && generationUserId) await releaseGenerationSlot(generationUserId);
   }
 }

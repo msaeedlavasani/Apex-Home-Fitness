@@ -510,8 +510,11 @@ export function toBadgeView(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Parses the `User.badges` Json column, tolerating null / malformed data. */
-function parseEarnedBadges(raw: unknown): EarnedBadge[] {
+/**
+ * Parses the `User.badges` Json column, tolerating null / malformed data.
+ * Pure — exported for unit tests (see `tests/gamification.test.ts`).
+ */
+export function parseEarnedBadges(raw: unknown): EarnedBadge[] {
   if (!Array.isArray(raw)) return [];
   const earned: EarnedBadge[] = [];
   for (const item of raw) {

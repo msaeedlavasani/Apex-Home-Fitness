@@ -52,13 +52,33 @@
  * up with a `Program` missing its `ProgramExercise` links, and no orphaned
  * exercises are left behind.
  *
+ * Timeout safety: the transaction is bounded — `withTimeout` enforces a
+ * client-side deadline (`PERSIST_TIMEOUT_MS`) and rejects with a stable
+ * `TimeoutError` (code `PERSISTENCE_TIMEOUT`) so a stuck database cannot hold
+ * the request's concurrency slot open indefinitely; Prisma's native
+ * `$transaction` `timeout`/`maxWait` act as a larger server-side backstop that
+ * rolls the transaction back. Budgets live in `src/lib/timeout.ts`.
+ *
  * All functions are server-only: they read the request's auth cookie via
  * `createServerSupabaseClient` and use Prisma. Call them from Route
  * Handlers, Server Actions or Server Components.
  */
-import { DifficultyLevel, ExerciseCategory, Prisma } from '@prisma/client';
+import {
+  DifficultyLevel,
+  ExerciseCategory,
+  GenerationRequestStatus,
+  Prisma,
+  PrismaClient,
+} from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import {
+  PERSIST_MAX_WAIT_MS,
+  PERSIST_TIMEOUT_MS,
+  PERSIST_TRANSACTION_TIMEOUT_MS,
+  TIMEOUT_CODES,
+  withTimeout,
+} from '../lib/timeout';
 import { getSupabaseAuthUser, syncUserWithSupabase } from './userService';
 
 // ---------------------------------------------------------------------------
@@ -356,9 +376,17 @@ export type ProgramWithDetails = Prisma.ProgramGetPayload<typeof programWithDeta
  * Persists a validated AI program for a given user inside a single
  * transaction (exercise upserts + Program + ProgramExercise links).
  *
+ * Timeouts: the transaction runs with a bounded budget — `withTimeout`
+ * (PERSIST_TIMEOUT_MS) enforces the client-side deadline and rejects with a
+ * stable `TimeoutError` (code `PERSISTENCE_TIMEOUT`), while Prisma's native
+ * `$transaction` `timeout` (PERSIST_TRANSACTION_TIMEOUT_MS, larger than the
+ * wrapper's) acts as a server-side backstop that rolls the transaction back.
+ *
  * Exported separately from `saveGeneratedProgram` so it can be reused
  * (e.g. tests) with an already-resolved user id.
  *
+ * @throws TimeoutError (code `PERSISTENCE_TIMEOUT`) when the transaction does
+ *         not settle within `PERSIST_TIMEOUT_MS`.
  * @throws P2002 when a program with the same `name` already exists (the
  *         transaction is rolled back, nothing is partially written).
  */
@@ -366,56 +394,135 @@ export async function persistProgramForUser(
   userId: string,
   input: SaveGeneratedProgramInput,
 ): Promise<ProgramWithDetails> {
+  const transaction = prisma.$transaction(
+    (tx) => persistProgramTransaction(tx, userId, input),
+    {
+      // Native backstop: bounds how long the engine keeps the transaction open
+      // and how long it waits for a pooled connection. Must stay larger than
+      // `PERSIST_TIMEOUT_MS` so `withTimeout` rejects first with our typed
+      // `TimeoutError` and the engine rollback only fires for stuck transactions.
+      timeout: PERSIST_TRANSACTION_TIMEOUT_MS,
+      maxWait: PERSIST_MAX_WAIT_MS,
+    },
+  );
+
+  return withTimeout(transaction, PERSIST_TIMEOUT_MS, {
+    message: 'Program persistence timed out',
+    code: TIMEOUT_CODES.PERSISTENCE,
+  });
+}
+
+export interface PersistProgramWithIdempotencyInput extends SaveGeneratedProgramInput {
+  /** The claimed idempotency record to finalize (from `beginIdempotentGeneration`). */
+  idempotencyRecordId: string;
+}
+
+/**
+ * Persists a validated AI program AND finalizes its idempotency record to
+ * SUCCEEDED in ONE transaction. The Program create and the replayable
+ * `responsePayload` commit atomically, so a persisted program is never
+ * observable without a matching replayable record (and vice versa) — a retry
+ * with the same `Idempotency-Key` replays the exact same response and never
+ * persists a duplicate program.
+ *
+ * Same timeout budget as `persistProgramForUser`; on failure the caller must
+ * mark the record FAILED (see `markIdempotentGenerationFailed`).
+ */
+export async function persistProgramForUserWithIdempotency(
+  userId: string,
+  input: PersistProgramWithIdempotencyInput,
+  client: PrismaClient = prisma,
+): Promise<ProgramWithDetails> {
+  const transaction = client.$transaction(
+    async (tx) => {
+      const program = await persistProgramTransaction(tx, userId, input);
+
+      // Cache the exact route response body ({ program, generated }) so retries
+      // replay byte-identical 200s. Cast: `program` carries Date objects which
+      // Prisma's Json serializer turns into ISO strings — the same shape
+      // `NextResponse.json` would produce on the original request.
+      const responsePayload = {program, generated: input.program} as unknown as Prisma.InputJsonValue;
+      await tx.programGenerationRequest.update({
+        where: {id: input.idempotencyRecordId},
+        data: {
+          status: GenerationRequestStatus.SUCCEEDED,
+          programId: program.id,
+          responsePayload,
+        },
+      });
+
+      return program;
+    },
+    {
+      timeout: PERSIST_TRANSACTION_TIMEOUT_MS,
+      maxWait: PERSIST_MAX_WAIT_MS,
+    },
+  );
+
+  return withTimeout(transaction, PERSIST_TIMEOUT_MS, {
+    message: 'Program persistence timed out',
+    code: TIMEOUT_CODES.PERSISTENCE,
+  });
+}
+
+/**
+ * The core persistence steps shared by `persistProgramForUser` and
+ * `persistProgramForUserWithIdempotency` (they differ only in finalizing the
+ * idempotency record inside the same transaction).
+ */
+async function persistProgramTransaction(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  input: SaveGeneratedProgramInput,
+): Promise<ProgramWithDetails> {
   const draft = buildProgramDraft(input);
 
-  return prisma.$transaction(async (tx) => {
-    // 1) Exercises — create-if-missing (upsert by unique name with an empty
-    //    update so curated seed rows are never overwritten).
-    for (const exercise of draft.exercises) {
-      await tx.exercise.upsert({
-        where: { name: exercise.name },
-        update: {},
-        create: exercise,
-      });
-    }
-
-    // 2) Program — linked to the current authenticated user.
-    const program = await tx.program.create({
-      data: {
-        name: draft.name,
-        description: draft.description,
-        level: draft.level,
-        durationWeeks: draft.durationWeeks,
-        sessionsPerWeek: draft.sessionsPerWeek,
-        ownerId: userId,
-      },
+  // 1) Exercises — create-if-missing (upsert by unique name with an empty
+  //    update so curated seed rows are never overwritten).
+  for (const exercise of draft.exercises) {
+    await tx.exercise.upsert({
+      where: {name: exercise.name},
+      update: {},
+      create: exercise,
     });
+  }
 
-    // 3) ProgramExercise links with the AI prescription, in program order.
-    if (draft.programExercises.length > 0) {
-      const names = Array.from(new Set(draft.programExercises.map((row) => row.exerciseName)));
-      const exercises = await tx.exercise.findMany({
-        where: { name: { in: names } },
-        select: { id: true, name: true },
-      });
-      const exerciseIdByName = new Map(exercises.map((e) => [e.name, e.id]));
+  // 2) Program — linked to the current authenticated user.
+  const program = await tx.program.create({
+    data: {
+      name: draft.name,
+      description: draft.description,
+      level: draft.level,
+      durationWeeks: draft.durationWeeks,
+      sessionsPerWeek: draft.sessionsPerWeek,
+      ownerId: userId,
+    },
+  });
 
-      await tx.programExercise.createMany({
-        data: draft.programExercises.map((row) => ({
-          programId: program.id,
-          exerciseId: exerciseIdByName.get(row.exerciseName) as string,
-          order: row.order,
-          sets: row.sets,
-          reps: row.reps,
-          restSeconds: row.restSeconds,
-        })),
-      });
-    }
-
-    return tx.program.findUniqueOrThrow({
-      where: { id: program.id },
-      ...programWithDetails,
+  // 3) ProgramExercise links with the AI prescription, in program order.
+  if (draft.programExercises.length > 0) {
+    const names = Array.from(new Set(draft.programExercises.map((row) => row.exerciseName)));
+    const exercises = await tx.exercise.findMany({
+      where: {name: {in: names}},
+      select: {id: true, name: true},
     });
+    const exerciseIdByName = new Map(exercises.map((e) => [e.name, e.id]));
+
+    await tx.programExercise.createMany({
+      data: draft.programExercises.map((row) => ({
+        programId: program.id,
+        exerciseId: exerciseIdByName.get(row.exerciseName) as string,
+        order: row.order,
+        sets: row.sets,
+        reps: row.reps,
+        restSeconds: row.restSeconds,
+      })),
+    });
+  }
+
+  return tx.program.findUniqueOrThrow({
+    where: {id: program.id},
+    ...programWithDetails,
   });
 }
 

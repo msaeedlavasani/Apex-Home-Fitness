@@ -37,3 +37,10 @@
 - [x] یکپارچه‌سازی توکن‌های Design System و افزودن audit خودکار.
 - [x] تکمیل مستندات API هوش مصنوعی در `docs/AI_API.md`.
 - [x] تکمیل pipeline اجرای E2E در CI با نصب browser، env مستند و fail-fast.
+
+## Batch 11: قابلیت اطمینان و سازگاری داده 🔒 (تکمیل شد)
+- [x] Rate Limit چنداینستنسی با abstraction حافظه‌ای و Redis REST، قفل اتمیک و تست race.
+- [x] Idempotency برای `generate-program` با کلید درخواست، state machine، migration و replay پاسخ.
+- [x] Timeout قابل تست برای query تاریخچه، AI و persistence با خطاهای امن و کددار.
+- [x] پوشش ۳۶ تست deterministic برای XP، level، streak، badge و reward در gamification.
+- [x] policy قطعی conflict resolution آفلاین، merge پیشرفت، retry classification و idempotent sync.

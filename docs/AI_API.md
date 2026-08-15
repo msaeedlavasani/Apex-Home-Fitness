@@ -4,7 +4,7 @@
 >
 > این سند endpoints مربوط به هوش مصنوعی را دقیقاً مطابق کد فعلی مستند می‌کند: مسیرها، احراز هویت، schema بدنه، نمونه request/response، کد وضعیت‌ها، محدودیت نرخ (rate limit)، timeout، سنجش پزشکی (medical clearance)، محدودیت‌های in-memory و متغیرهای محیطی لازم — **بدون ذکر هیچ secret**.
 >
-> Last reviewed against: `src/app/api/generate-program/route.ts`, `src/app/api/analytics/events/route.ts`, `src/lib/ai/requestSecurity.ts`, `src/lib/ai/prompts.ts`, `src/services/programService.ts`, `src/services/userService.ts`, `src/services/analyticsEvents.ts`, `src/lib/supabase.ts`, `prisma/schema.prisma`.
+> Last reviewed against: `src/app/api/generate-program/route.ts`, `src/app/api/analytics/events/route.ts`, `src/lib/ai/requestSecurity.ts`, `src/lib/ai/rateLimitStore.ts`, `src/lib/ai/prompts.ts`, `src/lib/timeout.ts`, `src/services/programService.ts`, `src/services/userService.ts`, `src/services/analyticsEvents.ts`, `src/lib/supabase.ts`, `prisma/schema.prisma`.
 
 ---
 
@@ -55,6 +55,22 @@ No auth header — identity comes from the Supabase session cookies. `Content-Ty
 | `limitations` | ✅ | `string[]` of `'none' \| 'knee' \| 'lower_back' \| 'shoulder' \| 'wrist' \| 'ankle' \| 'hip' \| 'neck'` | 0–8 items; no duplicates; `'none'` cannot be combined with other items |
 | `limitationsDetails` | ❌ (default `''`) | `string` | trimmed, max 1000 chars |
 
+**Idempotency header (optional, recommended for retries):**
+
+| Header | Required | Format | Validation |
+|---|---|---|---|
+| `Idempotency-Key` | ❌ (optional) | `string`, 8–64 chars of `[A-Za-z0-9_-]` | invalid value → `400 {"error":"…","code":"INVALID_IDEMPOTENCY_KEY"}` |
+
+Contract (see §3.10): when the header is present, the server guarantees that retries — and concurrent duplicates — of the **same key + same request body** never persist a second program:
+
+- the first request runs and records the outcome in the `ProgramGenerationRequest` table (one row per user + key, unique constraint),
+- a retry **after success** replays the exact 200 response body (same `program`, same `generated`),
+- a **concurrent duplicate** gets a predictable `409` while work is in flight,
+- **reusing a key with a different body** is rejected as `409` (conflict),
+- a **failed attempt** can be retried with the same key — it starts a fresh attempt (the record is flipped to `FAILED` on any failure after the key was claimed).
+
+Without the header the route behaves exactly as before (no idempotency guarantee). Clients should generate a fresh key per intended request and reuse it on retries.
+
 Note: `limitations` is required but may be an empty array (`[]`); `equipment` requires at least one item.
 
 **Sample request:**
@@ -78,33 +94,38 @@ Cookie: sb-<ref>-auth-token=<session>…   (Supabase session)
 2. Validate against `GENERATE_PROGRAM_INPUT_SCHEMA` — failure → `400 {"error":"Invalid workout profile."}`
 3. Resolve the Supabase user + sync the Prisma `User` — failure → `401 {"error":"Authentication required"}`
 4. **Medical clearance check** on `limitationsDetails` — hit → `422` (see §3.5)
-5. **Rate limiting / concurrency** via `acquireGenerationSlot(userId, ip)` — rejection → `429` / `409` (see §3.4)
-6. Mode detection:
+5. **Idempotency** (when `Idempotency-Key` is present): claim the key / classify the retry via `beginIdempotentGeneration` (see §3.10) — `replay` → `200` (cached body), `in_progress` → `409 IDEMPOTENCY_IN_PROGRESS`, `conflict` → `409 IDEMPOTENCY_CONFLICT`; only a claimed key proceeds. Runs **before** rate limiting so replays/duplicates never consume quota or re-run the AI
+6. **Rate limiting / concurrency** via `await acquireGenerationSlot(userId, ip)` — rejection → `429` / `409` (see §3.4); a claimed key is flipped to `FAILED` so it can be retried later
+7. Mode detection:
    - `limitations` non-empty and does not include `'none'` → `injury_focused`
    - else `equipment === ['none']` → `equipment_limited`
    - else → `general`
-7. Load the mode-specific system prompt from `infra/ai/prompts/` (`loadSystemPrompt`)
-8. Load recent `WorkoutSession` history (newest first, `take: 10`, exercises limited to 12 per session; completion status + actual sets/reps/duration drive the AI's progression/regression `adjustments`)
-9. `generateObject({ model: openai('gpt-4o-mini'), schema: ProgramSchema, ... })` raced against a **45 000 ms** timeout
-10. Persist the validated program (transactional) and return `200`
+8. Load the mode-specific system prompt from `infra/ai/prompts/` (`loadSystemPrompt`)
+9. Load recent `WorkoutSession` history (newest first, `take: 10`, exercises limited to 12 per session; completion status + actual sets/reps/duration drive the AI's progression/regression `adjustments`) — bounded by `HISTORY_QUERY_TIMEOUT_MS = 5_000` via `withTimeout` (see §3.6)
+10. `generateObject({ model: openai('gpt-4o-mini'), schema: ProgramSchema, ... })` bounded by a **45 000 ms** timeout (`AI_GENERATION_TIMEOUT_MS`) via `withTimeout` (see §3.6)
+11. Persist the validated program (transactional, bounded — see §3.7) and return `200`; with a claimed key, `persistProgramForUserWithIdempotency` finalizes the record to `SUCCEEDED` **in the same transaction**
 
 ### 3.4 Rate limits & concurrency / محدودیت نرخ و همزمانی
 
-All counters live in **module-level in-memory `Map`s / `Set`** in `src/lib/ai/requestSecurity.ts` (per process instance — see §7).
+All counters go through a **swappable store** — `RateLimitStore` (`src/lib/ai/rateLimitStore.ts`) — so the same limits hold across multiple instances and survive restarts:
 
-| Limit | Key | Value | Response |
+- Default (local development): `InMemoryRateLimitStore` — the previous per-process `Map`s / `Set` behavior, zero configuration, no secrets.
+- Production shared backend (explicit opt-in): `RedisRestRateLimitStore` — an Upstash REST-compatible Redis API selected with `RATE_LIMIT_STORE=redis` (+ `REDIS_REST_URL`, `REDIS_REST_TOKEN`). Atomicity is server-side: `INCR` + `EXPIRE … NX` fixed windows, `SET … NX PX` concurrency locks, and a token-checked `EVAL` release so a stale holder can never unlock a newer one.
+- Store selection is explicit via env (see §5); any store failure surfaces as `500` (fail-closed, never silently bypassed).
+
+| Limit | Store key | Value | Response |
 |---|---|---|---|
-| IP window | `x-forwarded-for` first value → `x-real-ip` → `'unknown'` | 5 requests / 60 s window (window = first request + 60 s) | `429 {"error":"Too many requests. Please wait a moment and try again."}` |
-| User window | Prisma user id | 3 requests / 60 s | `429` (same message) |
-| Daily (user) | `YYYY-MM-DD (UTC) : userId` | 10 requests / UTC calendar day | `429 {"error":"Daily program generation limit reached. Please try again tomorrow."}` |
-| Concurrency (user) | user id in `activeUsers` set | 1 in-flight generation | `409 {"error":"A program is already being generated. Please wait for it to finish."}` |
+| IP window | `ip:<ip>` (from `x-forwarded-for` first value → `x-real-ip` → `'unknown'`) | 5 requests / 60 s window (window = first request + 60 s) | `429 {"error":"Too many requests. Please wait a moment and try again."}` |
+| User window | `user:<prisma-user-id>` | 3 requests / 60 s | `429` (same message) |
+| Daily (user) | `daily:<YYYY-MM-DD (UTC)>:<prisma-user-id>` | 10 requests / UTC calendar day | `429 {"error":"Daily program generation limit reached. Please try again tomorrow."}` |
+| Concurrency (user) | `ai-generation:concurrent:<prisma-user-id>` | 1 in-flight generation (lock TTL 60 s) | `409 {"error":"A program is already being generated. Please wait for it to finish."}` |
 
 Behavioral notes:
 
 - IP is derived from `x-forwarded-for` (first entry, trimmed) or `x-real-ip`; the route **trusts proxy headers** — set these correctly at the edge/proxy in production.
 - The per-IP / per-user / daily counters are incremented **before** the concurrency check, so a request rejected with `409` still consumes one slot from the IP and user windows.
-- The concurrency slot is added only after all checks pass and is released in the route's `finally` block (`releaseGenerationSlot`).
-- Expired counters are pruned lazily on the next `consume` call (no background timer).
+- The concurrency lock is acquired only after all checks pass and is released in the route's `finally` block (`releaseGenerationSlot`). The release is **token-checked**, and the lock auto-expires after `CONCURRENCY_LOCK_TTL_MS = 60_000` (45 s AI budget + buffer), so a crashed instance can never block a user forever.
+- In the in-memory store, expired counters are pruned lazily on the next access (no background timer); in Redis, expiry is server-side (`EXPIRE … NX`).
 
 ### 3.5 Medical clearance / سنجش پزشکی
 
@@ -122,18 +143,23 @@ Matched categories (keyword classes, not the raw pattern): chest pain, shortness
 
 ### 3.6 Timeout / مهلت پاسخ
 
-- `AI_GENERATION_TIMEOUT_MS = 45_000` — if the AI call does not resolve within 45 s, the route responds `504 {"error":"Program generation timed out. Please try again."}`.
-- The timeout is implemented with `Promise.race`; the underlying OpenAI request is **not aborted** (it may still complete server-side, but nothing is persisted).
-- The route does not set `maxDuration`/`runtime` — it runs on the default Node.js runtime. On serverless platforms with a default function duration shorter than 45 s (e.g. Vercel Hobby), the platform may kill the function first; configure `maxDuration` if deploying there.
+All bounded operations go through the `withTimeout` helper (`src/lib/timeout.ts`), which rejects with a typed `TimeoutError` carrying a stable `code`. The route answers every timeout with `504` plus that `code` (see the status table) — the response is safe (no internal details) and differentiated (AI vs. persistence).
+
+- `AI_GENERATION_TIMEOUT_MS = 45_000` — if the AI call does not resolve within 45 s, the route responds `504 {"error":"Program generation timed out. Please try again.","code":"AI_TIMEOUT"}`.
+- `HISTORY_QUERY_TIMEOUT_MS = 5_000` — bounds the recent-workout-history read (`prisma.workoutSession.findMany`).
+- Persistence timeouts — see §3.7.
+- The underlying OpenAI request is **not aborted** (it may still complete server-side, but nothing is persisted). `withTimeout` swallows late completions/rejections of the timed-out operation, so a slow operation that finally fails after the timeout can never become an unhandled rejection (this was a latent risk with the previous inline `Promise.race`).
+- The route does not set `maxDuration`/`runtime` — it runs on the default Node.js runtime. On serverless platforms with a default function duration shorter than the AI + persistence budget (~55 s worst case), the platform may kill the function first; configure `maxDuration` if deploying there.
 
 ### 3.7 Persistence / ذخیره‌سازی
 
-`persistProgramForUser(userId, {...})` (`src/services/programService.ts`) runs everything in a single interactive Prisma transaction:
+`persistProgramForUser(userId, {...})` (`src/services/programService.ts`) runs everything in a single interactive Prisma transaction, **bounded by a two-layer timeout budget** (`src/lib/timeout.ts`):
 
 1. **Exercises**: upsert by unique `name` with an empty `update` — create-only, curated seed rows are never overwritten.
 2. **Program**: created with `ownerId = userId`, `name = "AI Program <program_id>"` (unique), `durationWeeks = 6`, `sessionsPerWeek = number of days in weekly_schedule`, `level` mapped from the input, description built from goal + mode + notes.
 3. **ProgramExercise** links with the AI prescription (`sets`, `reps` parsed to Int, `restSeconds`) in program order. Because of the composite PK `@@id([programId, exerciseId])`, a repeated exercise name across sessions is linked only once (first occurrence).
 4. If any write fails, the whole transaction rolls back (no orphaned programs / exercises). A `P2002` unique-name collision on the program name surfaces as a generic `500`.
+5. **Timeouts**: `withTimeout(transaction, PERSIST_TIMEOUT_MS = 10_000)` enforces the client-side deadline and rejects with `TimeoutError` (code `PERSISTENCE_TIMEOUT`) → `504` (see §3.6); Prisma's native `$transaction` options (`timeout: PERSIST_TRANSACTION_TIMEOUT_MS = 15_000`, `maxWait: PERSIST_MAX_WAIT_MS = 3_000`) are a larger server-side backstop that rolls the transaction back for truly stuck transactions. The wrapper fires first (its budget is smaller), so the client always gets the stable `PERSISTENCE_TIMEOUT` error. The route's `finally` still releases the user's concurrency slot — a stuck database can no longer hold it open indefinitely.
 
 ### 3.8 Response (200 OK)
 
@@ -234,14 +260,37 @@ Shape of `generated` (validated by `ProgramSchema` in the route):
 
 | Code | Meaning | Body |
 |---|---|---|
-| `200` | Program generated and persisted | `{ program, generated }` |
-| `400` | Malformed JSON **or** schema violation (incl. unknown keys) | `{"error":"Invalid JSON body."}` / `{"error":"Invalid workout profile."}` |
+| `200` | Program generated and persisted (or replayed from an idempotency record) | `{ program, generated }` |
+| `400` | Malformed JSON **or** schema violation (incl. unknown keys) **or** invalid `Idempotency-Key` header | `{"error":"Invalid JSON body."}` / `{"error":"Invalid workout profile."}` / `{"error":"…","code":"INVALID_IDEMPOTENCY_KEY"}` |
 | `401` | No valid Supabase session | `{"error":"Authentication required"}` |
 | `409` | Another generation already in flight for this user | `{"error":"A program is already being generated. Please wait for it to finish."}` |
+| `409` | Duplicate `Idempotency-Key` whose generation is already in progress | `{"error":"A generation with this Idempotency-Key is already in progress. Please retry shortly.","code":"IDEMPOTENCY_IN_PROGRESS"}` |
+| `409` | `Idempotency-Key` already used with a different request body | `{"error":"This Idempotency-Key was already used with a different request.","code":"IDEMPOTENCY_CONFLICT"}` |
 | `422` | High-risk disclosure in `limitationsDetails` | `{"error":"…", "code":"MEDICAL_CLEARANCE_REQUIRED"}` |
 | `429` | IP / user / daily rate limit exceeded | see §3.4 |
-| `504` | AI call exceeded 45 s | `{"error":"Program generation timed out. Please try again."}` |
+| `504` | AI call exceeded 45 s | `{"error":"Program generation timed out. Please try again.","code":"AI_TIMEOUT"}` |
+| `504` | Persistence (history query or program save) exceeded its budget | `{"error":"Your program could not be processed right now. Please try again.","code":"PERSISTENCE_TIMEOUT"}` |
 | `500` | Internal error (Prisma, prompt file missing, provider error, user-sync error, program-name collision) — logs only a stable error category, never prompts/profiles/API details | `{"error":"Failed to generate program"}` |
+
+### 3.10 Idempotency / تکرارناپذیری
+
+Source: `src/lib/ai/idempotency.ts` (pure contract) + `src/services/generationIdempotency.ts` (Prisma-backed state machine) + `persistProgramForUserWithIdempotency` in `src/services/programService.ts`.
+
+Ledger: the `ProgramGenerationRequest` table — one row per `(userId, Idempotency-Key)` (unique constraint), with `requestHash` (SHA-256 of the normalized request body — key-order-independent, no secrets), `status` (`IN_PROGRESS | SUCCEEDED | FAILED`), and a cached `responsePayload` for exact replays.
+
+Behavior on `beginIdempotentGeneration` (runs after auth + medical check, before rate limiting):
+
+| Record state | Outcome |
+|---|---|
+| none | claim → the request runs (row created `IN_PROGRESS`) |
+| `SUCCEEDED`, same body | `replay` → `200` with the cached `{ program, generated }` — no AI call, no quota consumed |
+| `IN_PROGRESS` (fresh) | `in_progress` → `409 IDEMPOTENCY_IN_PROGRESS` |
+| same key, different body (any status) | `conflict` → `409 IDEMPOTENCY_CONFLICT` |
+| `FAILED` (or `IN_PROGRESS` older than 120 s — crashed holder) | atomic reclaim → fresh attempt |
+
+Failure handling: the record is finalized to `SUCCEEDED` **inside the same transaction** that creates the `Program` (a persisted program can never exist without a replayable record, and vice versa). On any failure after claim (rate-limit rejection, AI timeout, persistence error, crash) the record is flipped to `FAILED`, so a retry with the same key re-executes instead of hanging on `409`.
+
+Retention: rows are pruned lazily by `updatedAt` after **30 days** (best-effort `deleteMany` on the next keyed request); a replayed key older than that starts a new generation.
 
 ---
 
@@ -338,6 +387,9 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 | `OPENAI_API_KEY` | `generate-program` (default env var read by `@ai-sdk/openai`) | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | PWA / TWA release, OG metadata (not read by these routes) | ❌ optional |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | error tracking (console reporter fallback without it) | ❌ optional |
+| `RATE_LIMIT_STORE` | `generate-program` rate limiting — `memory` (default, local fallback) or `redis` (shared multi-instance backend) | ❌ optional (default `memory`) |
+| `REDIS_REST_URL` | Redis REST store base URL (only when `RATE_LIMIT_STORE=redis`) | ⚠️ conditional |
+| `REDIS_REST_TOKEN` | Redis REST store auth token (only when `RATE_LIMIT_STORE=redis`; never commit a real value) | ⚠️ conditional |
 
 `analytics/events` requires **no** environment variables (logger only).
 
@@ -346,7 +398,7 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 ## 6. Runtime dependencies & deployment notes / وابستگی‌های زمان اجرا
 
 - **Prompt files (deployment artifact):** `infra/ai/prompts/01-general-program-generation-prompt.md`, `02-injury-focused-program-prompt.md`, `03-equipment-limited-program-prompt.md` are read from `process.cwd()` at request time by `loadSystemPrompt(mode)`. A missing file → `500 {"error":"Failed to generate program"}`. They must be present in the deployed artifact.
-- **Database:** SQLite via Prisma (`DATABASE_URL`), with migrations in `prisma/` — `WorkoutSession`, `User`, `Program`, `ProgramExercise`, `Exercise` are read/written by `generate-program`.
+- **Database:** SQLite via Prisma (`DATABASE_URL`), with migrations in `prisma/` — `WorkoutSession`, `User`, `Program`, `ProgramExercise`, `Exercise` are read/written by `generate-program`, plus the `ProgramGenerationRequest` idempotency ledger (§3.10).
 - **AI call:** one `gpt-4o-mini` structured-output call per request (OpenAI API). The route does **not** configure `maxDuration`; default Node.js runtime. See §3.6.
 - **Body size:** no app-level limit on `generate-program` (platform default applies); `analytics/events` enforces 64 KiB itself.
 - **Logging:** `analytics/events` output goes to structured logs (scope `analytics`); in production each entry is a single JSON line suitable for aggregation (CloudWatch, Datadog, …). Sensitive keys are redacted by the logger.
@@ -355,12 +407,13 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 
 ## 7. In-memory constraints / محدودیت‌های حافظه
 
-- **`generate-program` rate limiting is per-process, in-memory** (`src/lib/ai/requestSecurity.ts`):
-  - `ipCounters`, `userCounters`, `dailyCounters` (`Map<string, Counter>`) and `activeUsers` (`Set<string>`) are module-level singletons.
-  - Counters are **not shared** across serverless instances/replicas and are **lost on process restart**; expired entries are pruned lazily on the next request (no timer).
-  - Implication: under horizontal scaling the effective limits multiply by the number of instances; this is a soft guard, not an authoritative quota.
+- **`generate-program` rate limiting is store-backed** (`src/lib/ai/rateLimitStore.ts`):
+  - The default **in-memory** store (`InMemoryRateLimitStore`) keeps the old per-process behavior: counters and locks are module-level singletons, **not shared** across serverless instances/replicas and **lost on process restart**; expired entries are pruned lazily (no timer). Under horizontal scaling the effective limits multiply by the number of instances — a soft guard, not an authoritative quota.
+  - The production **shared** backend (`RATE_LIMIT_STORE=redis`, Upstash REST-compatible) makes the same limits authoritative across all instances and after restarts: fixed windows via atomic `INCR` + `EXPIRE … NX`, concurrency via `SET … NX PX` with a 60 s TTL and token-checked `EVAL` release. See §3.4.
+  - Per-process state that remains: the lock-token registry in `requestSecurity.ts` (acquire/release always happen inside one HTTP request on one instance).
 - **`analytics/events`**: no server-side queue/state. The client-side queue (`analyticsEvents.ts`) holds at most **100 events** in memory and drops the oldest beyond that.
-- **Program generation is fully synchronous per request** (one in-flight per user by design); the 45 s timeout prevents unbounded resource usage, but the underlying AI request is not cancelled (see §3.6).
+- **Program generation is fully synchronous per request** (one in-flight per user by design); the 45 s AI timeout and the persistence timeouts (5 s history read / 10 s save wrapper + native backstop, see §3.6–3.7) prevent unbounded resource usage, but the underlying AI request is not cancelled.
+- **Idempotency is DB-backed, not in-memory** (`ProgramGenerationRequest`): replay/conflict state survives restarts and is shared across instances (same SQLite/DB), unlike the rate-limit counters' in-memory default. Rows are pruned lazily after 30 days; an `IN_PROGRESS` row older than 120 s is treated as a crashed holder and reclaimed.
 
 ---
 
@@ -371,8 +424,11 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 | Generate-program route | `src/app/api/generate-program/route.ts` |
 | Analytics ingestion route | `src/app/api/analytics/events/route.ts` |
 | Input schema, rate limits, medical clearance, timeout, disclaimer | `src/lib/ai/requestSecurity.ts` |
+| Swappable rate-limit store (in-memory fallback + Redis REST shared backend) | `src/lib/ai/rateLimitStore.ts` |
+| Idempotency-Key contract (validation, request hash) | `src/lib/ai/idempotency.ts` |
+| Idempotency state machine (claim / replay / conflict / reclaim) | `src/services/generationIdempotency.ts` |
 | System prompts + modes | `src/lib/ai/prompts.ts` |
-| Program persistence (transactional) | `src/services/programService.ts` |
+| Program persistence (transactional, incl. idempotency finalize) | `src/services/programService.ts` |
 | Supabase auth / user sync | `src/services/userService.ts` |
 | Server Supabase client (cookies) | `src/lib/supabase-server.ts` |
 | Supabase env config | `src/lib/supabase.ts` |
@@ -382,3 +438,5 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 | Env template | `.env.example` |
 | Prompt files (deployment artifact) | `infra/ai/prompts/*.md` |
 | Security helper tests | `tests/request-security.test.ts` |
+| Rate-limit store + race condition tests | `tests/rate-limit-store.test.ts` |
+| Idempotency contract + state-machine tests | `tests/idempotency.test.ts` |

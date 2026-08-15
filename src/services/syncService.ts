@@ -12,6 +12,14 @@
  * into the Supabase `workout_exercise_logs` table. Rows are keyed by `id`, so
  * retries after a network blip are idempotent.
  *
+ * Failure handling is deterministic: every failure is classified by
+ * `classifySyncError` as retryable (network/timeout, 5xx, 429, Postgres
+ * connection/resource codes — retried on the next cycle) or permanent (4xx,
+ * validation/constraint/auth codes — flagged `giveUp` so the row is never
+ * retried again). `src/lib/offline/db.ts` additionally caps the number of
+ * attempts per row (`MAX_SYNC_ATTEMPTS`), so the outbox can never spin
+ * forever on a broken row.
+ *
  * Integration with `src/services/userService.ts`
  * ---------------------------------------------
  * `userService.ts` is a server-only module (Prisma + request-scoped Supabase
@@ -78,6 +86,74 @@ export class SyncServiceError extends Error {
     super(message);
     this.name = 'SyncServiceError';
   }
+}
+
+/** Whether a sync failure should be retried on the next cycle. */
+export type SyncErrorKind = 'retryable' | 'permanent';
+
+export interface SyncErrorClassification {
+  kind: SyncErrorKind;
+  /** `true` → keep the row queued for the next sync cycle. */
+  retryable: boolean;
+  /** Normalized error message (best effort). */
+  message: string;
+}
+
+/** HTTP statuses worth retrying (timeouts, rate limits, 5xx). */
+const RETRYABLE_HTTP_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+/** Message patterns that indicate a network/transport-level failure. */
+const NETWORK_ERROR_PATTERN =
+  /failed to fetch|networkerror|fetch failed|econnreset|econnrefused|econnaborted|etimedout|eai_again|timeout|aborted|interrupted|internet disconnected|offline/i;
+
+/** Postgres/Supabase error codes that are safe to retry (connection, resources). */
+const RETRYABLE_PG_CODE = /^08|^53/i;
+
+/** Postgres/Supabase error codes that are permanent (data, constraint, auth, privilege, syntax). */
+const PERMANENT_PG_CODE = /^(22|23|28|3d|42)/i;
+
+/**
+ * Deterministically classifies a sync failure as retryable or permanent.
+ *
+ * - Retryable: transport/network errors (browser `TypeError` from fetch,
+ *   DNS/connection resets, timeouts/aborts), HTTP 408/425/429/5xx, Postgres
+ *   connection (08*) and resource (53*) codes.
+ * - Permanent: HTTP 4xx (except 408/425/429), Postgres data (22*), integrity
+ *   (23*), auth (28*), catalog (3D*) and syntax/privilege (42*) codes.
+ * - Unknown failures default to retryable — the outbox must never silently
+ *   drop user workout data on an unclassified error.
+ */
+export function classifySyncError(err: unknown): SyncErrorClassification {
+  const anyErr = err as { message?: unknown; status?: unknown; code?: unknown } | null;
+  const message =
+    typeof anyErr?.message === 'string'
+      ? anyErr.message
+      : err instanceof Error
+        ? err.message
+        : String(err);
+
+  // Transport-level failures (browser fetch throws TypeError; Node fetch
+  // throws TypeError/FetchError with these messages).
+  if (err instanceof TypeError || NETWORK_ERROR_PATTERN.test(message)) {
+    return { kind: 'retryable', retryable: true, message };
+  }
+
+  // HTTP status (Supabase REST / fetch Response status).
+  const status = typeof anyErr?.status === 'number' ? anyErr.status : undefined;
+  if (status != null) {
+    if (RETRYABLE_HTTP_STATUS.has(status)) return { kind: 'retryable', retryable: true, message };
+    if (status >= 400 && status < 500) return { kind: 'permanent', retryable: false, message };
+    if (status >= 500) return { kind: 'retryable', retryable: true, message };
+  }
+
+  // Postgres/Supabase error codes (e.g. PostgrestError.code = '23505').
+  const code = typeof anyErr?.code === 'string' ? anyErr.code : undefined;
+  if (code) {
+    if (RETRYABLE_PG_CODE.test(code)) return { kind: 'retryable', retryable: true, message };
+    if (PERMANENT_PG_CODE.test(code)) return { kind: 'permanent', retryable: false, message };
+  }
+
+  return { kind: 'retryable', retryable: true, message };
 }
 
 // ---------------------------------------------------------------------------
@@ -205,8 +281,15 @@ export async function queueCompletedExercise(input: CompletedExerciseInput): Pro
 // Sync engine
 // ---------------------------------------------------------------------------
 
-/** Maps an outbox record to the Supabase row shape (snake_case columns). */
-function toSupabaseRow(row: ExerciseLogRecord): Record<string, unknown> {
+/**
+ * Maps an outbox record to the Supabase row shape (snake_case columns).
+ *
+ * The mapping is deterministic and always carries `id` — the idempotency
+ * key for the `upsert(..., { onConflict: 'id' })` used by
+ * `syncPendingWorkoutData`, so retrying a row whose server-side insert
+ * already succeeded never duplicates data.
+ */
+export function toSupabaseRow(row: ExerciseLogRecord): Record<string, unknown> {
   return {
     id: row.id,
     user_id: row.userId,
@@ -225,6 +308,11 @@ function toSupabaseRow(row: ExerciseLogRecord): Record<string, unknown> {
 /**
  * Uploads all pending outbox rows to Supabase. Idempotent — rows upsert on
  * `id`, so re-syncing after a partial failure never duplicates data.
+ *
+ * Failures are classified via {@link classifySyncError}: transient failures
+ * leave the rows queued for the next cycle; permanent rejections flag the
+ * rows as `giveUp` so the outbox stops retrying them (see
+ * `src/lib/offline/db.ts`).
  *
  * @param userId optional override — resolves the current user when omitted.
  */
@@ -245,12 +333,16 @@ export async function syncPendingWorkoutData(userId?: string): Promise<SyncResul
     const { error } = await supabase.from(SYNC_TABLE).upsert(rows, { onConflict: 'id' });
 
     if (error) {
-      lastError = error.message;
+      const cls = classifySyncError(error);
+      lastError = cls.message;
+      // Permanent rejections (4xx / validation / auth) are flagged giveUp so
+      // they are never retried; transient failures stay queued.
       await markExerciseLogsFailed(
         pending.map((row) => row.id),
-        error.message,
+        cls.message,
+        { giveUp: !cls.retryable },
       );
-      return { attempted: pending.length, synced: 0, failed: pending.length, errors: [error.message] };
+      return { attempted: pending.length, synced: 0, failed: pending.length, errors: [cls.message] };
     }
 
     lastSyncAt = Date.now();
@@ -261,13 +353,14 @@ export async function syncPendingWorkoutData(userId?: string): Promise<SyncResul
     );
     return { attempted: pending.length, synced: pending.length, failed: 0, errors: [] };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    lastError = message;
+    const cls = classifySyncError(err);
+    lastError = cls.message;
     await markExerciseLogsFailed(
       pending.map((row) => row.id),
-      message,
+      cls.message,
+      { giveUp: !cls.retryable },
     );
-    return { attempted: pending.length, synced: 0, failed: pending.length, errors: [message] };
+    return { attempted: pending.length, synced: 0, failed: pending.length, errors: [cls.message] };
   } finally {
     syncing = false;
   }

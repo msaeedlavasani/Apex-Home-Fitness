@@ -30,7 +30,8 @@
 - **Batch 8 (Completed):** بهینه‌سازی عملکرد بصری، بازبینی سیستم طراحی (Audit)، سیستم پیشنهاد هوشمند AI، بازبینی تولید TWA و سئو.
 - **Batch 9 (Completed):** اعتبارسنجی Zod، محافظ‌های AI، Medical Disclaimer، تست‌های امنیتی و CI سخت‌گیرانه.
 - **Batch 10 (Completed):** مقاوم‌سازی Workout Engine، تست‌های E2E آفلاین/RTL/کیبورد/ARIA، audit سیستم طراحی، مستندات API و pipeline کامل E2E در CI.
-- **تمرکز بعدی:** انتخاب پنج تسک باز بعدی با بالاترین اولویت، پس از commit و push موفق Batch 10.
+- **Batch 11 (Completed):** Rate Limit چنداینستنسی، idempotency تولید برنامه، timeout persistence، تست gamification و conflict resolution آفلاین.
+- **تمرکز بعدی:** پس از تأیید کاربر، انتخاب پنج تسک باز بعدی با بالاترین اولویت؛ قبل از تأیید هیچ بچ جدیدی شروع نمی‌شود.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **دسترسی به فایل‌ها:** ریشه اصلی پروژه `/Users/msl/Documents/GitHub/Apex-Home-Fitness` است.
