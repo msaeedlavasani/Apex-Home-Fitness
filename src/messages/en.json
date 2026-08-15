@@ -1,0 +1,78 @@
+{
+  "Metadata": {
+    "title": "Apex Home Fitness"
+  },
+  "Nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "workout": "Workout",
+    "profile": "Profile",
+    "quiz": "Quiz"
+  },
+  "Dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "weekLabel": "Your weekly training plan",
+    "calendarTitle": "Weekly calendar",
+    "weekProgress": "{done} of {total} sessions done this week",
+    "summaryTitle": "Today's workout",
+    "summaryRest": "Rest day",
+    "summaryRestDesc": "Recovery is part of the plan. Your next session is ready when you are.",
+    "startWorkout": "Start workout",
+    "stats": {
+      "duration": "Duration",
+      "exercises": "Exercises",
+      "calories": "Calories"
+    },
+    "units": {
+      "minutes": "{count} min",
+      "exercisesCount": "{count} exercises",
+      "caloriesCount": "{count} kcal"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "workouts": {
+      "fullBodyHiit": "Full Body HIIT",
+      "yogaFlow": "Morning Yoga Flow",
+      "upperBody": "Upper Body Calisthenics",
+      "corePilates": "Core Pilates",
+      "mobility": "Mobility & Stretch"
+    }
+  },
+  "WorkoutPlayer": {
+    "phase": {
+      "ready": "Ready",
+      "exercising": "Exercising",
+      "resting": "Resting",
+      "completed": "Completed"
+    },
+    "exerciseOf": "Exercise {current} of {total}",
+    "setOf": "Set {current} of {total}",
+    "reps": "{count} reps",
+    "progress": "{completed} of {total} sets done",
+    "workTime": "Work",
+    "restTime": "Rest",
+    "actions": {
+      "start": "Start",
+      "pause": "Pause",
+      "resume": "Resume",
+      "completeSet": "Complete set",
+      "skipRest": "Skip rest",
+      "previous": "Previous",
+      "next": "Next",
+      "restart": "Restart"
+    },
+    "complete": {
+      "title": "Workout complete!",
+      "subtitle": "All {total} sets finished. Well done!",
+      "time": "Total time: {time}"
+    },
+    "empty": "This workout has no exercises yet."
+  }
+}

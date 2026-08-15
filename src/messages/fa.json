@@ -1,0 +1,78 @@
+{
+  "Metadata": {
+    "title": "اپکس فیتنس خانگی"
+  },
+  "Nav": {
+    "home": "خانه",
+    "dashboard": "داشبورد",
+    "workout": "تمرین",
+    "profile": "پروفایل",
+    "quiz": "کوییز"
+  },
+  "Dashboard": {
+    "greeting": {
+      "morning": "صبح بخیر",
+      "afternoon": "ظهر بخیر",
+      "evening": "شب بخیر"
+    },
+    "weekLabel": "برنامه تمرینی هفتگی تو",
+    "calendarTitle": "تقویم هفتگی",
+    "weekProgress": "{done} از {total} جلسه این هفته انجام شد",
+    "summaryTitle": "تمرین امروز",
+    "summaryRest": "روز استراحت",
+    "summaryRestDesc": "استراحت هم بخشی از برنامه است. جلسه بعدی منتظر توست.",
+    "startWorkout": "شروع تمرین",
+    "stats": {
+      "duration": "مدت",
+      "exercises": "حرکتها",
+      "calories": "کالری"
+    },
+    "units": {
+      "minutes": "{count} دقیقه",
+      "exercisesCount": "{count} حرکت",
+      "caloriesCount": "{count} کالری"
+    },
+    "difficulty": {
+      "beginner": "مبتدی",
+      "intermediate": "متوسط",
+      "advanced": "پیشرفته"
+    },
+    "workouts": {
+      "fullBodyHiit": "اچآیتی تمام بدن",
+      "yogaFlow": "یوگای صبحگاهی",
+      "upperBody": "کالیستنیک بالاتنه",
+      "corePilates": "پیلاتس مرکزی",
+      "mobility": "تحرک و کشش"
+    }
+  },
+  "WorkoutPlayer": {
+    "phase": {
+      "ready": "آماده",
+      "exercising": "در حال تمرین",
+      "resting": "استراحت",
+      "completed": "تکمیل شد"
+    },
+    "exerciseOf": "تمرین {current} از {total}",
+    "setOf": "ست {current} از {total}",
+    "reps": "{count} تکرار",
+    "progress": "{completed} از {total} ست انجام شد",
+    "workTime": "تمرین",
+    "restTime": "استراحت",
+    "actions": {
+      "start": "شروع",
+      "pause": "توقف",
+      "resume": "ادامه",
+      "completeSet": "اتمام ست",
+      "skipRest": "رد کردن استراحت",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "restart": "شروع مجدد"
+    },
+    "complete": {
+      "title": "تمرین کامل شد!",
+      "subtitle": "هر {total} ست تمام شد. آفرین!",
+      "time": "زمان کل: {time}"
+    },
+    "empty": "این تمرین هنوز تمرینی ندارد."
+  }
+}

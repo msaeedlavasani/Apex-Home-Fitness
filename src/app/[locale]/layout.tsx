@@ -1,11 +1,12 @@
 import type {Metadata} from 'next';
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
+import {NextIntlClientProvider} from 'next-intl';
 import {getTranslations} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 // Note: The next-intl docs assume `@/` points to the project root.
 // If your project's `@` alias points to `src/` instead, use a relative import:
 // import {routing} from '../../../i18n/routing';
 import {routing} from '@/i18n/routing';
+import '../globals.css';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
@@ -33,7 +34,7 @@ export default async function LocaleLayout({
   const {locale} = await params;
 
   // Ensure that the incoming `locale` is valid
-  if (!hasLocale(routing.locales, locale)) {
+  if (!routing.locales.includes(locale as any)) {
     notFound();
   }
 

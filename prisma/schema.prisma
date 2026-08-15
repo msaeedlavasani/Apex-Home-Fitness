@@ -57,7 +57,7 @@ model User {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  programs        Program[]
+  programs        Program[]        @relation("UserPrograms")
   workoutSessions WorkoutSession[]
   quizResponses   QuizResponse[]
 }
@@ -70,13 +70,13 @@ model Exercise {
   name            String           @unique
   description     String
   category        ExerciseCategory
-  equipment       String[] // flexible, possibly empty list of required/optional gear
+  equipment       Json             // flexible, possibly empty list of required/optional gear
   difficulty      DifficultyLevel
-  durationSeconds Int? // approx. time for one working set
+  durationSeconds Int?             // approx. time for one working set
   reps            Int?
   sets            Int?
   restSeconds     Int?
-  instructions    String[] // ordered step-by-step cues
+  instructions    Json             // ordered step-by-step cues
   imageUrl        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
