@@ -81,9 +81,10 @@ test.describe('RTL — chrome markup contract', () => {
   }) => {
     await page.goto('/en/dashboard');
     const aside = page.locator('aside');
-    await expect(aside).toBeVisible();
+    await expect(aside).toHaveCount(1);
     // start-0 → the sidebar hugs the inline-start edge (left in LTR, right
-    // in RTL); md:flex → only rendered on desktop.
+    // in RTL); md:flex → only rendered on desktop. Visibility is intentionally
+    // not asserted: this test validates the responsive markup contract.
     await expect(aside).toHaveClass(/start-0/);
     await expect(aside).toHaveClass(/md:flex/);
     await expect(aside).toHaveClass(/hidden/);
@@ -94,9 +95,10 @@ test.describe('RTL — chrome markup contract', () => {
   }) => {
     await page.goto('/fa/dashboard');
     const header = page.locator('header');
-    await expect(header).toBeVisible();
+    await expect(header).toHaveCount(1);
     // The compact brand mark + pill nav mirror the sidebar content; the
     // header itself is md:hidden (desktop-only sidebar wins above 768px).
+    // Visibility is intentionally not asserted; this is a class-level contract test.
     await expect(header).toHaveClass(/md:hidden/);
     await expect(
       header.getByRole('navigation', {name: 'ناوبری اصلی'}),

@@ -64,9 +64,9 @@ test.describe('Onboarding quiz', () => {
 
     // Validation: Next without a selection shows the required error.
     await page.getByRole('button', {name: 'Next'}).click();
-    await expect(page.getByRole('alert')).toContainText(
-      'Please select an option to continue.',
-    );
+    await expect(
+      page.getByRole('alert').filter({hasText: 'Please select an option to continue.'}),
+    ).toBeVisible();
 
     // Pick "Dark" — the theme is applied immediately.
     await page.getByRole('button', {name: /^Dark/}).click();

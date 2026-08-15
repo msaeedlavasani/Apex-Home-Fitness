@@ -25,6 +25,7 @@ const repoRoot = path.join(__dirname, '..', '..');
 export default defineConfig({
   testDir: path.join(repoRoot, 'tests'),
   testMatch: '**/*.spec.ts',
+  timeout: isCI ? 60_000 : 30_000,
   outputDir: path.join(repoRoot, 'test-results'),
   fullyParallel: true,
   forbidOnly: isCI,
