@@ -1,6 +1,7 @@
 {
   "Metadata": {
-    "title": "اپکس فیتنس خانگی"
+    "title": "اپکس فیتنس خانگی",
+    "description": "فیتنس خانگی با هوش مصنوعی: برنامه‌های تمرینی شخصی‌سازی‌شده، ردیابی پیشرفت و تحلیل عملکرد — هر جا، هر زمان تمرین کن."
   },
   "Nav": {
     "home": "خانه",
@@ -157,5 +158,60 @@
       "streak": "بهترین رکورد متوالی",
       "days": "{count} روز"
     }
+  },
+  "Profile": {
+    "metaTitle": "پروفایل",
+    "title": "پروفایل",
+    "subtitle": "حساب کاربری و تنظیمات تو",
+    "sections": {
+      "userInfo": "اطلاعات کاربری",
+      "preferences": "تنظیمات",
+      "support": "پشتیبانی",
+      "account": "حساب کاربری"
+    },
+    "userInfo": {
+      "email": "ایمیل",
+      "goal": "هدف",
+      "level": "سطح"
+    },
+    "goals": {
+      "strength": "قدرت‌سازی",
+      "fat_loss": "کاهش چربی",
+      "flexibility": "انعطاف‌پذیری",
+      "functional_fitness": "تناسب عملکردی"
+    },
+    "levels": {
+      "beginner": "مبتدی",
+      "intermediate": "متوسط",
+      "advanced": "پیشرفته"
+    },
+    "notSet": "تنظیم نشده",
+    "preferences": {
+      "language": "زبان",
+      "appearance": "ظاهر",
+      "languageOptions": {
+        "en": "English",
+        "fa": "فارسی"
+      },
+      "themeOptions": {
+        "light": "روشن",
+        "dark": "تیره",
+        "system": "سیستم"
+      }
+    },
+    "support": {
+      "contact": "تماس با ما",
+      "contactValue": "support@apexfit.app",
+      "faq": "سوالات متداول"
+    },
+    "logout": {
+      "label": "خروج از حساب",
+      "signingOut": "در حال خروج…"
+    },
+    "unauthenticated": {
+      "title": "وارد نشده‌ای",
+      "message": "برای دیدن اطلاعات و تنظیمات پروفایل وارد شو."
+    },
+    "footer": "اپکس فیتنس خانگی نسخه ۰.۱.۰"
   }
 }

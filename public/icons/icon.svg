@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Apex Home Fitness — master icon (512 viewBox).
+    Minimalist geometric "peak" mark: a white mountain (apex) with a sun,
+    full-bleed indigo gradient background. Glyph sits inside the 80%
+    maskable safe zone so the same art works for "any" and "maskable".
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="55%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#3730A3"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="22%" cy="18%" r="75%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <circle cx="352" cy="174" r="27" fill="#FFFFFF" fill-opacity="0.96"/>
+  <path d="M 256 158 L 374 356 L 138 356 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round"/>
+</svg>

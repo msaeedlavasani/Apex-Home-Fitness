@@ -1,6 +1,7 @@
 {
   "Metadata": {
-    "title": "Apex Home Fitness"
+    "title": "Apex Home Fitness",
+    "description": "AI-powered home fitness: personalized workout programs, progress tracking, and analytics — train anywhere, anytime."
   },
   "Nav": {
     "home": "Home",
@@ -157,5 +158,60 @@
       "streak": "Best streak",
       "days": "{count, plural, one {# day} other {# days}}"
     }
+  },
+  "Profile": {
+    "metaTitle": "Profile",
+    "title": "Profile",
+    "subtitle": "Your account and preferences",
+    "sections": {
+      "userInfo": "User Info",
+      "preferences": "Preferences",
+      "support": "Support",
+      "account": "Account"
+    },
+    "userInfo": {
+      "email": "Email",
+      "goal": "Goal",
+      "level": "Level"
+    },
+    "goals": {
+      "strength": "Build strength",
+      "fat_loss": "Fat loss",
+      "flexibility": "Flexibility",
+      "functional_fitness": "Functional fitness"
+    },
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "notSet": "Not set",
+    "preferences": {
+      "language": "Language",
+      "appearance": "Appearance",
+      "languageOptions": {
+        "en": "English",
+        "fa": "فارسی"
+      },
+      "themeOptions": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      }
+    },
+    "support": {
+      "contact": "Contact us",
+      "contactValue": "support@apexfit.app",
+      "faq": "FAQ"
+    },
+    "logout": {
+      "label": "Log out",
+      "signingOut": "Signing out…"
+    },
+    "unauthenticated": {
+      "title": "Not signed in",
+      "message": "Sign in to see your profile details and preferences."
+    },
+    "footer": "Apex Home Fitness v0.1.0"
   }
 }
