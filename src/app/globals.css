@@ -107,8 +107,9 @@
   --apex-on-rest: #1c1c1e;                --apex-state-rest-text: #a05a00;
   --apex-state-success: #34c759;          --apex-state-success-soft: rgba(52, 199, 89, 0.10);
   --apex-on-success: #1c1c1e;             --apex-state-success-text: #1e7a31;
-  --apex-state-alert: #ff3b30;            --apex-state-alert-soft: rgba(255, 59, 48, 0.10);
-  --apex-on-alert: #ffffff;               --apex-state-alert-text: #d70015;
+  --apex-state-alert: #ff3b30;            --apex-state-alert-border: rgba(255, 59, 48, 0.40);
+  --apex-on-alert: #ffffff;               --apex-state-alert-soft: rgba(255, 59, 48, 0.10);
+  --apex-state-alert-text: #d70015;
 
   /* ── Media layer (video player chrome over video content) ──
      Mode-independent: white text/icons + black scrims must stay
@@ -293,8 +294,9 @@
   --apex-on-rest: #1c1c1e;                --apex-state-rest-text: #ffb340;
   --apex-state-success: #30d158;          --apex-state-success-soft: rgba(48, 209, 88, 0.16);
   --apex-on-success: #1c1c1e;             --apex-state-success-text: #40ff7c;
-  --apex-state-alert: #ff453a;            --apex-state-alert-soft: rgba(255, 69, 58, 0.16);
-  --apex-on-alert: #ffffff;               --apex-state-alert-text: #ff6961;
+  --apex-state-alert: #ff453a;            --apex-state-alert-border: rgba(255, 69, 58, 0.40);
+  --apex-on-alert: #ffffff;               --apex-state-alert-soft: rgba(255, 69, 58, 0.16);
+  --apex-state-alert-text: #ff6961;
 
   /* ── Workout components (rings / timers / counters) ─────── */
   --workout-ring-track: rgba(120, 120, 128, 0.30);
@@ -446,19 +448,9 @@
     min-height: 100dvh;
   }
 
-  /* RTL & Persian (fa) Specific Rules */
-  [dir='rtl'], [lang='fa'] {
-    font-family: 'Vazirmatn', theme('fontFamily.sans');
-    letter-spacing: 0 !important;
-  }
-
-  /* RTL & Persian (fa) Specific Rules */
-  [dir='rtl'], [lang='fa'] {
-    font-family: 'Vazirmatn', theme('fontFamily.sans');
-    letter-spacing: 0 !important;
-  }
-
-  /* RTL & Persian (fa) Specific Rules */
+  /* RTL & Persian (fa) — Vazirmatn first, zero tracking (DESIGN_SYSTEM.md §4).
+     Zero tracking must also win over the h1-h6 -0.02em rule below, hence
+     the !important on letter-spacing. */
   [dir='rtl'], [lang='fa'] {
     font-family: 'Vazirmatn', theme('fontFamily.sans');
     letter-spacing: 0 !important;

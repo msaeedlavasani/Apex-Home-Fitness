@@ -93,7 +93,12 @@ export interface WorkoutStateRecord {
   currentSet: number;
   completedSets: number;
   totalSets: number;
+  /** Seconds spent in the current phase at the last write — restores a mid-countdown phase exactly. */
+  phaseElapsedSeconds: number;
+  /** Total active workout time in seconds at the last write. */
   totalElapsedSeconds: number;
+  /** Whether the phase timer was counting at the last write (pause/resume history). */
+  isRunning: boolean;
   /** Epoch ms when the workout was started (null until `start()`). */
   startedAt: number | null;
   /** Epoch ms when the workout was completed (null until finished). */
@@ -138,7 +143,12 @@ export interface ExerciseLogRecord {
 // ---------------------------------------------------------------------------
 
 const DATABASE_NAME = 'apex-home-fitness';
-const DATABASE_VERSION = 1;
+// v2: `WorkoutStateRecord` gained `phaseElapsedSeconds` and `isRunning`
+// (per-phase countdown position + pause/resume history). The schema is
+// otherwise unchanged, so existing stores/records are preserved as-is;
+// records written before v2 simply lack the new fields, which restore to 0 /
+// paused (see `hydrateFromRecord` in `workoutPersistence.ts`).
+const DATABASE_VERSION = 2;
 
 const offlineDb = new Dexie(DATABASE_NAME) as Dexie & {
   activePrograms: EntityTable<ActiveProgramRecord, 'userId'>;

@@ -4,6 +4,16 @@ import { z } from 'zod';
 import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
 import { NextResponse } from 'next/server';
 
+import {
+  AI_GENERATION_TIMEOUT_MS,
+  GENERATE_PROGRAM_INPUT_SCHEMA,
+  MEDICAL_DISCLAIMER,
+  acquireGenerationSlot,
+  getClientIp,
+  hasHighRiskDisclosure,
+  releaseGenerationSlot,
+  securityMessage,
+} from '@/lib/ai/requestSecurity';
 import { prisma } from '@/lib/prisma';
 import { persistProgramForUser } from '@/services/programService';
 import {
@@ -200,21 +210,52 @@ function formatWorkoutHistory(sessions: HistorySession[]): string {
 }
 
 export async function POST(req: Request) {
+  let generationUserId: string | null = null;
+  let slotAcquired = false;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const { level, goal, equipment, limitations, limitationsDetails } = await req.json();
-
-    // Determine mode
-    let mode: PromptMode = 'general';
-    if (limitations && limitations.length > 0) {
-      mode = 'injury_focused';
-    } else if (!equipment || equipment.length === 0 || (equipment.length === 1 && equipment[0] === 'none')) {
-      mode = 'equipment_limited';
+    let requestBody: unknown;
+    try {
+      requestBody = await req.json();
+    } catch {
+      return NextResponse.json({error: 'Invalid JSON body.'}, {status: 400});
     }
+    const parsedInput = GENERATE_PROGRAM_INPUT_SCHEMA.safeParse(requestBody);
+    if (!parsedInput.success) {
+      return NextResponse.json({error: 'Invalid workout profile.'}, {status: 400});
+    }
+    const {level, goal, equipment, limitations, limitationsDetails} = parsedInput.data;
 
     // Resolve the authenticated user once — the same identity backs both the
     // workout-history lookup and the program persistence.
     const supabaseUser = await getSupabaseAuthUser();
     const user = await syncUserWithSupabase(supabaseUser);
+    generationUserId = user.id;
+
+    if (hasHighRiskDisclosure(limitationsDetails)) {
+      return NextResponse.json(
+        {
+          error: 'Medical clearance is required before generating a program for the disclosed symptoms or condition.',
+          code: 'MEDICAL_CLEARANCE_REQUIRED',
+        },
+        {status: 422},
+      );
+    }
+
+    const rejection = acquireGenerationSlot(user.id, getClientIp(req));
+    if (rejection) {
+      const status = rejection === 'daily_limit' ? 429 : rejection === 'concurrent_request' ? 409 : 429;
+      return NextResponse.json({error: securityMessage(rejection)}, {status});
+    }
+    slotAcquired = true;
+
+    // Determine mode
+    let mode: PromptMode = 'general';
+    if (limitations.length > 0 && !limitations.includes('none')) {
+      mode = 'injury_focused';
+    } else if (equipment.length === 1 && equipment[0] === 'none') {
+      mode = 'equipment_limited';
+    }
 
     // Recent WorkoutSession history (newest first) — completion status and
     // actual performance (sets / reps / duration) drive the AI's
@@ -246,7 +287,7 @@ export async function POST(req: Request) {
 
     const systemPrompt = await loadSystemPrompt(mode);
 
-    const result = await generateObject({
+    const generation = generateObject({
       model: openai('gpt-4o-mini'),
       schema: ProgramSchema,
       prompt: `Generate a workout program for a user with the following profile:
@@ -274,28 +315,46 @@ export async function POST(req: Request) {
         Fill the "adjustments" object with a concise summary, the concrete
         progression choices, the concrete regression choices, and a rationale
         grounded in the history (cite completion status and actual performance).
-        Mirror those choices in the weekly_schedule prescriptions (sets, reps, RPE,
-        rest) and in the progression_plan.`,
+         Mirror those choices in the weekly_schedule prescriptions (sets, reps, RPE,
+         rest) and in the progression_plan.
+         The output disclaimer must include this safety message or its equivalent:
+         ${MEDICAL_DISCLAIMER}`,
       system: systemPrompt,
     });
+
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('AI generation timeout')), AI_GENERATION_TIMEOUT_MS);
+    });
+    const result = await Promise.race([generation, timeout]);
+    const generated = {
+      ...result.object,
+      disclaimer: result.object.disclaimer.trim() || MEDICAL_DISCLAIMER,
+    };
 
     // Persist the validated program into `Program` / `ProgramExercise`,
     // linked to the current authenticated user (transactional).
     const program = await persistProgramForUser(user.id, {
-      program: result.object,
+      program: generated,
       level,
       goal,
     });
 
     return NextResponse.json({
       program, // persisted DB record (Program + ProgramExercise links)
-      generated: result.object, // full validated AI output (warmups, cooldowns, progression, adjustments…)
+      generated, // full validated AI output (warmups, cooldowns, progression, adjustments…)
     });
   } catch (error) {
-    console.error('Error generating program:', error);
     if (error instanceof UnauthenticatedError) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({error: 'Authentication required'}, {status: 401});
     }
-    return NextResponse.json({ error: 'Failed to generate program' }, { status: 500 });
+    if (error instanceof Error && error.message === 'AI generation timeout') {
+      return NextResponse.json({error: 'Program generation timed out. Please try again.'}, {status: 504});
+    }
+    // Log only a stable error category; never include prompts, profiles, or API details.
+    console.error('Program generation failed:', error instanceof Error ? error.name : 'unknown');
+    return NextResponse.json({error: 'Failed to generate program'}, {status: 500});
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (slotAcquired && generationUserId) releaseGenerationSlot(generationUserId);
   }
 }

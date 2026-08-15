@@ -23,9 +23,17 @@
 | :--- | :--- | :--- | :--- |
 | `--apex-primary` | `#FF4500` | `#FF6B3D` | Primary fill (Buttons, Active phase) |
 | `--apex-on-primary` | `#FFFFFF` | `#1C1C1E` | Text/Icon on primary fill |
+| `--apex-primary-hover` | `#E63E00` | `#FF7F57` | Primary fill (hover / pressed-up) |
+| `--apex-primary-active` | `#CC3800` | `#E65C2E` | Primary fill (pressed) |
 | `--apex-primary-text` | `#D93D00` | `#FF8A5C` | Accessible text on neutral backgrounds |
 | `--apex-primary-soft` | `rgba(255, 69, 0, 0.10)` | `rgba(255, 107, 61, 0.16)` | Selected state / Soft highlight |
+| `--apex-primary-soft-strong` | `rgba(255, 69, 0, 0.18)` | `rgba(255, 107, 61, 0.28)` | Selected state (stronger) |
 | `--apex-primary-border` | `rgba(255, 69, 0, 0.35)` | `rgba(255, 107, 61, 0.45)` | Subtle primary outlines |
+| `--apex-focus-ring` | `rgba(255, 69, 0, 0.35)` | `rgba(255, 107, 61, 0.45)` | Keyboard focus ring (2px offset) |
+
+> Also defined in `globals.css`: `--apex-gradient-brand` (brand gradient used by
+> the web logo), `--apex-media-overlay` / `--apex-media-scrim` (mode-independent
+> video-player chrome).
 
 ### 2.2 Neutral System (Semantic Ramp)
 
@@ -38,8 +46,13 @@ The neutral ramp is purely semantic to avoid developer error in dark mode.
 | `--apex-card` | `#FFFFFF` | `#2C2C2E` | Card / Dialog / Sheet surface |
 | `--apex-text-primary` | `#000000` | `#FFFFFF` | Primary headings and body |
 | `--apex-text-secondary`| `rgba(60,60,67, 0.6)` | `rgba(235,235,245, 0.6)` | Subtitles and captions |
+| `--apex-text-tertiary` | `rgba(60,60,67, 0.3)` | `rgba(235,235,245, 0.3)` | Captions, placeholders |
+| `--apex-text` | alias of `--apex-text-primary` | alias of `--apex-text-primary` | Generic text (workout/social) |
 | `--apex-border` | `rgba(60,60,67, 0.2)` | `rgba(84,84,88, 0.6)` | Hairlines and separators |
-| `--apex-fill` | `rgba(120,120,128, 0.2)`| `rgba(120,120,128, 0.3)`| Control fills (chips, inputs) |
+| `--apex-fill` | `rgba(120,120,128, 0.2)`| `rgba(120,120,128, 0.36)`| Control fills (chips, inputs) |
+
+> `--apex-text` is a pure alias of `--apex-text-primary` (kept for workout/social
+> components). `--apex-fill` dark (`0.36`) matches Apple HIG `systemFill` dark.
 
 ### 2.3 Workout State Tokens
 

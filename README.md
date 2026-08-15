@@ -24,5 +24,17 @@
 3. `npx prisma db push`
 4. `npm run dev`
 
+## 🤖 CI و E2E
+Pipeline در `.github/workflows/ci.yml` به‌ترتیب و fail-fast اجرا می‌شود:
+
+1. **`build`**: `npm ci` → `npx prisma generate` → lint → type check → unit tests → `next build`
+2. **`e2e`** (فقط بعد از موفقیت `build`): `npm ci` → نصب browserهای Playwright (`npx playwright install --with-deps chromium`) → `npm run test:e2e`؛ در صورت failure گزارش در artifact آپلود می‌شود.
+
+نکته‌های مهم:
+- CI فقط envهای placeholder (بدون secrets واقعی) می‌دهد؛ `DATABASE_URL="file:./ci.db"` کافی است چون E2E فعلی UI-only است و به auth/DB واقعی نیاز ندارد (داشبورد، کوییز، تم، کیبورد، ARIA و آفلاین).
+- E2E روی dev server اجرا می‌شود چون `tests/offline-pwa.spec.ts` رفتار dev-mode (عدم ثبت service worker) را پین کرده است؛ build پروداکشن جداگانه در job اول اعتبارسنجی می‌شود.
+- جریان‌های نیازمند creds واقعی (مثلاً `POST /api/generate-program` با Supabase auth + کلید OpenAI) جزو E2E نیستند — جزئیات در `.env.example` مستند شده است.
+- تست‌ها به‌صورت محلی: `npx playwright install chromium && npm run test:e2e`
+
 ## 📂 مستندات
 تمامی مستندات فنی، نقشه راه و استراتژی‌ها در پوشه `docs/` قرار دارند.

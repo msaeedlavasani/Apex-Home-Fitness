@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { WallClockAccumulator } from '../../lib/workout/wallClock';
 
 /**
  * useWorkoutEngine
@@ -14,10 +15,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
  * - **Timer**: a per-phase countdown driven by `durationSeconds` (working
  *   sets) and `restSeconds` (rest). When a phase has no configured duration
  *   the timer counts up (open-ended set) until the user advances manually.
+ *   The timer is **wall-clock based**: it tracks real elapsed time and is
+ *   re-synced on `visibilitychange` / `pagehide` / `pageshow` / `focus`, so
+ *   backgrounding the tab (or the device sleeping) never loses time — the
+ *   countdown catches up exactly when the user returns.
  * - **Set counting**: `currentSet` tracks the set within the current exercise;
  *   `completedSets`/`progress` describe overall workout progress.
  * - **Navigation**: `nextExercise`, `previousExercise` and `jumpTo(index)` move
  *   between exercises while the workout is active.
+ * - **Resumability**: the engine exposes a live `state` snapshot and an
+ *   `onStateChange` callback fired on every meaningful transition (start,
+ *   pause, resume, completeSet, skipRest, navigation, hydrate, reset,
+ *   restart, completion — *not* on timer ticks). A persisted snapshot can be
+ *   fed back via `hydrate()` (always restores paused, so the user resumes
+ *   explicitly). See `src/lib/offline/workoutPersistence.ts` for the
+ *   IndexedDB record mapping and `WorkoutPlayer` for a wired example.
  *
  * The hook is intentionally i18n-agnostic — the consumer is responsible for
  * translating exercise names and any labels. See WorkoutPlayer.tsx for a
@@ -57,6 +69,45 @@ export interface WorkoutSummary {
   durationSeconds: number;
 }
 
+/**
+ * A fully resumable snapshot of the engine. This is the shape handed to
+ * `onStateChange` (persist it) and accepted by `hydrate()` (restore it).
+ */
+export interface WorkoutEngineState {
+  phase: WorkoutPhase;
+  currentExerciseIndex: number;
+  /** 1-based set number within the current exercise. */
+  currentSet: number;
+  completedSets: number;
+  totalSets: number;
+  /** Seconds spent in the current phase (counts up in both modes). */
+  phaseElapsedSeconds: number;
+  /** Total active workout time in seconds since start(). */
+  totalElapsedSeconds: number;
+  /** Whether the phase timer is currently counting. */
+  isRunning: boolean;
+  /** Epoch ms when the workout was started (null until start()). */
+  startedAt: number | null;
+  /** Epoch ms when the workout was completed (null until finished). */
+  completedAt: number | null;
+}
+
+/**
+ * Input accepted by `hydrate()`. Every field is optional; missing values fall
+ * back to sensible defaults (index 0, set 1, zeroed timers, EXERCISING).
+ */
+export interface WorkoutEngineHydrateInput {
+  phase?: WorkoutPhase;
+  currentExerciseIndex?: number;
+  currentSet?: number;
+  phaseElapsedSeconds?: number;
+  totalElapsedSeconds?: number;
+  startedAt?: number | null;
+  completedAt?: number | null;
+  /** Convenience: when true and no `completedAt` is given, `completedAt` is set to now. */
+  isComplete?: boolean;
+}
+
 export interface WorkoutEngineOptions {
   /**
    * When true (default), a countdown that reaches zero auto-advances:
@@ -64,7 +115,12 @@ export interface WorkoutEngineOptions {
    * When false the timer stays at 0 and the user advances manually.
    */
   autoAdvance?: boolean;
-  /** Fired on every phase change (not on mount). */
+  /**
+   * Injectable wall-clock time source (defaults to `Date.now`). Mainly a
+   * test seam; consumers normally never set this.
+   */
+  now?: () => number;
+  /** Fired on every phase change (not on mount, not on hydrate). */
   onPhaseChange?: (phase: WorkoutPhase) => void;
   /** Fired whenever a working set is completed. */
   onSetComplete?: (info: WorkoutSetInfo) => void;
@@ -72,6 +128,13 @@ export interface WorkoutEngineOptions {
   onExerciseComplete?: (exerciseIndex: number) => void;
   /** Fired once, when the whole workout is finished. */
   onWorkoutComplete?: (summary: WorkoutSummary) => void;
+  /**
+   * Fired after every state-mutating transition (start, pause, resume,
+   * completeSet, skipRest, navigation, hydrate, reset, restart, completion)
+   * with a full resumable snapshot. NOT fired on timer ticks — safe to
+   * persist on every call (e.g. to IndexedDB).
+   */
+  onStateChange?: (state: WorkoutEngineState) => void;
 }
 
 export interface UseWorkoutEngineResult {
@@ -105,6 +168,17 @@ export interface UseWorkoutEngineResult {
   /** Total active workout time in seconds since start(). */
   totalElapsedSeconds: number;
 
+  // ---- Resumability ----
+  /** Live snapshot of every resumable field (memoized, updates with state). */
+  state: WorkoutEngineState;
+  /**
+   * Restore position/timer from a previously persisted snapshot. Only works
+   * while the engine is READY (before the user starts); the restored session
+   * is always paused — the user resumes explicitly, so a workout never runs
+   * while the app is closed. The phase callback is suppressed.
+   */
+  hydrate: (input: WorkoutEngineHydrateInput) => void;
+
   // ---- Controls ----
   /** READY → EXERCISING and starts the timer. No-op otherwise. */
   start: () => void;
@@ -128,7 +202,7 @@ export interface UseWorkoutEngineResult {
   restart: () => void;
 }
 
-function clampSets(sets: number | null | undefined): number {
+export function clampSets(sets: number | null | undefined): number {
   return Math.max(1, Math.floor(sets ?? 1));
 }
 
@@ -140,7 +214,14 @@ export function useWorkoutEngine(
   exercises: WorkoutExercise[],
   options: WorkoutEngineOptions = {}
 ): UseWorkoutEngineResult {
-  const { autoAdvance = true, onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete } = options;
+  const {
+    autoAdvance = true,
+    onPhaseChange,
+    onSetComplete,
+    onExerciseComplete,
+    onWorkoutComplete,
+    onStateChange,
+  } = options;
 
   const [phase, setPhase] = useState<WorkoutPhase>('READY');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -148,12 +229,26 @@ export function useWorkoutEngine(
   const [phaseElapsed, setPhaseElapsed] = useState(0);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [completedAt, setCompletedAt] = useState<number | null>(null);
 
   // Keep callbacks fresh without forcing every transition to depend on them.
-  const callbacksRef = useRef({ onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete });
+  const callbacksRef = useRef({ onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete, onStateChange });
   useEffect(() => {
-    callbacksRef.current = { onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete };
+    callbacksRef.current = { onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete, onStateChange };
   });
+
+  // Single wall-clock source: injectable for tests, `Date.now` by default.
+  const nowRef = useRef<() => number>(options.now ?? (() => Date.now()));
+  useEffect(() => {
+    if (options.now) nowRef.current = options.now;
+  });
+
+  // Wall-clock accumulator that drives both `phaseElapsed` and `totalElapsed`.
+  const accumulatorRef = useRef<WallClockAccumulator | null>(null);
+  if (accumulatorRef.current == null) {
+    accumulatorRef.current = new WallClockAccumulator({ now: () => nowRef.current() });
+  }
 
   /**
    * What should happen when the current RESTING phase ends:
@@ -188,6 +283,48 @@ export function useWorkoutEngine(
 
   const progress = totalSets > 0 ? Math.min(1, completedSets / totalSets) : 0;
 
+  // ---- Snapshot emission --------------------------------------------------
+
+  const snapshotDirtyRef = useRef(false);
+  const markSnapshotDirty = useCallback(() => {
+    snapshotDirtyRef.current = true;
+  }, []);
+
+  const state: WorkoutEngineState = useMemo(
+    () => ({
+      phase,
+      currentExerciseIndex,
+      currentSet,
+      completedSets,
+      totalSets,
+      phaseElapsedSeconds: phaseElapsed,
+      totalElapsedSeconds: totalElapsed,
+      isRunning,
+      startedAt,
+      completedAt,
+    }),
+    [
+      phase,
+      currentExerciseIndex,
+      currentSet,
+      completedSets,
+      totalSets,
+      phaseElapsed,
+      totalElapsed,
+      isRunning,
+      startedAt,
+      completedAt,
+    ]
+  );
+
+  // Emit a snapshot only after a transition marked the state dirty (timer
+  // ticks change `phaseElapsed` and therefore `state`, but must NOT emit).
+  useEffect(() => {
+    if (!snapshotDirtyRef.current) return;
+    snapshotDirtyRef.current = false;
+    callbacksRef.current.onStateChange?.(state);
+  }, [state]);
+
   // ---- Current phase duration -------------------------------------------
 
   const phaseDurationSeconds = useMemo<number | null>(() => {
@@ -203,23 +340,71 @@ export function useWorkoutEngine(
   const secondsLeft =
     phaseDurationSeconds == null ? null : Math.max(0, phaseDurationSeconds - phaseElapsed);
 
-  // ---- Timer tick -------------------------------------------------------
+  // ---- Wall-clock accounting ----------------------------------------------
 
+  /** Add whatever whole seconds elapsed since the last accounting. */
+  const accountElapsed = useCallback(() => {
+    const delta = accumulatorRef.current?.account() ?? 0;
+    if (delta <= 0) return;
+    setPhaseElapsed((s) => s + delta);
+    setTotalElapsed((s) => s + delta);
+  }, []);
+
+  // 1s heartbeat while running. Browsers throttle/pause this in background
+  // tabs — that's fine: the lifecycle handlers below catch up on return.
   useEffect(() => {
     if (!isRunning || (phase !== 'EXERCISING' && phase !== 'RESTING')) return;
     const id = globalThis.setInterval(() => {
-      setPhaseElapsed((s) => s + 1);
-      setTotalElapsed((s) => s + 1);
+      accountElapsed();
     }, 1000);
     return () => globalThis.clearInterval(id);
-  }, [isRunning, phase]);
+  }, [isRunning, phase, accountElapsed]);
 
-  // ---- Phase-change callback (skip the initial render) ------------------
+  // Re-sync with real time whenever the page's visibility or focus changes:
+  // returning from a background tab, from the bfcache (pageshow), from the
+  // lock screen (focus) or from a device sleep — the countdown catches up
+  // exactly. `account()` is idempotent, so hidden/visible both call it safely.
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    const sync = () => accountElapsed();
+    const onPageShow = () => accountElapsed();
+    const onFocus = () => accountElapsed();
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pagehide', sync);
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', sync);
+      window.removeEventListener('pagehide', sync);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [accountElapsed]);
+
+  // Start/pause the accumulator whenever running-ness or the phase anchor
+  // changes: a new phase (or a new set/exercise) counts from now, and paused
+  // time never counts.
+  useEffect(() => {
+    const acc = accumulatorRef.current;
+    if (!acc) return;
+    if (isRunning && (phase === 'EXERCISING' || phase === 'RESTING')) {
+      acc.start();
+    } else {
+      acc.pause();
+    }
+  }, [phase, currentSet, currentExerciseIndex, isRunning]);
+
+  // ---- Phase-change callback (skip the initial render and hydrates) ------
 
   const isFirstPhase = useRef(true);
+  const skipNextPhaseCallbackRef = useRef(false);
   useEffect(() => {
     if (isFirstPhase.current) {
       isFirstPhase.current = false;
+      return;
+    }
+    if (skipNextPhaseCallbackRef.current) {
+      skipNextPhaseCallbackRef.current = false;
       return;
     }
     callbacksRef.current.onPhaseChange?.(phase);
@@ -236,8 +421,9 @@ export function useWorkoutEngine(
       setCurrentSet(1);
       setPhaseElapsed(0);
       setPhase('EXERCISING');
+      markSnapshotDirty();
     },
-    [exercises.length]
+    [exercises.length, markSnapshotDirty]
   );
 
   /** End the rest: next set of the same exercise, or the following exercise. */
@@ -251,7 +437,8 @@ export function useWorkoutEngine(
     } else {
       goToExercise(currentExerciseIndex + 1);
     }
-  }, [phase, currentExercise, currentExerciseIndex, goToExercise]);
+    markSnapshotDirty();
+  }, [phase, currentExercise, currentExerciseIndex, goToExercise, markSnapshotDirty]);
 
   /** Complete the current working set and advance. */
   const completeSet = useCallback(() => {
@@ -268,9 +455,11 @@ export function useWorkoutEngine(
       callbacksRef.current.onExerciseComplete?.(currentExerciseIndex);
 
       if (isLastExercise) {
+        setCompletedAt(nowRef.current());
         setPhase('COMPLETED');
         setIsRunning(false);
         setPhaseElapsed(0);
+        markSnapshotDirty();
         callbacksRef.current.onWorkoutComplete?.({
           totalExercises: exercises.length,
           totalSets,
@@ -288,6 +477,7 @@ export function useWorkoutEngine(
       } else {
         goToExercise(currentExerciseIndex + 1);
       }
+      markSnapshotDirty();
       return;
     }
 
@@ -303,7 +493,18 @@ export function useWorkoutEngine(
       setPhaseElapsed(0);
       setIsRunning(true);
     }
-  }, [phase, currentExercise, currentSet, currentExerciseIndex, exercises.length, totalSets, totalElapsed, goToExercise]);
+    markSnapshotDirty();
+  }, [
+    phase,
+    currentExercise,
+    currentSet,
+    currentExerciseIndex,
+    exercises.length,
+    totalSets,
+    totalElapsed,
+    goToExercise,
+    markSnapshotDirty,
+  ]);
 
   // ---- Auto-advance when a countdown hits zero --------------------------
 
@@ -325,20 +526,25 @@ export function useWorkoutEngine(
 
   const start = useCallback(() => {
     if (phase !== 'READY' || exercises.length === 0) return;
+    setStartedAt(nowRef.current());
+    setCompletedAt(null);
     setPhase('EXERCISING');
     setPhaseElapsed(0);
     setIsRunning(true);
-  }, [phase, exercises.length]);
+    markSnapshotDirty();
+  }, [phase, exercises.length, markSnapshotDirty]);
 
   const pause = useCallback(() => {
     if (phase !== 'EXERCISING' && phase !== 'RESTING') return;
     setIsRunning(false);
-  }, [phase]);
+    markSnapshotDirty();
+  }, [phase, markSnapshotDirty]);
 
   const resume = useCallback(() => {
     if (phase !== 'EXERCISING' && phase !== 'RESTING') return;
     setIsRunning(true);
-  }, [phase]);
+    markSnapshotDirty();
+  }, [phase, markSnapshotDirty]);
 
   const skipRest = useCallback(() => {
     advanceFromRest();
@@ -363,23 +569,92 @@ export function useWorkoutEngine(
   );
 
   const reset = useCallback(() => {
+    restTargetRef.current = 'set';
     setPhase('READY');
     setCurrentExerciseIndex(0);
     setCurrentSet(1);
     setPhaseElapsed(0);
     setTotalElapsed(0);
     setIsRunning(false);
-  }, []);
+    setStartedAt(null);
+    setCompletedAt(null);
+    markSnapshotDirty();
+  }, [markSnapshotDirty]);
 
   const restart = useCallback(() => {
     if (exercises.length === 0) return;
+    restTargetRef.current = 'set';
+    setStartedAt(nowRef.current());
+    setCompletedAt(null);
     setPhase('EXERCISING');
     setCurrentExerciseIndex(0);
     setCurrentSet(1);
     setPhaseElapsed(0);
     setTotalElapsed(0);
     setIsRunning(true);
-  }, [exercises.length]);
+    markSnapshotDirty();
+  }, [exercises.length, markSnapshotDirty]);
+
+  /**
+   * Restore a previously persisted snapshot. Only meaningful while READY;
+   * the timer is always restored paused so a workout never advances while
+   * the app was closed. Position fields are clamped to the current plan, and
+   * a restored countdown keeps at least one tick when a duration is set.
+   */
+  const hydrate = useCallback(
+    (input: WorkoutEngineHydrateInput) => {
+      if (phase !== 'READY') return;
+      if (isRunning) return;
+      if (exercises.length === 0) return;
+
+      const index = Math.min(
+        Math.max(Math.floor(input.currentExerciseIndex ?? 0), 0),
+        exercises.length - 1
+      );
+      const sets = clampSets(exercises[index]?.sets);
+      const set = Math.min(Math.max(Math.floor(input.currentSet ?? 1), 1), sets);
+
+      const requestedPhase: WorkoutPhase =
+        input.phase === 'RESTING' || input.phase === 'COMPLETED' || input.phase === 'READY'
+          ? input.phase
+          : 'EXERCISING';
+
+      // Restore a mid-countdown phase exactly, but never *past* its end:
+      // keep at least one tick of countdown when a duration is configured so
+      // resuming doesn't instantly skip the phase.
+      const duration = normalizeDuration(
+        requestedPhase === 'RESTING'
+          ? exercises[index]?.restSeconds
+          : exercises[index]?.durationSeconds
+      );
+      let restoredPhaseElapsed = Math.max(0, Math.floor(input.phaseElapsedSeconds ?? 0));
+      if (duration != null && restoredPhaseElapsed >= duration) {
+        restoredPhaseElapsed = Math.max(0, duration - 1);
+      }
+
+      // When restoring RESTING after the last set of an exercise, the engine
+      // must know the rest leads to the next exercise, not another set.
+      if (requestedPhase === 'RESTING') {
+        restTargetRef.current = set >= sets ? 'exercise' : 'set';
+      }
+
+      if (requestedPhase !== phase) {
+        skipNextPhaseCallbackRef.current = true;
+      }
+      setCurrentExerciseIndex(index);
+      setCurrentSet(set);
+      setPhaseElapsed(restoredPhaseElapsed);
+      setTotalElapsed(Math.max(0, Math.floor(input.totalElapsedSeconds ?? 0)));
+      setStartedAt(input.startedAt ?? null);
+      setCompletedAt(
+        input.completedAt ?? (requestedPhase === 'COMPLETED' ? nowRef.current() : null)
+      );
+      setPhase(requestedPhase);
+      setIsRunning(false);
+      markSnapshotDirty();
+    },
+    [phase, isRunning, exercises, markSnapshotDirty]
+  );
 
   return {
     phase,
@@ -396,6 +671,8 @@ export function useWorkoutEngine(
     phaseElapsedSeconds: phaseElapsed,
     secondsLeft,
     totalElapsedSeconds: totalElapsed,
+    state,
+    hydrate,
     start,
     pause,
     resume,

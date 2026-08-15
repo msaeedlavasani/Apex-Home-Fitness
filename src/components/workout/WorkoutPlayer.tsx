@@ -3,12 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucide-react';
-import { useWorkoutEngine, type WorkoutExercise, type WorkoutPhase, type WorkoutSummary } from './useWorkoutEngine';
+import {
+  useWorkoutEngine,
+  type WorkoutEngineState,
+  type WorkoutExercise,
+  type WorkoutPhase,
+  type WorkoutSummary,
+} from './useWorkoutEngine';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/cn';
 import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
+import { getTodayWorkoutState, saveTodayWorkoutState } from '@/lib/offline/db';
+import { buildWorkoutStateRecord, hydrateFromRecord } from '@/lib/offline/workoutPersistence';
 import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } from './index';
 
 /**
@@ -30,6 +38,17 @@ import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } fr
  * (`messages/en.json` / `messages/fa.json`), so the component is fully
  * localized and RTL-aware out of the box. Colors/surfaces consume the Apex
  * design tokens and therefore support Light/Dark and all three platforms.
+ *
+ * **Resilience** (when a `userId` is provided):
+ *   - every meaningful engine transition (start, pause, resume, set/rest
+ *     advance, skip, completion) persists a resumable snapshot to IndexedDB
+ *     (`workoutStates`, see `src/lib/offline/db.ts`), and
+ *   - on mount, today's snapshot is restored via `hydrate()` when it still
+ *     matches the loaded plan — a half-done workout, including its
+ *     pause/resume position, survives a page reload. Restored sessions are
+ *     always paused; the user resumes explicitly. The engine timer itself is
+ *     wall-clock based and re-synced on background return, so countdowns
+ *     never drift while the tab is hidden.
  */
 
 function formatTime(totalSeconds: number): string {
@@ -63,6 +82,13 @@ export interface WorkoutPlayerProps {
   /** The workout plan to play. */
   exercises: WorkoutExercise[];
   /**
+   * When provided, the player persists and restores "today's workout"
+   * snapshots to IndexedDB for this user (pause/resume/skip/complete and
+   * half-finished sessions survive a reload, and the timer is wall-clock
+   * synced on background return). Omit to keep the session ephemeral.
+   */
+  userId?: string;
+  /**
    * When true (default), a countdown that reaches zero advances the workout
    * automatically (set completed / rest finished).
    */
@@ -79,6 +105,7 @@ export interface WorkoutPlayerProps {
 
 export function WorkoutPlayer({
   exercises,
+  userId,
   autoAdvance = true,
   soundEnabled = true,
   hapticsEnabled = true,
@@ -120,6 +147,28 @@ export function WorkoutPlayer({
     if (hapticsEnabled) haptic('setComplete');
   }, [hapticsEnabled, haptic]);
 
+  // ---- IndexedDB persistence (only when a `userId` is provided) ---------
+
+  const exercisesRef = useRef(exercises);
+  useEffect(() => {
+    exercisesRef.current = exercises;
+  });
+
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  });
+
+  /** Persist every engine transition as today's workout snapshot. */
+  const handleStateChange = useCallback((engineState: WorkoutEngineState) => {
+    const uid = userIdRef.current;
+    if (!uid) return;
+    const record = buildWorkoutStateRecord(exercisesRef.current, engineState);
+    void saveTodayWorkoutState(uid, record).catch((err) => {
+      console.error('[WorkoutPlayer] failed to persist workout state', err);
+    });
+  }, []);
+
   const {
     phase,
     currentExercise,
@@ -142,12 +191,36 @@ export function WorkoutPlayer({
     nextExercise,
     previousExercise,
     restart,
+    hydrate,
   } = useWorkoutEngine(exercises, {
     autoAdvance,
     onWorkoutComplete,
     onPhaseChange: handlePhaseChange,
     onSetComplete: handleSetComplete,
+    onStateChange: handleStateChange,
   });
+
+  // On mount, restore today's snapshot (if any) when it still matches the
+  // loaded plan. `hydrate()` no-ops once the user has started, so a slow
+  // IndexedDB read can never clobber an in-progress session.
+  useEffect(() => {
+    const uid = userId;
+    if (!uid) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const record = await getTodayWorkoutState(uid);
+        if (cancelled || !record) return;
+        const input = hydrateFromRecord(record, exercisesRef.current);
+        if (input) hydrate(input);
+      } catch (err) {
+        console.error('[WorkoutPlayer] failed to restore workout state', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, hydrate]);
 
   // A new set (or a jump to another exercise) starts a fresh rep tally.
   useEffect(() => {

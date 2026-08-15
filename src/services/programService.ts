@@ -31,8 +31,11 @@
  *   }
  *
  * Integration model: `src/app/api/generate-program/route.ts` produces a
- * zod-validated program (`generateObject` + `ProgramSchema`) and hands it to
- * `saveGeneratedProgram`, which:
+ * zod-validated program (`generateObject` + `ProgramSchema`) and calls
+ * `persistProgramForUser(user.id, ...)` directly — the route already resolved
+ * the authenticated user for the workout-history lookup. `saveGeneratedProgram`
+ * is the equivalent convenience wrapper for callers that still need the user
+ * resolution done here, which:
  *   1. Resolves the authenticated Supabase user (throws
  *      `UnauthenticatedError` when there is no session).
  *   2. Ensures the linked Prisma `User` row exists (`syncUserWithSupabase`),

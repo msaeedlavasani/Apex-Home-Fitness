@@ -47,6 +47,27 @@
   color: var(--apex-text-secondary);
 }
 
+/* Medical safety notice — visible before the user submits a profile. */
+.quiz-medical {
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--apex-state-alert-border, rgba(255, 59, 48, 0.4));
+  border-radius: 12px;
+  background: var(--apex-state-alert-soft, #fffbeb);
+  color: var(--apex-text-primary);
+}
+.quiz-medical__title {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.quiz-medical__body {
+  margin: 0;
+  color: var(--apex-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
 /* Step shell */
 .quiz-step {
   border: 0;

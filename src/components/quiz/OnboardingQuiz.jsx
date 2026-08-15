@@ -217,6 +217,11 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
 
       <ProgressBar current={currentStep + 1} total={totalSteps} t={localizedT} />
 
+      <aside className="quiz-medical" role="note" aria-label={localizedT('quiz.medical.title')}>
+        <strong className="quiz-medical__title">{localizedT('quiz.medical.title')}</strong>
+        <p className="quiz-medical__body">{localizedT('quiz.medical.body')}</p>
+      </aside>
+
       {renderStep()}
 
       <NavigationButtons

@@ -32,6 +32,8 @@ const EN = {
   'quiz.finish': 'See my plan',
   'quiz.error.required': 'Please select an option to continue.',
   'quiz.error.equipment.required': 'Please select at least one option, or choose "None".',
+  'quiz.medical.title': 'Safety first',
+  'quiz.medical.body': 'This app provides general fitness information, not medical advice. Consult a qualified healthcare professional before exercising if you have an injury, medical condition, are pregnant, or have concerning symptoms. Stop immediately and seek medical care for chest pain, severe shortness of breath, dizziness, numbness, weakness, or sharp/worsening pain.',
 
   // ---- Step 1 — Visual style ----
   'quiz.theme.title': 'What visual style do you prefer?',
@@ -106,6 +108,8 @@ const FA = {
   'quiz.finish': 'مشاهده برنامه من',
   'quiz.error.required': 'لطفاً یک گزینه را انتخاب کن تا ادامه بدیم.',
   'quiz.error.equipment.required': 'حداقل یک گزینه را انتخاب کن یا «هیچ‌کدام» را بزن.',
+  'quiz.medical.title': 'اول ایمنی',
+  'quiz.medical.body': 'این برنامه اطلاعات عمومی تناسب اندام ارائه می‌کند و جایگزین توصیه پزشکی نیست. اگر آسیب‌دیدگی، بیماری، بارداری یا علائم نگران‌کننده داری، قبل از تمرین با متخصص سلامت مشورت کن. در صورت درد قفسه سینه، تنگی نفس شدید، سرگیجه، بی‌حسی، ضعف یا درد تیز و رو به تشدید، فوراً تمرین را متوقف و مراقبت پزشکی دریافت کن.',
 
   // ---- Step 1 — Visual style ----
   'quiz.theme.title': 'چه سبک نمایشی رو ترجیح می‌دی؟',

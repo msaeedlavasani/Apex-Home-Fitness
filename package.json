@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "echo \"No tests specified yet\" && exit 0",
+    "audit:design": "node scripts/audit-design-system.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts tests/*.test.tsx",
     "test:e2e": "playwright test --config=infra/config/playwright.config.ts"
   },
   "dependencies": {
@@ -33,12 +35,15 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-test-renderer": "^18.3.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
     "prisma": "^6.19.3",
+    "react-test-renderer": "^18.3.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

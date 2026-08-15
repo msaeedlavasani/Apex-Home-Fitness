@@ -213,6 +213,10 @@ module.exports = {
           bg: 'var(--apex-bg)',
           surface: 'var(--apex-surface)',
           card: 'var(--apex-card)',
+          // `--apex-text` is the canonical alias of `--apex-text-primary`
+          // (globals.css), used by workout/social components. Exposing it here
+          // makes `text-apex-text` a first-class utility like the CSS alias.
+          text: 'var(--apex-text)',
           'text-primary': 'var(--apex-text-primary)',
           'text-secondary': 'var(--apex-text-secondary)',
           'text-tertiary': 'var(--apex-text-tertiary)',

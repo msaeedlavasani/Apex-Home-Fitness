@@ -6,30 +6,116 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# Fail fast: if a newer commit lands on the same ref, cancel the queued run —
+# never waste minutes on stale results.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # Static checks + production build.
+  # Anything failing here stops the pipeline: the `e2e` job below declares
+  # `needs: build`, so it never even starts when this job fails (fail-fast).
+  #
+  # Env: only placeholder values are provided — never real secrets. The app
+  # builds and renders with unset Supabase/Sentry/OpenAI vars (graceful
+  # fallbacks), and the covered flows never touch auth or the DB.
+  # ---------------------------------------------------------------------------
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Use Node.js
-      uses: actions/setup-node@v3
+    - name: Use Node.js 20
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
+      env:
+        # Placeholder only — enough for `prisma generate` (runs as the
+        # @prisma/client postinstall during npm ci). No real secrets in CI.
+        DATABASE_URL: file:./ci.db
 
-    - name: Lint check
+    - name: Generate Prisma client
+      run: npx prisma generate
+
+    - name: Lint
       run: npm run lint
-      continue-on-error: true
 
     - name: Type check
-      run: npx tsc --noEmit
-      continue-on-error: true
+      run: npm run typecheck
 
-    - name: Run tests
+    - name: Unit tests
       run: npm test
-      continue-on-error: true
+
+    - name: Production build
+      run: npm run build
+      env:
+        DATABASE_URL: file:./ci.db
+
+  # ---------------------------------------------------------------------------
+  # End-to-end tests (Playwright, chromium).
+  # Runs only after `build` succeeds, in this order: npm ci → Playwright
+  # browsers → E2E. A failure anywhere aborts the rest (fail-fast).
+  #
+  # The E2E suite is UI-only and needs no real auth/DB: Supabase/Sentry/OpenAI
+  # envs are intentionally NOT set here — the app degrades gracefully (console
+  # reporter, signed-out profile fallback). See .env.example and the README
+  # "CI & E2E" section for what is (and is not) covered.
+  #
+  # NOTE on the web server: Playwright boots `npm run dev` (see
+  # infra/config/playwright.config.ts) because tests/offline-pwa.spec.ts
+  # deliberately pins dev-mode behavior (no service-worker registration in
+  # development). The production build is validated by the `build` job above.
+  # ---------------------------------------------------------------------------
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+      env:
+        DATABASE_URL: file:./ci.db
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright browser (chromium) + OS dependencies
+      run: npx playwright install --with-deps chromium
+
+    - name: Run E2E tests
+      run: npm run test:e2e
+      env:
+        # Same placeholder as the build job — the dev server only touches
+        # Prisma/Supabase on demand, which the covered flows never do.
+        DATABASE_URL: file:./ci.db
+
+    - name: Upload Playwright report (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: |
+          playwright-report
+          test-results
+        retention-days: 14
+        if-no-files-found: warn
