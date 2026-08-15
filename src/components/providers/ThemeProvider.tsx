@@ -105,9 +105,21 @@ export function ThemeProvider({
   defaultTheme = 'system',
   storageKey = DEFAULT_STORAGE_KEY,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
-  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>('light');
+  // Match the pre-hydration ThemeScript so React does not briefly render the
+  // default light state over a persisted dark page and then flip it back.
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return defaultTheme;
+    return (
+      getStoredTheme(storageKey) ??
+      (document.documentElement.classList.contains('dark') ? 'dark' : defaultTheme)
+    );
+  });
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
+    if (typeof window === 'undefined') return 'light';
+    if (document.documentElement.classList.contains('dark')) return 'dark';
+    return getSystemTheme();
+  });
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 
   const didHydrateRef = useRef(false);
   const isFirstPersistRef = useRef(true);

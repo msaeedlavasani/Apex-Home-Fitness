@@ -4,6 +4,7 @@ import {useFormatter, useLocale, useTranslations} from 'next-intl';
 import Link from 'next/link';
 import {useMemo, useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
+import {dayIndexInWeek, mondayPlanIndex, weekDaysFor} from '@/lib/weekCalendar';
 import {AppShell} from '@/components/layout/AppShell';
 import {ANALYTICS_EVENTS, trackEvent} from '@/services/analyticsEvents';
 import {
@@ -31,7 +32,10 @@ type Workout = {
 type DayPlan = {type: 'rest'} | {type: 'workout'; workout: Workout};
 
 /**
- * Sample weekly plan (Monday → Sunday).
+ * Sample weekly plan (Monday → Sunday). The plan stays anchored to a
+ * Monday-start week in both locales; the calendar's column order depends on
+ * the locale (en: Monday → Sunday, fa: Saturday → Friday) and is mapped back
+ * to this ordering via `mondayPlanIndex` (see lib/weekCalendar).
  * Swap this for real data (Program / WorkoutSession from Prisma)
  * once the data layer is wired up.
  */
@@ -96,16 +100,6 @@ const DIFFICULTY_BADGE: Record<Difficulty, string> = {
   advanced: 'bg-rose-400/20 text-rose-300',
 };
 
-/** Monday of the week containing `date`. */
-function startOfWeek(date: Date): Date {
-  const mondayOffset = (date.getDay() + 6) % 7; // Sunday=0 → Monday=0
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate() - mondayOffset,
-  );
-}
-
 function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -121,32 +115,27 @@ export default function DashboardPage() {
 
   const today = useMemo(() => new Date(), []);
 
-  const todayIndex = useMemo(() => {
-    const monday = startOfWeek(today);
-    const diff = Math.floor((today.getTime() - monday.getTime()) / 86_400_000);
-    return Math.min(Math.max(diff, 0), 6);
-  }, [today]);
+  const todayIndex = useMemo(
+    () => dayIndexInWeek(today, locale),
+    [today, locale],
+  );
 
   const [selectedIndex, setSelectedIndex] = useState(todayIndex);
 
-  const weekDays = useMemo(() => {
-    const monday = startOfWeek(today);
-    return Array.from({length: 7}, (_, i) => {
-      const day = new Date(monday);
-      day.setDate(monday.getDate() + i);
-      return day;
-    });
-  }, [today]);
+  const weekDays = useMemo(
+    () => weekDaysFor(today, locale),
+    [today, locale],
+  );
 
   const startOfToday = useMemo(
     () => new Date(today.getFullYear(), today.getMonth(), today.getDate()),
     [today],
   );
 
-  const selectedPlan = WEEK_PLAN[selectedIndex];
+  const selectedPlan = WEEK_PLAN[mondayPlanIndex(weekDays[selectedIndex])];
   const isTodaySelected = selectedIndex === todayIndex;
 
-  const sessionsDone = WEEK_PLAN.slice(0, todayIndex).filter(
+  const sessionsDone = WEEK_PLAN.slice(0, mondayPlanIndex(today)).filter(
     (plan) => plan.type === 'workout',
   ).length;
   const totalSessions = WEEK_PLAN.filter(
@@ -191,7 +180,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {weekDays.map((day, index) => {
-              const plan = WEEK_PLAN[index];
+              const plan = WEEK_PLAN[mondayPlanIndex(day)];
               const isToday = index === todayIndex;
               const isSelected = index === selectedIndex;
               const isPast = day.getTime() < startOfToday.getTime();

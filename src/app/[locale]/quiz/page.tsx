@@ -20,7 +20,7 @@ export default function QuizPage() {
   const locale = params?.locale ?? 'en';
 
   return (
-    <main className="flex min-h-screen min-h-dvh items-start justify-center bg-slate-50 py-10 text-slate-900">
+    <main className="flex min-h-screen min-h-dvh items-start justify-center bg-apex-surface py-10 text-apex-text-primary">
       <div className="w-full max-w-lg px-4">
         <OnboardingQuiz
           locale={locale as 'en' | 'fa'}

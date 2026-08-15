@@ -283,8 +283,12 @@
 /* The quiz follows the active theme applied to <html> by             */
 /* `src/components/providers/ThemeProvider.tsx` / `theme.js`          */
 /* (`.dark` class — see `globals.css` `.dark body` and Tailwind       */
-/* `darkMode: 'class'`). These overrides keep the quiz readable in    */
-/* dark mode so the Visual-style step's effect is visible immediately. */
+/* `darkMode: 'class'`). The quiz route shell paints the page with    */
+/* `bg-apex-surface` (--apex-surface: #f2f2f7 light / #1c1c1e dark),  */
+/* and cards/inputs rise one step to --apex-card (#ffffff / #2c2c2e)  */
+/* so surfaces stay distinguishable and text keeps WCAG contrast in   */
+/* both modes. These overrides keep the quiz readable in dark mode so */
+/* the Visual-style step's effect is visible immediately.             */
 /* ------------------------------------------------------------------ */
 .dark .quiz {
   color: var(--apex-text-primary);
@@ -299,7 +303,7 @@
 .dark .quiz-option,
 .dark .quiz-check,
 .dark .quiz-field__input {
-  background: var(--apex-surface);
+  background: var(--apex-card);
   border-color: var(--apex-border);
   color: var(--apex-text-primary);
 }
@@ -309,8 +313,10 @@
 }
 .dark .quiz-option--selected,
 .dark .quiz-check--checked {
-  background: var(--apex-primary-soft);
-  border-color: var(--apex-primary-border);
+  /* Keep selected controls on a dark card surface; the orange accent remains
+     on the border so white/secondary text stays WCAG-readable. */
+  background: var(--apex-card);
+  border-color: var(--apex-primary);
 }
 .dark .quiz-field__input::placeholder {
   color: var(--apex-text-tertiary);

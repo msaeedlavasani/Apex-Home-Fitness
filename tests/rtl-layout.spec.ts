@@ -29,6 +29,7 @@ const FA_PAGES: {path: string; title: string; hasAppShell: boolean}[] = [
   {path: 'profile', title: 'پروفایل', hasAppShell: false}, // ProfileView has no AppShell nav
   {path: 'library', title: 'کتابخانه', hasAppShell: true},
   {path: 'challenges', title: 'چالش', hasAppShell: true},
+  {path: 'workout', title: 'تمرین', hasAppShell: true},
 ];
 
 test.describe('RTL — Persian pages', () => {
