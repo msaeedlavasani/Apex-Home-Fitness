@@ -128,6 +128,12 @@ model Program {
   level           DifficultyLevel
   durationWeeks   Int
   sessionsPerWeek Int?
+  // Weekday ids the user selected as rest days (1–3), e.g.
+  //   [ "wednesday", "sunday" ]
+  // Set by `persistProgramForUser` from the generation input; null for
+  // programs created before this feature. It is nullable because SQLite
+  // (this repo's datasource) does not support @default() on Json fields.
+  restDays        Json?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -220,8 +226,10 @@ model WorkoutSessionExercise {
 
 // Answers to the onboarding quiz used to recommend programs.
 // `answers` is a flexible JSON payload, e.g.:
-//   { "goal": "fatLoss", "experience": "beginner",
+//   { "goal": ["fatLoss", "strength"], "experience": "beginner",
 //     "timePerSessionMin": 30, "equipment": ["yoga mat", "resistance band"] }
+// Note: `goal` is a multi-select array; legacy single-string values
+// (`"goal": "fatLoss"`) are normalized to arrays by the API schema.
 model QuizResponse {
   id                    String   @id @default(cuid())
   userId                String

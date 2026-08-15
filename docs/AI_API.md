@@ -37,7 +37,7 @@ Covered endpoints:
 
 ## 3. `POST /api/generate-program`
 
-Source: `src/app/api/generate-program/route.ts` · helpers: `src/lib/ai/requestSecurity.ts`, `src/lib/ai/prompts.ts`, `src/services/programService.ts`
+Source: `src/app/api/generate-program/route.ts` · helpers: `src/lib/ai/requestSecurity.ts`, `src/lib/ai/restDays.ts`, `src/lib/ai/prompts.ts`, `src/services/programService.ts`
 
 ### 3.1 Summary / خلاصه
 
@@ -50,10 +50,11 @@ No auth header — identity comes from the Supabase session cookies. `Content-Ty
 | Field | Required | Type / allowed values | Constraints |
 |---|---|---|---|
 | `level` | ✅ | `'beginner' \| 'intermediate' \| 'advanced'` | — |
-| `goal` | ✅ | `'strength' \| 'fat_loss' \| 'flexibility' \| 'functional_fitness'` | — |
+| `goal` | ✅ | `string` or `string[]` of `'strength' \| 'fat_loss' \| 'flexibility' \| 'functional_fitness'` | Single legacy string or array of 1–4 items; no duplicates; always normalized to an array (`goal: ['strength', 'fat_loss']`) |
 | `equipment` | ✅ | `string[]` of `'none' \| 'pull_up_bar' \| 'bands' \| 'dumbbells' \| 'barbell' \| 'kettlebells' \| 'bench' \| 'cable_machine' \| 'jump_rope'` | 1–9 items; no duplicates; `'none'` cannot be combined with other items |
 | `limitations` | ✅ | `string[]` of `'none' \| 'knee' \| 'lower_back' \| 'shoulder' \| 'wrist' \| 'ankle' \| 'hip' \| 'neck'` | 0–8 items; no duplicates; `'none'` cannot be combined with other items |
 | `limitationsDetails` | ❌ (default `''`) | `string` | trimmed, max 1000 chars |
+| `restDays` | ❌ (absent → no constraint) | `string[]` of `'monday' \| 'tuesday' \| 'wednesday' \| 'thursday' \| 'friday' \| 'saturday' \| 'sunday'` | 1–3 items (when present); no duplicates; absent/omitted → no rest-day constraint (backward compatible); an explicit `[]` is rejected. These weekdays are kept **workout-free** in the generated and persisted program |
 
 **Idempotency header (optional, recommended for retries):**
 
@@ -71,7 +72,7 @@ Contract (see §3.10): when the header is present, the server guarantees that re
 
 Without the header the route behaves exactly as before (no idempotency guarantee). Clients should generate a fresh key per intended request and reuse it on retries.
 
-Note: `limitations` is required but may be an empty array (`[]`); `equipment` requires at least one item.
+Note: `limitations` is required but may be an empty array (`[]`); `equipment` requires at least one item. `goal` accepts the legacy single string (`"goal": "strength"`) **or** a multi-goal array (`"goal": ["strength", "fat_loss"]`); both are normalized to an array before the prompt/persistence step, and the two forms hash identically for idempotency purposes. `restDays` is optional (absent → no constraint, so pre-existing clients keep working); when provided it must contain 1–3 unique weekday ids.
 
 **Sample request:**
 
@@ -81,10 +82,11 @@ Cookie: sb-<ref>-auth-token=<session>…   (Supabase session)
 
 {
   "level": "beginner",
-  "goal": "strength",
+  "goal": ["strength", "fat_loss"],
   "equipment": ["dumbbells", "bench"],
   "limitations": ["knee"],
-  "limitationsDetails": "Mild knee discomfort during squats"
+  "limitationsDetails": "Mild knee discomfort during squats",
+  "restDays": ["wednesday", "sunday"]
 }
 ```
 
@@ -156,8 +158,8 @@ All bounded operations go through the `withTimeout` helper (`src/lib/timeout.ts`
 `persistProgramForUser(userId, {...})` (`src/services/programService.ts`) runs everything in a single interactive Prisma transaction, **bounded by a two-layer timeout budget** (`src/lib/timeout.ts`):
 
 1. **Exercises**: upsert by unique `name` with an empty `update` — create-only, curated seed rows are never overwritten.
-2. **Program**: created with `ownerId = userId`, `name = "AI Program <program_id>"` (unique), `durationWeeks = 6`, `sessionsPerWeek = number of days in weekly_schedule`, `level` mapped from the input, description built from goal + mode + notes.
-3. **ProgramExercise** links with the AI prescription (`sets`, `reps` parsed to Int, `restSeconds`) in program order. Because of the composite PK `@@id([programId, exerciseId])`, a repeated exercise name across sessions is linked only once (first occurrence).
+2. **Program**: created with `ownerId = userId`, `name = "AI Program <program_id>"` (unique), `durationWeeks = 6`, `sessionsPerWeek = number of TRAINING days in weekly_schedule` (rest-day entries are excluded), `restDays = <input restDays>` (Json array of weekday ids), `level` mapped from the input, description built from goal + mode + notes.
+3. **ProgramExercise** links with the AI prescription (`sets`, `reps` parsed to Int, `restSeconds`) in program order. Because of the composite PK `@@id([programId, exerciseId])`, a repeated exercise name across sessions is linked only once (first occurrence). Sessions flagged `is_rest_day` (see §3.8) are skipped entirely — no exercise is ever linked to a user-selected rest day.
 4. If any write fails, the whole transaction rolls back (no orphaned programs / exercises). A `P2002` unique-name collision on the program name surfaces as a generic `500`.
 5. **Timeouts**: `withTimeout(transaction, PERSIST_TIMEOUT_MS = 10_000)` enforces the client-side deadline and rejects with `TimeoutError` (code `PERSISTENCE_TIMEOUT`) → `504` (see §3.6); Prisma's native `$transaction` options (`timeout: PERSIST_TRANSACTION_TIMEOUT_MS = 15_000`, `maxWait: PERSIST_MAX_WAIT_MS = 3_000`) are a larger server-side backstop that rolls the transaction back for truly stuck transactions. The wrapper fires first (its budget is smaller), so the client always gets the stable `PERSISTENCE_TIMEOUT` error. The route's `finally` still releases the user's concurrency slot — a stuck database can no longer hold it open indefinitely.
 
@@ -168,7 +170,7 @@ All bounded operations go through the `withTimeout` helper (`src/lib/timeout.ts`
   "program": {
     "id": "clx…",
     "name": "AI Program prog_x1y2z3",
-    "description": "Goal: strength. AI-generated general program. …",
+    "description": "Goal: strength, fat_loss. AI-generated general program. …",
     "level": "BEGINNER",
     "durationWeeks": 6,
     "sessionsPerWeek": 4,
@@ -244,8 +246,11 @@ Shape of `generated` (validated by `ProgramSchema` in the route):
 
 - `mode`: `'general' | 'injury_focused' | 'equipment_limited'`
 - `program_id`: string
+- `rest_days`: string[] — the user's rest-day selection echoed from the input (canonical weekday ids, e.g. `["wednesday", "sunday"]`; `[]` when none was provided)
 - `method_mix`: `strength_pct`, `hypertrophy_pct`, `cardio_pct`, `mobility_pct`, `pilates_pct`, `bodyweight_pct`, `isometric_pct` (numbers)
-- `weekly_schedule`: array of `{ day, focus, warmup[], exercises[], cooldown[], notes? }`
+- `weekly_schedule`: array of `{ day, focus, day_name?, is_rest_day?, warmup[], exercises[], cooldown[], notes? }`
+  - `day_name`: weekday of the session (e.g. `"Monday"`) — sessions are never placed on a rest day
+  - `is_rest_day`: `true` only for entries the enforcement pass rewrote because the model placed them on a rest day; those entries have **empty** `warmup`/`exercises`/`cooldown` and are excluded from persistence
   - `warmup` / `cooldown` items: `{ name, duration_seconds, purpose }`
   - exercise items: `{ id, name, method, equipment, sets|null, reps|null, rest_seconds|null, tempo|null, rpe|null, instruction_cue, alternatives[], contraindicated_for[] }`
     - `method` ∈ `strength | hypertrophy | cardio | mobility | pilates | bodyweight | isometric | flexibility`

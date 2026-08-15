@@ -2,6 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
+import { enforceRestDays } from '@/lib/ai/restDays';
 import { NextResponse } from 'next/server';
 
 import {
@@ -60,6 +61,12 @@ const ExerciseSchema = z.object({
 const ProgramSchema = z.object({
   mode: z.enum(['general', 'injury_focused', 'equipment_limited']),
   program_id: z.string(),
+  // Echoes the user's rest-day selection (weekday ids, e.g.
+  // ["wednesday", "sunday"]) so the output always carries the constraint
+  // that produced it. The route overwrites this with the validated input
+  // value after generation (see `enforceRestDays`), so the field is
+  // guaranteed present even if the model omits it.
+  rest_days: z.array(z.string()).optional(),
   method_mix: z.object({
     strength_pct: z.number(),
     hypertrophy_pct: z.number(),
@@ -72,6 +79,12 @@ const ProgramSchema = z.object({
   weekly_schedule: z.array(z.object({
     day: z.number(),
     focus: z.string(),
+    // Weekday of the session ("Monday"…"Sunday") — the enforcement pass uses
+    // it to guarantee no session lands on a user-selected rest day.
+    day_name: z.string().optional(),
+    // Set by the post-generation enforcement pass when a session was placed
+    // on a rest day; such entries carry NO warmup/exercises/cooldown.
+    is_rest_day: z.boolean().optional(),
     warmup: z.array(z.object({
       name: z.string(),
       duration_seconds: z.number(),
@@ -248,7 +261,13 @@ export async function POST(req: Request) {
     if (!parsedInput.success) {
       return NextResponse.json({error: 'Invalid workout profile.'}, {status: 400});
     }
-    const {level, goal, equipment, limitations, limitationsDetails} = parsedInput.data;
+    const {level, goal, equipment, limitations, limitationsDetails, restDays = []} = parsedInput.data;
+    // `goal` is normalized by the Zod schema to a canonical array
+    // (legacy single strings are wrapped), e.g. ['strength', 'fat_loss'].
+    const goals = goal.join(', ');
+    // Canonical rest-day ids (1–3 weekdays) — enforced by the AI prompt AND
+    // by the post-generation pass, so selected days never carry workouts.
+    const restDaysJoined = restDays.join(', ');
 
     // Resolve the authenticated user once — the same identity backs both the
     // workout-history lookup and the program persistence.
@@ -357,10 +376,14 @@ export async function POST(req: Request) {
       schema: ProgramSchema,
       prompt: `Generate a workout program for a user with the following profile:
         - Level: ${level}
-        - Goal: ${goal}
+        - Goals: ${goals}
         - Available Equipment: ${equipment.join(', ')}
         - Injuries/Limitations: ${limitations.join(', ')}
         - Details: ${limitationsDetails || 'None'}
+        - Rest days (weekdays that MUST NOT contain any workout): ${restDaysJoined || 'None specified'}
+          Place sessions ONLY on weekdays that are not rest days; give every
+          weekly_schedule entry a day_name (e.g. "Monday") and never schedule
+          a session on a rest day.
 
         RECENT WORKOUT HISTORY (newest first, last ${HISTORY_SESSION_LIMIT} sessions):
         ${workoutHistory}
@@ -394,9 +417,14 @@ export async function POST(req: Request) {
       message: 'AI generation timeout',
       code: TIMEOUT_CODES.AI,
     });
+    // Enforce the rest-day invariant regardless of model behavior: any
+    // weekly_schedule entry placed on a user-selected rest day is rewritten
+    // into an explicit rest entry (is_rest_day: true, NO exercises/warmup/
+    // cooldown), and the canonical rest_days list is echoed into the output.
+    const enforced = enforceRestDays(result.object, restDays);
     const generated = {
-      ...result.object,
-      disclaimer: result.object.disclaimer.trim() || MEDICAL_DISCLAIMER,
+      ...enforced,
+      disclaimer: enforced.disclaimer.trim() || MEDICAL_DISCLAIMER,
     };
 
     // Persist the validated program into `Program` / `ProgramExercise`,
@@ -408,13 +436,15 @@ export async function POST(req: Request) {
       ? await persistProgramForUserWithIdempotency(user.id, {
           program: generated,
           level,
-          goal,
+          goal: goals,
+          restDays,
           idempotencyRecordId,
         })
       : await persistProgramForUser(user.id, {
           program: generated,
           level,
-          goal,
+          goal: goals,
+          restDays,
         });
 
     return NextResponse.json({

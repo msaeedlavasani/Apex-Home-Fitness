@@ -28,6 +28,11 @@ const nextConfig = {
    *    First-party analytics ingestion (/api/analytics/events) is covered
    *    by `'self'`.
    *  - `img-src https://*.supabase.co`: for Supabase Storage images if used.
+   *  - `img-src https://commondatastorage.googleapis.com`: video POSTER
+   *    images for the Exercise Library demo catalog (served from the Google
+   *    public demo bucket). Posters are <img> loads, so they are governed
+   *    by `img-src` (NOT `media-src`); without this origin they are blocked
+   *    by CSP and never display.
    *  - `media-src 'self' blob: https:`: video playback. `blob:` is REQUIRED
    *    by hls.js (it attaches MediaSource through `blob:` object URLs); the
    *    `https:` source covers CDN-hosted exercise videos (e.g. the demo
@@ -52,7 +57,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co",
+              "img-src 'self' data: blob: https://*.supabase.co https://commondatastorage.googleapis.com",
               "font-src 'self' data:",
               "media-src 'self' blob: https:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev",
@@ -109,6 +114,25 @@ const nextConfig = {
         headers: [
           { key: 'Content-Type', value: 'application/manifest+json' },
           { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
+      {
+        // PWA icons (public/icons/*) — immutable by convention: icon content
+        // never changes in place; a new design ships under a new filename and
+        // the manifest is updated (see docs/ASSETS.md). Long caching lets the
+        // service worker and install flows reuse them without revalidation.
+        source: '/icons/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Static offline fallback page — short cache so a fresh copy of the
+        // fallback reaches clients quickly after deploys; the service worker
+        // precaches it at install time regardless of HTTP cache state.
+        source: '/offline.html',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=300' },
         ],
       },
     ];

@@ -7,6 +7,9 @@ import CurrentLevelStep from './steps/CurrentLevelStep';
 import GoalStep from './steps/GoalStep';
 import EquipmentStep from './steps/EquipmentStep';
 import LimitationsStep from './steps/LimitationsStep';
+import RestDaysStep from './steps/RestDaysStep';
+import { normalizeGoals } from './goals';
+import { REST_DAY_MAX, REST_DAY_MIN, normalizeRestDays } from './restDays';
 import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import './quiz.css';
 
@@ -26,8 +29,11 @@ const STEP_CONFIG = [
   },
   {
     key: 'goal',
-    validate: (answers) => Boolean(answers.goal),
-    errorKey: 'quiz.error.required',
+    // Multi-goal step: at least one goal required. `normalizeGoals` also
+    // accepts a legacy single-string answer so pre-existing sessions still
+    // validate.
+    validate: (answers) => normalizeGoals(answers.goal).length > 0,
+    errorKey: 'quiz.error.goal.required',
   },
   {
     key: 'equipment',
@@ -38,15 +44,31 @@ const STEP_CONFIG = [
     key: 'limitations',
     validate: () => true, // optional step — always valid
   },
+  {
+    key: 'restDays',
+    // 1–3 rest days required. The step UI already caps the selection at
+    // REST_DAY_MAX (unchecked options disable); this guard is defense in
+    // depth for restored/legacy sessions that exceed the bounds.
+    validate: (answers) => {
+      const days = normalizeRestDays(answers.restDays);
+      return days.length >= REST_DAY_MIN && days.length <= REST_DAY_MAX;
+    },
+    errorKey: 'quiz.error.restDays.required',
+  },
 ];
 
 const INITIAL_ANSWERS = {
   theme: '',
   level: '',
-  goal: '',
+  // Goals are a multi-select array; legacy sessions restored via
+  // `initialData` may still carry a single string — GoalStep normalizes it.
+  goal: [],
   equipment: [],
   limitations: [],
   limitationsDetails: '',
+  // Weekday ids the user wants to keep workout-free (1–3), e.g.
+  // ['wednesday', 'sunday'].
+  restDays: [],
 };
 
 /**
@@ -76,9 +98,12 @@ function resolveDocumentLocale(localeProp) {
  * Steps:
  *   1. Visual style      (Light / Dark / Auto (System)) — applied immediately
  *   2. Current Level     (Beginner / Intermediate / Advanced)
- *   3. Goal              (Strength / Fat Loss / Flexibility / Functional Fitness)
+ *   3. Goals             (multi-select — Strength / Fat Loss / Flexibility /
+ *                         Functional Fitness; at least one required)
  *   4. Equipment         (multi-select checkboxes, "None" is exclusive)
  *   5. Limitations       (injury checkboxes + free-text details, optional)
+ *   6. Rest days         (multi-select weekdays, 1–3 — kept workout-free
+ *                         by the generated program)
  *
  * All user-facing strings go through `t('key')` so the quiz can be
  * localized by swapping the i18n helper.
@@ -86,7 +111,8 @@ function resolveDocumentLocale(localeProp) {
  * @param {object} props
  * @param {(answers: object) => void | Promise<void>} props.onSubmit
  *        Receives the final answers, e.g.:
- *        { theme, level, goal, equipment: [], limitations: [], limitationsDetails }
+ *        { theme, level, goal: ['strength', 'fat_loss'], equipment: [],
+ *          limitations: [], limitationsDetails, restDays: ['wednesday'] }
  * @param {(key: string, params?: object) => string} [props.t]
  * @param {object} [props.initialData] — partial pre-filled answers (e.g. when restoring a session)
  * @param {'en' | 'fa'} [props.locale] — forces a quiz language; when omitted,
@@ -137,9 +163,11 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
       trackEvent(ANALYTICS_EVENTS.QUIZ_COMPLETED, {
         theme: answers.theme,
         level: answers.level,
-        goal: answers.goal,
+        goal: normalizeGoals(answers.goal),
         equipmentCount: Array.isArray(answers.equipment) ? answers.equipment.length : 0,
         limitationsCount: Array.isArray(answers.limitations) ? answers.limitations.length : 0,
+        restDays: normalizeRestDays(answers.restDays),
+        restDaysCount: normalizeRestDays(answers.restDays).length,
       });
       setSubmitting(true);
       // onSubmit may return a promise (e.g. API call) — wait for it,
@@ -195,13 +223,22 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
             t={localizedT}
           />
         );
-      default:
+      case 4:
         return (
           <LimitationsStep
             value={answers.limitations}
             onChange={(limitations) => updateAnswers({ limitations })}
             details={answers.limitationsDetails}
             onDetailsChange={(details) => updateAnswers({ limitationsDetails: details })}
+            t={localizedT}
+          />
+        );
+      default:
+        return (
+          <RestDaysStep
+            value={answers.restDays}
+            onChange={(restDays) => updateAnswers({ restDays })}
+            error={errors.restDays}
             t={localizedT}
           />
         );

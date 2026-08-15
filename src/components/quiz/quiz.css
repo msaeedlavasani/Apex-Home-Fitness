@@ -96,7 +96,7 @@
   gap: 12px;
 }
 .quiz-option {
-  text-align: left;
+  text-align: start; /* logical — mirrors in RTL (fa) */
   padding: 14px 16px;
   border: 2px solid var(--apex-border);
   border-radius: 12px;
@@ -149,11 +149,42 @@
 .quiz-check__label {
   font-weight: 500;
 }
+.quiz-check__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.quiz-check__description {
+  font-size: 0.85rem;
+  color: var(--apex-text-secondary);
+}
 .quiz-check input {
   width: 18px;
   height: 18px;
   accent-color: var(--apex-primary);
   cursor: pointer;
+}
+
+/* Rest-days step — selection counter + max-cap hint */
+.quiz-restdays__counter {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--apex-text-secondary);
+}
+.quiz-restdays__hint {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  color: var(--apex-text-secondary);
+}
+.quiz-check--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.quiz-check--disabled:hover {
+  border-color: var(--apex-border);
+}
+.quiz-check--disabled input {
+  cursor: not-allowed;
 }
 
 /* Free-text field (limitations details) */
@@ -180,6 +211,29 @@
   border-color: var(--apex-primary);
 }
 
+/* ------------------------------------------------------------------ */
+/* Keyboard focus — visible focus-visible rings on every control.      */
+/* Uses the shared design-system ring token (--apex-focus-ring) so it  */
+/* matches the Tailwind `ring-apex-focus-ring` used in the web shell.  */
+/* ------------------------------------------------------------------ */
+.quiz-option:focus-visible,
+.quiz-nav__back:focus-visible,
+.quiz-nav__next:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--apex-focus-ring);
+}
+.quiz-field__input:focus-visible {
+  outline: none;
+  border-color: var(--apex-primary);
+  box-shadow: 0 0 0 3px var(--apex-focus-ring);
+}
+/* Checkbox rows: the native input is the focusable element; ring the
+   whole row via :focus-within so the 44px+ target is visible. */
+.quiz-check:focus-within {
+  border-color: var(--apex-primary);
+  box-shadow: 0 0 0 3px var(--apex-focus-ring);
+}
+
 /* Navigation */
 .quiz-nav {
   display: flex;
@@ -193,7 +247,8 @@
 }
 .quiz-nav__back,
 .quiz-nav__next {
-  padding: 10px 22px;
+  /* 12px/24px padding → ≥ 48px touch target */
+  padding: 12px 24px;
   border-radius: 10px;
   font-weight: 600;
   font-size: 1rem;
@@ -211,7 +266,7 @@
 .quiz-nav__next {
   background: var(--apex-primary);
   color: var(--apex-on-primary);
-  margin-left: auto;
+  margin-inline-start: auto; /* logical — keeps Next at the inline end in RTL */
 }
 .quiz-nav__next:hover {
   background: var(--apex-primary-hover);
@@ -237,7 +292,8 @@
 .dark .quiz__subtitle,
 .dark .quiz-step__subtitle,
 .dark .quiz-progress__label,
-.dark .quiz-option__description {
+.dark .quiz-option__description,
+.dark .quiz-check__description {
   color: var(--apex-text-secondary);
 }
 .dark .quiz-option,

@@ -12,7 +12,8 @@
     "history": "تاریخچه",
     "analytics": "آمار",
     "back": "بازگشت",
-    "navLabel": "ناوبری اصلی"
+    "navLabel": "ناوبری اصلی",
+    "navLabelMobile": "ناوبری موبایل"
   },
   "Dashboard": {
     "greeting": {

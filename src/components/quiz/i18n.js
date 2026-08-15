@@ -32,6 +32,7 @@ const EN = {
   'quiz.finish': 'See my plan',
   'quiz.error.required': 'Please select an option to continue.',
   'quiz.error.equipment.required': 'Please select at least one option, or choose "None".',
+  'quiz.error.goal.required': 'Please select at least one goal to continue.',
   'quiz.medical.title': 'Safety first',
   'quiz.medical.body': 'This app provides general fitness information, not medical advice. Consult a qualified healthcare professional before exercising if you have an injury, medical condition, are pregnant, or have concerning symptoms. Stop immediately and seek medical care for chest pain, severe shortness of breath, dizziness, numbness, weakness, or sharp/worsening pain.',
 
@@ -55,9 +56,9 @@ const EN = {
   'quiz.level.advanced': 'Advanced',
   'quiz.level.advanced.hint': '3+ years of training, comfortable with advanced movements',
 
-  // ---- Step 3 — Goal ----
-  'quiz.goal.title': 'What is your main goal?',
-  'quiz.goal.subtitle': 'Pick the goal you want to focus on most.',
+  // ---- Step 3 — Goals (multi-select) ----
+  'quiz.goal.title': 'What are your goals?',
+  'quiz.goal.subtitle': 'Select one or more goals you want to work on.',
   'quiz.goal.strength': 'Strength',
   'quiz.goal.strength.hint': 'Build muscle and get stronger',
   'quiz.goal.fat_loss': 'Fat Loss',
@@ -96,6 +97,21 @@ const EN = {
   'quiz.limitations.details.label': 'Additional details (optional)',
   'quiz.limitations.details.placeholder':
     'e.g. "Recovering from a sprained ankle — no jumping for 4 weeks"',
+
+  // ---- Step 6 — Rest days ----
+  'quiz.restDays.title': 'Which weekdays are your rest days?',
+  'quiz.restDays.subtitle': 'Pick 1–3 rest days — we keep them free of workouts.',
+  'quiz.restDays.counter': '{{count}} of {{max}} rest days selected',
+  'quiz.restDays.maxReached':
+    'You can select at most {{max}} rest days. Uncheck one to pick another.',
+  'quiz.restDays.monday': 'Monday',
+  'quiz.restDays.tuesday': 'Tuesday',
+  'quiz.restDays.wednesday': 'Wednesday',
+  'quiz.restDays.thursday': 'Thursday',
+  'quiz.restDays.friday': 'Friday',
+  'quiz.restDays.saturday': 'Saturday',
+  'quiz.restDays.sunday': 'Sunday',
+  'quiz.error.restDays.required': 'Please pick 1–3 rest days to continue.',
 };
 
 const FA = {
@@ -108,6 +124,7 @@ const FA = {
   'quiz.finish': 'مشاهده برنامه من',
   'quiz.error.required': 'لطفاً یک گزینه را انتخاب کن تا ادامه بدیم.',
   'quiz.error.equipment.required': 'حداقل یک گزینه را انتخاب کن یا «هیچ‌کدام» را بزن.',
+  'quiz.error.goal.required': 'لطفاً حداقل یک هدف را انتخاب کن تا ادامه بدیم.',
   'quiz.medical.title': 'اول ایمنی',
   'quiz.medical.body': 'این برنامه اطلاعات عمومی تناسب اندام ارائه می‌کند و جایگزین توصیه پزشکی نیست. اگر آسیب‌دیدگی، بیماری، بارداری یا علائم نگران‌کننده داری، قبل از تمرین با متخصص سلامت مشورت کن. در صورت درد قفسه سینه، تنگی نفس شدید، سرگیجه، بی‌حسی، ضعف یا درد تیز و رو به تشدید، فوراً تمرین را متوقف و مراقبت پزشکی دریافت کن.',
 
@@ -131,9 +148,9 @@ const FA = {
   'quiz.level.advanced': 'پیشرفته',
   'quiz.level.advanced.hint': 'بیش از ۳ سال سابقه تمرین و آشنایی با حرکات پیشرفته',
 
-  // ---- Step 3 — Goal ----
-  'quiz.goal.title': 'هدف اصلی تو چیست؟',
-  'quiz.goal.subtitle': 'هدفی که بیشتر از همه می‌خوای روی آن تمرکز کنی رو انتخاب کن.',
+  // ---- Step 3 — Goals (multi-select) ----
+  'quiz.goal.title': 'اهداف تو چیست؟',
+  'quiz.goal.subtitle': 'یک یا چند هدف که می‌خوای روی آن‌ها کار کنی رو انتخاب کن.',
   'quiz.goal.strength': 'قدرت',
   'quiz.goal.strength.hint': 'عضله‌سازی و افزایش قدرت',
   'quiz.goal.fat_loss': 'کاهش چربی',
@@ -172,6 +189,21 @@ const FA = {
   'quiz.limitations.details.label': 'توضیحات تکمیلی (اختیاری)',
   'quiz.limitations.details.placeholder':
     'مثلاً: «در حال بهبود از رگ به رگ شدن مچ پا هستم — تا ۴ هفته بدون پرش»',
+
+  // ---- Step 6 — Rest days ----
+  'quiz.restDays.title': 'کدام روزهای هفته روز استراحت تو هستند؟',
+  'quiz.restDays.subtitle': '۱ تا ۳ روز استراحت انتخاب کن — این روزها را بدون تمرین نگه می‌داریم.',
+  'quiz.restDays.counter': '{{count}} از {{max}} روز استراحت انتخاب شده',
+  'quiz.restDays.maxReached':
+    'حداکثر {{max}} روز استراحت می‌تونی انتخاب کنی. برای انتخاب روز دیگر، اول یکی از آن‌ها را بردار.',
+  'quiz.restDays.monday': 'دوشنبه',
+  'quiz.restDays.tuesday': 'سه‌شنبه',
+  'quiz.restDays.wednesday': 'چهارشنبه',
+  'quiz.restDays.thursday': 'پنجشنبه',
+  'quiz.restDays.friday': 'جمعه',
+  'quiz.restDays.saturday': 'شنبه',
+  'quiz.restDays.sunday': 'یکشنبه',
+  'quiz.error.restDays.required': 'لطفاً ۱ تا ۳ روز استراحت انتخاب کن تا ادامه بدیم.',
 };
 
 /** English catalog (kept under the old name for backward compatibility). */

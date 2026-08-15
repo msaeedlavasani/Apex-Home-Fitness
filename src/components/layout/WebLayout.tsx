@@ -44,7 +44,7 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
         </nav>
         <div className="flex items-center justify-between gap-3 border-t border-apex-border px-5 py-4">
           <span className="text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
-          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
         </div>
       </aside>
 
@@ -55,9 +55,15 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
       >
         <div className="flex h-14 items-center justify-between px-4">
           <BrandLink href={`/${locale}/dashboard`} compact />
-          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
         </div>
-        <nav aria-label={t('navLabel')} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3 pb-3">
+        {/* Distinct label from the desktop sidebar nav — both copies exist in
+            the DOM (responsive nav) and must stay unambiguous to assistive
+            tech; only one is ever visible (sidebar: md+, top bar: <md). */}
+        <nav
+          aria-label={t('navLabelMobile')}
+          className="no-scrollbar flex gap-1 overflow-x-auto px-2.5 pb-3"
+        >
           {APP_NAV.map((item) => (
             <PillItem key={item.section} item={item} active={item.section === active} />
           ))}
@@ -133,7 +139,8 @@ function SidebarItem({item, active}: {item: NavItem; active: boolean}) {
       href={sectionPath(item.section, locale)}
       aria-current={active ? 'page' : undefined}
       className={[
-        'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors touch-manipulation',
+        // py-3 keeps the row ≥ 48px (comfortable for touch laptops too).
+        'relative flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition-colors touch-manipulation',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apex-focus-ring',
         active
           ? 'bg-apex-primary-soft text-apex-primary'
@@ -161,7 +168,9 @@ function PillItem({item, active}: {item: NavItem; active: boolean}) {
       href={sectionPath(item.section, locale)}
       aria-current={active ? 'page' : undefined}
       className={[
-        'flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors touch-manipulation',
+        // px-2.5 + gap-1 keep all four pills fully inside 390px-wide
+        // viewports (no clipped last item); py-3 + min-h-11 ≈ 44px target.
+        'flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-3 text-[13px] font-medium leading-5 transition-colors touch-manipulation',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring',
         active
           ? 'bg-apex-primary-soft text-apex-primary'

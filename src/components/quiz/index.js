@@ -11,6 +11,16 @@ export { default as CurrentLevelStep } from './steps/CurrentLevelStep';
 export { default as GoalStep } from './steps/GoalStep';
 export { default as EquipmentStep } from './steps/EquipmentStep';
 export { default as LimitationsStep } from './steps/LimitationsStep';
+export { default as RestDaysStep } from './steps/RestDaysStep';
+
+// Rest-day selection helpers (canonical weekdays + normalization)
+export {
+  WEEKDAY_IDS,
+  WEEKDAY_OPTIONS,
+  REST_DAY_MIN,
+  REST_DAY_MAX,
+  normalizeRestDays,
+} from './restDays';
 
 // Shared building blocks
 export { default as OptionCard } from './components/OptionCard';

@@ -110,7 +110,7 @@ test.describe('Theme toggle — keyboard', () => {
 });
 
 test.describe('Onboarding quiz — keyboard', () => {
-  test('completes all five steps with the keyboard only', async ({page}) => {
+  test('completes all six steps with the keyboard only', async ({page}) => {
     await page.goto('/en/quiz');
 
     // Step 1 — visual style. OptionCards expose "title + description" as
@@ -133,13 +133,20 @@ test.describe('Onboarding quiz — keyboard', () => {
 
     await tabTo(page, page.getByRole('button', {name: 'Next'}));
     await page.getByRole('button', {name: 'Next'}).press('Enter');
-    await expect(page.getByText('What is your main goal?')).toBeVisible();
+    await expect(page.getByText('What are your goals?')).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
 
-    // Step 3 — goal.
-    const strength = page.getByRole('button', {name: /^Strength/});
+    // Step 3 — goals (multi-select native checkboxes, toggled with Space).
+    const strength = page.getByRole('checkbox', {name: /^Strength/});
+    const flexibility = page.getByRole('checkbox', {name: /^Flexibility/});
     await tabTo(page, strength);
-    await strength.press('Enter');
+    await strength.press('Space');
+    await expect(strength).toBeChecked();
+
+    await tabTo(page, flexibility);
+    await flexibility.press('Space');
+    await expect(flexibility).toBeChecked();
+    await expect(strength).toBeChecked();
 
     await tabTo(page, page.getByRole('button', {name: 'Next'}));
     await page.getByRole('button', {name: 'Next'}).press('Enter');
@@ -164,6 +171,22 @@ test.describe('Onboarding quiz — keyboard', () => {
     await tabTo(page, none);
     await none.press('Space');
     await expect(none).toBeChecked();
+
+    await tabTo(page, page.getByRole('button', {name: 'Next'}));
+    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '6');
+
+    // Step 6 — rest days (1–3 required; pick two weekdays with Space).
+    const wednesday = page.getByRole('checkbox', {name: 'Wednesday'});
+    await tabTo(page, wednesday);
+    await wednesday.press('Space');
+    await expect(wednesday).toBeChecked();
+
+    const sunday = page.getByRole('checkbox', {name: 'Sunday'});
+    await tabTo(page, sunday);
+    await sunday.press('Space');
+    await expect(sunday).toBeChecked();
 
     const finish = page.getByRole('button', {name: 'See my plan'});
     await tabTo(page, finish);

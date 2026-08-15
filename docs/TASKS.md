@@ -8,6 +8,14 @@
 - **Batch 9:** Zod، محافظ‌های AI، Medical Disclaimer، تست امنیتی و CI سخت‌گیرانه — تکمیل شد.
 - **Batch 10:** Workout Engine، تست‌های E2E، Design System audit، مستندات API و CI E2E — تکمیل شد.
 - **Batch 11:** Rate Limit مشترک، idempotency، timeout persistence، تست gamification و conflict resolution آفلاین — تکمیل شد.
+- **Batch 12:** چندهدفه‌کردن کوییز، انتخاب روزهای استراحت، رفع استایل localhost، responsive/RTL و سامان‌دهی asset pipeline — تکمیل شد.
+
+## Batch 12: تجربه کوییز و کیفیت رابط کاربری 🎯 (تکمیل شد)
+1. **[x] انتخاب چند هدف در کوییز:** پشتیبانی UI، schema، prompt و persistence از آرایه اهداف.
+2. **[x] انتخاب روزهای استراحت:** انتخاب روزهای هفته در کوییز و enforce شدن در برنامه تولیدشده.
+3. **[x] رفع استایل localhost:** انتقال پیکربندی PostCSS به ریشه و رفع نمایش HTML خام در dev.
+4. **[x] responsive و RTL:** تثبیت layout، navigation، focus و touch target در viewportهای اصلی.
+5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.
@@ -44,6 +52,6 @@
 - [x] تست تولید TWA و سئو (Batch 8)
 
 ## بدهی‌های فنی (Technical Debt) ⚠️
-1. **Unified Asset Pipeline:** نیاز به یک سیستم واحد برای مدیریت و بهینه‌سازی خودکار ویدیوها و انیمیشن‌های Lottie.
+1. **[x] Unified Asset Pipeline:** مسیر asset، fallback آفلاین، CSP/cache policy و audit خودکار در `docs/ASSETS.md`.
 2. **[x] Advanced Conflict Resolution:** policy قطعی تعارض، merge، retry و idempotency برای همگام‌سازی آفلاین.
 3. **[x] Unit Test Coverage:** پوشش unit برای منطق‌های XP، level، streak، badge و reward در `gamificationService`.

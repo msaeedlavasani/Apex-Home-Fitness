@@ -6,7 +6,7 @@ import {expect, test} from '@playwright/test';
  * Runs against the Next.js dev server (see playwright.config.ts webServer).
  *
  * 1. Localization (EN ⇄ FA switching + RTL)
- * 2. Onboarding quiz completion (5 steps)
+ * 2. Onboarding quiz completion (6 steps)
  * 3. Theme switching (dark / light / system + persistence)
  */
 
@@ -51,7 +51,7 @@ test.describe('Localization (EN / FA switching)', () => {
 });
 
 test.describe('Onboarding quiz', () => {
-  test('completes all five steps and lands on the dashboard', async ({page}) => {
+  test('completes all six steps and lands on the dashboard', async ({page}) => {
     await page.goto('/en/quiz');
     await expect(
       page.getByRole('heading', {name: 'Build your training plan'}),
@@ -80,9 +80,12 @@ test.describe('Onboarding quiz', () => {
     await page.getByRole('button', {name: /^Beginner/}).click();
     await page.getByRole('button', {name: 'Next'}).click();
 
-    // --- Step 3: Goal ---
-    await expect(page.getByText('What is your main goal?')).toBeVisible();
-    await page.getByRole('button', {name: /^Strength/}).click();
+    // --- Step 3: Goals (multi-select; at least one required) ---
+    await expect(page.getByText('What are your goals?')).toBeVisible();
+    await page.getByRole('checkbox', {name: /^Strength/}).check();
+    await page.getByRole('checkbox', {name: /^Fat Loss/}).check();
+    await expect(page.getByRole('checkbox', {name: /^Strength/})).toBeChecked();
+    await expect(page.getByRole('checkbox', {name: /^Fat Loss/})).toBeChecked();
     await page.getByRole('button', {name: 'Next'}).click();
 
     // --- Step 4: Equipment ---
@@ -97,11 +100,67 @@ test.describe('Onboarding quiz', () => {
       page.getByText('Do you have any injuries or limitations?'),
     ).toBeVisible();
     await page.getByRole('checkbox', {name: 'None — I am healthy'}).check();
+    await page.getByRole('button', {name: 'Next'}).click();
+
+    // --- Step 6: Rest days (1–3 required) ---
+    await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
+    await page.getByRole('checkbox', {name: 'Wednesday'}).check();
+    await page.getByRole('checkbox', {name: 'Sunday'}).check();
+    await expect(page.getByRole('checkbox', {name: 'Wednesday'})).toBeChecked();
+    await expect(page.getByRole('checkbox', {name: 'Sunday'})).toBeChecked();
     await page.getByRole('button', {name: 'See my plan'}).click();
 
     // Submission routes to the dashboard.
     await page.waitForURL('**/en/dashboard');
     await expect(page.getByText('Your weekly training plan')).toBeVisible();
+  });
+
+  test('goal step requires at least one goal and accepts multiple', async ({
+    page,
+  }) => {
+    await page.goto('/en/quiz');
+
+    // Step 1 — visual style.
+    await page.getByRole('button', {name: /^Light/}).click();
+    await page.getByRole('button', {name: 'Next'}).click();
+
+    // Step 2 — current level.
+    await page.getByRole('button', {name: /^Beginner/}).click();
+    await page.getByRole('button', {name: 'Next'}).click();
+
+    // Step 3 — goals: Next without a selection shows the goal-specific error
+    // and the quiz stays on the step.
+    await expect(page.getByText('What are your goals?')).toBeVisible();
+    await page.getByRole('button', {name: 'Next'}).click();
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({hasText: 'Please select at least one goal to continue.'}),
+    ).toBeVisible();
+    await expect(page.getByText('What are your goals?')).toBeVisible();
+
+    // Selecting a single goal clears the error path…
+    const strength = page.getByRole('checkbox', {name: /^Strength/});
+    await strength.check();
+    await expect(strength).toBeChecked();
+
+    // …and a second goal is added to the selection (multi-select).
+    const fatLoss = page.getByRole('checkbox', {name: /^Fat Loss/});
+    await fatLoss.check();
+    await expect(fatLoss).toBeChecked();
+    await expect(strength).toBeChecked();
+
+    // Un-checking the first goal keeps the second — still ≥ 1 selected.
+    await strength.uncheck();
+    await expect(strength).not.toBeChecked();
+    await expect(fatLoss).toBeChecked();
+
+    // Re-select Strength so the selection has two goals, then proceed.
+    await strength.check();
+    await page.getByRole('button', {name: 'Next'}).click();
+    await expect(
+      page.getByText('What equipment do you have available?'),
+    ).toBeVisible();
   });
 });
 

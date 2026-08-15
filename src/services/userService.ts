@@ -53,15 +53,16 @@ import { createServerSupabaseClient } from '../lib/supabase-server';
 
 /**
  * Onboarding quiz answers as produced by `src/components/quiz/OnboardingQuiz`:
- * `{ level, goal, equipment, limitations, limitationsDetails }`.
- * The schema stores the payload as a flexible Json value, so extra keys are
- * allowed (e.g. future steps such as `timePerSessionMin`).
+ * `{ level, goal, equipment, limitations, limitationsDetails, restDays }`.
+ * `goal` accepts the current multi-select string array and the legacy single
+ * string. The schema stores the payload as a flexible Json value, so extra
+ * keys are allowed (e.g. future steps such as `timePerSessionMin`).
  */
 export interface QuizAnswers {
   /** 'beginner' | 'intermediate' | 'advanced' */
   level?: string;
-  /** 'strength' | 'fat_loss' | 'flexibility' | 'functional_fitness' */
-  goal?: string;
+  /** Current multi-select ids, or one legacy goal id. */
+  goal?: string | string[];
   equipment?: string[];
   limitations?: string[];
   limitationsDetails?: string;
@@ -268,8 +269,17 @@ async function updateUserProfileFromQuiz(
 ) {
   const data: Prisma.UserUpdateInput = {};
 
-  if (typeof answers.goal === 'string' && answers.goal.trim()) {
-    data.fitnessGoal = answers.goal.trim();
+  const goals = Array.isArray(answers.goal)
+    ? answers.goal
+        .filter((goal): goal is string => typeof goal === 'string' && goal.trim().length > 0)
+        .map((goal) => goal.trim())
+    : typeof answers.goal === 'string' && answers.goal.trim().length > 0
+      ? [answers.goal.trim()]
+      : [];
+  if (goals.length > 0) {
+    // Keep the existing scalar profile column backward-compatible while the
+    // complete multi-goal array remains available in QuizResponse.answers.
+    data.fitnessGoal = goals.join(',');
   }
 
   if (typeof answers.level === 'string') {

@@ -55,6 +55,76 @@ test('rejects unsafe or malformed generation profiles', () => {
   );
 });
 
+test('accepts a legacy single goal string and normalizes it to an array', () => {
+  const result = GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({
+    level: 'beginner',
+    goal: 'strength',
+    equipment: ['none'],
+    limitations: [],
+  });
+  assert.equal(result.success, true);
+  if (result.success) assert.deepEqual(result.data.goal, ['strength']);
+});
+
+test('accepts multiple goals and normalizes them to a canonical array', () => {
+  const result = GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({
+    level: 'beginner',
+    goal: ['strength', 'fat_loss', 'flexibility'],
+    equipment: ['none'],
+    limitations: [],
+  });
+  assert.equal(result.success, true);
+  if (result.success) assert.deepEqual(result.data.goal, ['strength', 'fat_loss', 'flexibility']);
+});
+
+test('rejects empty, duplicate or unknown goals', () => {
+  const base = {
+    level: 'beginner',
+    equipment: ['none'],
+    limitations: [],
+  };
+
+  // Empty array — at least one goal required.
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, goal: []}).success, false);
+  // Duplicate goals.
+  assert.equal(
+    GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, goal: ['strength', 'strength']}).success,
+    false,
+  );
+  // Unknown goal id.
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, goal: 'marathon'}).success, false);
+  assert.equal(
+    GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, goal: ['strength', 'marathon']}).success,
+    false,
+  );
+  // Too many goals.
+  assert.equal(
+    GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({
+      ...base,
+      goal: ['strength', 'fat_loss', 'flexibility', 'functional_fitness', 'strength'],
+    }).success,
+    false,
+  );
+});
+
+test('single-string and array forms of the same goals hash identically', () => {
+  // The schema normalizes both forms to the same array, so the idempotency
+  // request hash (computed over the normalized body) must match.
+  const single = GENERATE_PROGRAM_INPUT_SCHEMA.parse({
+    level: 'beginner',
+    goal: 'strength',
+    equipment: ['none'],
+    limitations: [],
+  });
+  const multi = GENERATE_PROGRAM_INPUT_SCHEMA.parse({
+    level: 'beginner',
+    goal: ['strength'],
+    equipment: ['none'],
+    limitations: [],
+  });
+  assert.deepEqual(single, multi);
+});
+
 test('detects high-risk disclosures without exposing their contents', () => {
   assert.equal(hasHighRiskDisclosure('I have chest pain after a few steps.'), true);
   assert.equal(hasHighRiskDisclosure('گاهی بعد از تمرین تنگی نفس شدید دارم'), true);

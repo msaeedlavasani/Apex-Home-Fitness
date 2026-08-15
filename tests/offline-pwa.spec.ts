@@ -16,8 +16,8 @@ import {expect, test} from '@playwright/test';
  *    the offline fallback machinery (network-first navigation with cache
  *    fallback, precache list, install icons).
  * 4. Resilience — registering the real worker never crashes the running
- *    app, even though its install currently fails (see the note in
- *    "service worker install cannot activate" below).
+ *    app, even in dev where the shell is not precached (the install
+ *    activates but the page only becomes controlled on the next load).
  */
 
 test.describe('Offline / PWA', () => {
@@ -132,14 +132,22 @@ test.describe('Offline / PWA', () => {
     });
     expect(sw.status).toBe(200);
     // Versioned cache the install/activate lifecycle manages.
-    expect(sw.text).toContain('next-pwa-cache-v2');
-    // The app shell is precached on install.
+    expect(sw.text).toContain('next-pwa-cache-v3');
+    // The app shell is precached on install (static fallback + PWA files).
+    expect(sw.text).toContain("'/offline.html'");
     expect(sw.text).toContain("'/manifest.json'");
+    // Never precache '/' — it 307-redirects to '/en', so cache.addAll()
+    // rejects and the whole install fails (regression guard). Scoped to the
+    // PRECACHE_URLS block: "/api/" elsewhere legitimately contains "'/'".
+    const precache = sw.text.match(/PRECACHE_URLS\s*=\s*\[([\s\S]*?)\];/)?.[1] ?? '';
+    expect(precache).not.toContain("'/'");
     // Navigation requests are network-first with a cache (and offline page)
     // fallback — the core of the offline story.
     expect(sw.text).toContain("request.mode === 'navigate'");
     expect(sw.text).toContain('caches.match(OFFLINE_FALLBACK)');
-    expect(sw.text).toContain("const OFFLINE_FALLBACK = '/'");
+    expect(sw.text).toContain("const OFFLINE_FALLBACK = '/offline.html'");
+    // API responses are never intercepted by the cache-first path.
+    expect(sw.text).toContain("request.url.includes('/api/')");
 
     const manifest = await page.evaluate(async () => {
       const res = await fetch('/manifest.json');
@@ -184,11 +192,16 @@ test.describe('Offline / PWA', () => {
     expect(result.registered).toBe(true);
     expect(result.scope).toBe('http://localhost:3000/');
 
-    // Give the install attempt a moment to settle, then verify the app is
-    // still fully functional and unmanaged by a worker (controller === null).
+    // Give the install a moment to settle. In dev the worker may activate
+    // and claim this page (controller set) or stay pending until the next
+    // navigation — either state is fine; what matters is that the running
+    // app stays fully functional and unmanaged by stale cache entries.
     await page.waitForTimeout(2500);
     const controller = await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null);
-    expect(controller).toBeNull();
+    if (controller !== null) {
+      // If the worker took control, it must be OUR worker (same origin).
+      expect(controller).toBe('http://localhost:3000/service-worker.js');
+    }
 
     await expect(page.getByText('Your weekly training plan')).toBeVisible();
     const firstDay = page
@@ -200,22 +213,20 @@ test.describe('Offline / PWA', () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test('service worker install cannot activate (precache root 404s) — documents current offline gap', async ({
+  test('service worker install activates and precaches the offline shell', async ({
     page,
   }) => {
-    // NOTE: The shipped PRECACHE_URLS starts with '/', which the dev server
-    // (and `next start`) redirects to /en → 404. `cache.addAll` therefore
-    // rejects and the worker is discarded before it ever activates. This test
-    // pins that behavior deterministically; it should be updated together
-    // with the fix in public/service-worker.js.
+    // PRECACHE_URLS contains only static files that exist under /public
+    // (offline fallback, manifest, icons) and never '/' — so cache.addAll()
+    // succeeds and the worker activates instead of being discarded.
     await page.goto('/en/dashboard');
 
     await page.evaluate(() => navigator.serviceWorker.register('/service-worker.js'));
 
-    // The browser discards the registration once install fails.
+    // Install + activate must complete and populate the versioned cache.
     await page.waitForFunction(async () => {
-      const reg = await navigator.serviceWorker.getRegistration();
-      return reg === null;
+      const keys = await caches.keys();
+      return keys.includes('next-pwa-cache-v3');
     });
 
     const state = await page.evaluate(async () => {
@@ -228,8 +239,20 @@ test.describe('Offline / PWA', () => {
       return entries;
     });
 
-    // The cache got created, but addAll() never populated it (first entry
-    // '/' failed) — so the offline shell is not precached today.
-    expect(state['next-pwa-cache-v2'] ?? 0).toBe(0);
+    // Every precached URL must be present in the current cache.
+    const precached = await page.evaluate(async () => {
+      const cache = await caches.open('next-pwa-cache-v3');
+      const urls = (await cache.keys()).map((req) => new URL(req.url).pathname);
+      return {
+        offline: urls.includes('/offline.html'),
+        manifest: urls.includes('/manifest.json'),
+        icon: urls.includes('/icons/icon-512x512.png'),
+      };
+    });
+    expect(precached).toEqual({offline: true, manifest: true, icon: true});
+
+    // The cache got populated (previously it stayed empty because the first
+    // precache entry '/' redirected and rejected addAll).
+    expect(state['next-pwa-cache-v3'] ?? 0).toBeGreaterThan(0);
   });
 });

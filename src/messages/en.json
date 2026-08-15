@@ -12,7 +12,8 @@
     "history": "History",
     "analytics": "Analytics",
     "back": "Back",
-    "navLabel": "Main navigation"
+    "navLabel": "Main navigation",
+    "navLabelMobile": "Mobile navigation"
   },
   "Dashboard": {
     "greeting": {

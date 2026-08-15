@@ -1,27 +1,34 @@
-/* service-worker.js — basic service worker for a Next.js PWA */
-/* Register this file from the client (e.g. in a layout or _app):     */
-/*   if ('serviceWorker' in navigator) {                              */
-/*     navigator.serviceWorker.register('/service-worker.js');        */
-/*   }                                                                */
+/* service-worker.js — offline shell for the Apex PWA. */
+/* Register this file from the client (PWALoader, production only):   */
+/*   navigator.serviceWorker.register('/service-worker.js');          */
 
 // Bump this version on EVERY release that changes precached assets or the
 // app shell. A new CACHE_NAME triggers `activate`, which purges stale caches
-// so users never run an outdated offline shell (see RELEASING.md).
-const CACHE_NAME = 'next-pwa-cache-v2';
+// so users never run an outdated offline shell (see docs/RELEASING.md and
+// docs/ASSETS.md for the full cache policy).
+const CACHE_NAME = 'next-pwa-cache-v3';
 
-// Assets to precache on install (adjust to your actual build output).
+// Assets to precache on install. Rules (see docs/ASSETS.md):
+//  - Only static, always-present files under /public may be listed.
+//  - NEVER precache '/' or locale HTML ('/en', '/fa'): '/' is a 307
+//    redirect to '/en', and cache.addAll() rejects any non-2xx response —
+//    precaching '/' therefore failed the whole install (worker discarded).
+//    Locale HTML is also re-rendered on every deploy, so precaching it
+//    would pin a stale shell to old hashed chunks.
+//  - '/offline.html' is the static offline fallback for navigations.
 const PRECACHE_URLS = [
-  '/',
+  '/offline.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-192x192-maskable.png',
+  '/icons/icon-384x384.png',
   '/icons/icon-512x512.png',
   '/icons/icon-512x512-maskable.png',
   '/icons/apple-touch-icon.png',
 ];
 
-// Offline fallback for navigation requests.
-const OFFLINE_FALLBACK = '/';
+// Offline fallback for navigation requests (static, self-contained page).
+const OFFLINE_FALLBACK = '/offline.html';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -57,6 +64,9 @@ self.addEventListener('fetch', (event) => {
   // Skip browser-extension / non-http(s) requests.
   if (!request.url.startsWith('http')) return;
 
+  // API responses must always be fresh — never intercept /api/*.
+  if (request.url.includes('/api/')) return;
+
   // For navigation requests: network-first, falling back to cache,
   // then to the offline fallback page.
   if (request.mode === 'navigate') {
@@ -76,8 +86,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For all other GET requests: cache-first, with network fallback
-  // that populates the cache (stale-while-revalidate style).
+  // For all other same-origin GET requests (icons, fonts, /_next/static,
+  // manifest, …): cache-first, with network fallback that populates the
+  // cache (stale-while-revalidate style).
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;

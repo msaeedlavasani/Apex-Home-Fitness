@@ -93,15 +93,21 @@ test.describe('RTL — chrome markup contract', () => {
   test('mobile top bar is RTL-aware and only shown below the md breakpoint', async ({
     page,
   }) => {
+    // The header is md:hidden (visible only below 768px). With Tailwind
+    // wiring restored (root postcss.config.js → infra/config), the
+    // responsive utility is emitted, so this test must run in a mobile
+    // viewport to exercise the bar it is named for.
+    await page.setViewportSize({width: 390, height: 844});
     await page.goto('/fa/dashboard');
     const header = page.locator('header');
     await expect(header).toHaveCount(1);
     // The compact brand mark + pill nav mirror the sidebar content; the
     // header itself is md:hidden (desktop-only sidebar wins above 768px).
-    // Visibility is intentionally not asserted; this is a class-level contract test.
+    // The class contract is asserted here; visibility below the breakpoint
+    // is asserted by the nav/link checks that follow.
     await expect(header).toHaveClass(/md:hidden/);
     await expect(
-      header.getByRole('navigation', {name: 'ناوبری اصلی'}),
+      header.getByRole('navigation', {name: 'ناوبری موبایل'}),
     ).toBeVisible();
     await expect(header.getByRole('link', {name: 'خانه'})).toBeVisible();
   });

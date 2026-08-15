@@ -130,6 +130,14 @@ export interface AiExercise {
 export interface AiWeeklySession {
   day: number;
   focus: string;
+  /** Weekday of the session ("Monday"…"Sunday") — used to enforce rest days. */
+  day_name?: string;
+  /**
+   * True for entries the enforcement pass rewrote because they landed on a
+   * user-selected rest day; such entries carry NO exercises/warmup/cooldown
+   * and are skipped by `buildProgramDraft`.
+   */
+  is_rest_day?: boolean;
   warmup: Array<{ name: string; duration_seconds: number; purpose: string }>;
   exercises: AiExercise[];
   cooldown: Array<{ name: string; duration_seconds: number; purpose: string }>;
@@ -140,6 +148,8 @@ export interface AiWeeklySession {
 export interface AiGeneratedProgram {
   mode: AiProgramMode;
   program_id: string;
+  /** The user's rest-day selection echoed into the output (weekday ids). */
+  rest_days?: string[];
   method_mix: {
     strength_pct: number;
     hypertrophy_pct: number;
@@ -169,7 +179,11 @@ export interface SaveGeneratedProgramInput {
    * ('beginner' | 'intermediate' | 'advanced').
    */
   level: string;
-  /** The user's stated goal — used to enrich the program description. */
+  /**
+   * The user's stated goal(s) — used to enrich the program description.
+   * The route passes a comma-joined string of the normalized goal array
+   * (e.g. `"strength, fat_loss"`); a single legacy string works too.
+   */
   goal?: string;
   /**
    * Optional explicit program name. Defaults to `AI Program <program_id>`
@@ -177,6 +191,13 @@ export interface SaveGeneratedProgramInput {
    * `Program.name` is unique).
    */
   name?: string;
+  /**
+   * The user's rest-day selection (1–3 canonical weekday ids). Persisted on
+   * the `Program` row (`restDays` Json). Rest-day sessions are excluded from
+   * the persisted exercise links, so a stored program never contains a
+   * workout on a selected rest day.
+   */
+  restDays?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +306,8 @@ export interface ProgramDraft {
   level: DifficultyLevel;
   durationWeeks: number;
   sessionsPerWeek: number;
+  /** Rest-day weekday ids (persisted on `Program.restDays`). */
+  restDays: string[];
   /** Exercise rows to create (create-only — existing rows are left untouched). */
   exercises: Prisma.ExerciseCreateInput[];
   programExercises: ProgramExerciseDraft[];
@@ -296,6 +319,13 @@ export interface ProgramDraft {
  * `ProgramExercise` uses the composite key `@@id([programId, exerciseId])`,
  * so the same exercise can appear at most once per program — when the AI
  * repeats an exercise across sessions, only its first occurrence is linked.
+ *
+ * Rest-day enforcement: sessions flagged `is_rest_day: true` (set by the
+ * route's `enforceRestDays` pass for any session that landed on a
+ * user-selected rest day) are SKIPPED entirely — they contribute no exercise
+ * links, and `sessionsPerWeek` counts only real training days. Combined with
+ * the enforcement pass this guarantees a persisted program never contains a
+ * workout on a selected rest day, even if the model misbehaved.
  */
 export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraft {
   const { program } = input;
@@ -305,7 +335,11 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
   const programExercises: ProgramExerciseDraft[] = [];
   let order = 0;
 
-  for (const session of program.weekly_schedule ?? []) {
+  const trainingSessions = (program.weekly_schedule ?? []).filter(
+    (session) => session.is_rest_day !== true,
+  );
+
+  for (const session of trainingSessions) {
     for (const ex of session.exercises ?? []) {
       if (seen.has(ex.name)) continue; // composite PK — one row per exercise per program
       seen.add(ex.name);
@@ -340,7 +374,8 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
     description: buildDescription(input),
     level: levelToDifficulty(input.level),
     durationWeeks: PROGRAM_DURATION_WEEKS,
-    sessionsPerWeek: program.weekly_schedule?.length ?? 0,
+    sessionsPerWeek: trainingSessions.length,
+    restDays: input.restDays ?? [],
     exercises,
     programExercises,
   };
@@ -487,7 +522,9 @@ async function persistProgramTransaction(
     });
   }
 
-  // 2) Program — linked to the current authenticated user.
+  // 2) Program — linked to the current authenticated user. The user's
+  //    rest-day selection is persisted alongside (Json array of weekday ids)
+  //    so the stored program keeps its rest-day contract.
   const program = await tx.program.create({
     data: {
       name: draft.name,
@@ -495,6 +532,7 @@ async function persistProgramTransaction(
       level: draft.level,
       durationWeeks: draft.durationWeeks,
       sessionsPerWeek: draft.sessionsPerWeek,
+      restDays: draft.restDays,
       ownerId: userId,
     },
   });
