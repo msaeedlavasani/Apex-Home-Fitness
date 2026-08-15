@@ -57,6 +57,8 @@ jobs:
       run: npm run build
       env:
         DATABASE_URL: file:./ci.db
+        # Injected only from GitHub Repository Secrets; never hard-coded.
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   # ---------------------------------------------------------------------------
   # End-to-end tests (Playwright, chromium).
@@ -105,9 +107,11 @@ jobs:
     - name: Run E2E tests
       run: npm run test:e2e
       env:
-        # Same placeholder as the build job — the dev server only touches
-        # Prisma/Supabase on demand, which the covered flows never do.
+        # The dev server only touches Prisma/Supabase on demand, which the
+        # covered flows never do. The API key is available for future AI E2E
+        # coverage without exposing it in source or logs.
         DATABASE_URL: file:./ci.db
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     - name: Upload Playwright report (on failure)
       if: failure()
