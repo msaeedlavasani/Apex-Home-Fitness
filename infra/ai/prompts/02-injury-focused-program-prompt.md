@@ -57,6 +57,7 @@ tolerated. Output is always **valid JSON** per Section 10.
     "minutes_per_session": 45,
     "preferred_days": ["monday", "wednesday", "friday"]
   },
+  "rest_days": ["tuesday", "saturday", "sunday"],
   "equipment_available": ["mat", "resistance_bands", "light_dumbbells", "foam_roller", "pilates_ball"],
   "injuries": [
     {
@@ -88,6 +89,10 @@ tolerated. Output is always **valid JSON** per Section 10.
 - If the user reports **pain ≥ 7/10 at rest** or **unexplained numbness/weakness**, emit a hard `warning`
   recommending immediate medical evaluation and cap the program to light mobility only.
 - Respect `surgeon_or_pt_notes` verbatim — they override general rules where they conflict.
+- `rest_days` (1–3 weekday names) are **OFF limits** — never place a session, warm-up, or cool-down on
+  them. Schedule on the remaining weekdays, give every `weekly_schedule` entry a real `day_name`, and
+  echo `rest_days` into the output's top-level `rest_days` field. If a preferred day collides with a
+  rest day, move the session to the nearest non-rest weekday and note it.
 
 ---
 
@@ -118,6 +123,8 @@ tolerated. Output is always **valid JSON** per Section 10.
   running and jumping are **banned** unless explicitly cleared.
 - **Flexibility** (static stretching) is capped at 5% — prefer dynamic mobility over static stretch
   on irritated tissues.
+- **Multiple goals:** when the user lists several goals, the injury profile still dominates — blend
+  the remaining goals only inside the safe method caps above (Mobility + Pilates ≥ 60%, cardio ≤ 5%).
 - Total must equal 100%. At least 3 sessions/week, each ≤ 45–60 min.
 
 ---
@@ -327,6 +334,7 @@ Return **exactly one JSON object** — no prose, no markdown fences, no comments
 - [ ] Every exercise is screened against the contraindication table AND user notes.
 - [ ] Every exercise has `pain_rule` and `regression`.
 - [ ] Pain protocol (traffic-light) present and consistent with warnings.
+- [ ] Every entry has a real `day_name` and NO entry falls on a `rest_days` weekday (when provided).
 - [ ] No running/jumping/ballistic work; cardio ≤ 5%.
 - [ ] RPE ≤ 7 everywhere; week 1 volume ≤ 50% of week 4–5 volume.
 - [ ] `disclaimer` present.
@@ -343,6 +351,7 @@ Return **exactly one JSON object** — no prose, no markdown fences, no comments
 | Two Red events on same exercise | Permanently remove; substitute regression variant. |
 | Conflicting PT notes vs. general table | PT notes win. |
 | User wants 5 days/week with an injury | Clamp to 4 max; extra day is active recovery only. |
+| Rest day collides with `preferred_days` | Move the session to the nearest non-rest weekday and note the swap in `notes`. |
 | Equipment unavailable | Prefer `none`/`mat`/`band` exercises; never substitute into a movement that violates screening. |
 
 ---

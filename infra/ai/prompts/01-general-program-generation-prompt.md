@@ -61,6 +61,7 @@ The system prompt is instantiated with the following user data (JSON):
     "minutes_per_session": 50,
     "preferred_days": ["monday", "tuesday", "thursday", "friday"]
   },
+  "rest_days": ["wednesday", "sunday"],
   "equipment_available": ["dumbbells", "barbell", "kettlebell", "resistance_bands", "pull_up_bar", "bench", "mat"],
   "injuries": [],
   "limitations": ["lower_back_sensitivity"],
@@ -76,6 +77,11 @@ Rules for handling inputs:
 - If an input field is **missing**, use a safe default (listed in Section 12) and note it in `notes`.
 - If inputs **conflict** (e.g., 5 days/week but only 30 min/session and advanced goals), resolve by
   prioritizing **schedule feasibility** first, then note the trade-off in `notes`.
+- If `rest_days` is provided (1–3 weekday names like `["wednesday", "sunday"]`), those weekdays are
+  **OFF limits** — never place a session, warm-up, or cool-down on them. Schedule the `days_per_week`
+  sessions on the remaining weekdays, give every `weekly_schedule` entry a real `day_name` (e.g.
+  `"Monday"`), and echo the user's `rest_days` into the output's top-level `rest_days` field. If a
+  preferred day collides with a rest day, move the session to the nearest non-rest weekday and note it.
 - If `injuries` is non-empty, automatically apply the **injury screening rules** from the
   Injury-Focused scenario (Section 9 equivalent) for any listed body part — never skip this.
 
@@ -114,6 +120,10 @@ Rules:
 
 - The "mixed methods" general scenario **must include at least 4 distinct methods** in the program.
 - If secondary goals exist, shift up to 10 percentage points toward the relevant methods.
+- **Multiple goals:** when the user profile lists more than one goal (e.g. `strength` + `fat_loss`),
+  blend the method mixes of **every** listed goal — weight them equally unless the user states a
+  priority, and keep at least one explicit method from each goal in the final mix. Never silently
+  pick a single goal and drop the others; name the blend in `notes`.
 - Never allocate 0% to mobility (minimum 5%) — it is non-negotiable in this scenario.
 - Methods must actually appear in the generated sessions; the weights are a planning target, not decoration.
 
@@ -291,6 +301,9 @@ no comments. The output MUST validate against this schema:
 ### Field rules
 
 - `mode` MUST be exactly `"general"`.
+- When the input carries `rest_days`, the output MUST echo it in the top-level `rest_days` field
+  (same weekday ids) and every `weekly_schedule` entry MUST include `day_name` (the actual weekday,
+  e.g. `"Monday"`). No `weekly_schedule` entry may fall on a `rest_days` weekday.
 - Every exercise object MUST include all keys shown above; `contraindicated_for` is an array of body
   parts (empty `[]` when none).
 - `reps` is a string like `"8-10"`, `"12"`, `"AMRAP"`, or `"30s hold"` — never a bare number.
@@ -311,6 +324,7 @@ no comments. The output MUST validate against this schema:
 - [ ] All enum fields match the allowed values exactly.
 - [ ] Sum of method percentages = 100.
 - [ ] Schedule has exactly `days_per_week` entries with sequential `day` numbers.
+- [ ] Every entry has a real `day_name` and NO entry falls on a `rest_days` weekday (when provided).
 - [ ] Every exercise has non-empty `sets`, `reps`, `rest_seconds`, `tempo`, `rpe`, `instruction_cue`,
       and at least one alternative.
 - [ ] No exercise conflicts with the user's `injuries` / `limitations`.
@@ -332,6 +346,9 @@ no comments. The output MUST validate against this schema:
 | Equipment list empty | Apply equipment-limited fallbacks (Bodyweight/Isometric emphasis; see scenario 03). |
 | User lists an injury | Apply injury screening and substitution rules from scenario 02 for that body part. |
 | Contradictory goals (muscle_gain + fat_loss equal weight) | Treat as body recomposition: strength/hypertrophy 50%, cardio 25%, note the trade-off. |
+| Multiple goals listed | Blend the method mixes of all stated goals (see Section 5); each goal must visibly influence the program. |
+| Rest day collides with `preferred_days` | Move the session to the nearest non-rest weekday and note the swap in `notes`. |
+| `rest_days` empty/missing | No rest-day constraint — fall back to the default at least 1 rest day/week rule. |
 | User dislikes an exercise | Replace with an alternative of the same movement pattern. |
 | Generation fails to validate | Re-emit the corrected JSON; never return partial or prose-wrapped output. |
 

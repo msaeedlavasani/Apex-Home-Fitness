@@ -56,6 +56,7 @@ and a chair). Output is always **valid JSON** per Section 10.
     "minutes_per_session": 40,
     "preferred_days": ["monday", "wednesday", "friday", "saturday"]
   },
+  "rest_days": ["tuesday", "sunday"],
   "equipment_available": [],
   "environment": {
     "space": "small_room",
@@ -82,6 +83,10 @@ and a chair). Output is always **valid JSON** per Section 10.
   jumps, full bear-crawl laps) and keep all movement in a 2m x 2m footprint.
 - If `floor_type` is `carpet` or `hard_floor` and no mat exists, prefer standing/wall exercises and
   warn that floor plank/supine work may be uncomfortable — offer towel padding tips in `notes`.
+- `rest_days` (1–3 weekday names) are **OFF limits** — never place a session, warm-up, or cool-down on
+  them. Schedule on the remaining weekdays, give every `weekly_schedule` entry a real `day_name`, and
+  echo `rest_days` into the output's top-level `rest_days` field. If a preferred day collides with a
+  rest day, move the session to the nearest non-rest weekday and note it.
 
 ---
 
@@ -116,6 +121,9 @@ and a chair). Output is always **valid JSON** per Section 10.
   (then up to 15%, still equipment-free).
 - **Strength/hypertrophy with external load**: 0% by default. If the user *does* list bands or
   dumbbells, allocate up to 10% — otherwise never.
+- **Multiple goals:** when the user lists several goals, reflect each goal through equipment-free
+  methods (e.g. bodyweight conditioning for fat_loss, calisthenics strength for strength) while
+  keeping Bodyweight + Isometric ≥ 70%.
 - Sum must equal 100%. Bodyweight + Isometric MUST be ≥ 70%.
 
 ---
@@ -345,6 +353,7 @@ Return **exactly one JSON object** — no prose, no markdown fences, no comments
 - [ ] Isometric entries use duration strings, not rep counts.
 - [ ] All movements fit the declared space/floor type.
 - [ ] Furniture-based exercises flagged with a stability warning.
+- [ ] Every entry has a real `day_name` and NO entry falls on a `rest_days` weekday (when provided).
 - [ ] `disclaimer` present.
 
 ---
@@ -360,6 +369,7 @@ Return **exactly one JSON object** — no prose, no markdown fences, no comments
 | `injuries` non-empty | Apply scenario 02 screening; bodyweight/isometric mix still works (isometrics are tendon-friendly). |
 | User is advanced | Use lever progressions (archer/pseudo-planche/pistol/nordic) and maximal isometrics; no rung below advanced. |
 | Goal is fat_loss | Allow bodyweight conditioning (jumping jacks, high knees, shadowboxing) up to 15% of time if space/floor allow. |
+| Rest day collides with `preferred_days` | Move the session to the nearest non-rest weekday and note the swap in `notes`. |
 | `minutes_per_session` ≤ 30 | Convert to circuit format automatically. |
 | User wants pull-ups but no bar | Substitute table rows / towel doorframe rows; never invent a pull-up bar. |
 
