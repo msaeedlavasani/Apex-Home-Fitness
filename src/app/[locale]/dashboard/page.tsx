@@ -165,8 +165,10 @@ export default function DashboardPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto w-full max-w-md px-4 pb-12 pt-6 sm:max-w-lg sm:pt-10">
+    <main className="min-h-screen min-h-dvh bg-slate-50 text-slate-900">
+      {/* Safe-area aware container: keeps content clear of notches, the
+          home indicator and landscape camera cutouts (iPad / iPhone). */}
+      <div className="mx-auto w-full max-w-md pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(3rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:max-w-lg sm:pt-[max(2.5rem,env(safe-area-inset-top))] md:max-w-xl">
         {/* Header */}
         <header className="mb-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
@@ -185,7 +187,7 @@ export default function DashboardPage() {
         {/* Weekly calendar */}
         <section
           aria-label={t('calendarTitle')}
-          className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+          className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"
         >
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
             <CalendarDays className="h-4 w-4 text-emerald-600" aria-hidden="true" />
@@ -212,7 +214,7 @@ export default function DashboardPage() {
                   })}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    'flex flex-col items-center gap-1 rounded-2xl px-1 py-2 transition sm:py-3',
+                    'flex min-h-10 min-w-0 flex-col items-center gap-1 rounded-2xl px-1 py-2 transition touch-manipulation sm:py-3',
                     isSelected
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                       : isToday

@@ -4,14 +4,20 @@ import OnboardingQuiz from './OnboardingQuiz';
 /**
  * Minimal usage example — mount <OnboardingQuiz /> anywhere in your app.
  *
- * The quiz is self-contained: it renders all four steps with a progress
+ * The quiz is self-contained: it renders all five steps with a progress
  * bar and navigation, and calls `onSubmit` with the final answers.
+ *
+ * When mounted inside <ThemeProvider> (the app layout already provides
+ * one), the Visual style step uses `useTheme().setTheme(...)`, so the
+ * choice is persisted and applied app-wide immediately. Rendered
+ * standalone, it falls back to the direct apply helpers in `./theme.js`.
  */
 export default function Example() {
   const handleSubmit = (answers) => {
     // Send answers to your backend / context store here.
     // Example payload:
     // {
+    //   theme: 'system',           // 'light' | 'dark' | 'system' ("Auto (System)")
     //   level: 'intermediate',
     //   goal: 'strength',
     //   equipment: ['pull_up_bar', 'dumbbells'],

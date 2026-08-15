@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import {NextIntlClientProvider} from 'next-intl';
 import {getTranslations} from 'next-intl/server';
 import {notFound} from 'next/navigation';
@@ -6,11 +6,24 @@ import {notFound} from 'next/navigation';
 // If your project's `@` alias points to `src/` instead, use a relative import:
 // import {routing} from '../../../i18n/routing';
 import {routing} from '@/i18n/routing';
+import {ThemeProvider, ThemeScript} from '@/components/providers/ThemeProvider';
 import '../globals.css';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
 }
+
+/**
+ * `viewport-fit=cover` is REQUIRED for `env(safe-area-inset-*)` to return
+ * non-zero values on notched / rounded-corner devices (iPhone, iPad Pro,
+ * Android). Without it, safe-area utilities degrade to 0 and content can
+ * slide under the notch or the home indicator.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export async function generateMetadata({
   params
@@ -42,9 +55,15 @@ export default async function LocaleLayout({
   const dir = locale === 'fa' ? 'rtl' : 'ltr';
 
   return (
-    <html lang={locale} dir={dir}>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
+      <head>
+        {/* Applies the persisted/system theme class to <html> before hydration (prevents FOUC) */}
+        <ThemeScript />
+      </head>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ThemeProvider>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

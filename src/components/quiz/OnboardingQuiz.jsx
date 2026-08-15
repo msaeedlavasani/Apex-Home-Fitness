@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { t as defaultT } from './i18n';
 import ProgressBar from './components/ProgressBar';
 import NavigationButtons from './components/NavigationButtons';
+import ThemeStep from './steps/ThemeStep';
 import CurrentLevelStep from './steps/CurrentLevelStep';
 import GoalStep from './steps/GoalStep';
 import EquipmentStep from './steps/EquipmentStep';
@@ -12,6 +13,11 @@ import './quiz.css';
  * Step configuration: validation rule + error message key per step.
  */
 const STEP_CONFIG = [
+  {
+    key: 'theme',
+    validate: (answers) => Boolean(answers.theme),
+    errorKey: 'quiz.error.required',
+  },
   {
     key: 'level',
     validate: (answers) => Boolean(answers.level),
@@ -34,6 +40,7 @@ const STEP_CONFIG = [
 ];
 
 const INITIAL_ANSWERS = {
+  theme: '',
   level: '',
   goal: '',
   equipment: [],
@@ -42,13 +49,35 @@ const INITIAL_ANSWERS = {
 };
 
 /**
+ * Resolve the active locale for the quiz's built-in bilingual (en/fa)
+ * catalogs: explicit `locale` prop → <html lang> → 'en'.
+ *
+ * NOTE: reading `document` here must not happen during the initial render —
+ * the server renders without `document`, so doing so would cause a React
+ * hydration mismatch. The caller resolves it in a `useEffect` instead.
+ *
+ * @param {'en' | 'fa'} [localeProp]
+ * @returns {'en' | 'fa' | null} — null when nothing conclusive is known yet
+ */
+function resolveDocumentLocale(localeProp) {
+  if (localeProp === 'en' || localeProp === 'fa') return localeProp;
+  if (typeof document !== 'undefined') {
+    const lang = document.documentElement.lang;
+    if (lang === 'fa' || lang.startsWith('fa-')) return 'fa';
+    if (lang === 'en' || lang.startsWith('en-')) return 'en';
+  }
+  return null;
+}
+
+/**
  * Multi-step onboarding quiz.
  *
  * Steps:
- *   1. Current Level     (Beginner / Intermediate / Advanced)
- *   2. Goal              (Strength / Fat Loss / Flexibility / Functional Fitness)
- *   3. Equipment         (multi-select checkboxes, "None" is exclusive)
- *   4. Limitations       (injury checkboxes + free-text details, optional)
+ *   1. Visual style      (Light / Dark / Auto (System)) — applied immediately
+ *   2. Current Level     (Beginner / Intermediate / Advanced)
+ *   3. Goal              (Strength / Fat Loss / Flexibility / Functional Fitness)
+ *   4. Equipment         (multi-select checkboxes, "None" is exclusive)
+ *   5. Limitations       (injury checkboxes + free-text details, optional)
  *
  * All user-facing strings go through `t('key')` so the quiz can be
  * localized by swapping the i18n helper.
@@ -56,18 +85,36 @@ const INITIAL_ANSWERS = {
  * @param {object} props
  * @param {(answers: object) => void | Promise<void>} props.onSubmit
  *        Receives the final answers, e.g.:
- *        { level, goal, equipment: [], limitations: [], limitationsDetails }
+ *        { theme, level, goal, equipment: [], limitations: [], limitationsDetails }
  * @param {(key: string, params?: object) => string} [props.t]
  * @param {object} [props.initialData] — partial pre-filled answers (e.g. when restoring a session)
+ * @param {'en' | 'fa'} [props.locale] — forces a quiz language; when omitted,
+ *        the quiz follows <html lang> (set by the app layout) and defaults to 'en'.
  */
-export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {} }) {
+export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {}, locale }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({ ...INITIAL_ANSWERS, ...initialData });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  // Locale resolved from the DOM after mount (avoids SSR hydration mismatch);
+  // server render + first client render stay on 'en' until this effect runs.
+  const [domLocale, setDomLocale] = useState(null);
 
   const totalSteps = STEP_CONFIG.length;
   const isLastStep = currentStep === totalSteps - 1;
+
+  useEffect(() => {
+    const detected = resolveDocumentLocale(locale);
+    if (detected) setDomLocale(detected);
+  }, [locale]);
+
+  // Locale-aware `t`: an app-injected translator (e.g. next-intl) wins;
+  // otherwise bind the built-in bilingual catalog to the active locale.
+  const activeLocale = domLocale ?? 'en';
+  const localizedT = useMemo(() => {
+    if (t !== defaultT) return t;
+    return (key, params) => defaultT(key, params, activeLocale);
+  }, [t, activeLocale]);
 
   const updateAnswers = (patch) => {
     setAnswers((prev) => ({ ...prev, ...patch }));
@@ -78,7 +125,7 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
   const handleNext = () => {
     const { key, validate, errorKey } = STEP_CONFIG[currentStep];
     if (!validate(answers)) {
-      setErrors((prev) => ({ ...prev, [key]: t(errorKey) }));
+      setErrors((prev) => ({ ...prev, [key]: localizedT(errorKey) }));
       return;
     }
 
@@ -105,29 +152,38 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
     switch (currentStep) {
       case 0:
         return (
+          <ThemeStep
+            value={answers.theme}
+            onChange={(theme) => updateAnswers({ theme })}
+            error={errors.theme}
+            t={localizedT}
+          />
+        );
+      case 1:
+        return (
           <CurrentLevelStep
             value={answers.level}
             onChange={(level) => updateAnswers({ level })}
             error={errors.level}
-            t={t}
+            t={localizedT}
           />
         );
-      case 1:
+      case 2:
         return (
           <GoalStep
             value={answers.goal}
             onChange={(goal) => updateAnswers({ goal })}
             error={errors.goal}
-            t={t}
+            t={localizedT}
           />
         );
-      case 2:
+      case 3:
         return (
           <EquipmentStep
             value={answers.equipment}
             onChange={(equipment) => updateAnswers({ equipment })}
             error={errors.equipment}
-            t={t}
+            t={localizedT}
           />
         );
       default:
@@ -137,7 +193,7 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
             onChange={(limitations) => updateAnswers({ limitations })}
             details={answers.limitationsDetails}
             onDetailsChange={(details) => updateAnswers({ limitationsDetails: details })}
-            t={t}
+            t={localizedT}
           />
         );
     }
@@ -146,11 +202,11 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
   return (
     <div className="quiz">
       <header className="quiz__header">
-        <h1 className="quiz__title">{t('quiz.title')}</h1>
-        <p className="quiz__subtitle">{t('quiz.subtitle')}</p>
+        <h1 className="quiz__title">{localizedT('quiz.title')}</h1>
+        <p className="quiz__subtitle">{localizedT('quiz.subtitle')}</p>
       </header>
 
-      <ProgressBar current={currentStep + 1} total={totalSteps} t={t} />
+      <ProgressBar current={currentStep + 1} total={totalSteps} t={localizedT} />
 
       {renderStep()}
 
@@ -161,7 +217,7 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
         onNext={handleNext}
         isLastStep={isLastStep}
         disabled={submitting}
-        t={t}
+        t={localizedT}
       />
     </div>
   );

@@ -37,7 +37,7 @@ const PHASE_BADGE_STYLES: Record<WorkoutPhase, string> = {
 };
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2.5';
 
 const BUTTON_PRIMARY = 'bg-emerald-600 text-white hover:bg-emerald-700';
 const BUTTON_SECONDARY = 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200';
@@ -90,7 +90,7 @@ export function WorkoutPlayer({
 
   if (!currentExercise) {
     return (
-      <div className={`rounded-2xl bg-white p-6 text-center text-sm text-neutral-500 shadow-lg ring-1 ring-neutral-200 ${className}`}>
+      <div className={`w-full rounded-2xl bg-white p-4 text-center text-sm text-neutral-500 shadow-lg ring-1 ring-neutral-200 sm:p-6 ${className}`}>
         {t('empty')}
       </div>
     );
@@ -101,7 +101,9 @@ export function WorkoutPlayer({
   const progressPercent = Math.round(progress * 100);
 
   return (
-    <div className={`rounded-2xl bg-white p-6 shadow-lg ring-1 ring-neutral-200 ${className}`}>
+    <div
+      className={`w-full rounded-2xl bg-white p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg ring-1 ring-neutral-200 sm:p-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] ${className}`}
+    >
       {/* ---- Header: phase badge + position ---- */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span
@@ -147,7 +149,7 @@ export function WorkoutPlayer({
         <>
           {/* ---- Current exercise ---- */}
           <div className="mt-6 text-center">
-            <h2 className="text-2xl font-bold text-neutral-900">{currentExercise.name}</h2>
+            <h2 className="break-words text-xl font-bold text-neutral-900 sm:text-2xl">{currentExercise.name}</h2>
             <p className="mt-1 text-sm text-neutral-500">
               {t('setOf', { current: currentSet, total: currentExercise.sets })}
               {currentExercise.reps ? ` · ${t('reps', { count: currentExercise.reps })}` : ''}
@@ -179,13 +181,13 @@ export function WorkoutPlayer({
             <span className="text-xs font-medium uppercase tracking-widest text-neutral-400">
               {isResting ? t('restTime') : t('workTime')}
             </span>
-            <span className="mt-1 font-mono text-6xl font-bold tabular-nums text-neutral-900">
+            <span className="mt-1 font-mono text-5xl font-bold leading-none tabular-nums text-neutral-900 sm:text-6xl">
               {formatTime(displaySeconds)}
             </span>
           </div>
 
           {/* ---- Controls ---- */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-2.5 sm:gap-2">
             {phase === 'READY' && (
               <button type="button" onClick={start} className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}>
                 <Play className="h-4 w-4" aria-hidden="true" />

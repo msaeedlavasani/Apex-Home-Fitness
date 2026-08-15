@@ -1,17 +1,30 @@
 {
-  "name": "Next.js PWA",
-  "short_name": "NextPWA",
-  "description": "A progressive web app built with Next.js",
+  "name": "Apex Home Fitness",
+  "short_name": "Apex Fitness",
+  "description": "AI-powered home fitness: personalized workout programs, tracking, and progress analytics.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "fullscreen",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait-primary",
-  "background_color": "#FFFFFF",
+  "background_color": "#F8FAFC",
   "theme_color": "#4F46E5",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["productivity", "web"],
+  "categories": [
+    "fitness",
+    "health",
+    "sports"
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "handle_links": "auto",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

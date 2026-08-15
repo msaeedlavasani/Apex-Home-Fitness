@@ -198,3 +198,54 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ------------------------------------------------------------------ */
+/* Theme-aware surfaces (dark mode)                                    */
+/*                                                                    */
+/* The quiz follows the active theme applied to <html> by             */
+/* `src/components/providers/ThemeProvider.tsx` / `theme.js`          */
+/* (`.dark` class — see `globals.css` `.dark body` and Tailwind       */
+/* `darkMode: 'class'`). These overrides keep the quiz readable in    */
+/* dark mode so the Visual-style step's effect is visible immediately. */
+/* ------------------------------------------------------------------ */
+.dark .quiz {
+  color: #e5e7eb;
+}
+.dark .quiz__subtitle,
+.dark .quiz-step__subtitle,
+.dark .quiz-progress__label,
+.dark .quiz-option__description {
+  color: #9ca3af;
+}
+.dark .quiz-option,
+.dark .quiz-check,
+.dark .quiz-field__input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+.dark .quiz-option:hover,
+.dark .quiz-check:hover {
+  border-color: #6366f1;
+}
+.dark .quiz-option--selected,
+.dark .quiz-check--checked {
+  background: #312e81;
+  border-color: #818cf8;
+}
+.dark .quiz-field__input::placeholder {
+  color: #6b7280;
+}
+.dark .quiz-progress__track {
+  background: #374151;
+}
+.dark .quiz-nav__back {
+  background: #374151;
+  color: #e5e7eb;
+}
+.dark .quiz-nav__back:hover {
+  background: #4b5563;
+}
+.dark .quiz-step__error {
+  color: #f87171;
+}

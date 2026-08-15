@@ -2,8 +2,264 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a; /* slate-900 */
-  -webkit-font-smoothing: antialiased;
+/* ═══════════════════════════════════════════════════════════════
+   Apple System Design (HIG) — Design Tokens
+   Semantic colors are CSS custom properties that flip automatically
+   between light (`:root`) and dark (`.dark` on <html>, managed by
+   ThemeProvider). Tailwind maps them via `apple-*` utilities, e.g.
+   `bg-apple-grouped-background`, `text-apple-label`,
+   `text-apple-label-secondary`, `bg-apple-fill`, `border-apple-separator`.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Backgrounds ─────────────────────────────────────────── */
+  --apple-background: #ffffff;
+  --apple-background-secondary: #f2f2f7;
+  --apple-background-tertiary: #ffffff;
+  --apple-grouped-background: #f2f2f7;
+  --apple-grouped-background-secondary: #ffffff;
+  --apple-grouped-background-tertiary: #f2f2f7;
+
+  /* ── Labels ──────────────────────────────────────────────── */
+  --apple-label: #000000;
+  --apple-label-secondary: rgba(60, 60, 67, 0.6);
+  --apple-label-tertiary: rgba(60, 60, 67, 0.3);
+  --apple-label-quaternary: rgba(60, 60, 67, 0.18);
+
+  /* ── Fills ───────────────────────────────────────────────── */
+  --apple-fill: rgba(120, 120, 128, 0.2);
+  --apple-fill-secondary: rgba(120, 120, 128, 0.16);
+  --apple-fill-tertiary: rgba(118, 118, 128, 0.12);
+  --apple-fill-quaternary: rgba(116, 116, 128, 0.08);
+
+  /* ── Separators ──────────────────────────────────────────── */
+  --apple-separator: rgba(60, 60, 67, 0.29);
+  --apple-separator-opaque: #c6c6c8;
+
+  /* ── Accent colors (light) ───────────────────────────────── */
+  --apple-red: #ff3b30;
+  --apple-orange: #ff9500;
+  --apple-yellow: #ffcc00;
+  --apple-green: #34c759;
+  --apple-mint: #00c7be;
+  --apple-teal: #30b0c7;
+  --apple-cyan: #32ade6;
+  --apple-blue: #007aff;
+  --apple-indigo: #5856d6;
+  --apple-purple: #af52de;
+  --apple-pink: #ff2d55;
+  --apple-brown: #a2845e;
+
+  /* ── System grays (light) ────────────────────────────────── */
+  --apple-gray: #8e8e93;
+  --apple-gray-2: #aeaeb2;
+  --apple-gray-3: #c7c7cc;
+  --apple-gray-4: #d1d1d6;
+  --apple-gray-5: #e5e5ea;
+  --apple-gray-6: #f2f2f7;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* ── Backgrounds ─────────────────────────────────────────── */
+  --apple-background: #000000;
+  --apple-background-secondary: #1c1c1e;
+  --apple-background-tertiary: #2c2c2e;
+  --apple-grouped-background: #000000;
+  --apple-grouped-background-secondary: #1c1c1e;
+  --apple-grouped-background-tertiary: #2c2c2e;
+
+  /* ── Labels ──────────────────────────────────────────────── */
+  --apple-label: #ffffff;
+  --apple-label-secondary: rgba(235, 235, 245, 0.6);
+  --apple-label-tertiary: rgba(235, 235, 245, 0.3);
+  --apple-label-quaternary: rgba(235, 235, 245, 0.18);
+
+  /* ── Fills ───────────────────────────────────────────────── */
+  --apple-fill: rgba(120, 120, 128, 0.36);
+  --apple-fill-secondary: rgba(120, 120, 128, 0.32);
+  --apple-fill-tertiary: rgba(118, 118, 128, 0.24);
+  --apple-fill-quaternary: rgba(118, 118, 128, 0.18);
+
+  /* ── Separators ──────────────────────────────────────────── */
+  --apple-separator: rgba(84, 84, 88, 0.6);
+  --apple-separator-opaque: #38383a;
+
+  /* ── Accent colors (dark) ────────────────────────────────── */
+  --apple-red: #ff453a;
+  --apple-orange: #ff9f0a;
+  --apple-yellow: #ffd60a;
+  --apple-green: #30d158;
+  --apple-mint: #63e6e2;
+  --apple-teal: #40c8e0;
+  --apple-cyan: #64d2ff;
+  --apple-blue: #0a84ff;
+  --apple-indigo: #5e5ce6;
+  --apple-purple: #bf5af2;
+  --apple-pink: #ff375f;
+  --apple-brown: #ac8e68;
+
+  /* ── System grays (dark) ─────────────────────────────────── */
+  --apple-gray: #8e8e93;
+  --apple-gray-2: #636366;
+  --apple-gray-3: #48484a;
+  --apple-gray-4: #3a3a3c;
+  --apple-gray-5: #2c2c2e;
+  --apple-gray-6: #1c1c1e;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Base layer — HIG-aligned defaults
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    /* Grouped background (like iOS Settings) + semantic label color */
+    background-color: var(--apple-grouped-background);
+    color: var(--apple-label);
+    font-family: theme('fontFamily.sans');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    /* Track the dynamic viewport height so full-height backgrounds never
+       leave a gap while the mobile URL bar collapses/expands. */
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Tight, Apple-like display tracking for headings */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+  }
+
+  /* systemBlue-tinted selection (light / dark aware) */
+  ::selection {
+    background-color: rgba(0, 122, 255, 0.22);
+  }
+  .dark ::selection {
+    background-color: rgba(10, 132, 255, 0.3);
+  }
+
+  /* Apple-style thin scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--apple-gray-3) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--apple-gray-3);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--apple-gray-2);
+  }
+
+  /* Respect reduced-motion preferences (HIG accessibility) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Components layer — glassmorphism + surface utilities
+   Use together with the built-in `backdrop-blur-*` scale
+   (backdrop-blur-sm → backdrop-blur-3xl) for custom variants.
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Frosted glass — medium blur, translucent (light/dark aware) */
+  .glass {
+    background-color: rgba(255, 255, 255, 0.65);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+  .dark .glass {
+    background-color: rgba(28, 28, 30, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Frosted glass — heavy blur, more opaque (nav bars, sheets) */
+  .glass-strong {
+    background-color: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 16px 40px rgba(0, 0, 0, 0.08);
+  }
+  .dark .glass-strong {
+    background-color: rgba(28, 28, 30, 0.72);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  /* Frosted glass — light blur, subtle (inline chips, badges) */
+  .glass-subtle {
+    background-color: rgba(242, 242, 247, 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  .dark .glass-subtle {
+    background-color: rgba(28, 28, 30, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Apple-style solid card surface (light/dark aware, 16pt corners) */
+  .card-surface {
+    background-color: var(--apple-grouped-background-secondary);
+    border-radius: 1rem;
+    border: 1px solid var(--apple-separator);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+  .dark .card-surface {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Grouped list row (inset card style, like iOS Settings) */
+  .list-row {
+    background-color: var(--apple-grouped-background-secondary);
+    border-bottom: 1px solid var(--apple-separator);
+  }
+  .list-row:last-child {
+    border-bottom: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Utilities layer — misc HIG helpers
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Hide scrollbars while keeping scrollability (carousels) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
