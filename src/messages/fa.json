@@ -220,5 +220,140 @@
       "message": "برای دیدن اطلاعات و تنظیمات پروفایل وارد شو."
     },
     "footer": "اپکس فیتنس خانگی نسخه ۰.۱.۰"
+  },
+  "Social": {
+    "title": "اشتراک‌گذاری تمرین",
+    "subtitle": "نتیجه جلسه‌ات را با دوستانت به اشتراک بگذار",
+    "preview": "پیش‌نمایش",
+    "includeStats": "شامل آمار",
+    "includeStatsDesc": "مدت، کالری و ست‌های انجام‌شده",
+    "share": "اشتراک‌گذاری",
+    "copy": "کپی متن",
+    "copied": "در کلیپ‌بورد کپی شد!",
+    "shared": "تمرین به اشتراک گذاشته شد!",
+    "shareFailed": "اشتراک‌گذاری در این دستگاه پشتیبانی نمی‌شود — متن به‌جای آن کپی شد.",
+    "statsSeparator": " · ",
+    "shareText": {
+      "header": "تمرین {title} را با اپکس فیتنس خانگی تمام کردم!",
+      "hashtag": "#ApexFitness"
+    },
+    "units": {
+      "minutes": "{count} دقیقه",
+      "sets": "{count} ست",
+      "calories": "{count} کیلوکالری"
+    }
+  },
+  "Challenges": {
+    "title": "چالش‌ها",
+    "subtitle": "با دوستانت رقابت کن و به رکوردهای تازه برس",
+    "overline": "جامعه",
+    "tabsLabel": "فیلتر چالش‌ها",
+    "tabs": {
+      "active": "فعال",
+      "all": "همه",
+      "joined": "عضو شده‌ام"
+    },
+    "feedTitle": "فید",
+    "shareCard": {
+      "title": "آخرین تمرینت را به اشتراک بگذار",
+      "description": "نتیجه جلسه‌ات را پست کن و دوستانت را الهام ببخش."
+    },
+    "empty": {
+      "title": "اینجا هنوز چیزی نیست",
+      "description": "برای پیگیری در اینجا، به یک چالش بپیوند."
+    },
+    "join": "پیوستن",
+    "joined": "عضو شدی",
+    "completed": "تکمیل شد",
+    "meta": {
+      "participants": "{count} شرکت‌کننده",
+      "daysLeft": "{count} روز مانده",
+      "progress": "{done} از {total} انجام شد"
+    },
+    "difficulty": {
+      "beginner": "مبتدی",
+      "intermediate": "متوسط",
+      "advanced": "پیشرفته"
+    },
+    "demo": {
+      "workoutTitle": "اچ‌آیتی تمام بدن"
+    },
+    "items": {
+      "hiitSprint": {
+        "title": "اسپرینت ۳۰ روزه اچ‌آیتی",
+        "description": "در ۳۰ روز، ۱۲ جلسه اچ‌آیتی کامل کن و هوازی‌ات را تقویت کن."
+      },
+      "pushUpProgression": {
+        "title": "پیشروی شنا سوئدی",
+        "description": "این هفته با دوستانت ۲۰۰ شنا سوئدی بزن."
+      },
+      "morningMobility": {
+        "title": "تحرک صبحگاهی",
+        "description": "این هفته ۵ جلسه تحرک انجام بده و هر روز انعطاف‌پذیرتر شو."
+      },
+      "sevenDayStreak": {
+        "title": "۷ روز پیاپی",
+        "description": "یک هفته کامل هر روز تمرین کن. بدون استراحت، بدون بهانه."
+      },
+      "plankMarathon": {
+        "title": "ماراتن پلانک",
+        "description": "در طول ماه در مجموع ۵ دقیقه پلانک نگه دار."
+      }
+    }
+  },
+  "Library": {
+    "overline": "کتابخانه ویدیویی",
+    "title": "کتابخانه تمرین‌ها",
+    "subtitle": "ویدیوهای تمرین هدایت‌شده را مرور کنید — پخش با کیفیت HD یا ذخیره برای آفلاین.",
+    "searchLabel": "جستجوی تمرین‌ها",
+    "searchPlaceholder": "جستجوی تمرین‌ها",
+    "clearSearch": "پاک کردن جستجو",
+    "categoryLabel": "دسته‌بندی",
+    "resultsCount": "{count} تمرین",
+    "noResults": "هیچ تمرینی با «{query}» یافت نشد.",
+    "openPlayer": "پخش {name}",
+    "categories": {
+      "all": "همه",
+      "strength": "قدرتی",
+      "cardio": "هوازی",
+      "mobility": "تحرک",
+      "yoga": "یوگا"
+    },
+    "equipment": {
+      "none": "بدون وسیله",
+      "mat": "مت"
+    },
+    "exercises": {
+      "pushUps": "پیشرفت شنا سوئدی",
+      "squats": "اسکوات با وزن بدن",
+      "gluteBridge": "پل گلوت",
+      "lunges": "لانژ راه‌رفته",
+      "burpees": "اینتروال برپی",
+      "jumpingJacks": "جامپینگ جک",
+      "mountainClimbers": "کوهنوردی",
+      "plank": "نگه‌داشتن پلانک",
+      "hipMobility": "فلوی تحرک لگن",
+      "yogaFlow": "فلوی یوگای ملایم"
+    },
+    "player": {
+      "close": "بستن",
+      "play": "پخش",
+      "pause": "توقف",
+      "mute": "بی‌صدا",
+      "unmute": "صدا",
+      "seek": "جابه‌جایی",
+      "fullscreen": "تمام‌صفحه",
+      "exitFullscreen": "خروج از تمام‌صفحه",
+      "download": "دانلود",
+      "downloadSoon": "دانلود آفلاین به‌زودی در دسترس است — فعلاً ویدیو را آنلاین تماشا کنید.",
+      "error": "ویدیو بارگذاری نشد.",
+      "retry": "تلاش دوباره",
+      "buffering": "در حال بافر…",
+      "loading": "در حال بارگذاری ویدیو",
+      "shortcutSpace": "Space — پخش/توقف",
+      "shortcutMute": "M — بی‌صدا/صدا",
+      "shortcutFullscreen": "F — تمام‌صفحه",
+      "shortcutSeek": "←/→ — جابه‌جایی ۱۰ ثانیه"
+    }
   }
 }

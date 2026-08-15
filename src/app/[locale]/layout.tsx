@@ -2,7 +2,7 @@ import type {Metadata, Viewport} from 'next';
 import {headers} from 'next/headers';
 import {Inter, Roboto} from 'next/font/google';
 import {NextIntlClientProvider} from 'next-intl';
-import {getTranslations} from 'next-intl/server';
+import {getMessages, getTranslations} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 // Note: The next-intl docs assume `@/` points to the project root.
 // If your project's `@` alias points to `src/` instead, use a relative import:
@@ -12,6 +12,7 @@ import {ThemeProvider, ThemeScript} from '@/components/providers/ThemeProvider';
 import {PlatformProvider} from '@/components/ui/platform/context/PlatformProvider';
 import {detectPlatform} from '@/components/ui/platform/lib/platform';
 import PWALoader from '@/components/PWALoader';
+import MonitoringProvider from '@/components/providers/MonitoringProvider';
 import '../globals.css';
 
 /**
@@ -167,6 +168,7 @@ export default async function LocaleLayout({
   // PlatformProvider re-detects on mount (touch capability, manual override)
   // and mirrors it onto <html data-platform="ios|material">.
   const userAgent = headers().get('user-agent');
+  const messages = await getMessages();
 
   return (
     // data-platform="ios" is the default platform for the multi-platform
@@ -180,11 +182,13 @@ export default async function LocaleLayout({
       <body className={`${inter.variable} ${roboto.variable}`}>
         <ThemeProvider>
           <PlatformProvider defaultPlatform={userAgent ? detectPlatform(userAgent) : 'web'}>
-            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+            <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
           </PlatformProvider>
         </ThemeProvider>
         {/* Registers /service-worker.js for offline + installability (production only). */}
         <PWALoader />
+        {/* Boots client-side error tracking (Sentry/console) + global error handlers. */}
+        <MonitoringProvider />
       </body>
     </html>
   );

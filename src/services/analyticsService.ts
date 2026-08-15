@@ -48,6 +48,7 @@
  * Components. Authentication failures propagate as `UnauthenticatedError`
  * from `./userService`.
  */
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getSupabaseAuthUser, syncUserWithSupabase } from './userService';
 
@@ -552,9 +553,23 @@ export function computeWorkoutAnalytics(
 
 /**
  * Returns workout analytics for the authenticated user (or `userId` when
- * provided). Fetches the full `WorkoutSession` history with exercise
- * categories (needed for calorie estimates) and uses the stored body weight
- * when no `weightKg` option is passed.
+ * provided). Fetches the `WorkoutSession` history with exercise categories
+ * (needed for calorie estimates) and uses the stored body weight when no
+ * `weightKg` option is passed.
+ *
+ * Query optimizations (vs. the previous full-graph `findMany` + nested
+ * `include`):
+ * - `completedAt IS NOT NULL` is pushed into the WHERE clause, so incomplete
+ *   sessions and their exercises never leave the database (the pure helpers
+ *   only ever count completed sessions anyway).
+ * - Sessions are fetched with only the scalar columns analytics needs
+ *   (`startedAt`, `completedAt`, `durationSeconds`, `caloriesBurned`) — the
+ *   heavy exercise graph is no longer loaded for every session.
+ * - Volume + calorie inputs are read in ONE join-table query on
+ *   `WorkoutSessionExercise`, filtered via the session relation and restricted
+ *   to `completed === true` rows (the helpers skip anything else).
+ * - Ordering by `startedAt` is served by `@@index([userId, startedAt])`;
+ *   the completion filter is served by `@@index([userId, completedAt])`.
  *
  * @throws {UnauthenticatedError} when the request has no auth session.
  */
@@ -565,16 +580,37 @@ export async function getWorkoutAnalytics(
   const supabaseUser = await getSupabaseAuthUser();
   const ownerId = userId ?? (await syncUserWithSupabase(supabaseUser)).id;
 
-  const [sessions, profile] = await Promise.all([
+  // Only completed sessions contribute to totals, volume, streaks and calorie
+  // estimates — filter at the database so nothing else is transferred.
+  const completedWhere: Prisma.WorkoutSessionWhereInput = {
+    userId: ownerId,
+    completedAt: { not: null },
+  };
+
+  const [sessionRows, exerciseRows, profile] = await Promise.all([
     prisma.workoutSession.findMany({
-      where: { userId: ownerId },
-      orderBy: { startedAt: 'asc' },
-      include: {
-        exercises: {
-          include: {
-            exercise: { select: { category: true } },
-          },
-        },
+      where: completedWhere,
+      select: {
+        id: true,
+        startedAt: true,
+        completedAt: true,
+        durationSeconds: true,
+        caloriesBurned: true,
+      },
+      orderBy: { startedAt: 'asc' }, // index-backed: @@index([userId, startedAt])
+    }),
+    prisma.workoutSessionExercise.findMany({
+      where: {
+        completed: true,
+        session: completedWhere,
+      },
+      select: {
+        sessionId: true,
+        completed: true,
+        actualSets: true,
+        actualReps: true,
+        durationSeconds: true,
+        exercise: { select: { category: true } },
       },
     }),
     prisma.user.findUnique({
@@ -582,6 +618,23 @@ export async function getWorkoutAnalytics(
       select: { weightKg: true },
     }),
   ]);
+
+  // Group the join-table rows back onto their sessions — the resulting shape
+  // matches `AnalyticsSession` so the pure helpers consume it unchanged.
+  const exercisesBySession = new Map<string, AnalyticsSessionExercise[]>();
+  for (const row of exerciseRows) {
+    const list = exercisesBySession.get(row.sessionId);
+    if (list) {
+      list.push(row);
+    } else {
+      exercisesBySession.set(row.sessionId, [row]);
+    }
+  }
+
+  const sessions: AnalyticsSession[] = sessionRows.map((session) => ({
+    ...session,
+    exercises: exercisesBySession.get(session.id) ?? [],
+  }));
 
   const resolvedOptions: AnalyticsOptions = {
     ...opts,

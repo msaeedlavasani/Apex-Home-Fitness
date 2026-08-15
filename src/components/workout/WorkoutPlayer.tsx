@@ -7,6 +7,7 @@ import { useWorkoutEngine, type WorkoutExercise, type WorkoutPhase, type Workout
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
 import { cn } from '@/lib/cn';
+import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } from './index';
 
 /**
@@ -314,7 +315,18 @@ export function WorkoutPlayer({
           {/* ---- Controls ---- */}
           <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-2.5 sm:gap-2">
             {phase === 'READY' && (
-              <button type="button" onClick={start} className={cn(BUTTON_BASE, BUTTON_PRIMARY)}>
+              <button
+                type="button"
+                onClick={() => {
+                  // Critical action: the workout is actually starting.
+                  trackEvent(ANALYTICS_EVENTS.WORKOUT_STARTED, {
+                    exercises: totalExercises,
+                    sets: totalSets,
+                  });
+                  start();
+                }}
+                className={cn(BUTTON_BASE, BUTTON_PRIMARY)}
+              >
                 <Play className="h-4 w-4" aria-hidden="true" />
                 {t('actions.start')}
               </button>

@@ -54,6 +54,15 @@ model User {
   weightKg      Float?
   fitnessGoal   String?
   fitnessLevel  DifficultyLevel?
+  // Gamification (see src/services/gamificationService.ts): lifetime XP, the
+  // derived player level (level = floor(xp / 100) + 1) and the badges earned
+  // so far. `badges` is a Json array of { id, awardedAt } objects, e.g.
+  //   [ { "id": "first_workout", "awardedAt": "2026-08-15T10:00:00.000Z" } ]
+  // It is nullable because SQLite (this repo's datasource) does not support
+  // @default() on Json fields — the service normalizes null to [].
+  xp            Int              @default(0)
+  level         Int              @default(1)
+  badges        Json?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
@@ -86,6 +95,10 @@ model Exercise {
 
   @@index([category])
   @@index([difficulty])
+  // Program builder / AI generator lookups filter by category AND difficulty
+  // together (e.g. "HIIT exercises for intermediates") — one composite index
+  // serves both combined and single-column (leftmost prefix) lookups.
+  @@index([category, difficulty])
 }
 
 // A structured training plan. Exercises are linked through the
@@ -105,6 +118,10 @@ model Program {
   exercises        ProgramExercise[]
   workoutSessions  WorkoutSession[]
   quizRecommendations QuizResponse[]
+
+  // FK lookup path: list programs owned by a user. SQLite does not
+  // auto-index foreign keys, so this makes owner-scoped queries index-backed.
+  @@index([ownerId])
 }
 
 // Join table: which exercises a program contains, in what order,
@@ -122,6 +139,10 @@ model ProgramExercise {
 
   @@id([programId, exerciseId])
   @@index([exerciseId])
+  // `programWithDetails` (programService) loads a program's exercises ordered
+  // by `order` — (programId, order) turns that into an ordered index scan and
+  // removes the sort step (the @@id leftmost prefix only covers programId).
+  @@index([programId, order])
 }
 
 // A completed or in-progress workout performed by a user,
@@ -135,6 +156,10 @@ model WorkoutSession {
   durationSeconds Int?
   caloriesBurned  Int?
   notes           String?
+  // Gamification idempotency guard: set to true by
+  // `gamificationService.awardXpForWorkout` so a session's XP / badge rewards
+  // are never double-awarded (e.g. on a retried completion event).
+  xpAwarded       Boolean    @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -142,7 +167,13 @@ model WorkoutSession {
   program   Program?                @relation(fields: [programId], references: [id], onDelete: SetNull)
   exercises WorkoutSessionExercise[]
 
-  @@index([userId])
+  // Composite (userId, date) indexes — the analytics hot path:
+  //   - getWorkoutAnalytics filters by userId AND completedAt (totals, streaks)
+  //     and orders by startedAt (first/last workout, weekly bucketing).
+  //   - The userId leftmost prefix also serves every `where: { userId }` query
+  //     the old single-column @@index([userId]) covered, so it is replaced.
+  @@index([userId, startedAt])
+  @@index([userId, completedAt])
   @@index([programId])
 }
 
@@ -162,6 +193,10 @@ model WorkoutSessionExercise {
 
   @@id([sessionId, exerciseId])
   @@index([exerciseId])
+  // Analytics reads volume/calorie inputs for a user's completed sessions via
+  // `where: { completed: true, session: { userId, completedAt: { not: null } } }`
+  // — (sessionId, completed) serves the session-scoped scan + completion filter.
+  @@index([sessionId, completed])
 }
 
 // Answers to the onboarding quiz used to recommend programs.
@@ -179,6 +214,9 @@ model QuizResponse {
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   recommendedProgram Program? @relation(fields: [recommendedProgramId], references: [id], onDelete: SetNull)
 
-  @@index([userId])
+  // getQuizResponses filters by userId and orders by createdAt DESC — the
+  // composite index serves the filter (leftmost prefix) AND the sort, so the
+  // database never materializes + sorts the user's full response history.
+  @@index([userId, createdAt])
   @@index([recommendedProgramId])
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {useMemo, useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
 import {AppShell} from '@/components/layout/AppShell';
+import {ANALYTICS_EVENTS, trackEvent} from '@/services/analyticsEvents';
 import {
   CalendarDays,
   Check,
@@ -348,6 +349,13 @@ export default function DashboardPage() {
 
               <Link
                 href={`/${locale}/workout`}
+                onClick={() =>
+                  trackEvent(ANALYTICS_EVENTS.WORKOUT_START_CLICKED, {
+                    workout: selectedPlan.workout.nameKey,
+                    durationMin: selectedPlan.workout.durationMin,
+                    difficulty: selectedPlan.workout.difficulty,
+                  })
+                }
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-base font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50 active:scale-[0.98]"
               >
                 <Play className="h-5 w-5 fill-current" aria-hidden="true" />

@@ -220,5 +220,140 @@
       "message": "Sign in to see your profile details and preferences."
     },
     "footer": "Apex Home Fitness v0.1.0"
+  },
+  "Social": {
+    "title": "Share your workout",
+    "subtitle": "Show off your session to friends",
+    "preview": "Preview",
+    "includeStats": "Include stats",
+    "includeStatsDesc": "Duration, calories and sets",
+    "share": "Share",
+    "copy": "Copy text",
+    "copied": "Copied to clipboard!",
+    "shared": "Workout shared!",
+    "shareFailed": "Sharing isn't supported here — copied the text instead.",
+    "statsSeparator": " · ",
+    "shareText": {
+      "header": "I just finished {title} with Apex Home Fitness!",
+      "hashtag": "#ApexFitness"
+    },
+    "units": {
+      "minutes": "{count} min",
+      "sets": "{count} sets",
+      "calories": "{count} kcal"
+    }
+  },
+  "Challenges": {
+    "title": "Challenges",
+    "subtitle": "Compete with friends and hit new milestones",
+    "overline": "Community",
+    "tabsLabel": "Filter challenges",
+    "tabs": {
+      "active": "Active",
+      "all": "All",
+      "joined": "Joined"
+    },
+    "feedTitle": "Feed",
+    "shareCard": {
+      "title": "Share your latest workout",
+      "description": "Post your session result and inspire your friends."
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "Join a challenge to track it here."
+    },
+    "join": "Join",
+    "joined": "Joined",
+    "completed": "Completed",
+    "meta": {
+      "participants": "{count, plural, one {# participant} other {# participants}}",
+      "daysLeft": "{count, plural, one {# day left} other {# days left}}",
+      "progress": "{done} of {total} done"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "demo": {
+      "workoutTitle": "Full Body HIIT"
+    },
+    "items": {
+      "hiitSprint": {
+        "title": "30-Day HIIT Sprint",
+        "description": "Complete 12 HIIT sessions in 30 days and torch your cardio."
+      },
+      "pushUpProgression": {
+        "title": "Push-Up Progression",
+        "description": "Rack up 200 push-ups this week with friends."
+      },
+      "morningMobility": {
+        "title": "Morning Mobility",
+        "description": "Complete 5 mobility sessions this week and move better every day."
+      },
+      "sevenDayStreak": {
+        "title": "7-Day Streak",
+        "description": "Train every day for a full week. No rest days, no excuses."
+      },
+      "plankMarathon": {
+        "title": "Plank Marathon",
+        "description": "Hold a cumulative 5 minutes of plank time across the month."
+      }
+    }
+  },
+  "Library": {
+    "overline": "Video library",
+    "title": "Exercise Library",
+    "subtitle": "Browse guided exercise videos — stream in HD or save for offline.",
+    "searchLabel": "Search exercises",
+    "searchPlaceholder": "Search exercises",
+    "clearSearch": "Clear search",
+    "categoryLabel": "Category",
+    "resultsCount": "{count} exercises",
+    "noResults": "No exercises match \"{query}\".",
+    "openPlayer": "Play {name}",
+    "categories": {
+      "all": "All",
+      "strength": "Strength",
+      "cardio": "Cardio",
+      "mobility": "Mobility",
+      "yoga": "Yoga"
+    },
+    "equipment": {
+      "none": "No equipment",
+      "mat": "Mat"
+    },
+    "exercises": {
+      "pushUps": "Push-Up Progression",
+      "squats": "Air Squats",
+      "gluteBridge": "Glute Bridge",
+      "lunges": "Walking Lunges",
+      "burpees": "Burpee Intervals",
+      "jumpingJacks": "Jumping Jacks",
+      "mountainClimbers": "Mountain Climbers",
+      "plank": "Plank Hold",
+      "hipMobility": "Hip Mobility Flow",
+      "yogaFlow": "Gentle Yoga Flow"
+    },
+    "player": {
+      "close": "Close",
+      "play": "Play",
+      "pause": "Pause",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "seek": "Seek",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "download": "Download",
+      "downloadSoon": "Offline downloads are coming soon — stream this video for now.",
+      "error": "Couldn't load this video.",
+      "retry": "Retry",
+      "buffering": "Buffering…",
+      "loading": "Loading video",
+      "shortcutSpace": "Space — play/pause",
+      "shortcutMute": "M — mute/unmute",
+      "shortcutFullscreen": "F — fullscreen",
+      "shortcutSeek": "←/→ — seek 10 s"
+    }
   }
 }

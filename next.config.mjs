@@ -23,7 +23,19 @@ const nextConfig = {
    *  - `connect-src`: Supabase URLs come from env vars
    *    (`NEXT_PUBLIC_SUPABASE_URL`, any project subdomain) — the wildcard
    *    covers all project refs; `wss://` covers Supabase Realtime.
+   *    `https://*.ingest.sentry.io` allows the Sentry SDK (when a DSN is
+   *    configured, see src/lib/errorTracking.ts) to ship error events.
+   *    First-party analytics ingestion (/api/analytics/events) is covered
+   *    by `'self'`.
    *  - `img-src https://*.supabase.co`: for Supabase Storage images if used.
+   *  - `media-src 'self' blob: https:`: video playback. `blob:` is REQUIRED
+   *    by hls.js (it attaches MediaSource through `blob:` object URLs); the
+   *    `https:` source covers CDN-hosted exercise videos (e.g. the demo
+   *    streams in the Exercise Library and Supabase Storage / any future
+   *    media CDN). Media elements cannot execute scripts, so the broad
+   *    `https:` source carries minimal risk.
+   *  - `connect-src … https://*.mux.dev`: the Exercise Library demo HLS
+   *    stream (hls.js fetches the `.m3u8` manifest + segments via XHR).
    *  - No external fonts/CDNs/analytics are used by the client, so no other
    *    origins are allowlisted.
    *  - `frame-ancestors 'none'` (modern browsers) + `X-Frame-Options: DENY`
@@ -42,7 +54,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.supabase.co",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "media-src 'self' blob: https:",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",

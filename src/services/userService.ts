@@ -199,9 +199,11 @@ export async function getCurrentUserProfile() {
  * Steps:
  *   1. Resolve the authenticated Supabase user (throws if unauthenticated).
  *   2. Ensure the linked Prisma `User` row exists (`syncUserWithSupabase`).
- *   3. Create the `QuizResponse` owned by that user.
- *   4. Derive profile fields (`fitnessGoal` / `fitnessLevel`) on the linked
- *      user from the submitted answers.
+ *   3. In ONE transaction: derive profile fields (`fitnessGoal` /
+ *      `fitnessLevel`) from the submitted answers, then create the
+ *      `QuizResponse`. Deriving first means the returned `user` include
+ *      reflects the freshly updated profile (not a stale snapshot), and both
+ *      writes commit or roll back atomically.
  *
  * @returns the created QuizResponse, including a safe projection of the
  *          linked user and (if any) the recommended program.
@@ -211,31 +213,31 @@ export async function saveQuizResponse(input: SaveQuizResponseInput) {
   const supabaseUser = await getSupabaseAuthUser();
   const user = await syncUserWithSupabase(supabaseUser);
 
-  const quizResponse = await prisma.quizResponse.create({
-    data: {
-      userId: user.id,
-      answers: input.answers as Prisma.InputJsonValue,
-      recommendedProgramId: input.recommendedProgramId ?? null,
-      score: input.score ?? null,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          fitnessGoal: true,
-          fitnessLevel: true,
-        },
+  return prisma.$transaction(async (tx) => {
+    // The quiz answers are the source of truth for the user's profile fields.
+    await updateUserProfileFromQuiz(tx, user.id, input.answers);
+
+    return tx.quizResponse.create({
+      data: {
+        userId: user.id,
+        answers: input.answers as Prisma.InputJsonValue,
+        recommendedProgramId: input.recommendedProgramId ?? null,
+        score: input.score ?? null,
       },
-      recommendedProgram: true,
-    },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            fitnessGoal: true,
+            fitnessLevel: true,
+          },
+        },
+        recommendedProgram: true,
+      },
+    });
   });
-
-  // The quiz answers are the source of truth for the user's profile fields.
-  await updateUserProfileFromQuiz(user.id, input.answers);
-
-  return quizResponse;
 }
 
 /**
@@ -259,7 +261,11 @@ export async function getQuizResponses(userId?: string) {
 // ---------------------------------------------------------------------------
 
 /** Maps quiz answers onto the User profile fields declared in the schema. */
-async function updateUserProfileFromQuiz(userId: string, answers: QuizAnswers) {
+async function updateUserProfileFromQuiz(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  answers: QuizAnswers,
+) {
   const data: Prisma.UserUpdateInput = {};
 
   if (typeof answers.goal === 'string' && answers.goal.trim()) {
@@ -272,5 +278,5 @@ async function updateUserProfileFromQuiz(userId: string, answers: QuizAnswers) {
   }
 
   if (Object.keys(data).length === 0) return;
-  await prisma.user.update({ where: { id: userId }, data });
+  await tx.user.update({ where: { id: userId }, data });
 }

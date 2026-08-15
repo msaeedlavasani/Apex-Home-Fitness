@@ -7,6 +7,7 @@ import CurrentLevelStep from './steps/CurrentLevelStep';
 import GoalStep from './steps/GoalStep';
 import EquipmentStep from './steps/EquipmentStep';
 import LimitationsStep from './steps/LimitationsStep';
+import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import './quiz.css';
 
 /**
@@ -132,6 +133,14 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
     setErrors((prev) => ({ ...prev, [key]: undefined }));
 
     if (isLastStep) {
+      // Critical action: onboarding quiz finished.
+      trackEvent(ANALYTICS_EVENTS.QUIZ_COMPLETED, {
+        theme: answers.theme,
+        level: answers.level,
+        goal: answers.goal,
+        equipmentCount: Array.isArray(answers.equipment) ? answers.equipment.length : 0,
+        limitationsCount: Array.isArray(answers.limitations) ? answers.limitations.length : 0,
+      });
       setSubmitting(true);
       // onSubmit may return a promise (e.g. API call) — wait for it,
       // then re-enable the UI regardless of the outcome.
