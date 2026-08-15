@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "echo \"No tests specified yet\" && exit 0",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --config=infra/config/playwright.config.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.24",

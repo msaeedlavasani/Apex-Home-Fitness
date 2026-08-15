@@ -10,7 +10,7 @@ export async function loadSystemPrompt(mode: PromptMode): Promise<string> {
     equipment_limited: '03-equipment-limited-program-prompt.md',
   };
 
-  const filePath = path.join(process.cwd(), 'prompts', fileNameMap[mode]);
+  const filePath = path.join(process.cwd(), 'infra/ai/prompts', fileNameMap[mode]);
   
   try {
     return fs.readFileSync(filePath, 'utf8');

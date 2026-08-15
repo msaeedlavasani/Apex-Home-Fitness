@@ -11,7 +11,7 @@ const BASE_URL = `http://localhost:${PORT}`;
  * the dev server out of the box.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: '../../tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
