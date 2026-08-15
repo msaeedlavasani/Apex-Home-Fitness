@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
 import { NextResponse } from 'next/server';
 
+import { saveGeneratedProgram } from '@/services/programService';
+import { UnauthenticatedError } from '@/services/userService';
+
 // Schema for the exercise object in the AI output
 const ExerciseSchema = z.object({
   id: z.string(),
@@ -91,9 +94,23 @@ export async function POST(req: Request) {
       system: systemPrompt,
     });
 
-    return NextResponse.json(result.object);
+    // Persist the validated program into `Program` / `ProgramExercise`,
+    // linked to the current authenticated user (transactional).
+    const program = await saveGeneratedProgram({
+      program: result.object,
+      level,
+      goal,
+    });
+
+    return NextResponse.json({
+      program, // persisted DB record (Program + ProgramExercise links)
+      generated: result.object, // full validated AI output (warmups, cooldowns, progression…)
+    });
   } catch (error) {
     console.error('Error generating program:', error);
+    if (error instanceof UnauthenticatedError) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Failed to generate program' }, { status: 500 });
   }
 }

@@ -28,9 +28,18 @@
  * create `QuizResponse` rows owned by that user. Password hashing is managed
  * by Supabase, so a placeholder is stored in `passwordHash`.
  *
+ * Offline pipeline (src/lib/offline/db.ts + src/services/syncService.ts):
+ * client components persist the active program and today's workout to
+ * IndexedDB and queue completed exercises there. `syncService.ts` uploads
+ * that outbox to the Supabase `workout_exercise_logs` table when the device
+ * is online, keyed by this same Supabase auth user id (`supabaseUser.id`),
+ * so every synced row traces back to the Prisma `User` this module creates.
+ *
  * All functions in this module are server-only — they read the request's
  * auth cookie (via `createServerSupabaseClient`) and use Prisma. Call them
- * from Route Handlers, Server Actions or Server Components.
+ * from Route Handlers, Server Actions or Server Components. Do NOT import
+ * this module from client code; the client-side identity contract lives in
+ * `syncService.getCurrentUserId()`.
  */
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { DifficultyLevel, Prisma } from '@prisma/client';

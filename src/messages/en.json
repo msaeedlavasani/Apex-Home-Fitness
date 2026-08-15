@@ -74,5 +74,88 @@
       "time": "Total time: {time}"
     },
     "empty": "This workout has no exercises yet."
+  },
+  "History": {
+    "title": "History",
+    "subtitle": "Every session, at a glance",
+    "summary": {
+      "sessions": "Total sessions",
+      "volume": "Total volume",
+      "activeDays": "Active days",
+      "streak": "Current streak"
+    },
+    "chart": {
+      "title": "Last 14 sessions",
+      "unit": "Volume (kg)"
+    },
+    "unitKg": "kg",
+    "filters": {
+      "all": "All",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "list": {
+      "title": "Workout log"
+    },
+    "meta": "{date} · {duration} min · {calories} kcal",
+    "empty": "No sessions match this filter yet.",
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
+  },
+  "Analytics": {
+    "title": "Analytics",
+    "subtitle": "Track your progress and hit your goals",
+    "goal": {
+      "title": "Weekly goal",
+      "label": "Weekly volume",
+      "achieved": "{value} of {goal} kg",
+      "remaining": "{value} kg to go",
+      "onTrack": "You're on track to hit your goal",
+      "behind": "A little behind — {count, plural, one {# more session} other {# more sessions}} to catch up"
+    },
+    "trend": {
+      "title": "Volume trend",
+      "subtitle": "Last 8 weeks",
+      "metrics": {
+        "volume": "Volume",
+        "calories": "Calories",
+        "sessions": "Sessions"
+      },
+      "unitVolume": "kg",
+      "unitCalories": "kcal",
+      "unitSessions": "sessions",
+      "unitMinutes": "min"
+    },
+    "stats": {
+      "title": "This week",
+      "sessions": "Sessions",
+      "volume": "Volume",
+      "calories": "Calories",
+      "minutes": "Active minutes"
+    },
+    "categories": {
+      "title": "Workout mix",
+      "sessions": "{count} sessions",
+      "items": {
+        "YOGA": "Yoga",
+        "HIIT": "HIIT",
+        "CALISTHENICS": "Calisthenics",
+        "PILATES": "Pilates",
+        "MOBILITY": "Mobility",
+        "ISOMETRIC": "Isometric",
+        "RESISTANCE_BAND": "Resistance band",
+        "ANIMAL_FLOW": "Animal flow"
+      }
+    },
+    "best": {
+      "title": "Personal best",
+      "volume": "Best weekly volume",
+      "streak": "Best streak",
+      "days": "{count, plural, one {# day} other {# days}}"
+    }
   }
 }

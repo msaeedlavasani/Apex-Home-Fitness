@@ -1,8 +1,11 @@
 'use client';
 
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucide-react';
 import { useWorkoutEngine, type WorkoutExercise, type WorkoutPhase, type WorkoutSummary } from './useWorkoutEngine';
+import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
+import { useHaptic } from '@/hooks/useHaptic';
 
 /**
  * WorkoutPlayer
@@ -51,6 +54,10 @@ export interface WorkoutPlayerProps {
    * automatically (set completed / rest finished).
    */
   autoAdvance?: boolean;
+  /** Enables synthesized sound cues (start/end chimes, countdown ticks). Default true. */
+  soundEnabled?: boolean;
+  /** Enables haptic feedback (Vibration API) for workout events. Default true. */
+  hapticsEnabled?: boolean;
   /** Fired once with a summary when the whole workout is finished. */
   onWorkoutComplete?: (summary: WorkoutSummary) => void;
   /** Extra classes applied to the root element. */
@@ -60,10 +67,38 @@ export interface WorkoutPlayerProps {
 export function WorkoutPlayer({
   exercises,
   autoAdvance = true,
+  soundEnabled = true,
+  hapticsEnabled = true,
   onWorkoutComplete,
   className = '',
 }: WorkoutPlayerProps) {
   const t = useTranslations('WorkoutPlayer');
+
+  const { trigger: haptic } = useHaptic({ enabled: hapticsEnabled });
+
+  // ---- Audio + haptics callbacks -----------------------------------------
+
+  const handlePhaseChange = useCallback(
+    (next: WorkoutPhase) => {
+      if (next === 'EXERCISING') {
+        // READY→EXERCISING (start), RESTING→EXERCISING (next set/rest end),
+        // COMPLETED→EXERCISING (restart) — work begins.
+        if (soundEnabled) playStartSound();
+        if (hapticsEnabled) haptic('start');
+      } else if (next === 'RESTING') {
+        if (soundEnabled) playEndSound();
+        if (hapticsEnabled) haptic('restStart');
+      } else if (next === 'COMPLETED') {
+        if (soundEnabled) playEndSound();
+        if (hapticsEnabled) haptic('workoutComplete');
+      }
+    },
+    [soundEnabled, hapticsEnabled, haptic]
+  );
+
+  const handleSetComplete = useCallback(() => {
+    if (hapticsEnabled) haptic('setComplete');
+  }, [hapticsEnabled, haptic]);
 
   const {
     phase,
@@ -86,7 +121,39 @@ export function WorkoutPlayer({
     nextExercise,
     previousExercise,
     restart,
-  } = useWorkoutEngine(exercises, { autoAdvance, onWorkoutComplete });
+  } = useWorkoutEngine(exercises, {
+    autoAdvance,
+    onWorkoutComplete,
+    onPhaseChange: handlePhaseChange,
+    onSetComplete: handleSetComplete,
+  });
+
+  // Unlock the shared AudioContext on the first user interaction so the
+  // synthesized cues are allowed to play from the very first Start click.
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+  // Countdown ticks: beep + buzz during the last three seconds of a phase.
+  const lastCountdownTickRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isRunning || secondsLeft == null || secondsLeft > 3 || secondsLeft < 1) {
+      lastCountdownTickRef.current = null;
+      return;
+    }
+    if (lastCountdownTickRef.current === secondsLeft) return;
+    lastCountdownTickRef.current = secondsLeft;
+
+    const isFinal = secondsLeft === 1;
+    if (soundEnabled) playCountdownSound(isFinal);
+    if (hapticsEnabled) haptic(isFinal ? 'countdownFinal' : 'countdown');
+  }, [isRunning, secondsLeft, soundEnabled, hapticsEnabled, haptic]);
 
   if (!currentExercise) {
     return (

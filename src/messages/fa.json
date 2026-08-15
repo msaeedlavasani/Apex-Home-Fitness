@@ -74,5 +74,88 @@
       "time": "زمان کل: {time}"
     },
     "empty": "این تمرین هنوز تمرینی ندارد."
+  },
+  "History": {
+    "title": "تاریخچه",
+    "subtitle": "همه جلسات، در یک نگاه",
+    "summary": {
+      "sessions": "کل جلسات",
+      "volume": "حجم کل",
+      "activeDays": "روزهای فعال",
+      "streak": "رکورد فعلی"
+    },
+    "chart": {
+      "title": "۱۴ جلسه اخیر",
+      "unit": "حجم (کیلوگرم)"
+    },
+    "unitKg": "کیلوگرم",
+    "filters": {
+      "all": "همه",
+      "beginner": "مبتدی",
+      "intermediate": "متوسط",
+      "advanced": "پیشرفته"
+    },
+    "list": {
+      "title": "گزارش تمرین‌ها"
+    },
+    "meta": "{date} · {duration} دقیقه · {calories} کیلوکالری",
+    "empty": "هنوز جلسه‌ای با این فیلتر نیست.",
+    "difficulty": {
+      "beginner": "مبتدی",
+      "intermediate": "متوسط",
+      "advanced": "پیشرفته"
+    }
+  },
+  "Analytics": {
+    "title": "تحلیل پیشرفت",
+    "subtitle": "پیشرفتت رو دنبال کن و به هدفت برس",
+    "goal": {
+      "title": "هدف هفتگی",
+      "label": "حجم تمرین هفتگی",
+      "achieved": "{value} از {goal} کیلوگرم",
+      "remaining": "{value} کیلوگرم تا هدف",
+      "onTrack": "در مسیر رسیدن به هدفت هستی",
+      "behind": "کمی عقبی — {count} جلسه تا جبران"
+    },
+    "trend": {
+      "title": "روند حجم تمرین",
+      "subtitle": "۸ هفته گذشته",
+      "metrics": {
+        "volume": "حجم",
+        "calories": "کالری",
+        "sessions": "جلسات"
+      },
+      "unitVolume": "کیلوگرم",
+      "unitCalories": "کیلوکالری",
+      "unitSessions": "جلسه",
+      "unitMinutes": "دقیقه"
+    },
+    "stats": {
+      "title": "این هفته",
+      "sessions": "جلسات",
+      "volume": "حجم",
+      "calories": "کالری",
+      "minutes": "دقایق فعال"
+    },
+    "categories": {
+      "title": "ترکیب تمرین‌ها",
+      "sessions": "{count} جلسه",
+      "items": {
+        "YOGA": "یوگا",
+        "HIIT": "اچ‌آیتی",
+        "CALISTHENICS": "کالیستنیک",
+        "PILATES": "پیلاتس",
+        "MOBILITY": "تحرک",
+        "ISOMETRIC": "ایزومتریک",
+        "RESISTANCE_BAND": "کش مقاومتی",
+        "ANIMAL_FLOW": "آنیمال فلو"
+      }
+    },
+    "best": {
+      "title": "رکورد شخصی",
+      "volume": "بهترین حجم هفتگی",
+      "streak": "بهترین رکورد متوالی",
+      "days": "{count} روز"
+    }
   }
 }
