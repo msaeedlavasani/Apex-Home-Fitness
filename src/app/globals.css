@@ -82,33 +82,30 @@
   --apex-on-primary: #ffffff;
   --apex-primary-text: #d93d00;
   --apex-primary-soft: rgba(255, 69, 0, 0.10);
-  --apex-primary-soft-strong: rgba(255, 69, 0, 0.18);
+  --apex-primary-border: rgba(255, 69, 0, 0.35);
   --apex-focus-ring: rgba(255, 69, 0, 0.35);
   --apex-gradient-brand: linear-gradient(135deg, #ff4500 0%, #ff9500 100%);
 
   /* ── Apex neutrals (semantic) — DESIGN_SYSTEM.md §2.2 ───── */
   --apex-bg: #ffffff;
-  --apex-bg-secondary: #f2f2f7;
-  --apex-surface: #ffffff;
-  --apex-surface-raised: #ffffff;
-  --apex-text: #000000;
+  --apex-surface: #f2f2f7;
+  --apex-card: #ffffff;
+  --apex-text-primary: #000000;
   --apex-text-secondary: rgba(60, 60, 67, 0.60);
-  --apex-text-tertiary: rgba(60, 60, 67, 0.30);
-  --apex-text-disabled: rgba(60, 60, 67, 0.18);
-  --apex-border: rgba(60, 60, 67, 0.29);
+  --apex-border: rgba(60, 60, 67, 0.20);
   --apex-fill: rgba(120, 120, 128, 0.20);
 
-  /* ── Apex workout states — DESIGN_SYSTEM.md §5 ──────────── */
-  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.16);
+  /* ── Apex workout states — DESIGN_SYSTEM.md §2.3 ──────────── */
+  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.10);
+  --apex-state-idle-text: #636366;
   --apex-state-start: #ff4500;            --apex-state-start-soft: rgba(255, 69, 0, 0.10);
-  --apex-state-start-border: rgba(255, 69, 0, 0.35);
-  --apex-state-rest: #ff9500;             --apex-state-rest-soft: rgba(255, 149, 0, 0.12);
-  --apex-state-rest-border: rgba(255, 149, 0, 0.35);
-  --apex-state-success: #34c759;          --apex-state-success-soft: rgba(52, 199, 89, 0.12);
-  --apex-state-success-border: rgba(52, 199, 89, 0.35);
-  --apex-state-alert: #ff3b30;            --apex-state-alert-soft: rgba(255, 59, 48, 0.12);
-  --apex-state-alert-border: rgba(255, 59, 48, 0.40);
-  --apex-state-alert-text: #d70015;
+  --apex-on-start: #ffffff;               --apex-state-start-text: #d93d00;
+  --apex-state-rest: #ff9500;             --apex-state-rest-soft: rgba(255, 149, 0, 0.10);
+  --apex-on-rest: #1c1c1e;                --apex-state-rest-text: #a05a00;
+  --apex-state-success: #34c759;          --apex-state-success-soft: rgba(52, 199, 89, 0.10);
+  --apex-on-success: #1c1c1e;             --apex-state-success-text: #1e7a31;
+  --apex-state-alert: #ff3b30;            --apex-state-alert-soft: rgba(255, 59, 48, 0.10);
+  --apex-on-alert: #ffffff;               --apex-state-alert-text: #d70015;
 
   /* ── Workout components (rings / timers / counters) ─────── */
   --workout-ring-track: rgba(120, 120, 128, 0.18);
@@ -262,33 +259,30 @@
   --apex-on-primary: #1c1c1e;
   --apex-primary-text: #ff8a5c;
   --apex-primary-soft: rgba(255, 107, 61, 0.16);
-  --apex-primary-soft-strong: rgba(255, 107, 61, 0.28);
+  --apex-primary-border: rgba(255, 107, 61, 0.45);
   --apex-focus-ring: rgba(255, 107, 61, 0.45);
   --apex-gradient-brand: linear-gradient(135deg, #ff6b3d 0%, #ff9f0a 100%);
 
   /* ── Apex neutrals (semantic) ───────────────────────────── */
   --apex-bg: #000000;
-  --apex-bg-secondary: #1c1c1e;
   --apex-surface: #1c1c1e;
-  --apex-surface-raised: #2c2c2e;
-  --apex-text: #ffffff;
+  --apex-card: #2c2c2e;
+  --apex-text-primary: #ffffff;
   --apex-text-secondary: rgba(235, 235, 245, 0.60);
-  --apex-text-tertiary: rgba(235, 235, 245, 0.30);
-  --apex-text-disabled: rgba(235, 235, 245, 0.18);
   --apex-border: rgba(84, 84, 88, 0.60);
   --apex-fill: rgba(120, 120, 128, 0.36);
 
   /* ── Apex workout states ────────────────────────────────── */
-  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.24);
+  --apex-state-idle: #8e8e93;             --apex-state-idle-soft: rgba(142, 142, 147, 0.20);
+  --apex-state-idle-text: #aeaeb2;
   --apex-state-start: #ff6b3d;            --apex-state-start-soft: rgba(255, 107, 61, 0.16);
-  --apex-state-start-border: rgba(255, 107, 61, 0.40);
-  --apex-state-rest: #ff9f0a;             --apex-state-rest-soft: rgba(255, 159, 10, 0.18);
-  --apex-state-rest-border: rgba(255, 159, 10, 0.40);
+  --apex-on-start: #1c1c1e;               --apex-state-start-text: #ff8a5c;
+  --apex-state-rest: #ff9f0a;             --apex-state-rest-soft: rgba(255, 159, 10, 0.16);
+  --apex-on-rest: #1c1c1e;                --apex-state-rest-text: #ffb340;
   --apex-state-success: #30d158;          --apex-state-success-soft: rgba(48, 209, 88, 0.16);
-  --apex-state-success-border: rgba(48, 209, 88, 0.40);
-  --apex-state-alert: #ff453a;            --apex-state-alert-soft: rgba(255, 69, 58, 0.18);
-  --apex-state-alert-border: rgba(255, 69, 58, 0.45);
-  --apex-state-alert-text: #ff6961;
+  --apex-on-success: #1c1c1e;             --apex-state-success-text: #40ff7c;
+  --apex-state-alert: #ff453a;            --apex-state-alert-soft: rgba(255, 69, 58, 0.16);
+  --apex-on-alert: #ffffff;               --apex-state-alert-text: #ff6961;
 
   /* ── Workout components (rings / timers / counters) ─────── */
   --workout-ring-track: rgba(120, 120, 128, 0.30);
@@ -438,6 +432,12 @@
        leave a gap while the mobile URL bar collapses/expands. */
     min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  /* RTL & Persian (fa) Specific Rules */
+  [dir='rtl'], [lang='fa'] {
+    font-family: 'Vazirmatn', theme('fontFamily.sans');
+    letter-spacing: 0 !important;
   }
 
   /* Material platform: Roboto first (Android/M3), Inter as fallback */
