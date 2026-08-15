@@ -13,10 +13,10 @@
 ## 🛠️ استک فنی
 - **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Design:** Apple System Design & Material Design 3
-- **Animations:** Framer Motion, lottie-react
+- **Animations:** lottie-react و CSS transitions
 - **Backend/DB:** Supabase (Auth + Postgres + Storage), Prisma ORM
-- **AI Engine:** Vercel AI SDK (OpenAI/Gemini)
-- **Offline:** Dexie (IndexedDB) & Sync Service
+- **AI Engine:** Vercel AI SDK با OpenAI
+- **Offline:** Dexie (IndexedDB) و Sync Service
 
 ## 🚀 شروع به کار
 1. `npm install`
@@ -36,5 +36,11 @@ Pipeline در `.github/workflows/ci.yml` به‌ترتیب و fail-fast اجرا
 - جریان‌های نیازمند creds واقعی (مثلاً `POST /api/generate-program` با Supabase auth + کلید OpenAI) جزو E2E نیستند — جزئیات در `.env.example` مستند شده است.
 - تست‌ها به‌صورت محلی: `npx playwright install chromium && npm run test:e2e`
 
-## 📂 مستندات
-تمامی مستندات فنی، نقشه راه و استراتژی‌ها در پوشه `docs/` قرار دارند.
+## 📂 مستندات مرجع
+- [مرجع اصلی وضعیت، تسک‌ها و تاریخچه بچ‌ها](docs/TASKS.md)
+- [پروتکل اجرای بچ و تحویل به ایجنت بعدی](docs/HANDOFF.md)
+- [قرارداد APIهای هوش مصنوعی](docs/AI_API.md)
+- [سیستم طراحی و توکن‌ها](docs/DESIGN_SYSTEM.md)
+- [راهنمای release و TWA/Google Play](docs/RELEASING.md)
+
+اسناد تاریخی یا پیشنهادهای مصرف‌شده در ریشه مرجع نگهداری نمی‌شوند؛ تغییرات جدید باید ابتدا به `docs/TASKS.md` اضافه شوند.

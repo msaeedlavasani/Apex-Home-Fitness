@@ -1,4 +1,13 @@
-# مدیریت تسک‌ها و بدهی‌های فنی (Tasks & Tech Debt) 📋
+# مرجع اصلی وضعیت، تسک‌ها و تاریخچه بچ‌ها 📋
+
+این فایل مرجع واحد وضعیت کارها، بدهی فنی و تاریخچه batchهاست. روند اجرای هر batch در `docs/HANDOFF.md` و چک‌لیست انتشار در `docs/RELEASING.md` نگهداری می‌شود.
+
+## وضعیت batchها
+
+- **Batch 8:** بهینه‌سازی بصری، Design System، پیشنهاد AI، TWA و SEO — تکمیل شد.
+- **Batch 9:** Zod، محافظ‌های AI، Medical Disclaimer، تست امنیتی و CI سخت‌گیرانه — تکمیل شد.
+- **Batch 10:** Workout Engine، تست‌های E2E، Design System audit، مستندات API و CI E2E — تکمیل شد.
+- **Batch 11:** Rate Limit مشترک، idempotency، timeout persistence، تست gamification و conflict resolution آفلاین — تکمیل شد.
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.
