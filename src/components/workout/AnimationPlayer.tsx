@@ -1,7 +1,9 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
-import Lottie from 'lottie-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Lottie, { type LottieRefCurrentProps } from 'lottie-react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { startFpsMonitor, type FpsSample } from '@/lib/animationFps';
 
 export type AnimationType = 'lottie' | 'video';
 
@@ -38,6 +40,27 @@ export interface AnimationPlayerProps {
   ariaLabel?: string;
   /** Called when the asset fails to load or decode. */
   onError?: () => void;
+  /**
+   * Static image shown instead of the animation when motion is reduced
+   * (`prefers-reduced-motion: reduce`) or after a sustained FPS drop on
+   * a low-end device. When omitted, a plain placeholder keeps the layout
+   * slot (no fetch, no renderer — zero cost).
+   */
+  fallbackSrc?: string;
+  /**
+   * Honor `prefers-reduced-motion` by skipping the animation entirely and
+   * rendering the static fallback. Defaults to `true` (accessibility first).
+   */
+  respectReducedMotion?: boolean;
+  /**
+   * Watch real rendered FPS while the Lottie animation plays and swap to
+   * the static fallback on sustained drops (< 45fps for 2s). Defaults to
+   * `true`. This is the "lightweight fallback" for complex animations on
+   * mid-range hardware — see scripts/audit-lottie-fps.mjs for the audit.
+   */
+  fpsMonitorEnabled?: boolean;
+  /** Fired when the FPS monitor swaps to the static fallback. */
+  onFpsDrop?: (sample: FpsSample) => void;
 }
 
 const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
@@ -77,6 +100,43 @@ export function inferAnimationType(src: string): AnimationType {
   return 'video';
 }
 
+/**
+ * StaticFallback — zero-cost stand-in for the animation.
+ * Renders a poster image when `src` is provided, otherwise an empty
+ * `role="img"` slot that preserves the layout while consuming no CPU/GPU.
+ */
+function StaticFallback({
+  src,
+  className,
+  style,
+  ariaLabel,
+}: {
+  src?: string;
+  className?: string;
+  style?: React.CSSProperties;
+  ariaLabel?: string;
+}) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={ariaLabel ?? ''}
+        className={className}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', ...style }}
+        draggable={false}
+      />
+    );
+  }
+  return (
+    <div
+      className={className}
+      style={style}
+      role="img"
+      aria-label={ariaLabel}
+    />
+  );
+}
+
 interface LottieAnimationProps {
   src: string;
   loop: boolean;
@@ -85,25 +145,69 @@ interface LottieAnimationProps {
   style?: React.CSSProperties;
   ariaLabel?: string;
   onError?: () => void;
+  fallbackSrc?: string;
+  fpsMonitorEnabled?: boolean;
+  onFpsDrop?: (sample: FpsSample) => void;
 }
 
 /**
- * Lottie branch: fetches the JSON and hands it to lottie-react via
- * `animationData` (lottie-react's `src` prop is silently ignored by
- * lottie-web, and `path` is not part of its public types). `assetsPath`
- * keeps relative image assets inside the JSON resolving next to the file.
+ * Lottie branch with performance safeguards:
+ *
+ *   1. **Reduced motion** — never fetches or mounts the Lottie renderer;
+ *      renders the static fallback instead (zero CPU/GPU, no network).
+ *   2. **Visibility pause** — an IntersectionObserver pauses playback
+ *      while the animation is off-screen (scrolled out / hidden), so a
+ *      looping exercise animation never burns frames it can't be seen.
+ *   3. **FPS monitor** — while playing, real rendered FPS is sampled. A
+ *      *sustained* drop below 45fps for 2s swaps the animation for the
+ *      static fallback (lightweight fallback for complex JSON on
+ *      low-end hardware) and fires `onFpsDrop`.
  */
-function LottieAnimation({src, loop, autoplay, className, style, ariaLabel, onError}: LottieAnimationProps) {
-  // Keep the latest callback without re-running the fetch effect.
+function LottieAnimation({
+  src,
+  loop,
+  autoplay,
+  className,
+  style,
+  ariaLabel,
+  onError,
+  fallbackSrc,
+  fpsMonitorEnabled = true,
+  onFpsDrop,
+}: LottieAnimationProps) {
+  // Keep the latest callbacks without re-running effects.
   const onErrorRef = useRef(onError);
   useEffect(() => {
     onErrorRef.current = onError;
   });
+  const onFpsDropRef = useRef(onFpsDrop);
+  useEffect(() => {
+    onFpsDropRef.current = onFpsDrop;
+  });
+
+  const reducedMotion = useReducedMotion();
 
   const [animationData, setAnimationData] = useState<unknown>(null);
   const [failed, setFailed] = useState(false);
+  /** True after a sustained FPS drop — the animation is swapped for the fallback. */
+  const [degraded, setDegraded] = useState(false);
+  /** Whether the container is currently in the viewport. */
+  const [visible, setVisible] = useState(true);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lottieRef = useRef<LottieRefCurrentProps | null>(null);
+
+  // Reduced motion: skip the fetch entirely — the fallback is instant.
+  const skipAnimation = reducedMotion || degraded || failed;
+
+  // ---- Asset fetch (only when the animation will actually run) ----
   useEffect(() => {
+    if (reducedMotion || degraded) {
+      setAnimationData(null);
+      setFailed(false);
+      return;
+    }
+
     let cancelled = false;
     setAnimationData(null);
     setFailed(false);
@@ -130,16 +234,59 @@ function LottieAnimation({src, loop, autoplay, className, style, ariaLabel, onEr
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, reducedMotion, degraded]);
 
-  // Keep the layout slot while loading / after a failure.
-  if (!animationData) {
+  // ---- Visibility pause (IntersectionObserver) ----
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisible(entries[0]?.isIntersecting ?? true);
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // ---- Keep playback in sync with visibility ----
+  useEffect(() => {
+    const anim = lottieRef.current?.animationItem;
+    if (!anim || !animationData) return;
+    if (!visible) {
+      anim.pause();
+    } else if (autoplay) {
+      anim.play();
+    }
+  }, [visible, animationData, autoplay]);
+
+  // ---- FPS monitor: swap to the static fallback on sustained drops ----
+  useEffect(() => {
+    if (!fpsMonitorEnabled || !animationData || skipAnimation || !visible) return;
+    if (reducedMotion) return;
+
+    const stop = startFpsMonitor({
+      lowFpsThreshold: 45,
+      sustainedMs: 2000,
+      onDrop: (sample) => {
+        setDegraded(true);
+        onFpsDropRef.current?.(sample);
+      },
+    });
+
+    return stop;
+  }, [fpsMonitorEnabled, animationData, visible, skipAnimation, reducedMotion]);
+
+  // Layout slot is always preserved (loading / failure / reduced motion).
+  if (!animationData || skipAnimation) {
     return (
-      <div
+      <StaticFallback
+        src={skipAnimation ? fallbackSrc : undefined}
         className={className}
         style={style}
-        role="img"
-        aria-label={failed ? undefined : ariaLabel}
+        ariaLabel={failed ? undefined : ariaLabel}
       />
     );
   }
@@ -147,16 +294,22 @@ function LottieAnimation({src, loop, autoplay, className, style, ariaLabel, onEr
   const assetsPath = src.slice(0, src.lastIndexOf('/') + 1);
 
   return (
-    <Lottie
-      key={src}
-      animationData={animationData}
-      assetsPath={assetsPath}
-      loop={loop}
-      autoplay={autoplay}
-      className={className}
-      style={style}
-      aria-label={ariaLabel}
-    />
+    <div ref={containerRef} className={className} style={style}>
+      <Lottie
+        key={src}
+        lottieRef={lottieRef}
+        animationData={animationData}
+        assetsPath={assetsPath}
+        loop={loop}
+        autoplay={autoplay}
+        style={{ width: '100%', height: '100%' }}
+        rendererSettings={{
+          // Match the default <video> behavior: contain, centered.
+          preserveAspectRatio: 'xMidYMid meet',
+        }}
+        aria-label={ariaLabel}
+      />
+    </div>
   );
 }
 
@@ -167,12 +320,20 @@ function LottieAnimation({src, loop, autoplay, className, style, ariaLabel, onEr
  *   - `.json` → Lottie (lottie-react)
  *   - `.mp4` / `.webm` / `.ogg` / `.ogv` / `.mov` / `.m4v` → native <video>
  *
- * Both branches loop, autoplay and are keyed by `src`, so switching exercises
- * remounts the media element cleanly.
+ * Performance & accessibility:
+ *   - Honors `prefers-reduced-motion` (static fallback, no renderer mount).
+ *   - Pauses Lottie playback while off-screen (IntersectionObserver).
+ *   - Monitors real FPS and swaps complex Lottie JSON to a lightweight
+ *     static fallback on sustained drops below 45fps.
+ *   - Both branches loop, autoplay and are keyed by `src`, so switching
+ *     exercises remounts the media element cleanly.
  *
  * @example
  *   <AnimationPlayer src="/animations/push-up.json" />
  *   <AnimationPlayer src="/videos/squat.mp4" poster="/posters/squat.jpg" />
+ *
+ *   // Static poster for reduced-motion users / low-end devices:
+ *   <AnimationPlayer src="/animations/push-up.json" fallbackSrc="/posters/push-up.jpg" />
  *
  *   // Inside WorkoutPlayer (per-exercise asset):
  *   {currentExercise.animationSrc && (
@@ -191,7 +352,12 @@ export default function AnimationPlayer({
   muted = true,
   ariaLabel,
   onError,
+  fallbackSrc,
+  respectReducedMotion = true,
+  fpsMonitorEnabled = true,
+  onFpsDrop,
 }: AnimationPlayerProps) {
+  const reducedMotion = useReducedMotion();
   const renderer = useMemo<AnimationType>(
     () => type ?? inferAnimationType(src),
     [src, type]
@@ -202,6 +368,18 @@ export default function AnimationPlayer({
   }
 
   if (renderer === 'lottie') {
+    // Reduced motion: never mount the Lottie renderer at all.
+    if (respectReducedMotion && reducedMotion) {
+      return (
+        <StaticFallback
+          src={fallbackSrc}
+          className={className}
+          style={style}
+          ariaLabel={ariaLabel}
+        />
+      );
+    }
+
     return (
       <LottieAnimation
         src={src}
@@ -211,6 +389,9 @@ export default function AnimationPlayer({
         style={style}
         ariaLabel={ariaLabel}
         onError={onError}
+        fallbackSrc={fallbackSrc}
+        fpsMonitorEnabled={fpsMonitorEnabled}
+        onFpsDrop={onFpsDrop}
       />
     );
   }

@@ -6,6 +6,7 @@ import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucid
 import { useWorkoutEngine, type WorkoutExercise, type WorkoutPhase, type WorkoutSummary } from './useWorkoutEngine';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/cn';
 import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } from './index';
@@ -87,6 +88,9 @@ export function WorkoutPlayer({
   const t = useTranslations('WorkoutPlayer');
 
   const { trigger: haptic } = useHaptic({ enabled: hapticsEnabled });
+
+  // Reduced motion: phase transitions render instantly (no enter animation).
+  const reducedMotion = useReducedMotion();
 
   // ---- Reps counted in the current set (resets on set/exercise change) ----
 
@@ -199,6 +203,13 @@ export function WorkoutPlayer({
   const phaseTone = WORKOUT_TONES[PHASE_TONE[phase]];
   const phaseLabel = isResting ? t('restTime') : t('workTime');
 
+  // Phase transitions (READY ⇄ EXERCISING ⇄ RESTING ⇄ COMPLETED) remount a
+  // keyed container whose enter animation is transform/opacity only — pure
+  // compositor work, so it holds 60fps even while the ring refills.
+  // Reduced-motion users get an instant, animation-free swap.
+  const phaseKey = `${phase}-${currentExerciseIndex}-${currentSet}`;
+  const motionClass = reducedMotion ? undefined : 'animate-phase-enter';
+
   return (
     <div
       className={cn(
@@ -223,7 +234,7 @@ export function WorkoutPlayer({
 
       {phase === 'COMPLETED' ? (
         /* ---- Completion summary ---- */
-        <div className="mt-8 text-center">
+        <div key={phaseKey} className={cn('mt-8 text-center', motionClass)}>
           <Trophy className="mx-auto h-12 w-12 text-[color:var(--apex-state-success)]" aria-hidden="true" />
           <h2 className="mt-4 text-2xl font-bold">{t('complete.title')}</h2>
           <p className="mt-2 text-sm text-[color:var(--apex-text-secondary)]">
@@ -238,7 +249,7 @@ export function WorkoutPlayer({
           </button>
         </div>
       ) : (
-        <>
+        <div key={phaseKey} className={motionClass}>
           {/* ---- Current exercise ---- */}
           <div className="mt-6 text-center">
             <h2 className="break-words text-xl font-bold sm:text-2xl">{currentExercise.name}</h2>
@@ -260,7 +271,7 @@ export function WorkoutPlayer({
                       isDone
                         ? 'bg-[color:var(--apex-state-success)]'
                         : isCurrent
-                          ? 'bg-[color:var(--apex-state-start)] ring-2 ring-[color:var(--apex-state-start-border)]'
+                          ? 'bg-[color:var(--apex-state-start)] ring-2 ring-[color:var(--apex-primary-border)]'
                           : 'bg-[color:var(--apex-fill)]'
                     )}
                   />
@@ -388,7 +399,7 @@ export function WorkoutPlayer({
               </>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

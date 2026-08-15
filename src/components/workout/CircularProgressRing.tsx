@@ -2,6 +2,7 @@
 
 import { useId, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   APPLE_EASE,
   RING_ANIMATION_MS,
@@ -69,6 +70,12 @@ export function CircularProgressRing({
   children,
 }: CircularProgressRingProps) {
   const gradientId = useId();
+  const reducedMotion = useReducedMotion();
+
+  // JS-level reduced-motion gate (the global CSS rule covers CSS animations;
+  // this also disables the JS-driven stroke-dashoffset transition).
+  const effectivePulse = pulse && !reducedMotion;
+  const effectiveAnimated = animated && !reducedMotion;
 
   const clamped = Math.min(1, Math.max(0, progress));
   const radius = (size - strokeWidth) / 2;
@@ -86,7 +93,7 @@ export function CircularProgressRing({
       aria-label={ariaLabel}
       className={cn(
         'relative inline-flex items-center justify-center',
-        pulse && 'animate-workout-pulse',
+        effectivePulse && 'animate-workout-pulse',
         className
       )}
       style={{ width: size, maxWidth: '100%', aspectRatio: '1 / 1' }}
@@ -115,7 +122,25 @@ export function CircularProgressRing({
           strokeWidth={strokeWidth}
         />
 
-        {/* Progress arc — gradient stroke + soft glow, animated */}
+        {/*
+         * Static glow underlay — a wide, translucent stroke beneath the arc.
+         * Replaces the previous `filter: drop-shadow(...)` on the animated
+         * circle: SVG filters force the element to re-rasterize on every
+         * frame of the dashoffset transition, which drops frames on mobile
+         * GPUs. A static underlay is painted once and stays at 60fps.
+         */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius - 2}
+          fill="none"
+          stroke={tokens.color}
+          strokeWidth={strokeWidth + 6}
+          strokeLinecap="round"
+          opacity={0.16}
+        />
+
+        {/* Progress arc — gradient stroke + static glow, animated */}
         <circle
           cx={center}
           cy={center}
@@ -128,8 +153,7 @@ export function CircularProgressRing({
           strokeDashoffset={dashOffset}
           transform={`rotate(-90 ${center} ${center})`}
           style={{
-            filter: `drop-shadow(0 0 ${Math.max(10, strokeWidth)}px ${tokens.glow})`,
-            transition: animated
+            transition: effectiveAnimated
               ? `stroke-dashoffset ${RING_ANIMATION_MS}ms ${APPLE_EASE}, stroke 400ms ease`
               : undefined,
           }}

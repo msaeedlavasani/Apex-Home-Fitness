@@ -37,18 +37,18 @@ function roundToStep(value: number, step: number, min: number): number {
 /** Track / fill / thumb visuals per platform (thumb size used for centering). */
 const TRACK_GEOMETRY: Record<Platform, { track: string; fill: string; thumb: string; thumbHalf: number }> = {
   ios: {
-    track: 'absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-apple-fill',
-    fill: 'absolute top-1/2 start-0 h-1 -translate-y-1/2 rounded-full bg-apple-blue',
+    track: 'absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-apex-fill',
+    fill: 'absolute top-1/2 start-0 h-1 -translate-y-1/2 rounded-full bg-apex-primary',
     thumb:
-      'absolute top-1/2 h-7 w-7 -translate-y-1/2 rounded-full bg-white shadow-apple ring-1 ring-black/5 ' +
+      'absolute top-1/2 h-7 w-7 -translate-y-1/2 rounded-full bg-apex-on-primary shadow-apple ring-1 ring-[color:color-mix(in_srgb,var(--apex-border)_30%,transparent)] ' +
       'transition-transform duration-150 ease-apple-ease group-active:scale-110',
     thumbHalf: 14,
   },
   android: {
-    track: 'absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-material-surface-container-highest',
-    fill: 'absolute top-1/2 start-0 h-1 -translate-y-1/2 rounded-full bg-material-primary',
+    track: 'absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-apex-fill',
+    fill: 'absolute top-1/2 start-0 h-1 -translate-y-1/2 rounded-full bg-apex-primary',
     thumb:
-      'absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-material-primary shadow-elevation-1 ' +
+      'absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-apex-primary shadow-elevation-1 ' +
       'transition-transform duration-150 ease-material-emphasized group-active:scale-110',
     thumbHalf: 10,
   },
@@ -57,7 +57,7 @@ const TRACK_GEOMETRY: Record<Platform, { track: string; fill: string; thumb: str
     fill: 'absolute top-1/2 start-0 h-1.5 -translate-y-1/2 rounded-full bg-apex-primary',
     thumb:
       'absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-apex-primary shadow-md ' +
-      'ring-4 ring-[color:var(--apex-focus-ring)]/30 transition-transform duration-150 ease-apple-ease ' +
+      'ring-4 ring-[color:color-mix(in_srgb,var(--apex-focus-ring)_30%,transparent)] transition-transform duration-150 ease-apple-ease ' +
       'hover:scale-110 group-active:scale-110',
     thumbHalf: 10,
   },

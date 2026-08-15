@@ -20,14 +20,14 @@ const TRACK: Record<Platform, (checked: boolean) => string> = {
   ios: (checked) =>
     cn(
       'relative inline-flex h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ease-apple-ease',
-      checked ? 'bg-apple-green' : 'bg-apple-gray-3'
+      checked ? 'bg-apex-state-success' : 'bg-apex-state-idle'
     ),
   android: (checked) =>
     cn(
       'relative inline-flex h-8 w-[52px] shrink-0 rounded-full border-2 transition-colors duration-200 ease-material-standard',
       checked
-        ? 'border-material-primary bg-material-primary'
-        : 'border-material-outline bg-material-surface-container-highest'
+        ? 'border-apex-primary bg-apex-primary'
+        : 'border-apex-border bg-apex-surface'
     ),
   web: (checked) =>
     cn(
@@ -39,7 +39,7 @@ const TRACK: Record<Platform, (checked: boolean) => string> = {
 const KNOB: Record<Platform, (checked: boolean) => string> = {
   ios: (checked) =>
     cn(
-      'absolute left-0.5 top-0.5 h-[27px] w-[27px] rounded-full bg-white shadow-md',
+      'absolute left-0.5 top-0.5 h-[27px] w-[27px] rounded-full bg-apex-on-primary shadow-md',
       'transition-transform duration-200 ease-apple-ease group-active:scale-90',
       checked ? 'translate-x-5' : 'translate-x-0'
     ),
@@ -48,12 +48,12 @@ const KNOB: Record<Platform, (checked: boolean) => string> = {
       'absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full',
       'transition-all duration-200 ease-material-emphasized group-active:scale-90',
       checked
-        ? 'translate-x-6 bg-material-on-primary shadow-elevation-1'
-        : 'translate-x-0 bg-material-outline'
+        ? 'translate-x-6 bg-apex-on-primary shadow-elevation-1'
+        : 'translate-x-0 bg-apex-state-idle'
     ),
   web: (checked) =>
     cn(
-      'absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-md',
+      'absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-apex-on-primary shadow-md',
       'transition-transform duration-200 ease-apple-ease group-hover:scale-105 group-active:scale-95',
       checked ? 'translate-x-5' : 'translate-x-0'
     ),
@@ -69,7 +69,7 @@ const SwitchImpl = forwardRef<HTMLButtonElement, SwitchProps & { platform: Platf
         {(label != null || description != null) && (
           <div className="min-w-0">
             {label != null && (
-              <div className="text-[17px] leading-snug text-apex-text">{label}</div>
+              <div className="text-[17px] leading-snug text-apex-text-primary">{label}</div>
             )}
             {description != null && (
               <div className="mt-0.5 text-[13px] leading-snug text-apex-text-secondary">

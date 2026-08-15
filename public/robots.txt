@@ -1,0 +1,17 @@
+# robots.txt — Apex Home Fitness
+# Production origin: https://apexfit.app
+# Keep the Sitemap URL in sync with NEXT_PUBLIC_SITE_URL (see .env.example).
+
+User-agent: *
+Allow: /
+
+# Private/authenticated app areas — not meant for search-engine indexing.
+# The `/*/` wildcard covers both locale prefixes (/en/..., /fa/...).
+Disallow: /api/
+Disallow: /*/dashboard
+Disallow: /*/profile
+Disallow: /*/history
+Disallow: /*/analytics
+
+# Bilingual sitemap (generated dynamically by src/app/sitemap.ts).
+Sitemap: https://apexfit.app/sitemap.xml

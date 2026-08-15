@@ -35,10 +35,10 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
   const active = useActiveSection();
 
   return (
-    <div className="min-h-dvh bg-material-background text-material-on-background">
+    <div className="min-h-dvh bg-apex-bg text-apex-text-primary">
       {/* Standard AppBar */}
       <header
-        className="fixed inset-x-0 top-0 z-40 border-b border-material-outline-variant/60 bg-material-surface/95 backdrop-blur-md"
+        className="fixed inset-x-0 top-0 z-40 border-b border-[color:color-mix(in_srgb,var(--apex-border)_60%,transparent)] bg-[color:color-mix(in_srgb,var(--apex-surface)_95%,transparent)] backdrop-blur-md"
         style={{paddingTop: 'env(safe-area-inset-top)'}}
       >
         <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-1 px-2 sm:px-4">
@@ -46,7 +46,7 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
             <Link
               href={backHref}
               aria-label={t('back')}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-material-on-surface-variant transition-colors hover:bg-material-surface-container-high focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
             >
               <ArrowLeft className="h-6 w-6 rtl:rotate-180" aria-hidden="true" />
             </Link>
@@ -62,11 +62,11 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
               <h1 className="truncate text-[22px] font-medium leading-7 tracking-normal">{title}</h1>
             ) : null}
             {subtitle ? (
-              <p className="truncate text-xs text-material-on-surface-variant">{subtitle}</p>
+              <p className="truncate text-xs text-apex-text-secondary">{subtitle}</p>
             ) : null}
           </div>
 
-          <ThemeToggle className="flex h-12 w-12 items-center justify-center rounded-full text-material-on-surface-variant transition-colors hover:bg-material-surface-container-high" />
+          <ThemeToggle className="flex h-12 w-12 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
         </div>
       </header>
 
@@ -78,7 +78,7 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
       {/* Material 3 Navigation Bar */}
       <nav
         aria-label={t('navLabel')}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-material-outline-variant/60 bg-material-surface-container"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:color-mix(in_srgb,var(--apex-border)_60%,transparent)] bg-apex-surface"
         style={{paddingBottom: 'env(safe-area-inset-bottom)'}}
       >
         <div className="mx-auto grid w-full max-w-3xl grid-cols-4">
@@ -113,7 +113,7 @@ function NavBarItem({item, active}: {item: NavItem; active: boolean}) {
         <Icon
           className={[
             'h-6 w-6',
-            active ? 'text-apex-primary' : 'text-material-on-surface-variant',
+            active ? 'text-apex-primary' : 'text-apex-text-secondary',
           ].join(' ')}
           aria-hidden="true"
         />
@@ -121,7 +121,7 @@ function NavBarItem({item, active}: {item: NavItem; active: boolean}) {
       <span
         className={[
           'text-xs leading-none',
-          active ? 'font-medium text-material-on-surface' : 'text-material-on-surface-variant',
+          active ? 'font-medium text-apex-text-primary' : 'text-apex-text-secondary',
         ].join(' ')}
       >
         {t(item.messageKey)}

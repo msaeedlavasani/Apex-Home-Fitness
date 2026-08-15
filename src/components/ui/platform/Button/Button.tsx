@@ -83,40 +83,41 @@ const VARIANTS: Record<Platform, Record<ButtonVariant, Record<ButtonTone, string
     filled: {
       primary:
         'bg-apex-primary text-apex-on-primary shadow-sm active:bg-apex-primary-active active:scale-[0.98]',
-      destructive: 'bg-apple-red text-white shadow-sm active:brightness-90 active:scale-[0.98]',
+      destructive: 'bg-apex-state-alert text-apex-state-on-alert shadow-sm active:brightness-90 active:scale-[0.98]',
     },
     tonal: {
       primary: 'bg-apex-primary-soft text-apex-primary-text active:bg-apex-primary-soft-strong',
-      destructive: 'bg-apple-red/10 text-apple-red active:bg-apple-red/20',
+      destructive: 'bg-apex-state-alert-soft text-apex-state-alert-text active:bg-[color:color-mix(in_srgb,var(--apex-state-alert)_20%,transparent)]',
     },
     outlined: {
       primary:
-        'border border-apple-separator bg-transparent text-apex-primary-text active:bg-apex-primary-soft',
-      destructive: 'border border-apple-red/40 bg-transparent text-apple-red active:bg-apple-red/10',
+        'border border-apex-border bg-transparent text-apex-primary-text active:bg-apex-primary-soft',
+      destructive:
+        'border border-[color:color-mix(in_srgb,var(--apex-state-alert)_40%,transparent)] bg-transparent text-apex-state-alert-text active:bg-apex-state-alert-soft',
     },
     text: {
       primary: 'bg-transparent text-apex-primary-text active:bg-apex-primary-soft',
-      destructive: 'bg-transparent text-apple-red active:bg-apple-red/10',
+      destructive: 'bg-transparent text-apex-state-alert-text active:bg-apex-state-alert-soft',
     },
   },
   android: {
     filled: {
-      primary: 'bg-material-primary text-material-on-primary shadow-elevation-1 active:shadow-none',
-      destructive: 'bg-material-error text-material-on-error shadow-elevation-1 active:shadow-none',
+      primary: 'bg-apex-primary text-apex-on-primary shadow-elevation-1 active:shadow-none',
+      destructive: 'bg-apex-state-alert text-apex-state-on-alert shadow-elevation-1 active:shadow-none',
     },
     tonal: {
-      primary: 'bg-material-secondary-container text-material-on-secondary-container',
-      destructive: 'bg-material-error-container text-material-on-error-container',
+      primary: 'bg-apex-primary-soft text-apex-primary-text',
+      destructive: 'bg-apex-state-alert-soft text-apex-state-alert-text',
     },
     outlined: {
       primary:
-        'border border-material-outline bg-transparent text-material-primary active:bg-material-primary/10',
+        'border border-apex-border bg-transparent text-apex-primary-text active:bg-apex-primary-soft',
       destructive:
-        'border border-material-error bg-transparent text-material-error active:bg-material-error/10',
+        'border border-[color:color-mix(in_srgb,var(--apex-state-alert)_40%,transparent)] bg-transparent text-apex-state-alert-text active:bg-apex-state-alert-soft',
     },
     text: {
-      primary: 'bg-transparent text-material-primary active:bg-material-primary/10',
-      destructive: 'bg-transparent text-material-error active:bg-material-error/10',
+      primary: 'bg-transparent text-apex-primary-text active:bg-apex-primary-soft',
+      destructive: 'bg-transparent text-apex-state-alert-text active:bg-apex-state-alert-soft',
     },
   },
   web: {
@@ -124,20 +125,21 @@ const VARIANTS: Record<Platform, Record<ButtonVariant, Record<ButtonTone, string
       primary:
         'bg-apex-primary text-apex-on-primary shadow-md hover:bg-apex-primary-hover hover:shadow-lg hover:-translate-y-px active:bg-apex-primary-active active:translate-y-0 active:scale-[0.98]',
       destructive:
-        'bg-apple-red text-white shadow-md hover:brightness-95 hover:shadow-lg hover:-translate-y-px active:brightness-90 active:translate-y-0 active:scale-[0.98]',
+        'bg-apex-state-alert text-apex-state-on-alert shadow-md hover:brightness-95 hover:shadow-lg hover:-translate-y-px active:brightness-90 active:translate-y-0 active:scale-[0.98]',
     },
     tonal: {
       primary: 'bg-apex-primary-soft text-apex-primary-text hover:bg-apex-primary-soft-strong',
-      destructive: 'bg-apple-red/10 text-apple-red hover:bg-apple-red/15',
+      destructive: 'bg-apex-state-alert-soft text-apex-state-alert-text hover:bg-[color:color-mix(in_srgb,var(--apex-state-alert)_15%,transparent)]',
     },
     outlined: {
       primary:
         'border-2 border-apex-border bg-transparent text-apex-primary-text hover:border-apex-primary hover:text-apex-primary',
-      destructive: 'border-2 border-apple-red/40 bg-transparent text-apple-red hover:border-apple-red',
+      destructive:
+        'border-2 border-[color:color-mix(in_srgb,var(--apex-state-alert)_40%,transparent)] bg-transparent text-apex-state-alert-text hover:border-apex-state-alert',
     },
     text: {
       primary: 'bg-transparent text-apex-primary-text hover:bg-apex-primary-soft',
-      destructive: 'bg-transparent text-apple-red hover:bg-apple-red/10',
+      destructive: 'bg-transparent text-apex-state-alert-text hover:bg-apex-state-alert-soft',
     },
   },
 };

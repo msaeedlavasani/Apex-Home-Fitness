@@ -31,7 +31,7 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
   const active = useActiveSection();
 
   return (
-    <div className="min-h-dvh bg-apple-grouped-background text-apple-label">
+    <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
       {/* Scrollable content — the large title lives here (iOS pattern) */}
       <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
         {backHref ? (
@@ -57,7 +57,7 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
         ) : null}
 
         {subtitle ? (
-          <p className="mt-1.5 text-[15px] text-apple-label-secondary">{subtitle}</p>
+          <p className="mt-1.5 text-[15px] text-apex-text-secondary">{subtitle}</p>
         ) : null}
 
         <div className="mt-6">{children}</div>
@@ -66,7 +66,7 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
       {/* Bottom tab bar — frosted glass, safe-area aware */}
       <nav
         aria-label={t('navLabel')}
-        className="glass-strong fixed inset-x-0 bottom-0 z-50 border-t border-apple-separator/60"
+        className="glass-strong fixed inset-x-0 bottom-0 z-50 border-t border-[color:color-mix(in_srgb,var(--apex-border)_60%,transparent)]"
         style={{paddingBottom: 'env(safe-area-inset-bottom)'}}
       >
         <div className="mx-auto grid w-full max-w-3xl grid-cols-4">
@@ -90,7 +90,7 @@ function TabBarItem({item, active}: {item: NavItem; active: boolean}) {
       className={[
         'flex flex-col items-center gap-1 pb-1.5 pt-2.5 transition-colors touch-manipulation',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apex-focus-ring',
-        active ? 'text-apex-primary' : 'text-apple-label-tertiary',
+        active ? 'text-apex-primary' : 'text-apex-text-tertiary',
       ].join(' ')}
     >
       <Icon

@@ -24,32 +24,32 @@ export interface SegmentedControlProps<T extends string = string> {
 }
 
 const CONTAINER: Record<Platform, string> = {
-  ios: 'inline-flex w-full rounded-[10px] bg-apple-fill p-[3px]',
-  android: 'inline-flex w-full rounded-full border border-material-outline p-1',
+  ios: 'inline-flex w-full rounded-[10px] bg-apex-fill p-[3px]',
+  android: 'inline-flex w-full rounded-full border border-apex-border p-1',
   web: 'inline-flex w-full rounded-full border border-apex-border bg-apex-surface p-1 shadow-sm',
 };
 
 const ITEM: Record<Platform, string> = {
   ios: cn(
     'flex flex-1 items-center justify-center gap-1.5 rounded-[7px] px-3 py-2 text-[13px] font-medium',
-    'transition-all duration-200 ease-apple-ease text-apple-label-secondary',
+    'transition-all duration-200 ease-apple-ease text-apex-text-secondary',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)]'
   ),
   android: cn(
     'flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium',
-    'transition-all duration-200 ease-material-standard text-material-on-surface',
+    'transition-all duration-200 ease-material-standard text-apex-text-primary',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)]'
   ),
   web: cn(
     'flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium',
-    'transition-all duration-200 ease-apple-ease text-apex-text-secondary hover:text-apex-text',
+    'transition-all duration-200 ease-apple-ease text-apex-text-secondary hover:text-apex-text-primary',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)]'
   ),
 };
 
 const ITEM_SELECTED: Record<Platform, string> = {
-  ios: 'bg-white text-apple-label shadow-sm dark:bg-apple-background-tertiary',
-  android: 'bg-material-secondary-container text-material-on-secondary-container',
+  ios: 'bg-apex-card text-apex-text-primary shadow-sm',
+  android: 'bg-apex-primary-soft text-apex-primary-text',
   web: 'bg-apex-primary text-apex-on-primary shadow-sm',
 };
 

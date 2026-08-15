@@ -48,21 +48,21 @@ const SURFACES: Record<Platform, Record<CardVariant, string>> = {
   ios: {
     glass: 'glass',
     elevated: 'glass-strong',
-    tonal: 'bg-apex-primary-soft border border-apex-primary/15 backdrop-blur-sm',
-    outlined: 'border border-apple-separator bg-transparent',
+    tonal: 'bg-apex-primary-soft border border-[color:color-mix(in_srgb,var(--apex-primary)_15%,transparent)] backdrop-blur-sm',
+    outlined: 'border border-apex-border bg-transparent',
     solid: 'card-surface',
   },
   android: {
     glass: 'glass', // re-resolves to M3 surface-container-low + elev-1 under data-platform="material"
     elevated: 'glass-strong', // → surface-container-high + elev-3
-    tonal: 'bg-material-secondary-container border border-material-outline-variant',
-    outlined: 'border border-material-outline-variant bg-transparent',
-    solid: 'bg-material-surface-container shadow-elevation-1',
+    tonal: 'bg-apex-primary-soft border border-[color:color-mix(in_srgb,var(--apex-primary)_20%,transparent)]',
+    outlined: 'border border-apex-border bg-transparent',
+    solid: 'bg-apex-surface shadow-elevation-1',
   },
   web: {
     glass: 'glass',
     elevated: 'bg-apex-surface border border-apex-border shadow-apple-lg',
-    tonal: 'bg-apex-primary-soft border border-apex-primary/20',
+    tonal: 'bg-apex-primary-soft border border-[color:color-mix(in_srgb,var(--apex-primary)_20%,transparent)]',
     outlined: 'border-2 border-apex-border bg-transparent',
     solid: 'bg-apex-surface border border-apex-border shadow-apple',
   },
@@ -132,7 +132,7 @@ const CardImpl = forwardRef<any, CardProps & { platform: Platform }>(
             {(title != null || subtitle != null) && (
               <div className="min-w-0 flex-1">
                 {title != null && (
-                  <div className="text-[17px] font-semibold leading-snug text-apex-text">
+                  <div className="text-[17px] font-semibold leading-snug text-apex-text-primary">
                     {title}
                   </div>
                 )}

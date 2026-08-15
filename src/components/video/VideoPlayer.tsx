@@ -112,9 +112,9 @@ function ControlButton({
       }}
       className={cn(
         'flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full',
-        'bg-white/15 text-white backdrop-blur-md transition-all duration-150 ease-apple-ease',
-        'hover:bg-white/30 active:scale-90',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+        'bg-[color:color-mix(in_srgb,var(--apex-media-overlay)_15%,transparent)] text-apex-media-overlay backdrop-blur-md transition-all duration-150 ease-apple-ease',
+        'hover:bg-[color:color-mix(in_srgb,var(--apex-media-overlay)_30%,transparent)] active:scale-90',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--apex-media-overlay)_80%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-apex-media-scrim',
         className
       )}
     >
@@ -418,7 +418,7 @@ export function VideoPlayer({
       }}
       onDoubleClick={toggleFullscreen}
       className={cn(
-        'relative aspect-video w-full select-none overflow-hidden bg-black outline-none',
+        'relative aspect-video w-full select-none overflow-hidden bg-apex-media-scrim outline-none',
         'focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)]',
         className
       )}
@@ -436,7 +436,7 @@ export function VideoPlayer({
       {/* Buffering spinner */}
       {!error && buffering && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow-lg" aria-hidden="true" />
+          <Loader2 className="h-12 w-12 animate-spin text-apex-media-overlay drop-shadow-lg" aria-hidden="true" />
           <span className="sr-only">{t('buffering')}</span>
         </div>
       )}
@@ -450,9 +450,9 @@ export function VideoPlayer({
             event.stopPropagation();
             togglePlay();
           }}
-          className="absolute inset-0 z-10 flex items-center justify-center bg-black/10 transition-colors hover:bg-black/20"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-[color:color-mix(in_srgb,var(--apex-media-scrim)_10%,transparent)] transition-colors hover:bg-[color:color-mix(in_srgb,var(--apex-media-scrim)_20%,transparent)]"
         >
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-apex-primary text-apex-on-primary shadow-2xl ring-4 ring-white/30 transition-transform duration-150 ease-apple-ease hover:scale-105 active:scale-95">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-apex-primary text-apex-on-primary shadow-2xl ring-4 ring-[color:color-mix(in_srgb,var(--apex-media-overlay)_30%,transparent)] transition-transform duration-150 ease-apple-ease hover:scale-105 active:scale-95">
             <Play className="h-9 w-9 translate-x-0.5 fill-current" aria-hidden="true" />
           </span>
         </button>
@@ -460,9 +460,9 @@ export function VideoPlayer({
 
       {/* Fatal error state */}
       {error && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/85 p-6 text-center">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[color:color-mix(in_srgb,var(--apex-media-scrim)_85%,transparent)] p-6 text-center">
           <AlertTriangle className="h-10 w-10 text-apex-state-alert" aria-hidden="true" />
-          <p className="text-sm font-semibold text-white">{t('error')}</p>
+          <p className="text-sm font-semibold text-apex-media-overlay">{t('error')}</p>
           <Button
             size="sm"
             variant="outlined"
@@ -471,7 +471,7 @@ export function VideoPlayer({
               event.stopPropagation();
               retry();
             }}
-            className="text-white [&>span]:text-white"
+            className="text-apex-media-overlay [&>span]:text-apex-media-overlay"
           >
             {t('retry')}
           </Button>
@@ -481,7 +481,7 @@ export function VideoPlayer({
       {/* "Offline downloads coming soon" placeholder pill */}
       {downloadState === 'unavailable' && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center px-4">
-          <div className="flex items-center gap-2 rounded-full bg-black/80 px-4 py-2 text-xs font-semibold text-white shadow-xl ring-1 ring-white/25 backdrop-blur">
+          <div className="flex items-center gap-2 rounded-full bg-[color:color-mix(in_srgb,var(--apex-media-scrim)_80%,transparent)] px-4 py-2 text-xs font-semibold text-apex-media-overlay shadow-xl ring-1 ring-[color:color-mix(in_srgb,var(--apex-media-overlay)_25%,transparent)] backdrop-blur">
             <Download className="h-4 w-4 text-apex-primary" aria-hidden="true" />
             {t('downloadSoon')}
           </div>
@@ -491,7 +491,7 @@ export function VideoPlayer({
       {/* Control bar — auto-hides while playing, reappears on hover/tap */}
       <div
         className={cn(
-          'absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent',
+          'absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[color:color-mix(in_srgb,var(--apex-media-scrim)_90%,transparent)] via-[color:color-mix(in_srgb,var(--apex-media-scrim)_50%,transparent)] to-transparent',
           'px-3 pb-2 pt-12 transition-opacity duration-300 ease-apple-ease sm:px-4 sm:pb-3',
           controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
@@ -509,7 +509,7 @@ export function VideoPlayer({
             className="flex-1"
           />
           <span
-            className="shrink-0 text-xs font-semibold tabular-nums text-white drop-shadow"
+            className="shrink-0 text-xs font-semibold tabular-nums text-apex-media-overlay drop-shadow"
             aria-live="off"
           >
             {formatTime(currentTime)} / {formatTime(duration)}
@@ -546,7 +546,7 @@ export function VideoPlayer({
                 event.stopPropagation();
                 handleDownload();
               }}
-              className="bg-white/15 text-white backdrop-blur-md hover:bg-white/25"
+              className="bg-[color:color-mix(in_srgb,var(--apex-media-overlay)_15%,transparent)] text-apex-media-overlay backdrop-blur-md hover:bg-[color:color-mix(in_srgb,var(--apex-media-overlay)_25%,transparent)]"
               title={t('download')}
             >
               {t('download')}

@@ -18,8 +18,8 @@ export interface CheckboxProps extends Omit<ButtonHTMLAttributes<HTMLButtonEleme
 }
 
 const CHECK_COLOR: Record<Platform, string> = {
-  ios: 'text-white',
-  android: 'text-material-on-primary',
+  ios: 'text-apex-on-primary',
+  android: 'text-apex-on-primary',
   web: 'text-apex-on-primary',
 };
 
@@ -28,22 +28,22 @@ const BOX: Record<Platform, (checked: boolean, indeterminate: boolean) => string
     cn(
       'flex h-[22px] w-[22px] items-center justify-center rounded-[6px] border-2 transition-colors duration-200 ease-apple-ease',
       checked || indeterminate
-        ? 'border-apple-blue bg-apple-blue'
-        : 'border-apple-gray-3 bg-transparent group-hover:border-apple-gray-2'
+        ? 'border-apex-primary bg-apex-primary'
+        : 'border-apex-border bg-transparent group-hover:border-apex-text-secondary'
     ),
   android: (checked, indeterminate) =>
     cn(
       'flex h-5 w-5 items-center justify-center rounded-[3px] transition-colors duration-200 ease-material-standard',
       checked || indeterminate
-        ? 'bg-material-primary'
-        : 'border-2 border-material-outline group-hover:border-material-on-surface-variant'
+        ? 'bg-apex-primary'
+        : 'border-2 border-apex-border group-hover:border-apex-text-secondary'
     ),
   web: (checked, indeterminate) =>
     cn(
       'flex h-5 w-5 items-center justify-center rounded-md transition-all duration-200 ease-apple-ease',
       checked || indeterminate
         ? 'bg-apex-primary'
-        : 'border-2 border-apex-border bg-apex-surface group-hover:border-apex-primary group-hover:ring-4 group-hover:ring-[color:var(--apex-focus-ring)]/30'
+        : 'border-2 border-apex-border bg-apex-surface group-hover:border-apex-primary group-hover:ring-4 group-hover:ring-[color:color-mix(in_srgb,var(--apex-focus-ring)_30%,transparent)]'
     ),
 };
 
@@ -80,7 +80,7 @@ const CheckboxImpl = forwardRef<HTMLButtonElement, CheckboxProps & { platform: P
         {(label != null || description != null) && (
           <div className="min-w-0 pt-1.5">
             {label != null && (
-              <div className="text-[17px] leading-snug text-apex-text">{label}</div>
+              <div className="text-[17px] leading-snug text-apex-text-primary">{label}</div>
             )}
             {description != null && (
               <div className="mt-0.5 text-[13px] leading-snug text-apex-text-secondary">

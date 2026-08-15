@@ -33,29 +33,29 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
   const active = useActiveSection();
 
   return (
-    <div className="min-h-dvh bg-apple-grouped-background text-apple-label">
+    <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
       {/* ── Desktop sidebar ─────────────────────────────────── */}
-      <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-apple-separator bg-apple-grouped-background-secondary/85 backdrop-blur-md md:flex">
+      <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-apex-border bg-[color:color-mix(in_srgb,var(--apex-card)_85%,transparent)] backdrop-blur-md md:flex">
         <BrandLink href={`/${locale}/dashboard`} />
         <nav aria-label={t('navLabel')} className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {APP_NAV.map((item) => (
             <SidebarItem key={item.section} item={item} active={item.section === active} />
           ))}
         </nav>
-        <div className="flex items-center justify-between gap-3 border-t border-apple-separator px-5 py-4">
-          <span className="text-xs text-apple-label-tertiary">{tProfile('footer')}</span>
-          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-xl text-apple-label-secondary transition-colors hover:bg-apple-fill" />
+        <div className="flex items-center justify-between gap-3 border-t border-apex-border px-5 py-4">
+          <span className="text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
+          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
         </div>
       </aside>
 
       {/* ── Mobile top bar + pill nav (mobile-first top-nav) ── */}
       <header
-        className="glass-strong sticky top-0 z-40 border-b border-apple-separator/70 md:hidden"
+        className="glass-strong sticky top-0 z-40 border-b border-[color:color-mix(in_srgb,var(--apex-border)_70%,transparent)] md:hidden"
         style={{paddingTop: 'env(safe-area-inset-top)'}}
       >
         <div className="flex h-14 items-center justify-between px-4">
           <BrandLink href={`/${locale}/dashboard`} compact />
-          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full text-apple-label-secondary transition-colors hover:bg-apple-fill" />
+          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
         </div>
         <nav aria-label={t('navLabel')} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3 pb-3">
           {APP_NAV.map((item) => (
@@ -88,7 +88,7 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
           ) : null}
 
           {subtitle ? (
-            <p className="mt-1.5 text-[15px] text-apple-label-secondary md:text-base">{subtitle}</p>
+            <p className="mt-1.5 text-[15px] text-apex-text-secondary md:text-base">{subtitle}</p>
           ) : null}
 
           <div className="mt-6 md:mt-8">{children}</div>
@@ -137,7 +137,7 @@ function SidebarItem({item, active}: {item: NavItem; active: boolean}) {
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apex-focus-ring',
         active
           ? 'bg-apex-primary-soft text-apex-primary'
-          : 'text-apple-label-secondary hover:bg-apple-fill hover:text-apple-label',
+          : 'text-apex-text-secondary hover:bg-apex-fill hover:text-apex-text-primary',
       ].join(' ')}
     >
       {active ? (
@@ -165,7 +165,7 @@ function PillItem({item, active}: {item: NavItem; active: boolean}) {
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring',
         active
           ? 'bg-apex-primary-soft text-apex-primary'
-          : 'text-apple-label-secondary hover:bg-apple-fill',
+          : 'text-apex-text-secondary hover:bg-apex-fill',
       ].join(' ')}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />

@@ -102,6 +102,15 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Origin', value: '*' },
         ],
       },
+      {
+        // Web app manifest — serve with the manifest MIME type so PWA
+        // installability checks and Bubblewrap (TWA packaging) accept it.
+        source: '/manifest.json',
+        headers: [
+          { key: 'Content-Type', value: 'application/manifest+json' },
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
     ];
   },
 };

@@ -4,14 +4,20 @@
 /*     navigator.serviceWorker.register('/service-worker.js');        */
 /*   }                                                                */
 
-const CACHE_NAME = 'next-pwa-cache-v1';
+// Bump this version on EVERY release that changes precached assets or the
+// app shell. A new CACHE_NAME triggers `activate`, which purges stale caches
+// so users never run an outdated offline shell (see RELEASING.md).
+const CACHE_NAME = 'next-pwa-cache-v2';
 
 // Assets to precache on install (adjust to your actual build output).
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
+  '/icons/icon-192x192-maskable.png',
   '/icons/icon-512x512.png',
+  '/icons/icon-512x512-maskable.png',
+  '/icons/apple-touch-icon.png',
 ];
 
 // Offline fallback for navigation requests.

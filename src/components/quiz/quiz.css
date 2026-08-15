@@ -1,10 +1,12 @@
-/* Onboarding quiz styles — plain CSS, no dependencies. */
+/* Onboarding quiz styles — plain CSS, no dependencies.
+   Colors resolve to Design System v2.0 `apex-*` tokens (globals.css),
+   so every value flips automatically between light and dark mode. */
 
 .quiz {
   max-width: 640px;
   margin: 0 auto;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #1f2937;
+  color: var(--apex-text-primary);
   line-height: 1.5;
 }
 
@@ -19,7 +21,7 @@
 }
 .quiz__subtitle {
   margin: 0;
-  color: #6b7280;
+  color: var(--apex-text-secondary);
 }
 
 /* Progress */
@@ -28,13 +30,13 @@
 }
 .quiz-progress__track {
   height: 8px;
-  background: #e5e7eb;
+  background: var(--apex-fill);
   border-radius: 999px;
   overflow: hidden;
 }
 .quiz-progress__bar {
   height: 100%;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  background: linear-gradient(90deg, var(--apex-primary), var(--apex-state-rest));
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -42,7 +44,7 @@
   display: block;
   margin-top: 6px;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--apex-text-secondary);
 }
 
 /* Step shell */
@@ -57,11 +59,11 @@
   padding: 0;
 }
 .quiz-step__subtitle {
-  color: #6b7280;
+  color: var(--apex-text-secondary);
   margin: 4px 0 16px;
 }
 .quiz-step__error {
-  color: #dc2626;
+  color: var(--apex-state-alert-text);
   font-size: 0.875rem;
   margin: 12px 0 0;
 }
@@ -75,9 +77,9 @@
 .quiz-option {
   text-align: left;
   padding: 14px 16px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--apex-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--apex-card);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -86,18 +88,18 @@
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .quiz-option:hover {
-  border-color: #c7d2fe;
+  border-color: var(--apex-primary-border);
 }
 .quiz-option--selected {
-  border-color: #4f46e5;
-  background: #eef2ff;
+  border-color: var(--apex-primary);
+  background: var(--apex-primary-soft);
 }
 .quiz-option__title {
   font-weight: 600;
 }
 .quiz-option__description {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--apex-text-secondary);
 }
 
 /* Checkbox rows (equipment / limitations) */
@@ -111,17 +113,17 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--apex-border);
   border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .quiz-check:hover {
-  border-color: #c7d2fe;
+  border-color: var(--apex-primary-border);
 }
 .quiz-check--checked {
-  border-color: #4f46e5;
-  background: #eef2ff;
+  border-color: var(--apex-primary);
+  background: var(--apex-primary-soft);
 }
 .quiz-check__label {
   font-weight: 500;
@@ -129,7 +131,7 @@
 .quiz-check input {
   width: 18px;
   height: 18px;
-  accent-color: #4f46e5;
+  accent-color: var(--apex-primary);
   cursor: pointer;
 }
 
@@ -147,14 +149,14 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--apex-border);
   border-radius: 10px;
   font: inherit;
   resize: vertical;
 }
 .quiz-field__input:focus {
   outline: none;
-  border-color: #4f46e5;
+  border-color: var(--apex-primary);
 }
 
 /* Navigation */
@@ -179,19 +181,19 @@
   transition: background 0.15s ease, opacity 0.15s ease;
 }
 .quiz-nav__back {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--apex-surface);
+  color: var(--apex-text-primary);
 }
 .quiz-nav__back:hover {
-  background: #e5e7eb;
+  background: var(--apex-fill);
 }
 .quiz-nav__next {
-  background: #4f46e5;
-  color: #ffffff;
+  background: var(--apex-primary);
+  color: var(--apex-on-primary);
   margin-left: auto;
 }
 .quiz-nav__next:hover {
-  background: #4338ca;
+  background: var(--apex-primary-hover);
 }
 .quiz-nav__back:disabled,
 .quiz-nav__next:disabled {
@@ -209,43 +211,43 @@
 /* dark mode so the Visual-style step's effect is visible immediately. */
 /* ------------------------------------------------------------------ */
 .dark .quiz {
-  color: #e5e7eb;
+  color: var(--apex-text-primary);
 }
 .dark .quiz__subtitle,
 .dark .quiz-step__subtitle,
 .dark .quiz-progress__label,
 .dark .quiz-option__description {
-  color: #9ca3af;
+  color: var(--apex-text-secondary);
 }
 .dark .quiz-option,
 .dark .quiz-check,
 .dark .quiz-field__input {
-  background: #1f2937;
-  border-color: #374151;
-  color: #e5e7eb;
+  background: var(--apex-surface);
+  border-color: var(--apex-border);
+  color: var(--apex-text-primary);
 }
 .dark .quiz-option:hover,
 .dark .quiz-check:hover {
-  border-color: #6366f1;
+  border-color: var(--apex-primary);
 }
 .dark .quiz-option--selected,
 .dark .quiz-check--checked {
-  background: #312e81;
-  border-color: #818cf8;
+  background: var(--apex-primary-soft);
+  border-color: var(--apex-primary-border);
 }
 .dark .quiz-field__input::placeholder {
-  color: #6b7280;
+  color: var(--apex-text-tertiary);
 }
 .dark .quiz-progress__track {
-  background: #374151;
+  background: var(--apex-fill);
 }
 .dark .quiz-nav__back {
-  background: #374151;
-  color: #e5e7eb;
+  background: var(--apex-fill);
+  color: var(--apex-text-primary);
 }
 .dark .quiz-nav__back:hover {
-  background: #4b5563;
+  background: var(--apex-surface);
 }
 .dark .quiz-step__error {
-  color: #f87171;
+  color: var(--apex-state-alert-text);
 }

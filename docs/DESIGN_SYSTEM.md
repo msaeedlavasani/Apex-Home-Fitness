@@ -1,6 +1,6 @@
 # Apex Home Fitness — Multi-Platform Design System (v2.0)
 
-> **Status:** Production-Ready · **Last updated:** 2026-08-15
+> **Version:** 2.0 · **Status:** Production-Ready · **Last updated:** 2026-08-15
 >
 > A unified design language for home fitness, ensuring a consistent brand identity across **iOS**, **Android**, and **Web**, while respecting the native user experience patterns of each platform.
 
@@ -8,9 +8,9 @@
 
 ## 1. Core Principles
 
-- **Energetic & Focused:** Use warm, high-energy primary colors to motivate, paired with calm neutrals to maintain focus.
-- **Platform Native (Native-First):** Respect Apple HIG (iOS) and Material 3 (Android) navigation and interaction patterns. Brand is the "paint," Platform is the "architecture."
-- **Exercise-Safe UX:** High-contrast, large touch targets, and clear state-based color coding for use during intense physical activity.
+- **Energetic & Focused:** High-energy primary colors (Coral) motivate, while calm neutrals maintain focus.
+- **Platform Native (Native-First):** Respect platform idioms (Apple HIG / Material 3) for navigation, modals, and interaction. Brand is the "paint," Platform is the "architecture."
+- **Exercise-Safe UX:** High-visibility, large touch targets, and clear state-based color coding for use during intense physical activity.
 - **Inclusive & Accessible:** Native support for RTL (Persian), screen readers, and high-contrast accessibility from day one.
 
 ---
@@ -19,19 +19,17 @@
 
 ### 2.1 Brand Primary — Apex Coral `#FF4500`
 
-Used for primary CTAs, active exercise phases, and progress arcs.
-
 | Token | Light Value | Dark Value | Purpose |
 | :--- | :--- | :--- | :--- |
 | `--apex-primary` | `#FF4500` | `#FF6B3D` | Primary fill (Buttons, Active phase) |
 | `--apex-on-primary` | `#FFFFFF` | `#1C1C1E` | Text/Icon on primary fill |
-| `--apex-primary-text` | `#D93D00` | `#FF8A5C` | AA body text on neutral backgrounds |
-| `--apex-primary-soft` | `rgba(255, 69, 0, 0.10)` | `rgba(255, 107, 61, 0.16)` | Selected state background |
+| `--apex-primary-text` | `#D93D00` | `#FF8A5C` | Accessible text on neutral backgrounds |
+| `--apex-primary-soft` | `rgba(255, 69, 0, 0.10)` | `rgba(255, 107, 61, 0.16)` | Selected state / Soft highlight |
 | `--apex-primary-border` | `rgba(255, 69, 0, 0.35)` | `rgba(255, 107, 61, 0.45)` | Subtle primary outlines |
 
-### 2.2 Neutral System (Semantic)
+### 2.2 Neutral System (Semantic Ramp)
 
-The neutral ramp is semantic. Light mode uses a "calm cool gray" scale; Dark mode uses "deep obsidian."
+The neutral ramp is purely semantic to avoid developer error in dark mode.
 
 | Token | Light | Dark | Purpose |
 | :--- | :--- | :--- | :--- |
@@ -39,152 +37,120 @@ The neutral ramp is semantic. Light mode uses a "calm cool gray" scale; Dark mod
 | `--apex-surface` | `#F2F2F7` | `#1C1C1E` | Secondary background / Grouped lists |
 | `--apex-card` | `#FFFFFF` | `#2C2C2E` | Card / Dialog / Sheet surface |
 | `--apex-text-primary` | `#000000` | `#FFFFFF` | Primary headings and body |
-| `--apex-text-secondary`| `rgba(60,60,67, 0.6)` | `rgba(235,235,245, 0.6)` | Subtitles and secondary info |
-| `--apex-border` | `rgba(60,60,67, 0.2)` | `rgba(84,84,88, 0.6)` | Separators and outlines |
-| `--apex-fill` | `rgba(120,120,128, 0.2)`| `rgba(120,120,128, 0.3)`| Neutral control background |
+| `--apex-text-secondary`| `rgba(60,60,67, 0.6)` | `rgba(235,235,245, 0.6)` | Subtitles and captions |
+| `--apex-border` | `rgba(60,60,67, 0.2)` | `rgba(84,84,88, 0.6)` | Hairlines and separators |
+| `--apex-fill` | `rgba(120,120,128, 0.2)`| `rgba(120,120,128, 0.3)`| Control fills (chips, inputs) |
 
 ### 2.3 Workout State Tokens
 
-| State | Fill (L/D) | On-Fill (L/D) | Soft BG (L/D) | Accessible Text (L/D) |
+| State | Fill (L/D) | On-Fill (L/D) | Soft BG (L/D) | Border (L/D) |
 | :--- | :--- | :--- | :--- | :--- |
-| **Idle** | `#8E8E93` / `#8E8E93` | `#FFFFFF` / `#FFFFFF` | `rgba(142,142,147, 0.1)` | `#636366` / `#AEAEB2` |
-| **Start** | `#FF4500` / `#FF6B3D` | `#FFFFFF` / `#1C1C1E` | `rgba(255,69,0, 0.1)` | `#D93D00` / `#FF8A5C` |
-| **Rest** | `#FF9500` / `#FF9F0A` | `#1C1C1E` / `#1C1C1E` | `rgba(255,149,0, 0.1)`| `#A05A00` / `#FFB340` |
-| **Success**| `#34C759` / `#30D158` | `#1C1C1E` / `#1C1C1E` | `rgba(52,199,89, 0.1)` | `#1E7A31` / `#40FF7C` |
-| **Alert** | `#FF3B30` / `#FF453A` | `#FFFFFF` / `#FFFFFF` | `rgba(255,59,48, 0.1)` | `#D70015` / `#FF6961` |
+| **Idle** | `#8E8E93` | `#FFFFFF` | `rgba(142,142,147, 0.1)` | `#C7C7CC` / `#48484A` |
+| **Start** | `#FF4500` / `#FF6B3D` | `#FFFFFF` / `#1C1C1E` | `rgba(255,69,0, 0.1)` | `rgba(255,69,0, 0.35)` |
+| **Rest** | `#FF9500` / `#FF9F0A` | `#1C1C1E` / `#1C1C1E` | `rgba(255,149,0, 0.1)`| `rgba(255,149,0, 0.35)` |
+| **Success**| `#34C759` / `#30D158` | `#1C1C1E` / `#1C1C1E` | `rgba(52,199,89, 0.1)` | `rgba(52,199,89, 0.35)` |
+| **Alert** | `#FF3B30` / `#FF453A` | `#FFFFFF` / `#FFFFFF` | `rgba(255,59,48, 0.1)` | `rgba(255,59,48, 0.40)` |
 
 ---
 
-## 3. Platform Rules
+## 3. Platform Idioms
 
 ### 3.1 iOS (Apple HIG)
-- **Navigation:** Use Bottom Tab Bar. Large titles that collapse on scroll.
-- **Modals:** Use native Sheets with "grabber" handles.
-- **Feedback:** Use Taptic Engine (UIFeedbackGenerator).
+- **Navigation:** Tab Bar (bottom). Navigation Bar with Large Titles.
+- **Controls:** Standard Buttons (`RoundedRectangle` with `continuous` style).
+- **Feedback:** Haptic (`UIImpactFeedbackGenerator`).
 - **Touch Target:** Minimum **44 × 44 pt**.
 
 ### 3.2 Android (Material 3)
-- **Navigation:** Use Navigation Bar (bottom). Standard Top App Bar with centered or left-aligned title.
-- **Modals:** Use Modal Bottom Sheets with M3 scrim.
-- **Feedback:** Standard Android haptics (VibrationEffect).
-- **Touch Target:** Minimum **48 × 48 dp** (Visual size can be 40dp).
+- **Navigation:** Navigation Bar (bottom). Top App Bar (centered title).
+- **Controls:** M3 Filled/Tonal/Outlined Buttons.
+- **Feedback:** Standard vibration.
+- **Touch Target:** Minimum **48 × 48 dp**. (Visual size can be 40dp, but touch area must be 48dp).
 
 ### 3.3 Web / Desktop
-- **Layout:** Responsive sidebar for desktop/tablet; bottom nav for mobile web.
-- **Transitions:** Smooth CSS transitions (200-300ms).
-- **Touch Target:** Same as iOS/Android for mobile web; min **32px** for mouse/pointer.
+- **Navigation:** Responsive Sidebar (Desktop/Tablet) or Bottom Nav (Mobile).
+- **Interaction:** Hover states (10% darkening/elevation increase), Focus rings.
+- **Touch Target:** 48px for mobile, 32px for mouse.
 
 ---
 
 ## 4. RTL & Persian (fa) Support
 
-- **Font Priority:** `Vazirmatn` MUST be the first priority for Persian content.
-- **Letter Spacing:** Set to `0` for Persian. Never use negative tracking for Farsi.
-- **Mirroring:**
-  - Flip back/forward arrows.
-  - Reverse horizontal progress bars.
-  - Reverse layouts (Sidebar on the right for Web).
-  - Navigation order (Right to Left).
-- **Numbers:** Use Tabular Numerals for timers but ensure Persian digit rendering is supported where localized.
+- **Typography:** `Vazirmatn` MUST be the first priority for Persian.
+- **Tracking:** Set to `0` for Persian. **Negative tracking is strictly forbidden** for RTL.
+- **Directionality:**
+  - `lang="fa" dir="rtl"` on the `<html>` tag.
+  - Mirror icons with directional meaning (back arrows, progress flow).
+  - Navigation order: Dashboard (Right-most) → Profile (Left-most).
 
 ---
 
-## 5. Accessibility Matrix (WCAG 2.1 AA)
+## 5. Component Specifications
 
-| Pair | Light Ratio | Dark Ratio | AA Compliance |
-| :--- | :--- | :--- | :--- |
-| White on primary fill | 3.44 : 1 | 6.02 : 1 | ✅ Large/UI (L), ✅ All (D) |
-| Primary text on bg | 4.55 : 1 | 7.33 : 1 | ✅ All |
-| Black on rest fill | 8.28 : 1 | 8.28 : 1 | ✅ All |
-| White on alert fill | 3.55 : 1 | 3.55 : 1 | ✅ Large/UI |
+### 5.1 Buttons
+- **Primary:** `--apex-primary` fill, `--apex-on-primary` text. Radius: 12pt (xl).
+- **Secondary:** `--apex-primary-soft` fill, `--apex-primary-text`.
+- **Tertiary:** Transparent fill, `--apex-primary-text`.
+- **Destructive:** `--apex-state-alert` fill, white text.
 
----
+### 5.2 Exercise Card
+- **Radius:** 20pt (Continuous corners).
+- **Style:** `.glass` for iOS, `.surface-1` for Android.
+- **Content:** Large image, Bold Title 2, localized labels.
 
-## 6. Component Specifications
+### 5.3 Timer & Progress
+- **Circular Progress Ring:** 8pt width. Starts at Top (12 o'clock). Color-coded by state (Start/Rest).
+- **Countdown Timer:** Large Title font, Mono stack. Tabular numerals. Pulse animation below 5s.
 
-### 6.1 Buttons
-- **Primary:** Full apex-primary fill. Rounded-xl (12pt).
-- **Secondary:** apex-primary-soft fill with primary-text.
-- **Tertiary:** No fill, apex-primary-text.
-- **Destructive:** alert fill with white text.
-- **Interaction:** 
-  - Hover: Darken by 10% (Web).
-  - Pressed: Scale to 0.96 (iOS) or Ripple (Android).
-
-### 6.2 Workout Hero
-- **Circular Progress Ring:** 
-  - Track: 8pt width, `--apex-border`. 
-  - Fill: 8pt width, dynamic state color (Start/Rest).
-  - Glow: 15% opacity drop-shadow of fill color.
-- **Timer:** Bold, Large Title size. Mono font stack.
-
-### 6.3 Exercise Card
-- **Radius:** 20pt (Continuous).
-- **Elevation:** 
-  - iOS: `.glass` (frosted).
-  - Android: `.surface-1` (tonal).
-- **Interaction:** Card highlights on press.
+### 5.4 Navigation
+- **Mobile Bottom Nav:** 56pt (iOS) / 80dp (Android) height. 4-5 slots maximum.
+- **Desktop Sidebar:** 280px width. Fixed position. Glassmorphism background.
 
 ---
 
-## 7. Responsive Behavior (Web)
+## 6. Accessibility & Motion
 
-- **Mobile (< 640px):** Single column. Bottom navigation. Full-width buttons.
-- **Tablet (640px - 1024px):** Two columns (Exercise list | Details). Sidebar navigation.
-- **Desktop (> 1024px):** Three columns or large layout. Sidebar always visible. Video player maximized (16:9 ratio).
+- **WCAG 2.1 AA:** All color pairs verified for 4.5:1 ratio (Body) or 3:1 (UI).
+- **Reduced Motion:** Disable non-essential scaling/sliding animations via `prefers-reduced-motion`.
+- **Screen Readers:** Mandatory `aria-label` for all icon-only buttons (Start, Pause, Skip).
+- **Keyboard:** Logical tab order. Persistent focus ring (coral, 2px offset).
 
 ---
 
-## 8. Implementation Examples
+## 7. Implementation Snippets
 
-### Tailwind CSS (Web)
+### Tailwind Config (Updated)
 ```js
-// tailwind.config.js
-theme: {
-  extend: {
-    colors: {
-      apex: {
-        primary: 'var(--apex-primary)',
-        'primary-text': 'var(--apex-primary-text)',
-        state: {
-          start: 'var(--apex-state-start)',
-          rest: 'var(--apex-state-rest)',
-          success: 'var(--apex-state-success)',
-          alert: 'var(--apex-state-alert)',
-        }
-      }
-    }
+apex: {
+  primary: 'var(--apex-primary)',
+  'primary-text': 'var(--apex-primary-text)',
+  state: {
+    start: 'var(--apex-state-start)',
+    'start-soft': 'var(--apex-state-start-soft)',
+    'start-text': 'var(--apex-state-start-text)',
+    // ... all other states mapped 1:1
   }
 }
 ```
 
 ### SwiftUI (iOS)
 ```swift
-struct ApexPrimaryButton: View {
-    var title: String
-    var body: some View {
-        Text(title)
-            .font(.headline)
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color("ApexPrimary"))
-            .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
+Button(action: startWorkout) {
+    Text("Start Workout")
+        .font(.headline)
+        .padding()
+        .background(Color("ApexPrimary"))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 }
 ```
 
 ### Jetpack Compose (Android)
 ```kotlin
-@Composable
-fun ApexPrimaryButton(text: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(56.dp), // 48dp touch target
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = ApexPrimary)
-    ) {
-        Text(text = text, style = MaterialTheme.typography.labelLarge)
-    }
+Button(
+    onClick = { startWorkout() },
+    modifier = Modifier.height(56.dp).fillMaxWidth(), // 48dp target
+    shape = RoundedCornerShape(16.dp)
+) {
+    Text("Start Workout")
 }
 ```

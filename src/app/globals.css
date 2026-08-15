@@ -82,6 +82,7 @@
   --apex-on-primary: #ffffff;
   --apex-primary-text: #d93d00;
   --apex-primary-soft: rgba(255, 69, 0, 0.10);
+  --apex-primary-soft-strong: rgba(255, 69, 0, 0.18);
   --apex-primary-border: rgba(255, 69, 0, 0.35);
   --apex-focus-ring: rgba(255, 69, 0, 0.35);
   --apex-gradient-brand: linear-gradient(135deg, #ff4500 0%, #ff9500 100%);
@@ -91,7 +92,9 @@
   --apex-surface: #f2f2f7;
   --apex-card: #ffffff;
   --apex-text-primary: #000000;
+  --apex-text: var(--apex-text-primary); /* alias used by workout/social components */
   --apex-text-secondary: rgba(60, 60, 67, 0.60);
+  --apex-text-tertiary: rgba(60, 60, 67, 0.30);
   --apex-border: rgba(60, 60, 67, 0.20);
   --apex-fill: rgba(120, 120, 128, 0.20);
 
@@ -106,6 +109,12 @@
   --apex-on-success: #1c1c1e;             --apex-state-success-text: #1e7a31;
   --apex-state-alert: #ff3b30;            --apex-state-alert-soft: rgba(255, 59, 48, 0.10);
   --apex-on-alert: #ffffff;               --apex-state-alert-text: #d70015;
+
+  /* ── Media layer (video player chrome over video content) ──
+     Mode-independent: white text/icons + black scrims must stay
+     readable regardless of light/dark theme. */
+  --apex-media-overlay: #ffffff;
+  --apex-media-scrim: #000000;
 
   /* ── Workout components (rings / timers / counters) ─────── */
   --workout-ring-track: rgba(120, 120, 128, 0.18);
@@ -259,6 +268,7 @@
   --apex-on-primary: #1c1c1e;
   --apex-primary-text: #ff8a5c;
   --apex-primary-soft: rgba(255, 107, 61, 0.16);
+  --apex-primary-soft-strong: rgba(255, 107, 61, 0.28);
   --apex-primary-border: rgba(255, 107, 61, 0.45);
   --apex-focus-ring: rgba(255, 107, 61, 0.45);
   --apex-gradient-brand: linear-gradient(135deg, #ff6b3d 0%, #ff9f0a 100%);
@@ -268,7 +278,9 @@
   --apex-surface: #1c1c1e;
   --apex-card: #2c2c2e;
   --apex-text-primary: #ffffff;
+  --apex-text: var(--apex-text-primary); /* alias used by workout/social components */
   --apex-text-secondary: rgba(235, 235, 245, 0.60);
+  --apex-text-tertiary: rgba(235, 235, 245, 0.30);
   --apex-border: rgba(84, 84, 88, 0.60);
   --apex-fill: rgba(120, 120, 128, 0.36);
 
@@ -432,6 +444,18 @@
        leave a gap while the mobile URL bar collapses/expands. */
     min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  /* RTL & Persian (fa) Specific Rules */
+  [dir='rtl'], [lang='fa'] {
+    font-family: 'Vazirmatn', theme('fontFamily.sans');
+    letter-spacing: 0 !important;
+  }
+
+  /* RTL & Persian (fa) Specific Rules */
+  [dir='rtl'], [lang='fa'] {
+    font-family: 'Vazirmatn', theme('fontFamily.sans');
+    letter-spacing: 0 !important;
   }
 
   /* RTL & Persian (fa) Specific Rules */
@@ -614,5 +638,25 @@
   }
   .animate-workout-pulse {
     animation: workout-pulse 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+  }
+
+  /* Phase-enter transition for workout state changes
+     (READY ⇄ EXERCISING ⇄ RESTING ⇄ COMPLETED). Only `opacity` and
+     `transform` are animated, so the browser promotes the layer to the
+     compositor and the swap holds 60fps even on mid-range phones while
+     the progress ring refills. Disabled automatically by the global
+     prefers-reduced-motion rule (0.01ms) and by WorkoutPlayer's JS gate. */
+  @keyframes phase-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.995);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  .animate-phase-enter {
+    animation: phase-enter 240ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
 }

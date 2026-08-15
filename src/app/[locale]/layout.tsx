@@ -70,15 +70,26 @@ export async function generateMetadata({
   const description = t('description');
   const ogLocale = locale === 'fa' ? 'fa_IR' : 'en_US';
 
-  // Absolute URL base for OG/social images (set NEXT_PUBLIC_SITE_URL in
-  // production; omitted locally so relative URLs are used).
+  // Absolute URL base for canonical/OG/social URLs (set NEXT_PUBLIC_SITE_URL
+  // in production; omitted locally so relative URLs are used).
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const absUrl = (path: string) =>
+    siteUrl ? new URL(path, siteUrl).toString() : path;
+  const canonical = absUrl(`/${locale}`);
+  // OG/social image — the 512×512 app icon (swap for a 1200×630 OG banner
+  // once a dedicated social image asset exists).
+  const ogImage = absUrl('/icons/icon-512x512.png');
 
   return {
     ...(siteUrl ? {metadataBase: new URL(siteUrl)} : {}),
 
     // Bilingual title & description — resolved per-locale at request time.
-    title,
+    // `template` appends the localized site name to child pages' titles
+    // (e.g. "Settings | Apex Home Fitness").
+    title: {
+      default: title,
+      template: `%s | ${title}`,
+    },
     description,
 
     // PWA: link the web app manifest (public/manifest.json).
@@ -103,26 +114,26 @@ export async function generateMetadata({
       statusBarStyle: 'default',
     },
 
-    // Bilingual SEO: canonical + hreflang alternates for each locale root.
+    // Bilingual SEO: absolute canonical + hreflang alternates for each locale.
     alternates: {
-      canonical: `/${locale}`,
+      canonical,
       languages: {
-        en: '/en',
-        fa: '/fa',
-        'x-default': '/en',
+        en: absUrl('/en'),
+        fa: absUrl('/fa'),
+        'x-default': absUrl('/en'),
       },
     },
 
     openGraph: {
       type: 'website',
       locale: ogLocale,
-      url: `/${locale}`,
+      url: canonical,
       siteName: 'Apex Home Fitness',
       title,
       description,
       images: [
         {
-          url: '/icons/icon-512x512.png',
+          url: ogImage,
           width: 512,
           height: 512,
           alt: title,
@@ -135,7 +146,7 @@ export async function generateMetadata({
       card: 'summary',
       title,
       description,
-      images: ['/icons/icon-512x512.png'],
+      images: [ogImage],
     },
 
     robots: {
@@ -170,6 +181,57 @@ export default async function LocaleLayout({
   const userAgent = headers().get('user-agent');
   const messages = await getMessages();
 
+  // --- Schema.org structured data (JSON-LD, bilingual) ---------------------
+  // WebSite + Organization graph rendered on every page. `inLanguage`, name
+  // and description follow the active locale; `alternateName` carries the
+  // other locale's brand name so both languages resolve to one entity.
+  // The fallback origin is used only when NEXT_PUBLIC_SITE_URL is unset
+  // (local development).
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = siteUrl ?? 'https://apexfit.app';
+  const seoT = await getTranslations({locale, namespace: 'Metadata'});
+  const seoTitle = seoT('title');
+  const seoDescription = seoT('description');
+  const alternateName =
+    locale === 'fa' ? 'Apex Home Fitness' : 'اپکس فیتنس خانگی';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': `${origin}/#website`,
+        url: origin,
+        name: seoTitle,
+        alternateName,
+        description: seoDescription,
+        inLanguage: locale,
+        publisher: {'@id': `${origin}/#organization`},
+      },
+      {
+        '@type': 'Organization',
+        '@id': `${origin}/#organization`,
+        name: 'Apex Home Fitness',
+        url: origin,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${origin}/icons/icon-512x512.png`,
+          width: 512,
+          height: 512,
+        },
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: 'support@apexfit.app',
+          contactType: 'customer support',
+          availableLanguage: ['en', 'fa'],
+        },
+      },
+    ],
+  };
+
+  // Escape `<` so translated strings can never break out of the script tag.
+  const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+
   return (
     // data-platform="ios" is the default platform for the multi-platform
     // design system; PlatformProvider flips it to "material" at runtime when
@@ -178,6 +240,11 @@ export default async function LocaleLayout({
       <head>
         {/* Applies the persisted/system theme class to <html> before hydration (prevents FOUC) */}
         <ThemeScript />
+        {/* Schema.org structured data (WebSite + Organization, bilingual). */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{__html: jsonLdHtml}}
+        />
       </head>
       <body className={`${inter.variable} ${roboto.variable}`}>
         <ThemeProvider>

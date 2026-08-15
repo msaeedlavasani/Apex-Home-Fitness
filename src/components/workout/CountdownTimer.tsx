@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/cn';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { WORKOUT_TONES, type WorkoutTone } from './workoutTokens';
 
 export type TimerSize = 'lg' | 'xl' | '2xl';
@@ -86,10 +87,11 @@ export function CountdownTimer({
   className,
 }: CountdownTimerProps) {
   const tokens = WORKOUT_TONES[tone];
+  const reducedMotion = useReducedMotion();
   const clamped = Math.max(0, Math.floor(seconds));
 
   const isLow =
-    mode === 'countdown' && pulseOnLow && clamped > 0 && clamped <= lowThreshold;
+    mode === 'countdown' && pulseOnLow && !reducedMotion && clamped > 0 && clamped <= lowThreshold;
   const isCritical = mode === 'countdown' && clamped > 0 && clamped <= 3;
 
   const color = isCritical ? 'var(--apex-state-alert)' : tokens.text;

@@ -207,6 +207,7 @@ module.exports = {
           'on-primary': 'var(--apex-on-primary)',
           'primary-text': 'var(--apex-primary-text)',
           'primary-soft': 'var(--apex-primary-soft)',
+          'primary-soft-strong': 'var(--apex-primary-soft-strong)',
           'primary-border': 'var(--apex-primary-border)',
           'focus-ring': 'var(--apex-focus-ring)',
           bg: 'var(--apex-bg)',
@@ -214,8 +215,12 @@ module.exports = {
           card: 'var(--apex-card)',
           'text-primary': 'var(--apex-text-primary)',
           'text-secondary': 'var(--apex-text-secondary)',
+          'text-tertiary': 'var(--apex-text-tertiary)',
           border: 'var(--apex-border)',
           fill: 'var(--apex-fill)',
+          // Media layer (video chrome over content) — mode-independent.
+          'media-overlay': 'var(--apex-media-overlay)',
+          'media-scrim': 'var(--apex-media-scrim)',
           state: {
             idle: 'var(--apex-state-idle)',
             'idle-soft': 'var(--apex-state-idle-soft)',
@@ -238,6 +243,7 @@ module.exports = {
             'alert-text': 'var(--apex-state-alert-text)',
           }
         },
+
       },
       borderRadius: {
         // Continuous corner scale for cards/panels (Apple HIG):
