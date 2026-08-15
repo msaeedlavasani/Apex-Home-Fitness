@@ -156,6 +156,15 @@ test.describe('Quiz — Visual style step', () => {
     await page.getByRole('button', {name: /^تیره/}).click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     await expect(page.locator('main')).toHaveCSS('background-color', 'rgb(28, 28, 30)')
+    await expect(page.locator('.quiz-option--selected .quiz-option__title')).toHaveCSS('color', 'rgb(255, 255, 255)')
+    await expect.poll(
+      async () => {
+        const snapshot = await page.evaluate(contrastSnapshot)
+        const values = Object.values(snapshot.elements).filter((value): value is number => value !== null)
+        return Math.min(...values)
+      },
+      {timeout: 5_000, intervals: [100, 250, 500]},
+    ).toBeGreaterThanOrEqual(MIN_RATIO)
     let snap = await page.evaluate(contrastSnapshot)
     expect(snap.mainBgLuminance).toBeLessThan(0.2)
     for (const [name, value] of Object.entries(snap.elements)) {
