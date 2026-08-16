@@ -20,7 +20,7 @@
 2. **[x] پیاده‌سازی verify OTP و session حساب:** کد hash‌شده، expiry، single-use، attempt limit و اتصال fail-closed به Supabase Auth/SSR؛ بدون service-role در client.
 3. **[x] اتصال Landing تا Dashboard با OTP:** Landing دوزبانه، draft کوییز با expiry، OTP handoff، save idempotent، generation idempotent و redirect به Dashboard.
 4. **[x] افزودن auth UI و route protection:** routeهای دوزبانه OTP، refresh session، logout، public-route allowlist و محافظت dashboard/workout/history/analytics/challenges/profile.
-5. **[x] آماده‌سازی production و smoke test OTP:** env contract، checklist، readiness guard، mock smoke و go/no-go مستند شد. **Go نهایی production هنوز فقط پس از ثبت credentialهای واقعی، template فعال SMS.ir، تنظیم Supabase/domain و smoke test HTTPS با شماره رضایت‌دار صادر می‌شود.**
+5. **[x] آماده‌سازی production و smoke test OTP:** env contract، checklist، readiness guard، mock smoke و go/no-go مستند شد (مستند در `docs/OTP_LAUNCH_READINESS.md`). **Go نهایی production هنوز فقط پس از ثبت credentialهای واقعی، template فعال SMS.ir، تنظیم Supabase/domain و smoke test HTTPS با شماره رضایت‌دار صادر می‌شود.**
 
 ## Batch 13: داده، تایپوگرافی و navigation دوزبانه 🎯 (تکمیل شد)
 1. **[x] empty-state data cards برای History و Analytics:** کارت‌های داده، skeleton و empty-state دوزبانه با fallback امن برای نبود داده/خطای backend.
