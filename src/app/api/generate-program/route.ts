@@ -381,9 +381,11 @@ export async function POST(req: Request) {
         - Injuries/Limitations: ${limitations.join(', ')}
         - Details: ${limitationsDetails || 'None'}
         - Rest days (weekdays that MUST NOT contain any workout): ${restDaysJoined || 'None specified'}
-          Place sessions ONLY on weekdays that are not rest days; give every
-          weekly_schedule entry a day_name (e.g. "Monday") and never schedule
-          a session on a rest day.
+          Place sessions ONLY on weekdays that are not rest days. Every
+          weekly_schedule entry MUST carry BOTH a numeric day (the ISO
+          weekday number: 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday,
+          5=Friday, 6=Saturday, 7=Sunday) AND an English day_name
+          ("Monday" … "Sunday"); never schedule a session on a rest day.
 
         RECENT WORKOUT HISTORY (newest first, last ${HISTORY_SESSION_LIMIT} sessions):
         ${workoutHistory}
@@ -417,10 +419,16 @@ export async function POST(req: Request) {
       message: 'AI generation timeout',
       code: TIMEOUT_CODES.AI,
     });
-    // Enforce the rest-day invariant regardless of model behavior: any
-    // weekly_schedule entry placed on a user-selected rest day is rewritten
-    // into an explicit rest entry (is_rest_day: true, NO exercises/warmup/
-    // cooldown), and the canonical rest_days list is echoed into the output.
+    // Enforce the rest-day invariant deterministically — regardless of model
+    // behavior: any weekly_schedule entry placed on a user-selected rest day
+    // is rewritten into an explicit rest entry (is_rest_day: true, NO
+    // exercises/warmup/cooldown), and the canonical rest_days list is echoed
+    // into the output. Weekday resolution covers English AND Persian
+    // day_name values, plus the numeric `day` (ISO 1=Monday…7=Sunday)
+    // fallback — see `weekdayOf` in src/lib/ai/restDays.ts. The same
+    // enforcement result is what gets persisted and replayed on idempotent
+    // retries, so every output path (fresh generation, retry/replay) is
+    // covered.
     const enforced = enforceRestDays(result.object, restDays);
     const generated = {
       ...enforced,

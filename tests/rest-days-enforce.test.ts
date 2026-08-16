@@ -5,8 +5,10 @@ import {
   REST_DAYS_SCHEMA,
   WEEKDAY_VALUES,
   enforceRestDays,
+  isRestDay,
   isRestDaySession,
   normalizeDayName,
+  weekdayOf,
 } from '../src/lib/ai/restDays';
 import { GENERATE_PROGRAM_INPUT_SCHEMA } from '../src/lib/ai/requestSecurity';
 import { WEEKDAY_IDS } from '../src/components/quiz/restDays';
@@ -279,4 +281,232 @@ test('buildProgramDraft keeps legacy programs (no rest days) unchanged', async (
   assert.equal(draft.sessionsPerWeek, 2);
   assert.deepEqual(draft.restDays, []);
   assert.equal(draft.programExercises.length, 2);
+});
+
+// ---------------------------------------------------------------------------
+// 6. Edge-case regression — Thursday/Friday (the Persian weekend), Persian
+//    day names, the numeric `day` fallback, and the retry (idempotency
+//    replay) path. The fa quiz renders شنبه → جمعه but stores canonical ISO
+//    ids, so enforcement keys off the same ids in every locale.
+// ---------------------------------------------------------------------------
+
+test('enforceRestDays strips a session placed on Friday (en edge case)', () => {
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 5, day_name: 'Friday', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 5'},
+      ],
+    },
+    ['friday'],
+  );
+  const friday = enforced.weekly_schedule[0];
+  assert.equal(isRestDaySession(friday), true);
+  assert.deepEqual(friday.exercises, []);
+  assert.deepEqual(friday.warmup, []);
+  assert.deepEqual(friday.cooldown, []);
+});
+
+test('enforceRestDays strips a session placed on Thursday (en edge case)', () => {
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 4, day_name: 'Thursday', focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 4'},
+      ],
+    },
+    ['thursday'],
+  );
+  const thursday = enforced.weekly_schedule[0];
+  assert.equal(isRestDaySession(thursday), true);
+  assert.deepEqual(thursday.exercises, []);
+});
+
+test('fa canonical ids thursday/friday are enforced identically (display order is UI-only)', () => {
+  // The fa quiz shows شنبه → جمعه but stores canonical ISO ids; enforcement
+  // keys off those ids, so Thursday/Friday are stripped in every locale.
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 1, day_name: 'Monday', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 1'},
+        {day: 4, day_name: 'Thursday', focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 4'},
+        {day: 5, day_name: 'Friday', focus: 'Lower body', warmup: [], exercises: [exercise('Deadlift')], cooldown: [], notes: 'Day 5'},
+        {day: 6, day_name: 'Saturday', focus: 'Mobility', warmup: [], exercises: [exercise('Foam Roll')], cooldown: [], notes: 'Day 6'},
+      ],
+    },
+    ['thursday', 'friday'],
+  );
+  assert.deepEqual(enforced.rest_days, ['thursday', 'friday']);
+  assert.equal(isRestDaySession(enforced.weekly_schedule[1]), true); // Thursday
+  assert.equal(isRestDaySession(enforced.weekly_schedule[2]), true); // Friday
+  assert.equal(isRestDaySession(enforced.weekly_schedule[0]), false); // Monday
+  assert.equal(isRestDaySession(enforced.weekly_schedule[3]), false); // Saturday
+});
+
+test('normalizeDayName maps Persian weekday names to canonical ids', () => {
+  assert.equal(normalizeDayName('جمعه'), 'friday');
+  assert.equal(normalizeDayName('پنجشنبه'), 'thursday');
+  assert.equal(normalizeDayName('شنبه'), 'saturday');
+  assert.equal(normalizeDayName('یکشنبه'), 'sunday');
+  assert.equal(normalizeDayName('دوشنبه'), 'monday');
+  // Tuesday has two common spellings: with a ZWNJ and with a space.
+  assert.equal(normalizeDayName('سه‌شنبه'), 'tuesday');
+  assert.equal(normalizeDayName('سه شنبه'), 'tuesday');
+  assert.equal(normalizeDayName('چهارشنبه'), 'wednesday');
+  // Arabic yeh/kaf variants normalize to the Persian glyphs.
+  assert.equal(normalizeDayName('پنجشنبه'.replace(/ی/g, 'ي')), 'thursday');
+  assert.equal(normalizeDayName('چهارشنبه'.replace(/ک/g, 'ك')), 'wednesday');
+  // Still strict: junk is not a weekday.
+  assert.equal(normalizeDayName('فندق'), null);
+});
+
+test('enforceRestDays strips sessions whose day_name is Persian', () => {
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 5, day_name: 'جمعه', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 5'},
+        {day: 4, day_name: 'پنجشنبه', focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 4'},
+      ],
+    },
+    ['friday', 'thursday'],
+  );
+  assert.equal(isRestDaySession(enforced.weekly_schedule[0]), true);
+  assert.equal(isRestDaySession(enforced.weekly_schedule[1]), true);
+  assert.deepEqual(enforced.weekly_schedule[0].exercises, []);
+  assert.deepEqual(enforced.weekly_schedule[1].exercises, []);
+});
+
+test('weekdayOf resolves day_name first, then the numeric day (ISO 1=Monday)', () => {
+  assert.equal(weekdayOf({day_name: 'Monday', day: 1}), 'monday');
+  assert.equal(weekdayOf({day_name: 'جمعه', day: 6}), 'friday'); // name wins
+  assert.equal(weekdayOf({day_name: 'Wednesday'}), 'wednesday');
+  assert.equal(weekdayOf({day: 1}), 'monday');
+  assert.equal(weekdayOf({day: 4}), 'thursday');
+  assert.equal(weekdayOf({day: 5}), 'friday');
+  assert.equal(weekdayOf({day: 7}), 'sunday');
+  // Out-of-range / non-integer / string `day` values are never trusted.
+  assert.equal(weekdayOf({day: 0}), null);
+  assert.equal(weekdayOf({day: 8}), null);
+  assert.equal(weekdayOf({day: 1.5}), null);
+  assert.equal(weekdayOf({day: '5'}), null);
+  assert.equal(weekdayOf({}), null);
+  assert.equal(weekdayOf({day_name: 'funday'}), null); // no usable info
+  assert.equal(weekdayOf({day_name: 'funday', day: 0}), null); // day out of range
+  // Unparseable day_name falls back to the numeric day.
+  assert.equal(weekdayOf({day_name: 'funday', day: 3}), 'wednesday');
+});
+
+test('enforceRestDays uses the numeric day as a fallback when day_name is missing', () => {
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 1, focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 1'},
+        {day: 5, focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 5'},
+        {day: 4, focus: 'Lower body', warmup: [], exercises: [exercise('Deadlift')], cooldown: [], notes: 'Day 4'},
+      ],
+    },
+    ['friday', 'thursday'],
+  );
+  assert.equal(isRestDaySession(enforced.weekly_schedule[0]), false); // day 1 = Monday
+  assert.equal(isRestDaySession(enforced.weekly_schedule[1]), true); // day 5 = Friday
+  assert.equal(isRestDaySession(enforced.weekly_schedule[2]), true); // day 4 = Thursday
+  assert.deepEqual(enforced.weekly_schedule[1].exercises, []);
+  assert.deepEqual(enforced.weekly_schedule[2].exercises, []);
+  assert.equal(enforced.weekly_schedule[0].exercises.length, 1);
+});
+
+test('day_name wins over a conflicting numeric day', () => {
+  const enforced = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        // day 1 would map to Monday, but the explicit day_name says Wednesday.
+        {day: 1, day_name: 'Wednesday', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 1'},
+      ],
+    },
+    ['monday'],
+  );
+  assert.equal(isRestDaySession(enforced.weekly_schedule[0]), false);
+  assert.equal(enforced.weekly_schedule[0].exercises.length, 1);
+});
+
+test('isRestDay flags explicit rest entries and weekday matches (used by persistence)', () => {
+  assert.equal(isRestDay({is_rest_day: true}, []), true);
+  assert.equal(isRestDay({day_name: 'Friday', day: 5}, ['friday']), true);
+  assert.equal(isRestDay({day: 5}, ['friday']), true);
+  assert.equal(isRestDay({day_name: 'جمعه'}, ['friday']), true);
+  assert.equal(isRestDay({day_name: 'Monday'}, ['friday']), false);
+  assert.equal(isRestDay({}, ['monday']), false);
+  assert.equal(isRestDay({}, []), false);
+});
+
+test('enforceRestDays is idempotent — a replayed (already-enforced) payload stays enforced', () => {
+  // The idempotency retry path replays the payload stored at first
+  // generation, which was already enforced; running the pass again (as a
+  // fresh generation would) must leave it enforced, byte for byte.
+  const restDays = ['friday', 'thursday'];
+  const once = enforceRestDays(
+    {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 1, day_name: 'Monday', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 1'},
+        {day: 4, day_name: 'Thursday', focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 4'},
+        {day: 5, day_name: 'Friday', focus: 'Lower body', warmup: [], exercises: [exercise('Deadlift')], cooldown: [], notes: 'Day 5'},
+      ],
+    },
+    restDays,
+  );
+  const twice = enforceRestDays(once, restDays);
+  assert.deepEqual(twice.rest_days, once.rest_days);
+  assert.deepEqual(twice.weekly_schedule, once.weekly_schedule);
+  // Every entry mapped to a rest day is an explicit, empty rest entry.
+  for (const session of twice.weekly_schedule) {
+    if (restDays.includes(weekdayOf(session) as string)) {
+      assert.equal(isRestDaySession(session), true);
+      assert.deepEqual(session.exercises, []);
+    }
+  }
+});
+
+test('buildProgramDraft skips rest-day sessions even without the is_rest_day flag', async () => {
+  const service = await import('../src/services/programService');
+  const draft = service.buildProgramDraft({
+    level: 'beginner',
+    restDays: ['friday', 'thursday'],
+    program: {
+      ...baseProgram,
+      weekly_schedule: [
+        {day: 1, day_name: 'Monday', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 1'},
+        // NO is_rest_day flag — persistence must still skip Friday/Thursday
+        // via the weekday mapping (defense in depth against un-enforced input).
+        {day: 5, day_name: 'Friday', focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 5'},
+        {day: 4, day_name: 'Thursday', focus: 'Lower body', warmup: [], exercises: [exercise('Deadlift')], cooldown: [], notes: 'Day 4'},
+      ],
+    },
+  });
+  assert.equal(draft.sessionsPerWeek, 1);
+  assert.deepEqual(draft.programExercises.map((row) => row.exerciseName), ['Goblet Squat']);
+  assert.deepEqual(draft.restDays, ['friday', 'thursday']);
+});
+
+test('buildProgramDraft skips Persian-named and day-number rest-day sessions', async () => {
+  const service = await import('../src/services/programService');
+  const draft = service.buildProgramDraft({
+    level: 'beginner',
+    restDays: ['friday'],
+    program: {
+      ...baseProgram,
+      weekly_schedule: [
+        // Persian day_name → friday → skipped at persistence.
+        {day: 5, day_name: 'جمعه', focus: 'Full body', warmup: [], exercises: [exercise('Goblet Squat')], cooldown: [], notes: 'Day 5'},
+        // No day_name, day 6 = Saturday (not a rest day) → kept.
+        {day: 6, focus: 'Upper body', warmup: [], exercises: [exercise('Bench Press')], cooldown: [], notes: 'Day 6'},
+      ],
+    },
+  });
+  assert.equal(draft.sessionsPerWeek, 1);
+  assert.deepEqual(draft.programExercises.map((row) => row.exerciseName), ['Bench Press']);
 });
