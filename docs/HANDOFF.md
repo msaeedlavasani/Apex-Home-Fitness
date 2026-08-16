@@ -2,7 +2,7 @@
 
 ## مختصات محیطی (Environment Context)
 - **لینک ریپوزیتوری:** `https://github.com/msaeedlavasani/Apex-Home-Fitness.git`
-- **مسیر workspace:** از مسیر کاری فعلی استفاده شود؛ مسیرهای قدیمی سیستم محلی معتبر نیستند.
+- **مسیر workspace:* مسیر پروژه روی سیستم لوکال: /Users/msl/Documents/GitHub/Apex-Home-Fitness/docs
 - **دسترسی گیت:** کلید SSH روی سیستم نصب و فعال است.
 - **مرجع env:** `.env.example`؛ جزئیات API در `docs/AI_API.md` و انتشار در `docs/RELEASING.md` است.
 
