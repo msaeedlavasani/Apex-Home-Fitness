@@ -1,0 +1,12 @@
+# Never ship local state, secrets, or build artifacts into the image.
+node_modules
+.next
+.git
+.env
+*.db
+*.db-journal
+playwright-report
+test-results
+.dockerignore
+Dockerfile
+docker-compose.yml

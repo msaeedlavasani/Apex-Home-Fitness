@@ -37,8 +37,14 @@
 4. **[x] responsive و RTL:** تثبیت layout، navigation، focus و touch target در viewportهای اصلی.
 5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
+## Batch 16: آمادگی استقرار روی سرور (Server-build readiness) 🧭
+1. **[x] Feature flag OTP_AUTH_ENABLED (rollback یکفرمانی):** kill-switch برای ورود OTP و route protection (`src/lib/auth/mode.ts`) + ۸ تست unit + مستندسازی در `.env.example`. — تکمیل شد.
+2. **[x] کاملکردن قرارداد env:** اسکن `process.env.*` کد در مقابل `.env.example`؛ مستندسازی `NEXT_PUBLIC_RELEASE`؛ تست enforce جدید در `otp-launch-readiness.test.ts` (۹ تست). — تکمیل شد.
+3. **[x] Docker self-hosted deployment:** Dockerfile چندمرحلهای (deps→build→runner با standalone output + prisma engines) + docker-compose (SQLite volume + migrate service) + .dockerignore + بخش استقرار در `docs/RELEASING.md`؛ `output: 'standalone'` در next.config. — تکمیل شد.
+4. **[x] production build با full env:** build با placeholder کامل envها (site URL، Supabase، SMS، release) سبز (۳۴/۳۴ صفحه). — تکمیل شد.
+5. **[x] ممیزی Supabase و بهروزرسانی readiness:** وضعیت real در `OTP_LAUNCH_READINESS.md` ثبت شد (Prisma/SQLite برای دیتابیس، Supabase فقط Identity Provider).
+
 ## تسک‌های پیشنهادی بعدی (بعد از Batch 14) 🧭
-1. **[x] افزودن language switcher سراسری:** سوییچر EN/FA در sidebar دسکتاپ، هدر موبایل و Android AppBar با حفظ مسیر فعلی (`/en/workout` → `/fa/workout`)؛ رادیو-گروپ اکسسبل با focus ring و touch target ≥44px؛ messages دوزبانه و ۴ تست unit. — تکمیل شد (Batch 15).
 2. **[x] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی در خروجی تولیدشده — enforce در `enforceRestDays` + لایه persistence (`programService`) + پین کردن قرارداد روز در پرامپت؛ پشتیبانی نام فارسی روزها (شنبه→جمعه) و fallback عددی ISO؛ ۱۲ تست regression + تست زنجیره retry/idempotency. — تکمیل شد (Batch 15).
 3. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف).
 

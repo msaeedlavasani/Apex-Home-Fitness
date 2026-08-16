@@ -1,6 +1,5 @@
 import type {Metadata, Viewport} from 'next';
 import {headers} from 'next/headers';
-import {Inter, Roboto} from 'next/font/google';
 import localFont from 'next/font/local';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations} from 'next-intl/server';
@@ -22,9 +21,12 @@ import '../globals.css';
  *   stacks in tailwind.config.js keep it first so Apple devices render
  *   the real SF Pro.
  * - Inter (closest cross-platform match) and Roboto (Android/M3) are
- *   self-hosted via next/font, so non-Apple devices get a real webfont.
- *   Both are served from the same origin, which satisfies the CSP's
- *   `font-src 'self' data:` policy.
+ *   SELF-HOSTED via next/font/local (woff2 files in src/app/fonts/,
+ *   sourced from the @fontsource packages at build time). Serving them
+ *   from the same origin satisfies CSP `font-src 'self' data:` and makes
+ *   production builds fully offline/network-independent (no fetch to the
+ *   Google Fonts CDN during `next build` — required for Docker and
+ *   restricted-network servers).
  * - Vazirmatn (Persian) is fully self-hosted: the woff2 variable font
  *   lives in src/app/fonts/ (SIL OFL 1.1, see OFL.txt) and is served via
  *   next/font/local from the same origin — no external font requests,
@@ -32,15 +34,19 @@ import '../globals.css';
  *   satisfies the CSP `font-src 'self' data:` policy. globals.css applies
  *   it to all RTL/Persian content (`html[dir='rtl'] body`).
  */
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: '../fonts/Inter-Variable.woff2',
   variable: '--font-inter',
   display: 'swap',
+  weight: '100 900',
 });
 
-const roboto = Roboto({
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
+const roboto = localFont({
+  src: [
+    {path: '../fonts/Roboto-400.woff2', weight: '400', style: 'normal'},
+    {path: '../fonts/Roboto-500.woff2', weight: '500', style: 'normal'},
+    {path: '../fonts/Roboto-700.woff2', weight: '700', style: 'normal'},
+  ],
   variable: '--font-roboto',
   display: 'swap',
 });

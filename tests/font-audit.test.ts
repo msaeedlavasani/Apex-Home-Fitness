@@ -34,19 +34,30 @@ test('font audit: asset pipeline passes with self-hosted fonts', () => {
   assert.deepEqual(violations, []);
 });
 
-test('layout.tsx: Vazirmatn is self-hosted via next/font/local', () => {
+test('layout.tsx: all fonts (Vazirmatn, Inter, Roboto) are self-hosted via next/font/local', () => {
   const layout = read(LAYOUT);
 
   assert.match(layout, /import\s+localFont\s+from\s+'next\/font\/local'/, 'must import next/font/local');
-  assert.match(layout, /next\/font\/google/, 'English Inter/Roboto stacks must be preserved');
+  assert.ok(
+    !layout.includes('next/font/google'),
+    'must NOT import next/font/google (all fonts are self-hosted)',
+  );
   assert.match(layout, /const\s+vazirmatn\s*=\s*localFont\(\{/, 'must declare Vazirmatn via localFont');
+  assert.match(layout, /const\s+inter\s*=\s*localFont\(\{/, 'must declare Inter via localFont');
+  assert.match(layout, /const\s+roboto\s*=\s*localFont\(\{/, 'must declare Roboto via localFont');
   assert.match(layout, /--font-vazirmatn/, 'must expose the --font-vazirmatn variable');
+  assert.match(layout, /--font-inter/, 'must expose the --font-inter variable');
+  assert.match(layout, /--font-roboto/, 'must expose the --font-roboto variable');
 
-  // The referenced woff2 must actually exist next to the layout.
-  const srcMatch = layout.match(/src:\s*'(\.\.?\/[^']+\.woff2)'/);
-  assert.ok(srcMatch, 'must reference a local .woff2 src');
-  const fontPath = resolve(dirname(resolve(ROOT, LAYOUT)), srcMatch![1]);
-  assert.ok(existsSync(fontPath), `referenced font file must exist (${srcMatch![1]})`);
+  // Every referenced woff2 must actually exist next to the layout.
+  const srcs = Array.from(layout.matchAll(/src:\s*(\{?\s*path:\s*)?'(\.\.?\/[^']+\.woff2)'/g)).map(
+    (m) => m[2],
+  );
+  assert.ok(srcs.length >= 2, `must reference local .woff2 files (found ${srcs.length})`);
+  for (const src of srcs) {
+    const fontPath = resolve(dirname(resolve(ROOT, LAYOUT)), src);
+    assert.ok(existsSync(fontPath), `referenced font file must exist (${src})`);
+  }
 });
 
 test('globals.css: RTL/Persian body resolves to the self-hosted Vazirmatn first', () => {

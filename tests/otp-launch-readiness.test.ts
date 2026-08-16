@@ -244,3 +244,40 @@ test('otp launch: release docs cross-reference the readiness doc', () => {
     'docs/TASKS.md (Batch 14 task 5) must link docs/OTP_LAUNCH_READINESS.md',
   );
 });
+
+// ---------------------------------------------------------------------------
+// 6. Env contract completeness: every process.env.* referenced in src/ must be
+//    documented in .env.example (so the deployment env can be configured from
+//    the example alone — no undocumented runtime requirements).
+// ---------------------------------------------------------------------------
+
+/** Env vars the framework owns; no need to document them as app config. */
+const FRAMEWORK_ENV = new Set(['NEXT_RUNTIME', 'NODE_ENV']);
+
+test('otp launch: every code-referenced env var is documented in .env.example', () => {
+  const srcFiles = collectFiles('src', ['.ts', '.tsx', '.js', '.mjs']);
+  const referenced = new Set<string>();
+  for (const file of srcFiles) {
+    const text = readText(file);
+    for (const match of Array.from(text.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g))) {
+      referenced.add(match[1]);
+    }
+  }
+
+  const example = readText('.env.example');
+  const documented = new Set<string>();
+  for (const match of Array.from(example.matchAll(/^#?\s*([A-Z][A-Z0-9_]*)\s*=/gm))) {
+    documented.add(match[1]);
+  }
+
+  const missing = Array.from(referenced)
+    .filter((key) => !documented.has(key) && !FRAMEWORK_ENV.has(key))
+    .sort();
+
+  assert.deepEqual(
+    missing,
+    [],
+    'env vars referenced in src/ but missing from .env.example:\n' +
+      missing.join('\n'),
+  );
+});

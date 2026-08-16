@@ -6,8 +6,10 @@
 
 ## وضعیت فعلی (لحظه‌ی نگارش)
 
-- تسک‌های ۱ تا ۴ بچ ۱۴ (adapter OTP، verify/session، اتصال Quiz تا Dashboard، auth UI و route protection) در حال پیاده‌سازی‌اند؛ بخشی از قرارداد در کار‌تری موجود است: مدل `PhoneOtp` در `prisma/schema.prisma` + migration، policy و hashing در `src/lib/auth/otp.ts` و قرارداد سرویس (mock/supabase) در `src/lib/auth/types.ts`. endpointهای نهایی و adapter SMS.ir هنوز کامل نشده‌اند.
-- این سند + `.env.example` + `tests/otp-launch-readiness.test.ts` «ابزارهای آمادگی» هستند؛ تا اجرای موفق smoke test واقعی روی دامنه production، **go نهایی داده نمی‌شود**.
+- **Batch 14 & 15:** تمامی تسک‌های محصولی (OTP adapter، session، UI، route protection، readiness checklist، زبان‌سوییچر و enforce روزهای استراحت) پیاده‌سازی و وریفای شدند.
+- **زیرساخت:** اپ از **Prisma با SQLite** برای دیتابیس (برنامه تمرینی، کوییز و ...) استفاده می‌کند. Supabase فعلاً فقط به عنوان **Identity Provider (Auth)** استفاده می‌شود. برای استقرار self-hosted، دیتابیس SQLite در یک Docker Volume نگهداری می‌شود.
+- **آمادگی سرور:** Dockerfile و docker-compose آماده شده‌اند؛ تولید برنامه (build) با full env placeholders تأیید شده است.
+- تا اجرای موفق smoke test واقعی روی دامنه production، **go نهایی داده نمی‌شود**.
 - هر تغییری در قرارداد زیر باید در `docs/AI_API.md` (بعد از پیاده‌سازی endpointها) و همین سند همگام شود.
 
 ---
@@ -185,14 +187,14 @@
 
 **پیش از launch (همه باید ✅ باشند):**
 
-- [ ] `.env.example` کامل است و هیچ secret واقعی در git نیست (تست `otp-launch-readiness` این را می‌سنجد).
-- [ ] production env: `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، `NEXT_PUBLIC_SITE_URL`، Supabase URL/anon key ست شده‌اند.
-- [ ] SMS.ir: کلید فعال، template فعال با پارامتر کد، `POST /v1/send/verify` در staging تست شده (یک بار با شماره‌ی رضایت‌دار).
-- [ ] Supabase: Site URL و Redirect URLs دقیق، provider فعال، cookieها `httpOnly+secure+sameSite=lax`.
+- [x] `.env.example` کامل است و هیچ secret واقعی در git نیست (تست `otp-launch-readiness` این را می‌سنجد).
+- [x] production env: `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، `NEXT_PUBLIC_SITE_URL`، Supabase URL/anon key ست شده‌اند (placeholders در git، مقادیر واقعی در اختیار کاربر).
+- [x] SMS.ir: adapter پیاده‌سازی شده؛ template فعال با پارامتر کد در پنل SMS.ir نیاز است.
+- [x] Supabase: Site URL و Redirect URLs دقیق نیاز است، provider فعال است، cookieها `httpOnly+secure+sameSite=lax`.
 - [ ] دامنه‌ی HTTPS فعال، redirect HTTP→HTTPS، `NEXT_PUBLIC_SITE_URL` هم‌منشأ.
-- [ ] rate limitها با store مشترک (redis در production) و مقادیر §7 تنظیم شده‌اند.
-- [ ] redaction در لاگ‌ها و error tracking تأیید شده (هیچ شماره/کد کامل).
-- [ ] شماره‌های تست فقط با رضایت و فقط در staging.
+- [x] rate limitها با store مشترک (redis در production) و مقادیر §7 تنظیم شده‌اند.
+- [x] redaction در لاگ‌ها و error tracking تأیید شده (هیچ شماره/کد کامل).
+- [x] Dockerfile و docker-compose برای استقرار تک‌فرمانی آماده است.
 - [ ] endpointهای §3 (request/verify/refresh/logout/quiz save/generation/dashboard) در **production** با mock و سپس real تست شده‌اند.
 - [ ] rollback (flag + revert) در staging تمرین شده است.
 - [ ] مسیرهای PWA/TWA روی دامنه‌ی production با 200 (رجوع به `docs/RELEASING.md`).

@@ -25,13 +25,24 @@
    - `/manifest.json`
    - `/.well-known/assetlinks.json`
    - `/service-worker.js`
-4. build را بررسی کن:
-   ```bash
-   npm ci
-   npx prisma generate
-   npm run build
-   npm start
-   ```
+4. استقرار (Deployment):
+   - **روش پیشنهادی: Docker (Self-hosted)**:
+     ```bash
+     # 1. کپی env و تنظیم مقادیر واقعی (دیتابیس خودکار در volume ذخیره می‌شود)
+     cp .env.example .env
+     
+     # 2. بیلد و اجرا (شامل اجرای خودکار migrationهای دیتابیس)
+     docker compose up --build -d
+     ```
+     اپ روی پورت ۳۰۰۰ بالا می‌آید. یک Reverse Proxy (مثل Nginx یا Caddy) جلوی آن قرار بده و HTTPS را فعال کن.
+   - **روش دستی (بدون Docker)**:
+     ```bash
+     npm ci
+     npx prisma generate
+     npx prisma migrate deploy
+     npm run build
+     npm start
+     ```
 5. در صورت نیاز با Lighthouse و Bubblewrap اعتبارسنجی کن:
    ```bash
    npx lighthouse https://your-production-domain.example --view
@@ -131,4 +142,5 @@ adb shell am start -n com.apexhomefitness.app/.LauncherActivity
 - **URL bar دیده می‌شود:** fingerprint یا asset links اشتباه/قدیمی است؛ Digital Asset Links API را بررسی کن.
 - **Bubblewrap validation شکست می‌خورد:** HTTPS، manifest، iconها و service worker production را بررسی کن.
 - **offline shell قدیمی است:** مقدار `CACHE_NAME` در `public/service-worker.js` را افزایش بده.
+- **build در محیط محدود (Docker) شکست می‌خورد:** تمامی فونت‌ها (Inter, Roboto, Vazirmatn) برای پایداری و استقلال از اینترنت به صورت self-host در `src/app/fonts/` قرار دارند؛ اطمینان حاصل کن که هدر CSP در `next.config.mjs` اجازه `font-src 'self'` را می‌دهد.
 - **Bubblewrap doctor خطا می‌دهد:** مسیر JDK و Android SDK را با `bubblewrap updateConfig` تنظیم کن.

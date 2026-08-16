@@ -1,0 +1,38 @@
+# Apex Home Fitness — self-hosted stack (Next.js standalone + SQLite volume).
+#
+# 1. Copy .env.example → .env and fill real values (never commit them).
+# 2. `docker compose up --build` — the `migrate` service applies Prisma
+#    migrations to the mounted SQLite volume before the app starts.
+# 3. App is served on http://localhost:3000 (set a reverse proxy + HTTPS in
+#    front of it for production — see docs/RELEASING.md).
+
+services:
+  migrate:
+    build:
+      context: .
+      target: build
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/data/app.db
+    command: sh -c "npx prisma migrate deploy"
+    volumes:
+      - db-data:/data
+
+  app:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/data/app.db
+    volumes:
+      - db-data:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  db-data:

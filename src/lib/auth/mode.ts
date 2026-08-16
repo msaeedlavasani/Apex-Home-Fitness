@@ -25,14 +25,34 @@ export function hasSupabaseEnv(): boolean {
 }
 
 /**
+ * OTP login / route-protection feature flag — the one-command rollback switch
+ * (see docs/OTP_LAUNCH_READINESS.md §10).
+ *
+ * Default: ENABLED. Set `OTP_AUTH_ENABLED=false` in the deployment
+ * environment to disable OTP login and route protection in an emergency —
+ * `isAuthConfigured()` then returns false regardless of the Supabase env, so
+ * the middleware stops redirecting and auth-gated APIs fail honestly
+ * (503 `AUTH_BACKEND_NOT_CONFIGURED`). This is the FIRST rollback step; a
+ * full return to the pre-auth product flow also requires reverting the code
+ * to the last healthy release (rollback step 2).
+ */
+export function otpAuthEnabled(): boolean {
+  return process.env.OTP_AUTH_ENABLED !== 'false';
+}
+
+/**
  * True when route protection should be enforced:
  *   - explicit `AUTH_OTP_MODE=mock` (dev/CI E2E), or
- *   - Supabase is configured (production).
+ *   - Supabase is configured (production),
+ * AND the `OTP_AUTH_ENABLED` rollback flag is not set to `false`.
  *
  * Without either the app degrades gracefully to today's open behaviour —
  * this keeps the UI-only E2E suite and local development working without
  * Supabase, exactly as documented in `.env.example`.
  */
 export function isAuthConfigured(): boolean {
-  return process.env.AUTH_OTP_MODE === 'mock' || hasSupabaseEnv();
+  return (
+    otpAuthEnabled() &&
+    (process.env.AUTH_OTP_MODE === 'mock' || hasSupabaseEnv())
+  );
 }

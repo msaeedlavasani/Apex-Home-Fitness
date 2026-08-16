@@ -137,6 +137,9 @@ const nextConfig = {
       },
     ];
   },
+  // Self-hosted deployment: emit the minimal standalone server (.next/standalone)
+  // so the Docker image only ships what `node server.js` needs (see Dockerfile).
+  output: 'standalone',
 };
 
 export default withNextIntl(nextConfig);
