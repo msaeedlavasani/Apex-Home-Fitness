@@ -141,6 +141,12 @@ test.describe('Rest days step', () => {
     );
 
     await page.getByRole('button', {name: 'مشاهده برنامه من'}).click();
-    await page.waitForURL('**/fa/dashboard');
+    // Without a session the flow hands off to the OTP login step, carrying
+    // the completed draft so the answers survive the verify round-trip.
+    await page.waitForURL('**/fa/auth/login**');
+    const stored = await page.evaluate(() =>
+      localStorage.getItem('apex:quiz:draft:v1'),
+    );
+    expect(stored).toBeTruthy();
   });
 });
