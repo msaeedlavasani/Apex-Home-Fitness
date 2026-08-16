@@ -21,6 +21,15 @@
     "navLabel": "Main navigation",
     "navLabelMobile": "Mobile navigation"
   },
+  "Language": {
+    "label": "Language",
+    "en": "EN",
+    "fa": "فا",
+    "enName": "English",
+    "faName": "Persian",
+    "switchToEn": "Switch to English",
+    "switchToFa": "Switch to Persian"
+  },
   "Dashboard": {
     "greeting": {
       "morning": "Good morning",

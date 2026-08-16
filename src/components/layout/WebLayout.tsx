@@ -10,6 +10,7 @@ import {
   type LayoutChromeProps,
   type NavItem,
 } from './nav';
+import {LanguageSwitcher} from './LanguageSwitcher';
 import {ThemeToggle} from './ThemeToggle';
 
 /**
@@ -43,8 +44,11 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
           ))}
         </nav>
         <div className="flex items-center justify-between gap-3 border-t border-apex-border px-5 py-4">
-          <span className="text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
-          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          <span className="min-w-0 truncate text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          </div>
         </div>
       </aside>
 
@@ -55,7 +59,10 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
       >
         <div className="flex h-14 items-center justify-between px-4">
           <BrandLink href={`/${locale}/dashboard`} compact />
-          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          </div>
         </div>
         {/* Distinct label from the desktop sidebar nav — both copies exist in
             the DOM (responsive nav) and must stay unambiguous to assistive
