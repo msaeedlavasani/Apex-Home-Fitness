@@ -3,6 +3,12 @@
     "title": "Apex Home Fitness",
     "description": "AI-powered home fitness: personalized workout programs, progress tracking, and analytics — train anywhere, anytime."
   },
+  "Landing": {
+    "eyebrow": "Apex Home Fitness",
+    "title": "Build a plan that fits your life",
+    "description": "Answer a few questions and get a personalized home workout program.",
+    "start": "Start the quiz"
+  },
   "Nav": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -241,7 +247,8 @@
     },
     "unauthenticated": {
       "title": "Not signed in",
-      "message": "Sign in to see your profile details and preferences."
+      "message": "Sign in to see your profile details and preferences.",
+      "signIn": "Sign in"
     },
     "footer": "Apex Home Fitness v0.1.0"
   },
@@ -413,6 +420,42 @@
       "shortcutMute": "M — mute/unmute",
       "shortcutFullscreen": "F — fullscreen",
       "shortcutSeek": "←/→ — seek 10 s"
+    }
+  },
+  "Auth": {
+    "metaTitle": "Sign in",
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Enter your mobile number and we'll text you a one-time code.",
+    "phoneLabel": "Mobile number",
+    "phonePlaceholder": "09123456789",
+    "phoneHelp": "We'll send a 6-digit code by SMS.",
+    "continue": "Send code",
+    "sending": "Sending…",
+    "backToStart": "Back to start",
+    "backToLogin": "Back to sign in",
+    "changePhone": "Change number",
+    "verifyTitle": "Enter the code",
+    "verifySubtitle": "We sent a 6-digit code to {phone}.",
+    "codeLabel": "Verification code",
+    "codeDigitLabel": "Digit {n} of 6",
+    "verify": "Verify & sign in",
+    "verifying": "Verifying…",
+    "resendIn": "Resend code in {seconds}s",
+    "resend": "Resend code",
+    "resending": "Resending…",
+    "codeSent": "A new code has been sent.",
+    "codeStillValid": "Your code is still valid — check your SMS.",
+    "privacyNote": "By continuing you agree to receive SMS messages for authentication.",
+    "devHint": "Development code: {code}",
+    "errors": {
+      "invalidPhone": "Enter a valid mobile number, e.g. 09123456789.",
+      "invalidCode": "That code isn't right. Check it and try again.",
+      "expired": "This code has expired. Request a new one.",
+      "tooManyAttempts": "Too many attempts. Request a new code.",
+      "rateLimited": "Please wait a moment before requesting another code.",
+      "notRequested": "Request a code first.",
+      "providerError": "We couldn't send the code. Please try again.",
+      "generic": "Something went wrong. Please try again."
     }
   }
 }

@@ -94,13 +94,23 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      const supabase = createBrowserSupabaseClient();
-      await supabase.auth.signOut();
+      // Prefer the dedicated logout route: it clears the mock/supabase session
+      // cookie through the same contract as the auth API. Falls back to the
+      // browser Supabase client for environments without the route's backend.
+      const response = await fetch('/api/auth/logout', {method: 'POST'});
+      if (!response.ok) throw new Error('logout route failed');
     } catch {
-      // No Supabase session/config — still return to the start screen so the
-      // user can sign in again.
+      try {
+        const supabase = createBrowserSupabaseClient();
+        await supabase.auth.signOut();
+      } catch {
+        // No Supabase session/config — still return to the start screen so the
+        // user can sign in again.
+      }
     }
-    router.replace(`/${locale}`);
+    // The quiz is the public entry of the product flow (Landing → Quiz → …),
+    // so signed-out users always land on an open page, never a stale shell.
+    router.replace(`/${locale}/quiz`);
     router.refresh();
   }
 
@@ -251,6 +261,7 @@ function ProfileSummaryCard({user}: {user: ProfileUser}) {
 /** Graceful fallback when the page is rendered without a session. */
 function SignedOutCard() {
   const t = useTranslations('Profile');
+  const locale = useLocale();
   return (
     <div className="rounded-3xl border border-apple-separator bg-apple-grouped-background-secondary p-6 text-center shadow-apple-sm">
       <UserRound className="mx-auto h-9 w-9 text-apple-label-tertiary" aria-hidden="true" />
@@ -260,6 +271,16 @@ function SignedOutCard() {
       <p className="mt-1 text-sm leading-relaxed text-apple-label-secondary">
         {t('unauthenticated.message')}
       </p>
+      <Link
+        href={`/${locale}/auth/login`}
+        className={[
+          'mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-apple-blue px-5 py-2.5 text-[15px] font-semibold text-white transition-colors touch-manipulation',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apple-blue',
+          'hover:opacity-90 active:opacity-80',
+        ].join(' ')}
+      >
+        {t('unauthenticated.signIn')}
+      </Link>
     </div>
   );
 }

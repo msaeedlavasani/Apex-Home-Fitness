@@ -192,9 +192,14 @@ test.describe('Onboarding quiz — keyboard', () => {
     await tabTo(page, finish);
     await finish.press('Enter');
 
-    // Submission routes to the dashboard.
-    await page.waitForURL('**/en/dashboard');
-    await expect(page.getByText('Your weekly training plan')).toBeVisible();
+    // Without a session the completed quiz hands off to the OTP login step
+    // (the draft is persisted so the answers survive the round-trip).
+    await page.waitForURL('**/en/auth/login**');
+    const stored = await page.evaluate(() =>
+      localStorage.getItem('apex:quiz:draft:v1'),
+    );
+    expect(stored).toBeTruthy();
+    expect(JSON.parse(stored!).status).toBe('completed');
   });
 
   test('missing selection is announced via role=alert when Next is activated', async ({

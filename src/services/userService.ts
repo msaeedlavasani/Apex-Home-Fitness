@@ -42,7 +42,7 @@
  * `syncService.getCurrentUserId()`.
  */
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { DifficultyLevel, Prisma } from '@prisma/client';
+import { DifficultyLevel, Prisma, PrismaClient } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { createServerSupabaseClient } from '../lib/supabase-server';
@@ -75,6 +75,15 @@ export interface SaveQuizResponseInput {
   recommendedProgramId?: string | null;
   /** Optional recommender score (e.g. 0–100). */
   score?: number | null;
+  /**
+   * Client-supplied idempotency key (8–64 URL-safe chars — same format as the
+   * `Idempotency-Key` header contract, see `src/lib/ai/idempotency.ts`).
+   * The quiz flow passes the draft's stable `completionId` here so retries,
+   * refreshes and post-OTP resumes of the same quiz completion always return
+   * the SAME `QuizResponse` and never persist a duplicate. A key that already
+   * belongs to another user is rejected (never replayed).
+   */
+  clientRequestId?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -93,6 +102,18 @@ export class UnauthenticatedError extends UserServiceError {
   constructor(message = 'Authentication required.') {
     super(message);
     this.name = 'UnauthenticatedError';
+  }
+}
+
+/**
+ * Thrown when a `clientRequestId` is already bound to a DIFFERENT user's
+ * `QuizResponse`. The idempotency key is only replayable by its owner; a
+ * foreign key must never be silently replayed.
+ */
+export class QuizResponseConflictError extends UserServiceError {
+  constructor(message = 'This quiz response idempotency key is already in use.') {
+    super(message);
+    this.name = 'QuizResponseConflictError';
   }
 }
 
@@ -194,51 +215,119 @@ export async function getCurrentUserProfile() {
 // Quiz responses
 // ---------------------------------------------------------------------------
 
+/** Shared relation shape so fresh creates and idempotent replays return
+ * byte-identical payloads (see `saveQuizResponse`). */
+const quizResponseInclude = Prisma.validator<Prisma.QuizResponseDefaultArgs>()({
+  include: {
+    user: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        fitnessGoal: true,
+        fitnessLevel: true,
+      },
+    },
+    recommendedProgram: true,
+  },
+});
+
+export type QuizResponseWithRelations = Prisma.QuizResponseGetPayload<
+  typeof quizResponseInclude
+>;
+
+/** True when `error` is a Prisma unique-constraint violation (P2002). */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+  );
+}
+
 /**
  * Saves a quiz response and links it to the authenticated user.
  *
  * Steps:
  *   1. Resolve the authenticated Supabase user (throws if unauthenticated).
  *   2. Ensure the linked Prisma `User` row exists (`syncUserWithSupabase`).
- *   3. In ONE transaction: derive profile fields (`fitnessGoal` /
- *      `fitnessLevel`) from the submitted answers, then create the
- *      `QuizResponse`. Deriving first means the returned `user` include
- *      reflects the freshly updated profile (not a stale snapshot), and both
- *      writes commit or roll back atomically.
+ *   3. Persist idempotently via `createQuizResponseForUser`: in ONE
+ *      transaction derive profile fields (`fitnessGoal` / `fitnessLevel`)
+ *      from the submitted answers, then create the `QuizResponse`. Deriving
+ *      first means the returned `user` include reflects the freshly updated
+ *      profile (not a stale snapshot), and both writes commit or roll back
+ *      atomically.
  *
- * @returns the created QuizResponse, including a safe projection of the
- *          linked user and (if any) the recommended program.
+ * Idempotency: when `input.clientRequestId` is set, a replay (retry after a
+ * lost response, refresh mid-flow, post-OTP resume) returns the EXISTING
+ * `QuizResponse` for (clientRequestId, user) instead of creating a duplicate;
+ * a key owned by a different user is rejected with
+ * `QuizResponseConflictError`.
+ *
+ * @returns the created (or replayed) QuizResponse, including a safe
+ *          projection of the linked user and (if any) the recommended
+ *          program.
  * @throws {UnauthenticatedError} when the request has no auth session.
+ * @throws {QuizResponseConflictError} when `clientRequestId` belongs to
+ *         another user.
  */
-export async function saveQuizResponse(input: SaveQuizResponseInput) {
+export async function saveQuizResponse(
+  input: SaveQuizResponseInput,
+): Promise<QuizResponseWithRelations> {
   const supabaseUser = await getSupabaseAuthUser();
   const user = await syncUserWithSupabase(supabaseUser);
+  return createQuizResponseForUser(user.id, input, prisma);
+}
 
-  return prisma.$transaction(async (tx) => {
-    // The quiz answers are the source of truth for the user's profile fields.
-    await updateUserProfileFromQuiz(tx, user.id, input.answers);
-
-    return tx.quizResponse.create({
-      data: {
-        userId: user.id,
-        answers: input.answers as Prisma.InputJsonValue,
-        recommendedProgramId: input.recommendedProgramId ?? null,
-        score: input.score ?? null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            fitnessGoal: true,
-            fitnessLevel: true,
-          },
-        },
-        recommendedProgram: true,
-      },
+/**
+ * Creates (or idempotently replays) a quiz response for an already-resolved
+ * user id. Exported separately from `saveQuizResponse` so it can be reused
+ * (e.g. tests) without the request-scoped auth resolution.
+ *
+ * @param client an explicit Prisma client for tests — defaults to the shared
+ *        singleton.
+ */
+export async function createQuizResponseForUser(
+  userId: string,
+  input: SaveQuizResponseInput,
+  client: PrismaClient = prisma,
+): Promise<QuizResponseWithRelations> {
+  // Fast replay path: a previous attempt already persisted this completion.
+  if (input.clientRequestId) {
+    const existing = await client.quizResponse.findFirst({
+      where: {clientRequestId: input.clientRequestId, userId},
+      ...quizResponseInclude,
     });
-  });
+    if (existing) return existing;
+  }
+
+  try {
+    return await client.$transaction(async (tx) => {
+      // The quiz answers are the source of truth for the user's profile fields.
+      await updateUserProfileFromQuiz(tx, userId, input.answers);
+
+      return tx.quizResponse.create({
+        data: {
+          userId,
+          answers: input.answers as Prisma.InputJsonValue,
+          recommendedProgramId: input.recommendedProgramId ?? null,
+          score: input.score ?? null,
+          clientRequestId: input.clientRequestId ?? null,
+        },
+        ...quizResponseInclude,
+      });
+    });
+  } catch (error) {
+    // A concurrent request with the same key won the create race. Replay the
+    // winner — but only for THIS user; a foreign key is a client conflict.
+    if (input.clientRequestId && isUniqueViolation(error)) {
+      const winner = await client.quizResponse.findFirst({
+        where: {clientRequestId: input.clientRequestId, userId},
+        ...quizResponseInclude,
+      });
+      if (winner) return winner;
+      throw new QuizResponseConflictError();
+    }
+    throw error;
+  }
 }
 
 /**

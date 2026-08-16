@@ -112,6 +112,29 @@ const EN = {
   'quiz.restDays.saturday': 'Saturday',
   'quiz.restDays.sunday': 'Sunday',
   'quiz.error.restDays.required': 'Please pick 1–3 rest days to continue.',
+
+  // ---- Completion flow (Batch 14 / task 3 — quiz page orchestration) ----
+  'quiz.flow.saving': 'Saving your answers…',
+  'quiz.flow.generating': 'Building your personalized program…',
+  'quiz.flow.needsAuth.title': 'Almost there — create your account',
+  'quiz.flow.needsAuth.body':
+    'Sign in with your phone number to save your answers and get your personalized program.',
+  'quiz.flow.needsAuth.cta': 'Continue with phone number',
+  'quiz.flow.resume.title': 'Finishing your plan',
+  'quiz.flow.resume.body': 'Your answers are safe. We are completing the last steps…',
+  'quiz.flow.signin.title': 'Sign in to finish',
+  'quiz.flow.signin.body':
+    'Your answers are saved on this device. Sign in with your phone number to continue.',
+  'quiz.flow.error.title': 'Something went wrong',
+  'quiz.flow.error.retryable':
+    'We could not finish saving your plan. Check your connection and try again — your answers are safe.',
+  'quiz.flow.error.permanent':
+    'We could not create your program with these answers. Please review them and try again.',
+  'quiz.flow.error.authNotConfigured':
+    'Sign-in is not available right now. Please try again later.',
+  'quiz.flow.retry': 'Try again',
+  'quiz.flow.review': 'Review answers',
+  'quiz.flow.restart': 'Start over',
 };
 
 const FA = {
@@ -204,6 +227,29 @@ const FA = {
   'quiz.restDays.saturday': 'شنبه',
   'quiz.restDays.sunday': 'یکشنبه',
   'quiz.error.restDays.required': 'لطفاً ۱ تا ۳ روز استراحت انتخاب کن تا ادامه بدیم.',
+
+  // ---- Completion flow (Batch 14 / task 3 — quiz page orchestration) ----
+  'quiz.flow.saving': 'در حال ذخیرهٔ پاسخ‌ها…',
+  'quiz.flow.generating': 'در حال ساخت برنامهٔ اختصاصی تو…',
+  'quiz.flow.needsAuth.title': 'فقط یک قدم مانده — حساب خودت رو بساز',
+  'quiz.flow.needsAuth.body':
+    'با شمارهٔ موبایلت وارد شو تا پاسخ‌هات ذخیره بشن و برنامهٔ اختصاصی‌ات ساخته بشه.',
+  'quiz.flow.needsAuth.cta': 'ادامه با شمارهٔ موبایل',
+  'quiz.flow.resume.title': 'در حال تکمیل برنامه‌ات',
+  'quiz.flow.resume.body': 'پاسخ‌هات امن هستن. داریم آخرین قدم‌ها رو انجام می‌دیم…',
+  'quiz.flow.signin.title': 'برای ادامه وارد شو',
+  'quiz.flow.signin.body':
+    'پاسخ‌هات روی همین دستگاه ذخیره شده. برای ادامه با شمارهٔ موبایلت وارد شو.',
+  'quiz.flow.error.title': 'مشکلی پیش اومد',
+  'quiz.flow.error.retryable':
+    'نتونستیم برنامه‌ات رو کامل ذخیره کنیم. اتصالت رو چک کن و دوباره تلاش کن — پاسخ‌هات امن هستن.',
+  'quiz.flow.error.permanent':
+    'نتونستیم با این پاسخ‌ها برنامه‌ات رو بسازیم. لطفاً آن‌ها رو بازبینی کن و دوباره تلاش کن.',
+  'quiz.flow.error.authNotConfigured':
+    'ورود در حال حاضر در دسترس نیست. لطفاً بعداً دوباره تلاش کن.',
+  'quiz.flow.retry': 'تلاش دوباره',
+  'quiz.flow.review': 'بازبینی پاسخ‌ها',
+  'quiz.flow.restart': 'شروع دوباره',
 };
 
 /** English catalog (kept under the old name for backward compatibility). */

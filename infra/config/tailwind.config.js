@@ -249,6 +249,7 @@ module.exports = {
             alert: 'var(--apex-state-alert)',
             'on-alert': 'var(--apex-on-alert)',
             'alert-soft': 'var(--apex-state-alert-soft)',
+            'alert-border': 'var(--apex-state-alert-border)',
             'alert-text': 'var(--apex-state-alert-text)',
           }
         },

@@ -41,6 +41,13 @@ enum DifficultyLevel {
   ADVANCED
 }
 
+// What a phone OTP challenge was issued for. Only SIGNIN exists today; the
+// enum leaves room for future purposes (e.g. ACCOUNT_RECOVERY) without
+// widening the model later. SQLite stores enums as TEXT.
+enum OtpPurpose {
+  SIGNIN
+}
+
 // Lifecycle of an idempotent program-generation request (see
 // `ProgramGenerationRequest`). SQLite stores enums as TEXT.
 enum GenerationRequestStatus {
@@ -236,6 +243,12 @@ model QuizResponse {
   answers               Json // flexible answer payload
   recommendedProgramId  String?
   score                 Float?
+  // Client-supplied idempotency key (8–64 URL-safe chars, e.g. the quiz
+  // draft's completionId). UNIQUE + set by `saveQuizResponse` — a replayed
+  // save (retry after a lost response, refresh mid-flow) returns the SAME
+  // QuizResponse instead of persisting a duplicate. Scoped to the owner at
+  // read time, so one user can never replay another user's key.
+  clientRequestId       String?  @unique
   createdAt             DateTime @default(now())
 
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -278,4 +291,46 @@ model ProgramGenerationRequest {
   @@index([programId])
   // Lazy retention cleanup drops rows older than 30 days by `updatedAt`.
   @@index([updatedAt])
+}
+
+// Phone OTP challenge ledger (see `src/services/otpService.ts` and
+// `docs/OTP_LAUNCH_READINESS.md`). One row per SMS OTP challenge issued for a phone.
+//
+// Security properties enforced here (each backed by a unit test):
+//   - `codeHash` stores ONLY a scrypt digest of the 6-digit code (random
+//     per-record salt) — the plaintext code never touches the database, so a
+//     leaked DB dump cannot be brute-forced offline (scrypt cost) and support
+//     staff can never read a code.
+//   - `expiresAt` + `maxAttempts` bound the lifetime of a challenge; every
+//     verify attempt increments `attempts` atomically.
+//   - `consumedAt` makes a challenge single-use: verification consumes the
+//     row atomically (`updateMany ... where consumedAt: null`), so a replayed
+//     verify request can never succeed twice.
+//   - `requestId` (client-supplied idempotency key or server-generated UUID)
+//     is UNIQUE — the same key replaying `/request` returns the original
+//     challenge without re-sending SMS, and a key reused for a different phone
+//     is rejected.
+//
+// `phone` is stored as the normalized E.164-ish identifier (e.g.
+// `+989121234567`) — it is the account identifier, not a secret. The CODE is
+// the secret, and it is never stored in plaintext.
+model PhoneOtp {
+  id          String      @id @default(cuid())
+  phone       String
+  purpose     OtpPurpose  @default(SIGNIN)
+  requestId   String      @unique
+  codeHash    String
+  attempts    Int         @default(0)
+  maxAttempts Int         @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime    @default(now())
+
+  // Verify looks up by (requestId, phone); the phone leftmost prefix also
+  // serves the cooldown query (active challenge for a phone) and cleanup.
+  @@index([phone, purpose])
+  // Lazy retention cleanup drops consumed/expired rows by `consumedAt`.
+  @@index([consumedAt])
+  // Expiry scans (markExpired / cleanup) filter by `expiresAt`.
+  @@index([expiresAt])
 }

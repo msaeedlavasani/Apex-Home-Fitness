@@ -10,6 +10,17 @@
 - **Batch 11:** Rate Limit مشترک، idempotency، timeout persistence، تست gamification و conflict resolution آفلاین — تکمیل شد.
 - **Batch 12:** چندهدفه‌کردن کوییز، انتخاب روزهای استراحت، رفع استایل localhost، responsive/RTL و سامان‌دهی asset pipeline — تکمیل شد.
 - **Batch 13:** empty-state History/Analytics، فونت Vazirmatn، پوسته Profile، route دوزبانه FAQ و ترتیب روزهای فارسی — تکمیل شد.
+- **Batch 14:** Auth/OTP با SMS.ir، اتصال Quiz به حساب، محافظت routeها و ابزار readiness — implementation تکمیل شد؛ launch واقعی هنوز به smoke test production وابسته است.
+
+## Batch 14: احراز هویت OTP و آمادگی لانچ 🔴 (Implementation تکمیل شد؛ Production Go مشروط)
+> ترتیب محصول قطعی: **Landing → Quiz → Login / Sign up با OTP → Save quiz response → Generate program → Dashboard**.
+> منبع provider: [SMS.ir REST API](https://sms.ir/rest-api/)؛ endpoint رسمی OTP: `POST https://api.sms.ir/v1/send/verify` با `X-API-KEY`، `mobile`، `templateId` و `parameters`.
+
+1. **[x] ساخت adapter امن OTP با SMS.ir:** server-only، timeout، اعتبارسنجی شماره، redaction، مدیریت 401/429/5xx، cooldown/rate limit و تست provider.
+2. **[x] پیاده‌سازی verify OTP و session حساب:** کد hash‌شده، expiry، single-use، attempt limit و اتصال fail-closed به Supabase Auth/SSR؛ بدون service-role در client.
+3. **[x] اتصال Landing تا Dashboard با OTP:** Landing دوزبانه، draft کوییز با expiry، OTP handoff، save idempotent، generation idempotent و redirect به Dashboard.
+4. **[x] افزودن auth UI و route protection:** routeهای دوزبانه OTP، refresh session، logout، public-route allowlist و محافظت dashboard/workout/history/analytics/challenges/profile.
+5. **[x] آماده‌سازی production و smoke test OTP:** env contract، checklist، readiness guard، mock smoke و go/no-go مستند شد. **Go نهایی production هنوز فقط پس از ثبت credentialهای واقعی، template فعال SMS.ir، تنظیم Supabase/domain و smoke test HTTPS با شماره رضایت‌دار صادر می‌شود.**
 
 ## Batch 13: داده، تایپوگرافی و navigation دوزبانه 🎯 (تکمیل شد)
 1. **[x] empty-state data cards برای History و Analytics:** کارت‌های داده، skeleton و empty-state دوزبانه با fallback امن برای نبود داده/خطای backend.
@@ -25,9 +36,10 @@
 4. **[x] responsive و RTL:** تثبیت layout، navigation، focus و touch target در viewportهای اصلی.
 5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
-## تسک‌های پیشنهادی بعدی (Batch 14 candidates) 🧭
+## تسک‌های پیشنهادی بعدی (بعد از Batch 14) 🧭
 1. **[ ] افزودن language switcher سراسری:** نمایش آیکون/دو پرچم کوچک در همه صفحات با حفظ مسیر locale.
 2. **[ ] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی، با regression پنجشنبه/جمعه در هر دو locale.
+3. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل.
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.

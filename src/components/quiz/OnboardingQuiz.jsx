@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { t as defaultT } from './i18n';
 import ProgressBar from './components/ProgressBar';
 import NavigationButtons from './components/NavigationButtons';
@@ -117,8 +117,16 @@ function resolveDocumentLocale(localeProp) {
  * @param {object} [props.initialData] — partial pre-filled answers (e.g. when restoring a session)
  * @param {'en' | 'fa'} [props.locale] — forces a quiz language; when omitted,
  *        the quiz follows <html lang> (set by the app layout) and defaults to 'en'.
+ * @param {(answers: object) => void} [props.onAnswersChange] — fired with the
+ *        MERGED answers after every selection change (draft autosave hook).
  */
-export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {}, locale }) {
+export default function OnboardingQuiz({
+  onSubmit,
+  t = defaultT,
+  initialData = {},
+  locale,
+  onAnswersChange,
+}) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({ ...INITIAL_ANSWERS, ...initialData });
   const [errors, setErrors] = useState({});
@@ -143,10 +151,23 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
     return (key, params) => defaultT(key, params, activeLocale);
   }, [t, activeLocale]);
 
+  // Ref mirror of `answers` so `updateAnswers` can compute the merged payload
+  // synchronously and notify the host (e.g. draft autosave) without a stale
+  // closure, while `setAnswers` stays a plain state update.
+  const answersRef = useRef(answers);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
   const updateAnswers = (patch) => {
-    setAnswers((prev) => ({ ...prev, ...patch }));
+    const next = { ...answersRef.current, ...patch };
+    answersRef.current = next;
+    setAnswers(next);
     // Clear the current step's error as soon as the user provides an answer.
     setErrors((prev) => ({ ...prev, [STEP_CONFIG[currentStep].key]: undefined }));
+    // Host hook (e.g. the quiz page's draft autosave) — receives the merged
+    // answers after every selection change.
+    if (onAnswersChange) onAnswersChange(next);
   };
 
   const handleNext = () => {

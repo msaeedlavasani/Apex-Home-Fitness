@@ -51,7 +51,9 @@ test.describe('Localization (EN / FA switching)', () => {
 });
 
 test.describe('Onboarding quiz', () => {
-  test('completes all six steps and lands on the dashboard', async ({page}) => {
+  test('completes all six steps, persists the draft and hands off to sign-in', async ({
+    page,
+  }) => {
     await page.goto('/en/quiz');
     await expect(
       page.getByRole('heading', {name: 'Build your training plan'}),
@@ -110,9 +112,22 @@ test.describe('Onboarding quiz', () => {
     await expect(page.getByRole('checkbox', {name: 'Sunday'})).toBeChecked();
     await page.getByRole('button', {name: 'See my plan'}).click();
 
-    // Submission routes to the dashboard.
-    await page.waitForURL('**/en/dashboard');
-    await expect(page.getByText('Your weekly training plan')).toBeVisible();
+    // Without a session the flow hands off to the OTP login step, carrying
+    // the completed draft so the answers survive the verify round-trip.
+    await page.waitForURL('**/en/auth/login**');
+
+    const stored = await page.evaluate(() =>
+      localStorage.getItem('apex:quiz:draft:v1'),
+    );
+    expect(stored).toBeTruthy();
+    const draft = JSON.parse(stored!) as {
+      status: string;
+      answers: {level: string; goal: string[]; restDays: string[]};
+    };
+    expect(draft.status).toBe('completed');
+    expect(draft.answers.level).toBe('beginner');
+    expect(draft.answers.goal).toEqual(['strength', 'fat_loss']);
+    expect(draft.answers.restDays).toEqual(['wednesday', 'sunday']);
   });
 
   test('goal step requires at least one goal and accepts multiple', async ({

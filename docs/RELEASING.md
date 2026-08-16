@@ -1,6 +1,6 @@
 # راهنمای انتشار Apex Home Fitness
 
-این فایل تنها مرجع انتشار PWA/TWA و انتشار Android در Google Play است. جزئیات API در `docs/AI_API.md` و وضعیت تسک‌ها در `docs/TASKS.md` نگهداری می‌شود.
+این فایل تنها مرجع انتشار PWA/TWA و انتشار Android در Google Play است. جزئیات API در `docs/AI_API.md`، آمادگی launch احراز هویت OTP در `docs/OTP_LAUNCH_READINESS.md` و وضعیت تسک‌ها در `docs/TASKS.md` نگهداری می‌شود.
 
 ## وضعیت فعلی انتشار
 
@@ -115,6 +115,8 @@ adb shell am start -n com.apexhomefitness.app/.LauncherActivity
 5. پس از تست Internal/Closed، نسخه را به Production promote کن.
 
 ## چک‌لیست go/no-go
+
+> آمادگی launch احراز هویت OTP (SMS.ir، Supabase، envها، rate limit، redaction، rollback و smoke test) در `docs/OTP_LAUNCH_READINESS.md` است و با `tests/otp-launch-readiness.test.ts` در CI بررسی می‌شود.
 
 - [ ] HTTPS و `NEXT_PUBLIC_SITE_URL` فعال است.
 - [ ] manifest، service worker و asset links روی دامنه production با status `200` هستند.

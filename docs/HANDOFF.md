@@ -25,7 +25,11 @@
 - **Batch 13 (Completed):** empty-stateهای History/Analytics، فونت self-hosted Vazirmatn، یکپارچه‌سازی Profile با sidebar/back، route دوزبانه FAQ و ترتیب روزهای فارسی.
 - **Runtime:** Node.js `>=22.0.0` در `package.json` و `.nvmrc` ثبت شده؛ verification با Node `v24.18.0` موفق بوده است.
 - **Verification Batch 13:** full unit suite با نتیجه 207/207 و E2Eهای متمرکز با نتیجه 51/51 موفق شدند؛ typecheck و asset audit نیز PASS هستند.
-- **تمرکز بعدی:** پس از push و تأیید کاربر، انتخاب تسک‌های باز بعدی از Batch 14؛ قبل از تأیید هیچ بچ جدیدی شروع نمی‌شود.
+- **Batch 14 (Implementation Completed):** adapter امن SMS.ir، OTP lifecycle/session، Landing→Quiz→OTP→save→generate→Dashboard، auth UI/route protection و readiness checklist تکمیل شدند.
+- **Batch 14 Verification:** full unit suite با نتیجه 319/319، typecheck، production build، asset audit، auth mock E2E با نتیجه 12/12 و main-flows E2E با نتیجه 8/8 موفق شدند؛ keyboard/RTL نیز standalone با نتیجه 17/17 موفق است.
+- **Production Go مشروط:** هیچ SMS واقعی یا external system در این batch لمس نشده است. قبل از لانچ باید `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، Supabase URL/anon/service-role، دامنه HTTPS، redirectها و template فعال تنظیم شوند و smoke test واقعی با شماره رضایت‌دار اجرا شود.
+- **تصمیم Next.js:** ارتقای Next.js به 16.3.1 به‌عنوان migration مستقل و بعد از launch در backlog ثبت شده؛ برای این batch انجام نمی‌شود.
+- **تمرکز بعدی:** ابتدا production smoke و go/no-go لانچ؛ سپس انتخاب تسک‌های بعدی از backlog. هیچ migration Next.js یا بچ جدیدی بدون تأیید شروع نمی‌شود.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **دسترسی به فایل‌ها:** ریشه اصلی پروژه `/Users/msl/Documents/GitHub/Apex-Home-Fitness` است.
