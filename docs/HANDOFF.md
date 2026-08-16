@@ -6,9 +6,34 @@
 - **دسترسی گیت:** کلید SSH روی سیستم نصب و فعال است.
 - **مرجع env:** `.env.example`؛ جزئیات API در `docs/AI_API.md` و انتشار در `docs/RELEASING.md` است.
 
-## گیت اصلاح Workflow — فقط یک‌بار و قبل از هر کار عادی 🔴
+## Blocker فوری قبل از هر Batch: شکست CI در مرحله Build 🔴
 
-> **دستور قطعی برای ایجنت بعدی:** قبل از انتخاب/اجرای هر Batch یا شروع هر تسک محصولی، این گیت را کامل کن. در این مرحله فقط Workflow، isolation ساب‌ایجنت‌ها و validation/CI اصلاح می‌شود؛ هیچ feature جدیدی شروع نشود.
+> **دستور قطعی برای ایجنت بعدی:** قبل از اجرای Workflow Repair Gate، انتخاب Batch یا شروع هر تسک محصولی، شکست build را بررسی و رفع کن. این blocker هنوز حل‌شده فرض نمی‌شود.
+
+### وضعیت ثبت‌شده
+
+- اجرای CI مربوط به commit `ea86ad8` (`Document workflow repair gate and E2E policy`) در job `build` با `exit code 1` شکست خورده است.
+- طبق گزارش کاربر، commit قبلی `77f721d` (`Implement SMS.ir OTP authentication flow`) نیز در مرحله‌ی build شکست داشته است؛ لاگ دقیق هر دو اجرا باید از GitHub Actions خوانده شود.
+- در اجرای `ea86ad8`، job `e2e` به‌دلیل وابستگی `needs: build` اصلاً اجرا نشده است.
+- علت واقعی build failure هنوز مشخص نیست؛ از روی status screenshot نمی‌توان آن را به اصلاحات Workflow Repair، auth، Next.js یا dependency خاصی نسبت داد.
+
+### معیار پذیرش blocker build
+
+- [ ] لاگ کامل job `build` برای `77f721d` و `ea86ad8` بررسی و علت ریشه‌ای هر دو مشخص شود.
+- [ ] مشخص شود شکست‌ها یک علت مشترک دارند یا دو failure مستقل هستند.
+- [ ] build در محیط مشابه CI با Node 22، `DATABASE_URL=file:./ci.db` و migrationهای Prisma بازتولید یا ردگیری شود.
+- [ ] علت ریشه‌ای با کمترین تغییر امن اصلاح شود؛ اصلاحات حدسی یا upgrade غیرمرتبط انجام نشود.
+- [ ] `npm ci`، Prisma generate/migrate، lint، typecheck، unit tests و `npm run build` در محیط CI-like سبز شوند.
+- [ ] پس از اصلاح، یک push آزمایشی/commit اصلاحی CI را تا پایان job `build` اجرا کند؛ فقط بعد از PASS شدن build وارد Workflow Repair Gate شو.
+- [ ] اگر علت به external secret، GitHub Actions configuration یا production environment وابسته است، blocker و مقدار/تنظیم لازم دقیق مستند شود و secret واقعی در repo قرار نگیرد.
+
+### رابطه با اصلاحات Workflow Repair
+
+اصلاحات قبلی Workflow Repair فقط isolation، validation policy، targeted E2E و auth coverage را هدف می‌گیرند و **به‌تنهایی ثابت نمی‌کنند build سالم است**. تا زمانی که build هر دو commit بررسی و یک build سبز روی commit اصلاحی ثبت نشده، هیچ Batch جدیدی شروع نشود.
+
+## گیت اصلاح Workflow — فقط یک‌بار و بعد از رفع Build Blocker 🔴
+
+> **دستور قطعی برای ایجنت بعدی:** بعد از PASS شدن blocker build و قبل از انتخاب/اجرای هر Batch یا شروع هر تسک محصولی، این گیت را کامل کن. در این مرحله فقط Workflow، isolation ساب‌ایجنت‌ها و validation/CI اصلاح می‌شود؛ هیچ feature جدیدی شروع نشود.
 
 ### مسئله‌ای که باید رفع شود
 
@@ -102,7 +127,7 @@
 پس از PASS شدن تمام معیارهای بالا:
 
 1. تغییرات Workflow را commit/push کن.
-2. همین بخش `## گیت اصلاح Workflow — فقط یک‌بار و قبل از هر کار عادی` را از این فایل حذف کن.
+2. همین بخش `## گیت اصلاح Workflow — فقط یک‌بار و بعد از رفع Build Blocker` را از این فایل حذف کن.
 3. در بخش Current Status فقط یک خط دائمی باقی بگذار: `Workflow Repair Gate completed — isolated agents, staged validation, targeted E2E policy and CI auth coverage are active.`
 4. سپس، و فقط سپس، روال عادی انتخاب Batch و اجرای taskهای محصولی را ادامه بده.
 5. گزارش کامل ممیزی E2E را نگه دار؛ حذف این بخش موقت به معنی حذف policy دائمی یا کاهش coverage نیست.
@@ -134,8 +159,9 @@
 - **Batch 14 Verification:** full unit suite با نتیجه 319/319، typecheck، production build، asset audit، auth mock E2E با نتیجه 12/12 و main-flows E2E با نتیجه 8/8 موفق شدند؛ keyboard/RTL نیز standalone با نتیجه 17/17 موفق است.
 - **Production Go مشروط:** هیچ SMS واقعی یا external system در این batch لمس نشده است. قبل از لانچ باید `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، Supabase URL/anon/service-role، دامنه HTTPS، redirectها و template فعال تنظیم شوند و smoke test واقعی با شماره رضایت‌دار اجرا شود.
 - **تصمیم Next.js:** ارتقای Next.js به 16.3.1 به‌عنوان migration مستقل و بعد از launch در backlog ثبت شده؛ برای این batch انجام نمی‌شود.
-- **Workflow Repair Gate:** برای رفع shared-workspace conflict، staged validation، failure classification، targeted E2E و فعال‌سازی auth coverage در CI آماده شده و باید قبل از هر Batch بعدی اجرا و پس از PASS از همین فایل پاک شود.
-- **تمرکز بعدی:** ابتدا Workflow Repair Gate، سپس production smoke و go/no-go لانچ؛ بعد از آن انتخاب تسک‌های بعدی از backlog. هیچ migration Next.js یا بچ جدیدی بدون تأیید شروع نمی‌شود.
+- **Build Blocker:** CI برای commitهای `77f721d` و `ea86ad8` طبق گزارش موجود در مرحله `build` شکست خورده؛ قبل از Workflow Repair Gate و هر Batch جدید باید علت هر دو run بررسی و یک build سبز CI-like/CI ثبت شود.
+- **Workflow Repair Gate:** برای رفع shared-workspace conflict، staged validation، failure classification، targeted E2E و فعال‌سازی auth coverage در CI آماده شده و فقط بعد از رفع Build Blocker باید اجرا و پس از PASS از همین فایل پاک شود.
+- **تمرکز بعدی:** ابتدا رفع Build Blocker، سپس Workflow Repair Gate، بعد production smoke و go/no-go لانچ؛ بعد از آن انتخاب تسک‌های بعدی از backlog. هیچ migration Next.js یا بچ جدیدی بدون تأیید شروع نمی‌شود.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **دسترسی به فایل‌ها:** ریشه اصلی پروژه `/Users/msl/Documents/GitHub/Apex-Home-Fitness` است.
