@@ -269,7 +269,10 @@ export function VerifyForm() {
     >
       {pending ? (
         <>
-          <div role="group" aria-label={t('codeLabel')} className="flex justify-between gap-2">
+          {/* OTP digits are always entered left-to-right, even on RTL pages —
+              the code is read from the SMS as a number. `dir="ltr"` keeps the
+              first digit on the left and the caret/digit order unambiguous. */}
+          <div role="group" aria-label={t('codeLabel')} dir="ltr" className="flex justify-between gap-2">
             {digits.map((digit, index) => (
               <input
                 key={index}

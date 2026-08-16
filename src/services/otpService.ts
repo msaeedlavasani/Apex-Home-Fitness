@@ -68,6 +68,7 @@ import {
 } from '../lib/auth/otp';
 import type {OtpErrorCode, OtpService, RequestCodeResult, VerifyCodeResult} from '../lib/auth/types';
 import {normalizePhone} from '../lib/auth/phone';
+import {hasSupabaseEnv} from '../lib/auth/mode';
 import {createSmsIrOtpProvider, SmsIrProviderError, SMSIR_ERROR_CODES, type SmsIrOtpProvider} from '../lib/auth/smsIrProvider';
 import {establishSessionForVerifiedPhone} from './phoneSessionService';
 
@@ -463,6 +464,13 @@ export function createSecureOtpService(deps: SecureOtpServiceDeps = {}): OtpServ
     async verifyCode({phone, code}): Promise<VerifyCodeResult> {
       if (!normalizePhone(phone)) return {ok: false, error: 'invalid_phone'};
       if (!isPlausibleOtpCode(code, policy.codeLength)) return {ok: false, error: 'invalid_code'};
+      // Session-provider availability gate. Without Supabase the verified code
+      // cannot be exchanged for a session — fail BEFORE consuming the
+      // challenge so the code stays valid once the provider is configured
+      // (no burning codes + a precise, honest error message).
+      if (!hasSupabaseEnv()) {
+        return {ok: false, error: 'session_unavailable'};
+      }
       try {
         await verifyLatestChallengeForPhone(phone, code, policy, now(), onVerified);
         return {ok: true};

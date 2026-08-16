@@ -35,6 +35,7 @@ function statusFor(error: OtpErrorCode): number {
     case 'rate_limited':
       return 429;
     case 'provider_error':
+    case 'session_unavailable':
       return 503;
     default:
       return 400;

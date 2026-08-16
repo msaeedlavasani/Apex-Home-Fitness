@@ -464,6 +464,7 @@
       "rateLimited": "Please wait a moment before requesting another code.",
       "notRequested": "Request a code first.",
       "providerError": "We couldn't send the code. Please try again.",
+      "sessionUnavailable": "Your code was correct, but sign-in isn't available yet (the Supabase service isn't configured). Please try again later.",
       "generic": "Something went wrong. Please try again."
     }
   }

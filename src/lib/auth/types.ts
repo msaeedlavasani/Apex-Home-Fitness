@@ -31,7 +31,8 @@ export type OtpErrorCode =
   | 'too_many_attempts'
   | 'rate_limited'
   | 'not_requested'
-  | 'provider_error';
+  | 'provider_error'
+  | 'session_unavailable';
 
 export interface RequestCodeResult {
   ok: boolean;

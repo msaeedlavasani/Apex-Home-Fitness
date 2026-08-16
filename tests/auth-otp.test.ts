@@ -164,7 +164,8 @@ test('verify error mapping covers the canonical verify codes', () => {
   assert.equal(verifyErrorMessageKey('ATTEMPTS_EXHAUSTED'), 'tooManyAttempts');
   assert.equal(verifyErrorMessageKey('COOLDOWN'), 'rateLimited');
   assert.equal(verifyErrorMessageKey('RATE_LIMITED'), 'rateLimited');
-  assert.equal(verifyErrorMessageKey('SESSION_PROVIDER_NOT_CONFIGURED'), 'providerError');
+  assert.equal(verifyErrorMessageKey('SESSION_PROVIDER_NOT_CONFIGURED'), 'sessionUnavailable');
+  assert.equal(verifyErrorMessageKey('session_unavailable'), 'sessionUnavailable');
   assert.equal(verifyErrorMessageKey('SESSION_FAILED'), 'providerError');
   assert.equal(verifyErrorMessageKey('INTERNAL'), 'generic');
   assert.equal(verifyErrorMessageKey(undefined), 'generic');

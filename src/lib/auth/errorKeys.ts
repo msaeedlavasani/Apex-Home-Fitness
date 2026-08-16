@@ -19,6 +19,7 @@ export type AuthErrorMessageKey =
   | 'rateLimited'
   | 'notRequested'
   | 'providerError'
+  | 'sessionUnavailable'
   | 'generic';
 
 const REQUEST_CODE_TO_KEY: Record<string, AuthErrorMessageKey> = {
@@ -49,12 +50,14 @@ const VERIFY_CODE_TO_KEY: Record<string, AuthErrorMessageKey> = {
   too_many_attempts: 'tooManyAttempts',
   ATTEMPTS_EXHAUSTED: 'tooManyAttempts',
   not_requested: 'notRequested',
+  session_unavailable: 'sessionUnavailable',
+  SESSION_UNAVAILABLE: 'sessionUnavailable',
   rate_limited: 'rateLimited',
   RATE_LIMITED: 'rateLimited',
   COOLDOWN: 'rateLimited',
   SMS_RATE_LIMITED: 'rateLimited',
   provider_error: 'providerError',
-  SESSION_PROVIDER_NOT_CONFIGURED: 'providerError',
+  SESSION_PROVIDER_NOT_CONFIGURED: 'sessionUnavailable',
   SESSION_FAILED: 'providerError',
 };
 
