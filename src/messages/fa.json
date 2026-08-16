@@ -21,6 +21,15 @@
     "navLabel": "ناوبری اصلی",
     "navLabelMobile": "ناوبری موبایل"
   },
+  "Language": {
+    "label": "زبان",
+    "en": "EN",
+    "fa": "فا",
+    "enName": "انگلیسی",
+    "faName": "فارسی",
+    "switchToEn": "تغییر به انگلیسی",
+    "switchToFa": "تغییر به فارسی"
+  },
   "Dashboard": {
     "greeting": {
       "morning": "صبح بخیر",

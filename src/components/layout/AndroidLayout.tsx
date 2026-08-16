@@ -10,6 +10,7 @@ import {
   type LayoutChromeProps,
   type NavItem,
 } from './nav';
+import {LanguageSwitcher} from './LanguageSwitcher';
 import {ThemeToggle} from './ThemeToggle';
 
 /**
@@ -66,7 +67,10 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
             ) : null}
           </div>
 
-          <ThemeToggle className="flex h-12 w-12 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
+            <ThemeToggle className="flex h-12 w-12 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          </div>
         </div>
       </header>
 
