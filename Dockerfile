@@ -16,6 +16,17 @@ FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# NEXT_PUBLIC_* values are INLINED into the client bundle at build time —
+# pass them in as build args (from the compose .env) or the browser bundle
+# would ship with undefined Supabase/site values. Never put secrets here.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 # A placeholder DATABASE_URL satisfies prisma client generation at build time;
