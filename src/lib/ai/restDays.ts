@@ -14,11 +14,24 @@ import {z} from 'zod';
  *     → persistence (`Program.restDays`; `buildProgramDraft` skips rest-day
  *       sessions, so no exercise is ever linked to a rest day).
  *
- * Enforcement (defense in depth): even if the model schedules a session on a
- * user-selected rest day, `enforceRestDays` strips it into an explicit rest
- * entry (`is_rest_day: true`, no warmup/exercises/cooldown). The guarantee
- * "selected days never contain workouts" therefore holds in the API response
- * AND in the persisted program, independent of model behavior.
+ * Enforcement (defense in depth, deterministic — not prompt-told-only):
+ *   1. The AI prompt pins the weekday contract (numeric `day` = ISO weekday
+ *      number 1=Monday…7=Sunday, `day_name` = English "Monday"…"Sunday").
+ *   2. `enforceRestDays` post-processes the validated output: any session
+ *      whose weekday is a user-selected rest day is rewritten into an
+ *      explicit rest entry (`is_rest_day: true`, no warmup/exercises/
+ *      cooldown). Weekday resolution is `day_name` first (English AND
+ *      Persian names — the model cannot dodge the invariant by localizing),
+ *      with the numeric `day` as a documented ISO fallback when `day_name`
+ *      is absent.
+ *   3. `buildProgramDraft` independently skips every session whose weekday
+ *      is a selected rest day at persistence time (`isRestDay`), so even a
+ *      caller that bypassed the route-level pass cannot persist a workout
+ *      on a rest day.
+ *
+ * The guarantee "selected days never contain workouts" therefore holds in
+ * the API response AND in the persisted program, independent of model
+ * behavior.
  */
 
 /** Canonical weekday ids (ISO order, Monday first) — mirrors the quiz's `WEEKDAY_IDS`. */
@@ -61,14 +74,97 @@ export function isRestDaySession(session: {is_rest_day?: boolean}): boolean {
 }
 
 /**
+ * Collapses spelling variants into the lookup-key form used by
+ * `DAY_NAME_ALIASES`: lowercase, ZWNJ (U+200C) and all whitespace removed,
+ * Arabic yeh/kaf mapped to the Persian glyphs. «سه‌شنبه» and «سه شنبه» both
+ * land on «سه‌شنبه».
+ */
+function normalizeDayNameKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\u200c/g, '')
+    .replace(/\s+/g, '')
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک');
+}
+
+/**
+ * Raw weekday-name aliases (English primary, Persian accepted) in their
+ * human-readable spelling. Keys are normalized once at module load via
+ * `normalizeDayNameKey`, so the lookup table and the input normalization can
+ * never drift apart (ZWNJ/space variants of «سه‌شنبه» match regardless of how
+ * this file's literals were typed).
+ */
+const DAY_NAME_ALIAS_RAW: Record<string, Weekday> = {
+  monday: 'monday',
+  tuesday: 'tuesday',
+  wednesday: 'wednesday',
+  thursday: 'thursday',
+  friday: 'friday',
+  saturday: 'saturday',
+  sunday: 'sunday',
+  // Persian week (شنبه = Saturday … جمعه = Friday).
+  'شنبه': 'saturday',
+  'یکشنبه': 'sunday',
+  'دوشنبه': 'monday',
+  'سه‌شنبه': 'tuesday',
+  'چهارشنبه': 'wednesday',
+  'پنجشنبه': 'thursday',
+  'جمعه': 'friday',
+};
+
+const DAY_NAME_ALIASES: Record<string, Weekday> = Object.fromEntries(
+  Object.entries(DAY_NAME_ALIAS_RAW).map(([key, value]) => [normalizeDayNameKey(key), value]),
+);
+
+/**
  * Normalizes a model-emitted weekday name to the canonical id
- * ("Monday" / "MONDAY" / " monday " → 'monday'). Returns null for anything
- * that is not a weekday name, so enforcement never guesses.
+ * ("Monday" / "MONDAY" / " monday " → 'monday'; «جمعه» → 'friday'). Returns
+ * null for anything that is not a weekday name, so enforcement never guesses.
  */
 export function normalizeDayName(value: unknown): Weekday | null {
   if (typeof value !== 'string') return null;
-  const name = value.trim().toLowerCase();
-  return (WEEKDAY_VALUES as readonly string[]).includes(name) ? (name as Weekday) : null;
+  return DAY_NAME_ALIASES[normalizeDayNameKey(value)] ?? null;
+}
+
+/**
+ * Resolves the weekday of a schedule entry to a canonical id, or null when it
+ * cannot be determined:
+ *
+ *   1. `day_name` wins — it is the semantic contract the generation prompt
+ *      pins down (English "Monday"…"Sunday"; Persian names are accepted).
+ *   2. When `day_name` is absent or not a recognizable weekday name, the
+ *      numeric `day` is used as a documented fallback with ISO numbering
+ *      (1 = Monday … 7 = Sunday) — the same convention the app's own
+ *      fixtures and the generation prompt use.
+ *   3. When neither is usable the entry is unmappable and enforcement leaves
+ *      it untouched rather than guess.
+ */
+export function weekdayOf(session: {day_name?: unknown; day?: unknown}): Weekday | null {
+  const named = normalizeDayName(session.day_name);
+  if (named) return named;
+  const day = session.day;
+  if (typeof day === 'number' && Number.isInteger(day) && day >= 1 && day <= 7) {
+    return WEEKDAY_VALUES[day - 1] ?? null;
+  }
+  return null;
+}
+
+/**
+ * True when a schedule entry must not carry a workout for the given rest-day
+ * selection: the entry is explicitly flagged as a rest day, OR its weekday
+ * (via `weekdayOf`) is one of the selected rest days. Used by
+ * `buildProgramDraft` so persistence skips rest-day sessions even when the
+ * route-level `enforceRestDays` pass was bypassed.
+ */
+export function isRestDay(
+  session: {day_name?: unknown; day?: unknown; is_rest_day?: boolean},
+  restDays: readonly string[],
+): boolean {
+  if (session.is_rest_day === true) return true;
+  const weekday = weekdayOf(session);
+  return weekday !== null && restDays.includes(weekday);
 }
 
 /**
@@ -80,6 +176,8 @@ export function normalizeDayName(value: unknown): Weekday | null {
  *      into an explicit rest entry: `is_rest_day: true` and EMPTY
  *      warmup / exercises / cooldown. The entry stays in the schedule (marked
  *      as a rest day) so downstream code can see the full week at a glance.
+ *      Weekday resolution is `day_name` (English or Persian) first, then the
+ *      numeric `day` (ISO 1=Monday…7=Sunday) — see `weekdayOf`.
  *   3. Non-rest entries are left untouched (their `is_rest_day` is preserved
  *      if the model already set it).
  *
@@ -91,15 +189,15 @@ export function normalizeDayName(value: unknown): Weekday | null {
  */
 export function enforceRestDays<
   TProgram extends object,
-  TSession extends {day_name?: unknown; is_rest_day?: boolean; notes?: unknown},
+  TSession extends {day_name?: unknown; day?: unknown; is_rest_day?: boolean; notes?: unknown},
 >(
   program: TProgram & {weekly_schedule?: TSession[]},
   restDays: readonly string[],
 ): TProgram & {rest_days: string[]; weekly_schedule: (TSession & {is_rest_day: boolean})[]} {
   const restSet = new Set<string>(restDays);
   const schedule = (program.weekly_schedule ?? []).map((session) => {
-    const dayName = normalizeDayName(session.day_name);
-    if (dayName && restSet.has(dayName)) {
+    const weekday = weekdayOf(session);
+    if (weekday !== null && restSet.has(weekday)) {
       return {
         ...session,
         is_rest_day: true,

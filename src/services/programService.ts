@@ -72,6 +72,7 @@ import {
 } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { isRestDay } from '../lib/ai/restDays';
 import {
   PERSIST_MAX_WAIT_MS,
   PERSIST_TIMEOUT_MS,
@@ -320,15 +321,19 @@ export interface ProgramDraft {
  * so the same exercise can appear at most once per program — when the AI
  * repeats an exercise across sessions, only its first occurrence is linked.
  *
- * Rest-day enforcement: sessions flagged `is_rest_day: true` (set by the
- * route's `enforceRestDays` pass for any session that landed on a
- * user-selected rest day) are SKIPPED entirely — they contribute no exercise
- * links, and `sessionsPerWeek` counts only real training days. Combined with
- * the enforcement pass this guarantees a persisted program never contains a
- * workout on a selected rest day, even if the model misbehaved.
+ * Rest-day enforcement: sessions that must not carry a workout are SKIPPED
+ * entirely — they contribute no exercise links, and `sessionsPerWeek` counts
+ * only real training days. The skip decision is `isRestDay` (see
+ * `src/lib/ai/restDays.ts`): an explicit `is_rest_day: true` flag OR a
+ * session whose weekday (`day_name`, with a numeric `day` ISO fallback) is
+ * one of the user's selected rest days. The route already runs
+ * `enforceRestDays` before persistence, so this is defense in depth — a
+ * persisted program never contains a workout on a selected rest day, even if
+ * a caller bypassed the route-level pass.
  */
 export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraft {
   const { program } = input;
+  const restDays = input.restDays ?? [];
   const seen = new Set<string>();
 
   const exercises: Prisma.ExerciseCreateInput[] = [];
@@ -336,7 +341,7 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
   let order = 0;
 
   const trainingSessions = (program.weekly_schedule ?? []).filter(
-    (session) => session.is_rest_day !== true,
+    (session) => !isRestDay(session, restDays),
   );
 
   for (const session of trainingSessions) {
