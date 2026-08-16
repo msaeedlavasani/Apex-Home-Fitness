@@ -76,7 +76,9 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
           {backHref ? (
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1 rounded-lg px-1 py-0.5 text-sm font-medium text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+              // min-h-11 (44px) keeps the Back control a comfortable touch
+              // target on mobile (matches the iOS/Android back affordances).
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
             >
               <ChevronLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
               {t('back')}

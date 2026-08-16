@@ -1,5 +1,5 @@
 import React from 'react';
-import { REST_DAY_MAX, REST_DAY_MIN, WEEKDAY_OPTIONS, normalizeRestDays } from '../restDays';
+import { REST_DAY_MAX, REST_DAY_MIN, getWeekdayOptions, normalizeRestDays } from '../restDays';
 import { t as defaultT } from '../i18n';
 
 /**
@@ -20,10 +20,14 @@ import { t as defaultT } from '../i18n';
  *        Called with the new canonical array on every toggle.
  * @param {(key: string, params?: object) => string} [props.t]
  * @param {string} [props.error]
+ * @param {'en' | 'fa'} [props.locale='en'] — display order: 'fa' renders the
+ *        options Saturday → Friday (Persian week), everything else keeps the
+ *        canonical Monday → Sunday order. Stored ids are locale-independent.
  */
-export default function RestDaysStep({ value = [], onChange, t = defaultT, error }) {
+export default function RestDaysStep({ value = [], onChange, t = defaultT, error, locale = 'en' }) {
   const selected = normalizeRestDays(value);
   const atMax = selected.length >= REST_DAY_MAX;
+  const options = getWeekdayOptions(locale);
 
   const handleToggle = (id) => {
     if (selected.includes(id)) {
@@ -46,7 +50,7 @@ export default function RestDaysStep({ value = [], onChange, t = defaultT, error
       </p>
 
       <div className="quiz-step__options quiz-step__options--checkboxes">
-        {WEEKDAY_OPTIONS.map((option) => {
+        {options.map((option) => {
           const checked = selected.includes(option.id);
           // Only unchecked options lock up when the cap is reached — the
           // user can always uncheck a selected day.

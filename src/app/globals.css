@@ -448,11 +448,16 @@
     min-height: 100dvh;
   }
 
-  /* RTL & Persian (fa) — Vazirmatn first, zero tracking (DESIGN_SYSTEM.md §4).
-     Zero tracking must also win over the h1-h6 -0.02em rule below, hence
-     the !important on letter-spacing. */
-  [dir='rtl'], [lang='fa'] {
-    font-family: 'Vazirmatn', theme('fontFamily.sans');
+  /* RTL & Persian (fa) — self-hosted Vazirmatn first (next/font/local,
+     served same-origin, CSP font-src 'self'), then the system Persian
+     fallbacks, then the base sans stack. `html[dir='rtl'] body` has
+     higher specificity than the `[data-platform='material'] body` rule
+     below so fa on Android still gets the real Vazirmatn webfont
+     (Roboto has no Persian glyphs). Zero tracking must also win over the
+     h1-h6 -0.02em rule below, hence the !important on letter-spacing. */
+  html[dir='rtl'] body,
+  html[lang='fa'] body {
+    font-family: var(--font-vazirmatn), 'Vazirmatn', theme('fontFamily.sans');
     letter-spacing: 0 !important;
   }
 

@@ -9,6 +9,14 @@
 - **Batch 10:** Workout Engine، تست‌های E2E، Design System audit، مستندات API و CI E2E — تکمیل شد.
 - **Batch 11:** Rate Limit مشترک، idempotency، timeout persistence، تست gamification و conflict resolution آفلاین — تکمیل شد.
 - **Batch 12:** چندهدفه‌کردن کوییز، انتخاب روزهای استراحت، رفع استایل localhost، responsive/RTL و سامان‌دهی asset pipeline — تکمیل شد.
+- **Batch 13:** empty-state History/Analytics، فونت Vazirmatn، پوسته Profile، route دوزبانه FAQ و ترتیب روزهای فارسی — تکمیل شد.
+
+## Batch 13: داده، تایپوگرافی و navigation دوزبانه 🎯 (تکمیل شد)
+1. **[x] empty-state data cards برای History و Analytics:** کارت‌های داده، skeleton و empty-state دوزبانه با fallback امن برای نبود داده/خطای backend.
+2. **[x] اعمال فونت Vazirmatn:** فونت self-hosted با `next/font/local`، asset audit، CSP same-origin و سازگاری offline/PWA.
+3. **[x] sidebar و back در Profile:** اتصال Profile به AppShell، sidebar/mobile navigation و Back قابل‌دسترسی در desktop/mobile و en/fa.
+4. **[x] رفع ۴۰۴ FAQ:** route دوزبانه FAQ، metadata، محتوای ترجمه‌شده و اتصال navigation/Profile.
+5. **[x] اصلاح ترتیب روزهای کوییز فارسی:** نمایش شنبه تا جمعه با حفظ canonical IDs و server contract.
 
 ## Batch 12: تجربه کوییز و کیفیت رابط کاربری 🎯 (تکمیل شد)
 1. **[x] انتخاب چند هدف در کوییز:** پشتیبانی UI، schema، prompt و persistence از آرایه اهداف.
@@ -17,14 +25,9 @@
 4. **[x] responsive و RTL:** تثبیت layout، navigation، focus و touch target در viewportهای اصلی.
 5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
-## تسک‌های پیشنهادی بعدی (Batch 13 candidates) 🧭
-1. **[ ] ساخت empty-state data cards برای History و Analytics:** نمایش باکس‌های داده، skeleton و empty-state دوزبانه حتی بدون داده.
-2. **[ ] اعمال فونت Vazirmatn:** استفاده از فونت وزیر در تمام صفحات فارسی با حفظ stack انگلیسی.
-3. **[ ] افزودن sidebar و back به Profile:** یکپارچه‌سازی پوسته پروفایل در en/fa و desktop/mobile.
-4. **[ ] رفع ۴۰۴ FAQ:** ساخت route دوزبانه FAQ و اتصال لینک Profile.
-5. **[ ] اصلاح ترتیب روزهای کوییز فارسی:** شنبه، یکشنبه، دوشنبه، سه‌شنبه، چهارشنبه، پنجشنبه، جمعه.
-6. **[ ] افزودن language switcher سراسری:** نمایش آیکون/دو پرچم کوچک در همه صفحات با حفظ مسیر locale.
-7. **[ ] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی، با regression پنجشنبه/جمعه در هر دو locale.
+## تسک‌های پیشنهادی بعدی (Batch 14 candidates) 🧭
+1. **[ ] افزودن language switcher سراسری:** نمایش آیکون/دو پرچم کوچک در همه صفحات با حفظ مسیر locale.
+2. **[ ] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی، با regression پنجشنبه/جمعه در هر دو locale.
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.

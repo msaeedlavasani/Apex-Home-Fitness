@@ -3,11 +3,13 @@ import test from 'node:test';
 
 import {
   REST_DAYS_SCHEMA,
+  WEEKDAY_VALUES,
   enforceRestDays,
   isRestDaySession,
   normalizeDayName,
 } from '../src/lib/ai/restDays';
 import { GENERATE_PROGRAM_INPUT_SCHEMA } from '../src/lib/ai/requestSecurity';
+import { WEEKDAY_IDS } from '../src/components/quiz/restDays';
 import type {
   AiExercise,
   AiGeneratedProgram,
@@ -82,6 +84,28 @@ const baseProgram: AiGeneratedProgram = {
 // ---------------------------------------------------------------------------
 // 1. REST_DAYS_SCHEMA
 // ---------------------------------------------------------------------------
+
+test('server canonical weekday set stays ISO and in sync with the quiz (display order is UI-only)', () => {
+  // Regression: the Persian quiz now REORDERS its options (Saturday first),
+  // but that display change must never leak into the server contract —
+  // canonical ids stay ISO (Monday first), identical to the quiz's
+  // WEEKDAY_IDS, so stored values and enforcement are locale-independent.
+  assert.deepEqual([...WEEKDAY_VALUES], WEEKDAY_IDS);
+  assert.deepEqual([...WEEKDAY_VALUES], [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ]);
+  // The schema still accepts only canonical ISO ids (all valid, incl. the
+  // Persian-first display order id set — ids themselves are unchanged).
+  for (const id of WEEKDAY_VALUES) {
+    assert.equal(REST_DAYS_SCHEMA.safeParse([id]).success, true, `schema must accept ${id}`);
+  }
+});
 
 test('REST_DAYS_SCHEMA is strict: absent input is rejected (backward compat lives in the input schema)', () => {
   // The strict schema itself never accepts "no answer" — the

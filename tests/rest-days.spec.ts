@@ -5,7 +5,10 @@ import {expect, test, type Page} from '@playwright/test';
  *
  * 1. min bound — finishing without a rest day shows the bilingual error;
  * 2. max bound — the selection caps at 3 and unchecked options disable;
- * 3. Persian — the step is fully localized (labels + RTL page).
+ * 3. option display order — en keeps Monday → Sunday (canonical), fa renders
+ *    the Persian week Saturday (شنبه) → Friday (جمعه) — display only, the
+ *    stored weekday ids stay canonical ISO ids;
+ * 4. Persian — the step is fully localized (labels + RTL page).
  */
 
 /** Walks steps 1–5 (theme, level, goals, equipment, limitations-skip). */
@@ -78,6 +81,48 @@ test.describe('Rest days step', () => {
     await expect(thursday).toBeEnabled();
     await expect(page.locator('.quiz-restdays__counter')).toContainText(
       '2 of 3 rest days selected',
+    );
+  });
+
+  test('en keeps the canonical Monday → Sunday option order', async ({page}) => {
+    await navigateToRestDaysStep(page);
+
+    await expect(page.locator('.quiz-step__options--checkboxes input')).toHaveCount(7);
+    await expect(page.locator('.quiz-step__options--checkboxes .quiz-check__label')).toHaveText([
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ]);
+  });
+
+  test('fa orders options Saturday (شنبه) → Friday (جمعه) — display only', async ({
+    page,
+  }) => {
+    await navigateToRestDaysStep(page, {locale: 'fa'});
+
+    await expect(page.locator('.quiz-step__options--checkboxes input')).toHaveCount(7);
+    // Persian week: شنبه first, جمعه last; the ids behind these options stay
+    // canonical ISO ids (asserted in the unit + server contract tests).
+    await expect(page.locator('.quiz-step__options--checkboxes .quiz-check__label')).toHaveText([
+      'شنبه',
+      'یکشنبه',
+      'دوشنبه',
+      'سه‌شنبه',
+      'چهارشنبه',
+      'پنجشنبه',
+      'جمعه',
+    ]);
+
+    // Selection still works across the reordered options and the counter
+    // reflects it.
+    await page.getByRole('checkbox', {name: 'جمعه', exact: true}).check();
+    await page.getByRole('checkbox', {name: 'شنبه', exact: true}).check();
+    await expect(page.locator('.quiz-restdays__counter')).toContainText(
+      '2 از 3 روز استراحت انتخاب شده',
     );
   });
 

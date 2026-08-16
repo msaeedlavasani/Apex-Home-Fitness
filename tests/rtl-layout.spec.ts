@@ -26,7 +26,7 @@ import {expect, test} from '@playwright/test';
 const FA_PAGES: {path: string; title: string; hasAppShell: boolean}[] = [
   {path: 'history', title: 'تاریخچه', hasAppShell: true},
   {path: 'analytics', title: 'آمار', hasAppShell: true},
-  {path: 'profile', title: 'پروفایل', hasAppShell: false}, // ProfileView has no AppShell nav
+  {path: 'profile', title: 'پروفایل', hasAppShell: true}, // ProfileView renders inside AppShell
   {path: 'library', title: 'کتابخانه', hasAppShell: true},
   {path: 'challenges', title: 'چالش', hasAppShell: true},
   {path: 'workout', title: 'تمرین', hasAppShell: true},

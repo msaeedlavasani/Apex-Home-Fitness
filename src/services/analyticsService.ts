@@ -118,6 +118,8 @@ export interface WorkoutAnalytics {
   userId?: string;
   /** Completed sessions, all time. */
   totalSessions: number;
+  /** Distinct calendar days (in the analytics timezone) with ≥ 1 completed session. */
+  activeDays: number;
   /** Total active duration of completed sessions (seconds). */
   totalDurationSeconds: number;
   /** Total calories — stored values preferred, the rest estimated. */
@@ -337,6 +339,23 @@ export function countCompletedSessions(
   return sessions.reduce((count, session) => count + (isCompletedSession(session) ? 1 : 0), 0);
 }
 
+/**
+ * Distinct calendar days (in `opts.timeZone`) that contain at least one
+ * completed session — i.e. how many separate days the user trained on.
+ */
+export function computeActiveDays(
+  sessions: readonly AnalyticsSession[],
+  opts: AnalyticsOptions = {},
+): number {
+  const timeZone = opts.timeZone ?? defaultTimeZone();
+  const activeDays = new Set<number>();
+  for (const session of sessions) {
+    if (!isCompletedSession(session)) continue;
+    activeDays.add(dayKey(toDate(session.startedAt), timeZone));
+  }
+  return activeDays.size;
+}
+
 /** Sets / reps actually performed in a session (completed exercises only). */
 function volumeOf(session: AnalyticsSession): { sets: number; reps: number } {
   let sets = 0;
@@ -526,6 +545,7 @@ export function computeWorkoutAnalytics(
     estimateCaloriesBurned(completed, opts);
   const streak = computeCurrentStreak(completed, opts);
   const weeklyVolume = computeWeeklyVolume(completed, opts);
+  const activeDays = computeActiveDays(completed, opts);
 
   const firstWorkoutAt = completed[0] ? toDate(completed[0].startedAt) : null;
   const lastWorkoutAt = completed.length > 0
@@ -534,6 +554,7 @@ export function computeWorkoutAnalytics(
 
   return {
     totalSessions: completed.length,
+    activeDays,
     totalDurationSeconds,
     totalCaloriesBurned,
     estimated,

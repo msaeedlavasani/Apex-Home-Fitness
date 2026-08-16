@@ -16,7 +16,10 @@ export { default as RestDaysStep } from './steps/RestDaysStep';
 // Rest-day selection helpers (canonical weekdays + normalization)
 export {
   WEEKDAY_IDS,
+  WEEKDAY_IDS_FA,
   WEEKDAY_OPTIONS,
+  WEEKDAY_OPTIONS_FA,
+  getWeekdayOptions,
   REST_DAY_MIN,
   REST_DAY_MAX,
   normalizeRestDays,

@@ -3,24 +3,44 @@ import test, { mock } from 'node:test';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import RestDaysStep from '../src/components/quiz/steps/RestDaysStep';
-import { REST_DAY_MAX, WEEKDAY_IDS } from '../src/components/quiz/restDays';
+import { REST_DAY_MAX, WEEKDAY_IDS, normalizeRestDays } from '../src/components/quiz/restDays';
+import { translate } from '../src/components/quiz/i18n';
 
 /**
  * Component-level tests for the rest-days step: rendering, min/max bounds
- * (unchecked options lock once the cap is reached), toggling and the error /
- * cap hints. React 18 test-renderer environment (no DOM available in Node).
+ * (unchecked options lock once the cap is reached), toggling, the error /
+ * cap hints and the locale-aware display order (fa renders Saturday first).
+ * React 18 test-renderer environment (no DOM available in Node).
  */
+
+/** A `t` bound to the built-in Persian catalog (as OnboardingQuiz does). */
+const faT = (key, params) => translate(key, params, 'fa');
 
 function renderStep(props = {}) {
   const component = TestRenderer.create(
-    <RestDaysStep value={props.value} onChange={props.onChange} error={props.error} />,
+    <RestDaysStep
+      value={props.value}
+      onChange={props.onChange}
+      error={props.error}
+      locale={props.locale}
+      t={props.t}
+    />,
   );
   return { root: component.root, component };
 }
 
-/** Inputs render in WEEKDAY_IDS order (monday…sunday). */
+/** Inputs render in display order: WEEKDAY_IDS (en) / WEEKDAY_IDS_FA (fa). */
 function checkboxes(root) {
   return root.findAllByType('input');
+}
+
+/** Visible option label texts in DOM (render) order. */
+function optionLabels(root) {
+  return root.findAllByType('input').map((box) => {
+    // The innermost span inside the wrapping <label> holds the label text.
+    const spans = box.parent.findAllByType('span');
+    return spans[spans.length - 1].props.children;
+  });
 }
 
 test('renders one checkbox per weekday, none selected by default', () => {
@@ -106,4 +126,66 @@ test('renders the cap hint via role=status only when the max is reached', () => 
 
   const underMax = renderStep({ value: ['monday'] });
   assert.equal(underMax.root.findAllByProps({ role: 'status' }).length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Locale display order (en = canonical Monday first; fa = Saturday first).
+// ---------------------------------------------------------------------------
+
+test('en (default) locale renders options in canonical Monday → Sunday order', () => {
+  const { root } = renderStep({ value: [] });
+  assert.deepEqual(optionLabels(root), [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ]);
+});
+
+test('fa locale renders options Saturday → Friday (Persian week)', () => {
+  const { root } = renderStep({ value: [], locale: 'fa', t: faT });
+  assert.deepEqual(optionLabels(root), [
+    'شنبه',
+    'یکشنبه',
+    'دوشنبه',
+    'سه‌شنبه',
+    'چهارشنبه',
+    'پنجشنبه',
+    'جمعه',
+  ]);
+});
+
+test('fa locale toggling stores canonical weekday ids (display order is UI-only)', () => {
+  const onChange = mock.fn();
+  let value = [];
+  const component = TestRenderer.create(
+    <RestDaysStep value={value} onChange={onChange} locale="fa" t={faT} />,
+  );
+
+  const toggle = (index) => {
+    const inputs = component.root.findAllByType('input');
+    act(() => inputs[index].props.onChange());
+    value = onChange.mock.calls[onChange.mock.calls.length - 1].arguments[0];
+    act(() =>
+      component.update(<RestDaysStep value={value} onChange={onChange} locale="fa" t={faT} />),
+    );
+  };
+
+  toggle(0); // first fa option = Saturday
+  assert.deepEqual(value, ['saturday']);
+  toggle(1); // second fa option = Sunday
+  assert.deepEqual(value, ['saturday', 'sunday']);
+  toggle(4); // fifth fa option = Wednesday
+  assert.deepEqual(value, ['saturday', 'sunday', 'wednesday']);
+
+  // The cap still locks the remaining unchecked options.
+  const boxes = component.root.findAllByType('input');
+  assert.equal(boxes[5].props.disabled, true); // Thursday (unchecked)
+  assert.equal(boxes[0].props.disabled, false); // Saturday (selected)
+
+  // Stored ids are canonical; normalization (submit/API boundary) keeps ISO order.
+  assert.deepEqual(normalizeRestDays(value), ['wednesday', 'saturday', 'sunday']);
 });

@@ -93,6 +93,17 @@
       "activeDays": "Active days",
       "streak": "Current streak"
     },
+    "summaryUnits": {
+      "sessions": "{count, plural, one {# session} other {# sessions}}",
+      "volume": "{sets, plural, one {# set} other {# sets}} · {reps, plural, one {# rep} other {# reps}}",
+      "days": "{count, plural, one {# day} other {# days}}"
+    },
+    "loading": "Loading workout history…",
+    "emptyState": {
+      "title": "No workouts yet",
+      "description": "Your completed sessions will show up here — finish your first workout to get started.",
+      "action": "Start a workout"
+    },
     "chart": {
       "title": "Last 14 sessions",
       "unit": "Volume (kg)"
@@ -140,11 +151,23 @@
       "unitMinutes": "min"
     },
     "stats": {
-      "title": "This week",
+      "title": "All time",
       "sessions": "Sessions",
       "volume": "Volume",
       "calories": "Calories",
       "minutes": "Active minutes"
+    },
+    "statsUnits": {
+      "sessions": "{count, plural, one {# session} other {# sessions}}",
+      "sets": "{count, plural, one {# set} other {# sets}}",
+      "minutes": "{count, plural, one {# min} other {# mins}}",
+      "calories": "{count} kcal"
+    },
+    "loading": "Loading analytics…",
+    "emptyState": {
+      "title": "No data yet",
+      "description": "Finish a workout to start seeing your insights here.",
+      "action": "Start a workout"
     },
     "categories": {
       "title": "Workout mix",
@@ -221,6 +244,41 @@
       "message": "Sign in to see your profile details and preferences."
     },
     "footer": "Apex Home Fitness v0.1.0"
+  },
+  "Faq": {
+    "metaTitle": "FAQ",
+    "title": "Frequently Asked Questions",
+    "subtitle": "Quick answers to the most common questions about Apex Home Fitness.",
+    "items": {
+      "whatIs": {
+        "question": "What is Apex Home Fitness?",
+        "answer": "Apex Home Fitness is an AI-powered home fitness app. It builds a personalized workout program from your goals, level, equipment and schedule, then tracks your progress and analytics — no gym required."
+      },
+      "cost": {
+        "question": "How much does it cost?",
+        "answer": "The app is free to use during early access. There are no hidden charges — if pricing changes in the future, we will announce it here first."
+      },
+      "equipment": {
+        "question": "Do I need any equipment?",
+        "answer": "Most programs are bodyweight only. Some plans may suggest a mat or a resistance band, and your program adapts to the equipment you told us you have."
+      },
+      "injury": {
+        "question": "I have an injury or a medical condition. Can I still train?",
+        "answer": "If you have a medical condition or are recovering from an injury, please check with a doctor before starting. During onboarding you can note your limitations — the app flags high-risk cases and keeps them out of your plan."
+      },
+      "offline": {
+        "question": "Can I use the app offline?",
+        "answer": "Yes. Apex Home Fitness is a progressive web app, so it can be installed on your phone and keeps working with limited or no connection. Offline video downloads are coming soon."
+      },
+      "support": {
+        "question": "How do I change my language or contact support?",
+        "answer": "You can switch between English and Persian from Profile → Preferences at any time. For anything else, email us — the address is below."
+      }
+    },
+    "contact": {
+      "title": "Still need help?",
+      "email": "support@apexfit.app"
+    }
   },
   "Social": {
     "title": "Share your workout",

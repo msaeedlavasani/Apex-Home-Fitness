@@ -17,12 +17,15 @@
 7. **شروع بچ بعدی:** فقط پس از تأیید صریح کاربر، ۵ تسک باز بعدی با بالاترین اولویت انتخاب و با همین چرخه موازی تکرار می‌شود.
 
 ## وضعیت فعلی پروژه (Current Status) 🟢
-- **Batch 8 (Completed):** بهینه‌سازی عملکرد بصری، بازبینی سیستم طراحی (Audit)، سیستم پیشنهاد هوشمند AI، بازبینی تولید TWA و سئو.
+- **Batch 8 (Completed):** بهینه‌سازی عملکرد بصری، بازبینی سیستم طراحی (Audit)، سیستم پیشنهاد AI، بازبینی تولید TWA و SEO.
 - **Batch 9 (Completed):** اعتبارسنجی Zod، محافظ‌های AI، Medical Disclaimer، تست‌های امنیتی و CI سخت‌گیرانه.
 - **Batch 10 (Completed):** مقاوم‌سازی Workout Engine، تست‌های E2E آفلاین/RTL/کیبورد/ARIA، audit سیستم طراحی، مستندات API و pipeline کامل E2E در CI.
-- **Batch 11 (Completed):** Rate Limit چنداینستنسی، idempotency تولید برنامه، timeout persistence، تست gamification و conflict resolution آفلاین.
+- **Batch 11 (Completed):** Rate Limit چنداینستنسی، idempotency، timeout persistence، تست gamification و conflict resolution آفلاین.
 - **Batch 12 (Completed):** چندهدفه‌کردن کوییز، انتخاب روزهای استراحت، رفع PostCSS localhost، responsive/RTL و asset pipeline آفلاین.
-- **تمرکز بعدی:** پس از تأیید کاربر، انتخاب پنج تسک باز بعدی با بالاترین اولویت؛ قبل از تأیید هیچ بچ جدیدی شروع نمی‌شود.
+- **Batch 13 (Completed):** empty-stateهای History/Analytics، فونت self-hosted Vazirmatn، یکپارچه‌سازی Profile با sidebar/back، route دوزبانه FAQ و ترتیب روزهای فارسی.
+- **Runtime:** Node.js `>=22.0.0` در `package.json` و `.nvmrc` ثبت شده؛ verification با Node `v24.18.0` موفق بوده است.
+- **Verification Batch 13:** full unit suite با نتیجه 207/207 و E2Eهای متمرکز با نتیجه 51/51 موفق شدند؛ typecheck و asset audit نیز PASS هستند.
+- **تمرکز بعدی:** پس از push و تأیید کاربر، انتخاب تسک‌های باز بعدی از Batch 14؛ قبل از تأیید هیچ بچ جدیدی شروع نمی‌شود.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **دسترسی به فایل‌ها:** ریشه اصلی پروژه `/Users/msl/Documents/GitHub/Apex-Home-Fitness` است.

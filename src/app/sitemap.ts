@@ -20,7 +20,7 @@ const LOCALES = ['en', 'fa'] as const;
  * NOTE: a home page (`src/app/[locale]/page.tsx`) is still expected to be
  * added — the sitemap entries below assume it renders at `/${locale}`.
  */
-const PUBLIC_ROUTES = ['', '/quiz', '/library', '/challenges'] as const;
+const PUBLIC_ROUTES = ['', '/quiz', '/library', '/challenges', '/faq'] as const;
 
 /**
  * Dynamically generated sitemap (`/sitemap.xml`).

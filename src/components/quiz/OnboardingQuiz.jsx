@@ -240,6 +240,7 @@ export default function OnboardingQuiz({ onSubmit, t = defaultT, initialData = {
             onChange={(restDays) => updateAnswers({ restDays })}
             error={errors.restDays}
             t={localizedT}
+            locale={activeLocale}
           />
         );
     }

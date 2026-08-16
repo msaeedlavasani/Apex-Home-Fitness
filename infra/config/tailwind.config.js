@@ -33,8 +33,10 @@ module.exports = {
         // first in the list) wins; everywhere else it falls back to the
         // self-hosted Inter / Roboto webfonts linked via next/font
         // (layout.tsx exposes them as --font-inter / --font-roboto).
-        // Persian fallbacks (Vazirmatn / IRANSansX / Tahoma) keep RTL content
-        // rendering correctly.
+        // Persian fallbacks (self-hosted --font-vazirmatn first, then
+        // Vazirmatn / IRANSansX / Tahoma) keep RTL content rendering
+        // correctly. globals.css overrides the family for [dir='rtl'] /
+        // [lang='fa'] so Vazirmatn leads regardless of platform.
         sans: [
           '-apple-system',
           'BlinkMacSystemFont',
@@ -47,6 +49,7 @@ module.exports = {
           'Segoe UI',
           'Roboto',
           'Arial',
+          'var(--font-vazirmatn)',
           'Vazirmatn',
           'IRANSansX',
           'Tahoma',
@@ -65,6 +68,7 @@ module.exports = {
           'Segoe UI',
           'Roboto',
           'Arial',
+          'var(--font-vazirmatn)',
           'Vazirmatn',
           'IRANSansX',
           'Tahoma',
@@ -84,6 +88,7 @@ module.exports = {
           '"Helvetica Neue"',
           'Segoe UI',
           'Arial',
+          'var(--font-vazirmatn)',
           'Vazirmatn',
           'IRANSansX',
           'Tahoma',

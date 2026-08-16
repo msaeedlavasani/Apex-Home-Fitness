@@ -21,12 +21,19 @@ import {
 } from 'lucide-react';
 import {useTheme, type Theme} from '@/components/providers/ThemeProvider';
 import {createBrowserSupabaseClient} from '@/lib/supabase';
+import {AppShell} from '@/components/layout/AppShell';
 
 /**
  * ProfileView — the user's profile & settings screen, styled after the iOS
  * Settings app (Apple HIG): inset grouped cards on a grouped background,
  * hairline separators, SF-style typography, safe-area aware and fully RTL /
  * dark-mode aware through the `apple-*` design tokens.
+ *
+ * Renders inside the platform `AppShell`, so the existing navigation chrome
+ * (desktop sidebar / mobile pill nav / iOS tab bar / Android nav bar) wraps
+ * the screen on every platform. The shell owns the page title/subtitle and
+ * renders an accessible Back control pointing at the dashboard — a
+ * deterministic, safe fallback that never depends on browser history.
  *
  * Owns all interactivity:
  *   - Language toggle (next-intl locale switch, keeps the current path)
@@ -98,125 +105,120 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
   }
 
   return (
-    <main className="min-h-screen min-h-dvh bg-apple-grouped-background text-apple-label">
-      {/* Safe-area aware container (notch, home indicator, landscape cutouts). */}
-      <div className="mx-auto w-full max-w-md pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(3rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:max-w-lg sm:pt-[max(2.5rem,env(safe-area-inset-top))] md:max-w-xl">
-        {/* Header — large title */}
-        <header className="mb-4">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-[34px]">
-            {t('title')}
-          </h1>
-          <p className="mt-1 text-[15px] text-apple-label-secondary">
-            {t('subtitle')}
-          </p>
-        </header>
+    <AppShell title={t('title')} subtitle={t('subtitle')} backHref={`/${locale}/dashboard`}>
+      {/* Full-bleed grouped background (bleeds to the shell main's padding so
+          the iOS-settings look survives inside the platform chrome, in both
+          light & dark). */}
+      <div className="-mx-4 min-h-dvh bg-apple-grouped-background px-4 pb-8 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10">
+        {/* Content column — comfortable reading width on every breakpoint. */}
+        <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl">
+          {user ? <ProfileSummaryCard user={user} /> : <SignedOutCard />}
 
-        {user ? <ProfileSummaryCard user={user} /> : <SignedOutCard />}
+          {/* User Info */}
+          {user ? (
+            <Section title={t('sections.userInfo')}>
+              <div className="divide-y divide-apple-separator">
+                <InfoRow
+                  icon={Mail}
+                  chip="text-apple-blue"
+                  label={t('userInfo.email')}
+                  value={user.email}
+                />
+                <InfoRow
+                  icon={Target}
+                  chip="text-apple-orange"
+                  label={t('userInfo.goal')}
+                  value={goalLabel(t, user.fitnessGoal)}
+                />
+                <InfoRow
+                  icon={TrendingUp}
+                  chip="text-apple-purple"
+                  label={t('userInfo.level')}
+                  value={levelLabel(t, user.fitnessLevel)}
+                />
+              </div>
+            </Section>
+          ) : null}
 
-        {/* User Info */}
-        {user ? (
-          <Section title={t('sections.userInfo')}>
+          {/* Preferences */}
+          <Section title={t('sections.preferences')}>
             <div className="divide-y divide-apple-separator">
-              <InfoRow
-                icon={Mail}
+              <PreferenceRow label={t('preferences.language')}>
+                <Segmented
+                  ariaLabel={t('preferences.language')}
+                  options={LOCALES.map((code) => ({
+                    key: code,
+                    label: t(`preferences.languageOptions.${code}`),
+                  }))}
+                  value={locale}
+                  onChange={(code) => switchLocale(code as AppLocale)}
+                />
+              </PreferenceRow>
+              <PreferenceRow label={t('preferences.appearance')}>
+                <Segmented
+                  ariaLabel={t('preferences.appearance')}
+                  options={THEME_OPTIONS.map(({key, icon}) => ({
+                    key,
+                    icon,
+                    label: t(`preferences.themeOptions.${key}`),
+                  }))}
+                  value={theme}
+                  onChange={setTheme}
+                />
+              </PreferenceRow>
+            </div>
+          </Section>
+
+          {/* Support */}
+          <Section title={t('sections.support')}>
+            <div className="divide-y divide-apple-separator">
+              <LinkRow
+                href={`mailto:${t('support.contactValue')}`}
+                icon={LifeBuoy}
                 chip="text-apple-blue"
-                label={t('userInfo.email')}
-                value={user.email}
+                label={t('support.contact')}
+                value={t('support.contactValue')}
               />
-              <InfoRow
-                icon={Target}
-                chip="text-apple-orange"
-                label={t('userInfo.goal')}
-                value={goalLabel(t, user.fitnessGoal)}
-              />
-              <InfoRow
-                icon={TrendingUp}
-                chip="text-apple-purple"
-                label={t('userInfo.level')}
-                value={levelLabel(t, user.fitnessLevel)}
+              <LinkRow
+                href={`/${locale}/faq`}
+                icon={CircleHelp}
+                chip="text-apple-teal"
+                label={t('support.faq')}
               />
             </div>
           </Section>
-        ) : null}
 
-        {/* Preferences */}
-        <Section title={t('sections.preferences')}>
-          <div className="divide-y divide-apple-separator">
-            <PreferenceRow label={t('preferences.language')}>
-              <Segmented
-                ariaLabel={t('preferences.language')}
-                options={LOCALES.map((code) => ({
-                  key: code,
-                  label: t(`preferences.languageOptions.${code}`),
-                }))}
-                value={locale}
-                onChange={(code) => switchLocale(code as AppLocale)}
-              />
-            </PreferenceRow>
-            <PreferenceRow label={t('preferences.appearance')}>
-              <Segmented
-                ariaLabel={t('preferences.appearance')}
-                options={THEME_OPTIONS.map(({key, icon}) => ({
-                  key,
-                  icon,
-                  label: t(`preferences.themeOptions.${key}`),
-                }))}
-                value={theme}
-                onChange={setTheme}
-              />
-            </PreferenceRow>
-          </div>
-        </Section>
+          {/* Account */}
+          {user ? (
+            <Section title={t('sections.account')}>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={signingOut}
+                className={[
+                  'flex w-full items-center justify-center gap-2 px-4 py-4 text-[15px] font-semibold text-apple-red transition-colors touch-manipulation',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apple-red',
+                  signingOut
+                    ? 'cursor-wait opacity-60'
+                    : 'hover:bg-apple-fill active:bg-apple-fill-secondary',
+                ].join(' ')}
+              >
+                {signingOut ? (
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <LogOut className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
+                )}
+                {signingOut ? t('logout.signingOut') : t('logout.label')}
+              </button>
+            </Section>
+          ) : null}
 
-        {/* Support */}
-        <Section title={t('sections.support')}>
-          <div className="divide-y divide-apple-separator">
-            <LinkRow
-              href={`mailto:${t('support.contactValue')}`}
-              icon={LifeBuoy}
-              chip="text-apple-blue"
-              label={t('support.contact')}
-              value={t('support.contactValue')}
-            />
-            <LinkRow
-              href={`/${locale}/faq`}
-              icon={CircleHelp}
-              chip="text-apple-teal"
-              label={t('support.faq')}
-            />
-          </div>
-        </Section>
-
-        {/* Account */}
-        {user ? (
-          <Section title={t('sections.account')}>
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={signingOut}
-              className={[
-                'flex w-full items-center justify-center gap-2 px-4 py-4 text-[15px] font-semibold text-apple-red transition-colors touch-manipulation',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apple-red',
-                signingOut
-                  ? 'cursor-wait opacity-60'
-                  : 'hover:bg-apple-fill active:bg-apple-fill-secondary',
-              ].join(' ')}
-            >
-              {signingOut ? (
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-              ) : (
-                <LogOut className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
-              )}
-              {signingOut ? t('logout.signingOut') : t('logout.label')}
-            </button>
-          </Section>
-        ) : null}
-
-        <footer className="mt-8 text-center text-xs text-apple-label-tertiary">
-          {t('footer')}
-        </footer>
+          <footer className="mt-8 text-center text-xs text-apple-label-tertiary">
+            {t('footer')}
+          </footer>
+        </div>
       </div>
-    </main>
+    </AppShell>
   );
 }
 

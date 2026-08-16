@@ -1,6 +1,7 @@
 import type {Metadata, Viewport} from 'next';
 import {headers} from 'next/headers';
 import {Inter, Roboto} from 'next/font/google';
+import localFont from 'next/font/local';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations} from 'next-intl/server';
 import {notFound} from 'next/navigation';
@@ -24,6 +25,12 @@ import '../globals.css';
  *   self-hosted via next/font, so non-Apple devices get a real webfont.
  *   Both are served from the same origin, which satisfies the CSP's
  *   `font-src 'self' data:` policy.
+ * - Vazirmatn (Persian) is fully self-hosted: the woff2 variable font
+ *   lives in src/app/fonts/ (SIL OFL 1.1, see OFL.txt) and is served via
+ *   next/font/local from the same origin — no external font requests,
+ *   works offline through the service worker's same-origin cache, and
+ *   satisfies the CSP `font-src 'self' data:` policy. globals.css applies
+ *   it to all RTL/Persian content (`html[dir='rtl'] body`).
  */
 const inter = Inter({
   subsets: ['latin'],
@@ -36,6 +43,19 @@ const roboto = Roboto({
   subsets: ['latin'],
   variable: '--font-roboto',
   display: 'swap',
+});
+
+/**
+ * Vazirmatn — variable font (wght 100–900), self-hosted locally.
+ * Loaded unconditionally (one ~111 KB woff2 covering the whole weight
+ * range) so Persian text always resolves to the real webfont instead of
+ * a system fallback, on every platform (iOS / Android / web).
+ */
+const vazirmatn = localFont({
+  src: '../fonts/Vazirmatn-Variable.woff2',
+  variable: '--font-vazirmatn',
+  display: 'swap',
+  weight: '100 900',
 });
 
 export function generateStaticParams() {
@@ -246,7 +266,7 @@ export default async function LocaleLayout({
           dangerouslySetInnerHTML={{__html: jsonLdHtml}}
         />
       </head>
-      <body className={`${inter.variable} ${roboto.variable}`}>
+      <body className={`${inter.variable} ${roboto.variable} ${vazirmatn.variable}`}>
         <ThemeProvider>
           <PlatformProvider defaultPlatform={userAgent ? detectPlatform(userAgent) : 'web'}>
             <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>

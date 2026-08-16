@@ -45,7 +45,9 @@ export function useActiveSection(): AppSection {
   if (rest === '/' || rest.startsWith('/dashboard')) return 'dashboard';
   if (rest.startsWith('/history')) return 'history';
   if (rest.startsWith('/analytics')) return 'analytics';
-  if (rest.startsWith('/profile')) return 'profile';
+  // `/faq` is a pushed screen from Profile → Support, so the Profile tab
+  // stays highlighted while it is open.
+  if (rest.startsWith('/profile') || rest.startsWith('/faq')) return 'profile';
   return 'dashboard';
 }
 

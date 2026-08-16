@@ -19,6 +19,12 @@
  *                             References inside comments (e.g. JSDoc examples
  *                             for future /videos, /posters, /animations
  *                             assets) are informational only.
+ *   6. fonts                — webfonts are self-hosted (next/font/local in
+ *                             src/app/[locale]/layout.tsx, files exist next
+ *                             to it, valid woff2), the Persian contract
+ *                             (--font-vazirmatn) is wired, CSP allows
+ *                             `font-src 'self'`, and no external font CDN
+ *                             origins appear anywhere (offline-safe).
  *
  * Usage:
  *   node scripts/audit-assets.mjs        # exits non-zero on violations
@@ -204,6 +210,9 @@ export function runAudit() {
     if (!cfg.includes("source: '/offline.html'")) {
       violations.push('next.config.mjs must set a Cache-Control rule for /offline.html');
     }
+    if (!/font-src[^"]*'self'/.test(cfg)) {
+      violations.push("next.config.mjs CSP font-src must allow same-origin fonts ('self')");
+    }
   }
 
   /* ------------------------------------------------------------------ *
@@ -234,6 +243,69 @@ export function runAudit() {
         }
         violations.push(
           `${relFile}:${i + 1}: references "${path}" which does not exist in public/${future ? ' (only allowed in comments)' : ''}`
+        );
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 6. Fonts — self-hosted webfonts (next/font/local, CSP, no CDN)
+   * ------------------------------------------------------------------ */
+  const layoutPath = join(SRC_DIR, 'app', '[locale]', 'layout.tsx');
+  if (!existsSync(layoutPath)) {
+    violations.push('src/app/[locale]/layout.tsx is missing (font wiring lives there)');
+  } else {
+    const layout = readFileSync(layoutPath, 'utf8');
+
+    // Collect every next/font/local `src` (relative to the layout file) and
+    // verify the woff/woff2 exists next to it. next/font/local bundles the
+    // file from the repo and serves it from the same origin — no runtime
+    // network requests, so offline + CSP `font-src 'self'` keep working.
+    const fontSrcRe = /(?:localFont|src)\s*[:(]\s*['"](\.\.?\/[^'"]+\.(?:woff2?|ttf))['"]/g;
+    const fontRefs = [...layout.matchAll(fontSrcRe)].map((m) => m[1]);
+    if (fontRefs.length === 0) {
+      violations.push('layout.tsx declares no self-hosted local fonts (expected Vazirmatn via next/font/local)');
+    }
+    for (const rel of fontRefs) {
+      const file = resolve(dirname(layoutPath), rel);
+      if (!existsSync(file)) {
+        violations.push(`layout.tsx references local font "${rel}" which does not exist (${file})`);
+      } else if (extname(rel).toLowerCase() === '.woff2') {
+        const buf = readFileSync(file);
+        // wOFF2 magic bytes: 77 4F 46 32 ("wOF2")
+        const ok = buf.length >= 4 && buf[0] === 0x77 && buf[1] === 0x4f && buf[2] === 0x46 && buf[3] === 0x32;
+        if (!ok) violations.push(`local font "${rel}" is not a valid woff2 (bad magic bytes)`);
+      }
+    }
+
+    // Persian typography contract (DESIGN_SYSTEM.md §4): Vazirmatn must be
+    // wired through the --font-vazirmatn variable.
+    if (!layout.includes('--font-vazirmatn')) {
+      violations.push('layout.tsx must expose the Vazirmatn variable (--font-vazirmatn) for Persian');
+    }
+  }
+
+  // External font origins are forbidden: every webfont must be self-hosted
+  // so the app works offline and the CSP stays at `font-src 'self' data:`.
+  const externalFontOrigins = [
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'fonts.cdnfonts.com',
+    'cdn.jsdelivr.net',
+    'unpkg.com',
+  ];
+  const fontScanFiles = [
+    ...walk(SRC_DIR, SRC_EXTENSIONS),
+    join(ROOT, 'next.config.mjs'),
+    join(ROOT, 'infra', 'config', 'tailwind.config.js'),
+    join(PUBLIC_DIR, 'offline.html'),
+  ];
+  for (const file of fontScanFiles) {
+    const text = readFileSync(file, 'utf8');
+    for (const origin of externalFontOrigins) {
+      if (text.includes(origin)) {
+        violations.push(
+          `${file.replace(ROOT + '/', '')} references external font origin "${origin}" (fonts must be self-hosted)`
         );
       }
     }
