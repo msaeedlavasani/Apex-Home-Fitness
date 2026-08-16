@@ -269,6 +269,7 @@ async function consumeChallenge(
   code: string,
   policy: OtpPolicy,
   now: number,
+  opts: {consume?: boolean} = {},
 ): Promise<void> {
   if (challenge.expiresAt.getTime() <= now) throw new CodeExpiredError();
 
@@ -291,6 +292,11 @@ async function consumeChallenge(
     throw new InvalidCodeError();
   }
 
+  // Validate-only mode: the code is correct but the challenge stays intact
+  // (used when the session provider is unavailable, so a later retry works
+  // with the same code once the provider is configured).
+  if (opts.consume === false) return;
+
   // Single-use: consume atomically. count===0 means a concurrent verify won.
   const consumed = await prisma.phoneOtp.updateMany({
     where: {id: challenge.id, consumedAt: null},
@@ -304,13 +310,7 @@ async function consumeChallenge(
  * the canonical `OtpService` seam, which has no requestId). Distinguishes
  * "never requested" from "expired/consumed" for a precise error.
  */
-async function verifyLatestChallengeForPhone(
-  phone: string,
-  code: string,
-  policy: OtpPolicy,
-  now: number,
-  onVerified: OnVerifiedHook,
-): Promise<VerifyOtpResult> {
+async function findActiveChallengeForPhone(phone: string) {
   const challenge = await prisma.phoneOtp.findFirst({
     where: {phone, purpose: 'SIGNIN', consumedAt: null},
     orderBy: {createdAt: 'desc'},
@@ -323,6 +323,17 @@ async function verifyLatestChallengeForPhone(
     if (anyRow) throw new CodeExpiredError();
     throw new InvalidRequestError('No code was requested for this phone.');
   }
+  return challenge;
+}
+
+async function verifyLatestChallengeForPhone(
+  phone: string,
+  code: string,
+  policy: OtpPolicy,
+  now: number,
+  onVerified: OnVerifiedHook,
+): Promise<VerifyOtpResult> {
+  const challenge = await findActiveChallengeForPhone(phone);
 
   await consumeChallenge(
     {id: challenge.id, codeHash: challenge.codeHash, maxAttempts: challenge.maxAttempts, expiresAt: challenge.expiresAt},
@@ -403,36 +414,48 @@ export interface SecureOtpServiceDeps {
 
 /** Maps typed OTP/SMS.ir failures to the canonical provider-agnostic codes. */
 function toCanonicalError(error: unknown): RequestCodeResult | VerifyCodeResult {
-  if (error instanceof OtpServiceError) {
-    switch (error.code) {
-      case 'INVALID_PHONE':
-        return {ok: false, error: 'invalid_phone'};
-      case 'INVALID_CODE':
-        return {ok: false, error: 'invalid_code'};
-      case 'CODE_EXPIRED':
-      case 'CODE_ALREADY_USED':
-        return {ok: false, error: 'expired'};
-      case 'ATTEMPTS_EXHAUSTED':
-        return {ok: false, error: 'too_many_attempts'};
-      case 'COOLDOWN':
-      case 'RATE_LIMITED':
-        return {ok: false, error: 'rate_limited', retryAfterSeconds: error.retryAfterSeconds};
-      default:
-        return {ok: false, error: 'provider_error'};
-    }
+  // Match on the STABLE `code` string (and explicit class `name`) instead of
+  // `instanceof` — error classes are webpack-bundled and minified, so
+  // instanceof checks against the module-local class can silently fail in the
+  // production bundle and every error would degrade to `provider_error`.
+  const code = (error as {code?: string})?.code;
+  if (
+    code === 'SESSION_PROVIDER_NOT_CONFIGURED' ||
+    (error instanceof Error && error.name === 'SessionProviderConfigError')
+  ) {
+    return {ok: false, error: 'session_unavailable'};
   }
-  if (error instanceof SmsIrProviderError) {
-    if (error.code === SMSIR_ERROR_CODES.RATE_LIMITED) {
+  switch (code) {
+    case 'INVALID_PHONE':
+      return {ok: false, error: 'invalid_phone'};
+    case 'INVALID_REQUEST':
+      return {ok: false, error: 'not_requested'};
+    case 'INVALID_CODE':
+      return {ok: false, error: 'invalid_code'};
+    case 'CODE_EXPIRED':
+    case 'CODE_ALREADY_USED':
+      return {ok: false, error: 'expired'};
+    case 'ATTEMPTS_EXHAUSTED':
+      return {ok: false, error: 'too_many_attempts'};
+    case 'COOLDOWN':
+    case 'RATE_LIMITED':
+      return {
+        ok: false,
+        error: 'rate_limited',
+        retryAfterSeconds: (error as {retryAfterSeconds?: number}).retryAfterSeconds,
+      };
+    case SMSIR_ERROR_CODES.RATE_LIMITED:
       return {
         ok: false,
         error: 'rate_limited',
         retryAfterSeconds:
-          typeof error.retryAfterMs === 'number' ? Math.max(1, Math.ceil(error.retryAfterMs / 1000)) : undefined,
+          typeof (error as {retryAfterMs?: number}).retryAfterMs === 'number'
+            ? Math.max(1, Math.ceil((error as {retryAfterMs: number}).retryAfterMs / 1000))
+            : undefined,
       };
-    }
-    return {ok: false, error: 'provider_error'};
+    default:
+      return {ok: false, error: 'provider_error'};
   }
-  return {ok: false, error: 'provider_error'};
 }
 
 /**
@@ -462,17 +485,14 @@ export function createSecureOtpService(deps: SecureOtpServiceDeps = {}): OtpServ
     },
 
     async verifyCode({phone, code}): Promise<VerifyCodeResult> {
-      if (!normalizePhone(phone)) return {ok: false, error: 'invalid_phone'};
+      // Normalize BEFORE the challenge lookup: rows are stored under the
+      // canonical `+98...` form, so querying with the raw input would never
+      // match and every verify would fail with `not_requested`.
+      const normalized = normalizePhone(phone);
+      if (!normalized) return {ok: false, error: 'invalid_phone'};
       if (!isPlausibleOtpCode(code, policy.codeLength)) return {ok: false, error: 'invalid_code'};
-      // Session-provider availability gate. Without Supabase the verified code
-      // cannot be exchanged for a session — fail BEFORE consuming the
-      // challenge so the code stays valid once the provider is configured
-      // (no burning codes + a precise, honest error message).
-      if (!hasSupabaseEnv()) {
-        return {ok: false, error: 'session_unavailable'};
-      }
       try {
-        await verifyLatestChallengeForPhone(phone, code, policy, now(), onVerified);
+        await verifyLatestChallengeForPhone(normalized, code, policy, now(), onVerified);
         return {ok: true};
       } catch (error) {
         return toCanonicalError(error);
