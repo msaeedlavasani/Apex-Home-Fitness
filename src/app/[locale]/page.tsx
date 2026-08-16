@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {getTranslations} from 'next-intl/server';
 import {ArrowRight, Dumbbell, ShieldCheck, Sparkles} from 'lucide-react';
+import {LanguageSwitcher} from '@/components/layout/LanguageSwitcher';
 
 export async function generateMetadata({
   params,
@@ -22,8 +23,13 @@ export default async function LandingPage({
   const t = await getTranslations({locale, namespace: 'Landing'});
 
   return (
-    <main className="flex min-h-dvh items-center bg-apex-surface px-5 py-12 text-apex-text-primary sm:px-8">
-      <div className="mx-auto grid w-full max-w-5xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+    <main className="flex min-h-dvh flex-col bg-apex-surface text-apex-text-primary">
+      {/* Global language switcher header for the Landing page */}
+      <header className="flex h-16 w-full items-center justify-end px-5 sm:px-8">
+        <LanguageSwitcher />
+      </header>
+
+      <div className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-12 px-5 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center sm:px-8">
         <section>
           <div className="flex items-center gap-3 text-sm font-semibold text-apex-primary">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl text-apex-on-primary" style={{background: 'var(--apex-gradient-brand)'}}>

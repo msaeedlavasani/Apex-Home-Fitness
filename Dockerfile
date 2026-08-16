@@ -40,7 +40,11 @@ COPY --from=build /app/prisma ./prisma
 # Prisma client engines are not traced by the standalone bundler — ship them.
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
+# Ensure the database directory is writable by the nextjs user.
+USER root
+RUN mkdir -p /data && chown -R nextjs:nodejs /data
 USER nextjs
+
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
