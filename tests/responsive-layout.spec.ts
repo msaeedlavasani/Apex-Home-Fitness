@@ -169,10 +169,22 @@ test.describe('Responsive shell — touch targets', () => {
       expect(box).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
-    const toggle = await page.locator('header button').boundingBox();
-    expect(toggle).not.toBeNull();
-    expect(toggle!.width).toBeGreaterThanOrEqual(44);
-    expect(toggle!.height).toBeGreaterThanOrEqual(44);
+    // The header also hosts the language switcher (role=radio buttons) — the
+    // theme toggle is the only plain button with a title, so target it
+    // explicitly instead of the ambiguous `header button`.
+    const toggle = page.locator('header button[title]');
+    await expect(toggle).toHaveCount(1);
+    const toggleBox = await toggle.boundingBox();
+    expect(toggleBox).not.toBeNull();
+    expect(toggleBox!.width).toBeGreaterThanOrEqual(44);
+    expect(toggleBox!.height).toBeGreaterThanOrEqual(44);
+    // Language switcher options must meet the same touch-target floor.
+    for (const langBtn of await page.locator('header button[role="radio"]').all()) {
+      const langBox = await langBtn.boundingBox();
+      expect(langBox).not.toBeNull();
+      expect(langBox!.height).toBeGreaterThanOrEqual(44);
+      expect(langBox!.width).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test('quiz navigation buttons meet 44px touch targets', async ({page}) => {

@@ -11,6 +11,7 @@
 - **Batch 12:** چندهدفه‌کردن کوییز، انتخاب روزهای استراحت، رفع استایل localhost، responsive/RTL و سامان‌دهی asset pipeline — تکمیل شد.
 - **Batch 13:** empty-state History/Analytics، فونت Vazirmatn، پوسته Profile، route دوزبانه FAQ و ترتیب روزهای فارسی — تکمیل شد.
 - **Batch 14:** Auth/OTP با SMS.ir، اتصال Quiz به حساب، محافظت routeها و ابزار readiness — implementation تکمیل شد؛ launch واقعی هنوز به smoke test production وابسته است.
+- **Batch 15:** زبان‌سوییچر سراسری EN/FA (حفظ مسیر، رادیو-گروپ اکسسبل، ۴۴px) و enforce قطعی روزهای استراحت در تولید برنامه (persistence-level + regression) — تکمیل شد.
 
 ## Batch 14: احراز هویت OTP و آمادگی لانچ 🔴 (Implementation تکمیل شد؛ Production Go مشروط)
 > ترتیب محصول قطعی: **Landing → Quiz → Login / Sign up با OTP → Save quiz response → Generate program → Dashboard**.
@@ -37,9 +38,9 @@
 5. **[x] Unified Asset Pipeline:** یکدست‌سازی resolution، fallback و policy کش assetها (مستند در `docs/ASSETS.md`؛ SW precache اصلاح شد، `offline.html` اضافه شد، audit خودکار در `scripts/audit-assets.mjs` + `tests/asset-audit.test.ts`).
 
 ## تسک‌های پیشنهادی بعدی (بعد از Batch 14) 🧭
-1. **[ ] افزودن language switcher سراسری:** نمایش آیکون/دو پرچم کوچک در همه صفحات با حفظ مسیر locale.
-2. **[ ] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی، با regression پنجشنبه/جمعه در هر دو locale.
-3. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل.
+1. **[x] افزودن language switcher سراسری:** سوییچر EN/FA در sidebar دسکتاپ، هدر موبایل و Android AppBar با حفظ مسیر فعلی (`/en/workout` → `/fa/workout`)؛ رادیو-گروپ اکسسبل با focus ring و touch target ≥44px؛ messages دوزبانه و ۴ تست unit. — تکمیل شد (Batch 15).
+2. **[x] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی در خروجی تولیدشده — enforce در `enforceRestDays` + لایه persistence (`programService`) + پین کردن قرارداد روز در پرامپت؛ پشتیبانی نام فارسی روزها (شنبه→جمعه) و fallback عددی ISO؛ ۱۲ تست regression + تست زنجیره retry/idempotency. — تکمیل شد (Batch 15).
+3. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف).
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.
