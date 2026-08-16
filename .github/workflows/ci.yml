@@ -66,19 +66,19 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   # ---------------------------------------------------------------------------
-  # End-to-end tests (Playwright, chromium).
-  # Runs only after `build` succeeds, in this order: npm ci → Playwright
-  # browsers → E2E. A failure anywhere aborts the rest (fail-fast).
+  # End-to-end smoke tests (Playwright, chromium).
+  # Runs only after `build` succeeds. Per-commit E2E is intentionally FAST:
+  #  1. auth-flow with AUTH_OTP_MODE=mock — OTP UI, route protection, session
+  #     behaviour, without any real SMS/Supabase credentials;
+  #  2. main-flows in open mode — the core signed-out product journey.
+  # The FULL regression suite is preserved and runs nightly / on demand via
+  # .github/workflows/ci-full-e2e.yml, so ordinary commits are not slowed
+  # down by the whole 100+ test suite.
   #
-  # The E2E suite is UI-only and needs no real auth/DB: Supabase/Sentry/OpenAI
-  # envs are intentionally NOT set here — the app degrades gracefully (console
-  # reporter, signed-out profile fallback). See .env.example and the README
-  # "CI & E2E" section for what is (and is not) covered.
-  #
-  # NOTE on the web server: Playwright boots `npm run dev` (see
-  # infra/config/playwright.config.ts) because tests/offline-pwa.spec.ts
-  # deliberately pins dev-mode behavior (no service-worker registration in
-  # development). The production build is validated by the `build` job above.
+  # AUTH_OTP_MODE=mock never mints sessions — the login API fails honestly
+  # (503) when no Supabase env is present. Real provider journeys stay in
+  # controlled staging/manual environments with protected credentials
+  # (see docs/OTP_LAUNCH_READINESS.md).
   # ---------------------------------------------------------------------------
   e2e:
     runs-on: ubuntu-latest
@@ -114,12 +114,19 @@ jobs:
     - name: Install Playwright browser (chromium) + OS dependencies
       run: npx playwright install --with-deps chromium
 
-    - name: Run E2E tests
-      run: npm run test:e2e
+    - name: Run E2E auth tests (mock OTP mode)
+      run: npm run test:e2e:auth
       env:
-        # The dev server only touches Prisma/Supabase on demand, which the
-        # covered flows never do. The API key is available for future AI E2E
-        # coverage without exposing it in source or logs.
+        # Mock OTP mode: route protection + auth UI without external credentials.
+        AUTH_OTP_MODE: mock
+        DATABASE_URL: file:./ci.db
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    - name: Run E2E smoke tests (core journey, open mode)
+      run: npm run test:e2e:smoke
+      env:
+        # Open mode (no auth arming): the product journey runs as a signed-out
+        # visitor, matching how the app degrades without Supabase/SMS creds.
         DATABASE_URL: file:./ci.db
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
