@@ -11,6 +11,7 @@ import test from 'node:test';
 import {
   computeActiveDays,
   computeWorkoutAnalytics,
+  formatDate,
   formatRelativeDay,
   formatShortDate,
   formatWeekday,
@@ -102,15 +103,31 @@ test('formatWeekday returns a localized weekday name', () => {
 
 test('formatRelativeDay uses translated Today / Yesterday labels when provided', () => {
   const labels = { today: 'TODAY_LBL', yesterday: 'YESTERDAY_LBL' };
-  const now = new Date('2026-08-16T10:00:00Z');
-  const yesterday = new Date('2026-08-15T10:00:00Z');
-  const older = new Date('2026-08-10T10:00:00Z');
+  // The function compares against the real clock (`new Date()`), so the dates
+  // must be derived from it at runtime — a fixed date would only pass on the
+  // day it was written (regression: the suite broke on every other day).
+  // Exact ±24h arithmetic in the UTC timezone avoids DST day-length surprises.
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 86_400_000);
+  const older = new Date(now.getTime() - 8 * 86_400_000);
 
   assert.equal(formatRelativeDay(now, 'en', labels, 'UTC'), 'TODAY_LBL');
   assert.equal(formatRelativeDay(yesterday, 'en', labels, 'UTC'), 'YESTERDAY_LBL');
-  // Older dates fall back to a full localized date (Aug 10 2026 = Monday).
+  // Older dates fall back to a full localized date — formatted in the SAME
+  // timezone the diff used (UTC), matching the function's fallback exactly.
+  assert.notEqual(formatRelativeDay(older, 'en', labels, 'UTC'), 'TODAY_LBL');
+  assert.notEqual(
+    formatRelativeDay(older, 'en', labels, 'UTC'),
+    'YESTERDAY_LBL',
+  );
   assert.equal(
     formatRelativeDay(older, 'en', labels, 'UTC'),
-    'Monday, August 10, 2026',
+    formatDate(older, 'en', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }),
   );
 });
