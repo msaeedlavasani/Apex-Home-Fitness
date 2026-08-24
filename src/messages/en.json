@@ -462,7 +462,7 @@
     "codeSent": "A new code has been sent.",
     "codeStillValid": "Your code is still valid — check your SMS.",
     "privacyNote": "By continuing you agree to receive SMS messages for authentication.",
-    "devHint": "Development code: {code}",
+    "devHint": "Please enter {code} to continue",
     "errors": {
       "invalidPhone": "Enter a valid mobile number, e.g. 09123456789.",
       "invalidCode": "That code isn't right. Check it and try again.",

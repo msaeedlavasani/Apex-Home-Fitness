@@ -15,9 +15,12 @@
  *
  * Safety rails:
  *   - the factory (`src/lib/auth/otpService.ts`) refuses mock mode in
- *     production,
+ *     production UNLESS the explicit `AUTH_OTP_MOCK_IN_PRODUCTION=true`
+ *     override is set (temporary test harness while SMS delivery is being
+ *     fixed — every phone then gets the deterministic code and NO real SMS
+ *     is sent),
  *   - the returned `devCode` is the same deterministic value; the API route
- *     only surfaces it in mock mode (never in production),
+ *     only surfaces it in mock mode (never in real production mode),
  *   - the store lives in memory only — no persistence, no cross-instance
  *     sharing; that is fine for dev/CI and explicitly not for production.
  *
@@ -27,7 +30,7 @@
 import type {OtpService, RequestCodeResult, VerifyCodeResult} from './types';
 import {normalizePhone} from './phone';
 
-/** Deterministic code returned in mock mode (dev/CI only). */
+/** Deterministic code returned in mock mode (dev/CI or the prod override). */
 export const MOCK_OTP_CODE = '123456';
 /** Resend cooldown enforced server-side and mirrored by the client countdown. */
 export const MOCK_RESEND_COOLDOWN_SECONDS = 60;
@@ -58,7 +61,18 @@ export function mockOtpStoreSize(): number {
   return store.size;
 }
 
-export function createMockOtpService(): OtpService {
+export interface MockOtpServiceDeps {
+  /**
+   * Hook invoked AFTER a code verifies (default: none — dev/CI mock). The
+   * production override passes `establishSessionForVerifiedPhone` so a
+   * verified phone gets a REAL Supabase SSR session; if it throws, the code
+   * stays consumed and the client simply requests a fresh code.
+   */
+  onVerified?: (phone: string) => Promise<unknown>;
+}
+
+export function createMockOtpService(deps: MockOtpServiceDeps = {}): OtpService {
+  const onVerified = deps.onVerified;
   return {
     async requestCode({phone}): Promise<RequestCodeResult> {
       const normalized = normalizePhone(phone);
@@ -116,6 +130,7 @@ export function createMockOtpService(): OtpService {
 
       // Single-use: the verified code is consumed immediately.
       store.delete(normalized);
+      if (onVerified) await onVerified(normalized);
       return {ok: true};
     },
   };
