@@ -4,6 +4,14 @@ import createNextIntlPlugin from 'next-intl/plugin';
 // Required by next-intl >= 3 for the app router; without this file no page renders.
 const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
+// `'unsafe-eval'` is a dev-only requirement (webpack HMR source maps) and
+// must not ship in production responses.
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
+].join(' ');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Remove the default `X-Powered-By: Next.js` response header (info leak).
@@ -18,8 +26,8 @@ const nextConfig = {
    *    `src/app/[locale]/layout.tsx` and the hydration payload). A nonce- or
    *    hash-based CSP is the recommended hardening follow-up (see audit report).
    *  - `script-src 'unsafe-eval'`: only needed in `next dev` (webpack HMR
-   *    source maps). It can be dropped in production if you verify the prod
-   *    build runs without it.
+   *    source maps). Dropped automatically from the production CSP (see
+   *    `scriptSrc` below) — the prod build runs without eval.
    *  - `connect-src`: Supabase URLs come from env vars
    *    (`NEXT_PUBLIC_SUPABASE_URL`, any project subdomain) — the wildcard
    *    covers all project refs; `wss://` covers Supabase Realtime.
@@ -55,7 +63,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.supabase.co https://commondatastorage.googleapis.com",
               "font-src 'self' data:",
