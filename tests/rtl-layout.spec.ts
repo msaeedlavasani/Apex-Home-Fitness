@@ -72,7 +72,7 @@ test.describe('RTL — Persian pages', () => {
       page.getByRole('heading', {name: 'برنامه تمرینی خودت رو بساز'}),
     ).toBeVisible();
     await expect(page.getByRole('radiogroup')).toBeVisible();
-    await expect(page.getByRole('button', {name: 'بعدی'})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'بعدی', exact: true})).toBeVisible();
   });
 });
 

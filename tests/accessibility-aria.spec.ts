@@ -124,7 +124,7 @@ test.describe('Onboarding quiz — ARIA', () => {
 
     // Validation surfaces through role=alert (filter out Next.js's route
     // announcer, which also uses role=alert but stays empty).
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(
       page.getByRole('alert').filter({hasText: 'Please select an option to continue.'}),
     ).toBeVisible();
@@ -137,7 +137,7 @@ test.describe('Onboarding quiz — ARIA', () => {
     );
 
     // Progress advances when moving on.
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
 
     await expectAllInteractiveNamed(page);
@@ -150,12 +150,12 @@ test.describe('Onboarding quiz — ARIA', () => {
 
     // Navigate to the equipment step (step 4) using buttons.
     await page.getByRole('button', {name: 'Dark'}).click();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await page.getByRole('button', {name: 'Beginner'}).click();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     // Goal step is a multi-select — check one goal to continue.
     await page.getByRole('checkbox', {name: /^Strength/}).check();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // Checkboxes are reachable by their (label-derived) accessible names.
     const none = page.getByRole('checkbox', {name: 'None — bodyweight only'});

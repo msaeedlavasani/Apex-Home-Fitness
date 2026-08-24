@@ -65,7 +65,7 @@ test.describe('Onboarding quiz', () => {
     ).toBeVisible();
 
     // Validation: Next without a selection shows the required error.
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(
       page.getByRole('alert').filter({hasText: 'Please select an option to continue.'}),
     ).toBeVisible();
@@ -73,14 +73,14 @@ test.describe('Onboarding quiz', () => {
     // Pick "Dark" — the theme is applied immediately.
     await page.getByRole('button', {name: /^Dark/}).click();
     await expect(page.locator('html')).toHaveClass(/dark/);
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // --- Step 2: Current level ---
     await expect(
       page.getByText('What is your current training level?'),
     ).toBeVisible();
     await page.getByRole('button', {name: /^Beginner/}).click();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // --- Step 3: Goals (multi-select; at least one required) ---
     await expect(page.getByText('What are your goals?')).toBeVisible();
@@ -88,21 +88,21 @@ test.describe('Onboarding quiz', () => {
     await page.getByRole('checkbox', {name: /^Fat Loss/}).check();
     await expect(page.getByRole('checkbox', {name: /^Strength/})).toBeChecked();
     await expect(page.getByRole('checkbox', {name: /^Fat Loss/})).toBeChecked();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // --- Step 4: Equipment ---
     await expect(
       page.getByText('What equipment do you have available?'),
     ).toBeVisible();
     await page.getByRole('checkbox', {name: 'Dumbbells'}).check();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // --- Step 5: Limitations (optional) ---
     await expect(
       page.getByText('Do you have any injuries or limitations?'),
     ).toBeVisible();
     await page.getByRole('checkbox', {name: 'None — I am healthy'}).check();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // --- Step 6: Rest days (1–3 required) ---
     await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
@@ -137,16 +137,16 @@ test.describe('Onboarding quiz', () => {
 
     // Step 1 — visual style.
     await page.getByRole('button', {name: /^Light/}).click();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // Step 2 — current level.
     await page.getByRole('button', {name: /^Beginner/}).click();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // Step 3 — goals: Next without a selection shows the goal-specific error
     // and the quiz stays on the step.
     await expect(page.getByText('What are your goals?')).toBeVisible();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(
       page
         .getByRole('alert')
@@ -172,7 +172,7 @@ test.describe('Onboarding quiz', () => {
 
     // Re-select Strength so the selection has two goals, then proceed.
     await strength.check();
-    await page.getByRole('button', {name: 'Next'}).click();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(
       page.getByText('What equipment do you have available?'),
     ).toBeVisible();
