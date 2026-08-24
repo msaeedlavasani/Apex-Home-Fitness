@@ -243,7 +243,7 @@ export function VerifyForm() {
       setPending(updated);
       setDigits(Array(CODE_LENGTH).fill(''));
       focusIndex(0);
-      setNotice(t('codeSent'));
+      setNotice(updated.devCode ? t('devHint', {code: updated.devCode}) : t('codeSent'));
       setStatus('idle');
     } catch {
       setStatus('idle');
@@ -313,7 +313,7 @@ export function VerifyForm() {
                 {t(`errors.${error}`)}
               </p>
             ) : notice ? (
-              <p className="text-center text-xs font-medium text-apex-primary">
+              <p className="rounded-lg border border-apex-primary/25 bg-apex-primary-soft px-3 py-2.5 text-center text-sm font-semibold text-apex-primary">
                 {notice}
               </p>
             ) : null}

@@ -36,6 +36,7 @@
 - **تصمیم Next.js:** ارتقای امنیتی به 15.5.23 (به‌همراه next-intl 4.13.7) روی برنچ `migration/next-15` انجام و typecheck/lint/unit (345/345) سبز شد؛ 14.x دیگر پچ امنیتی نمی‌گیرد، پس این ارتقا قبل از launch الزامی است. ارتقای نهایی به 16.x همچنان به‌عنوان migration مستقل و **بعد از launch** باقی می‌ماند.
 - **تمرکز بعدی:** آمادگی بیلد/استقرار روی سرور (بچ ۱۶) → production smoke و go/no-go لانچ (نیازمند env واقعی از کاربر). بچ جدید فقط با تأیید صریح کاربر.
 - **مانیتور دلیوری SMS:** بعد از هر ارسال OTP، اپ یک بار بعد از `SMS_IR_MONITOR_DELAY_MS` (پیش‌فرض ۶۰s) وضعیت را از `GET /v1/send/{messageId}` می‌خواند و نتیجه را لاگ می‌کند (`otp.delivery.delivered|slow|pending|failed|check_failed`). چک دستی: `GET /api/monitor/sms-delivery?messageId=<id>`؛ غیرفعال با `SMS_IR_MONITOR_DELAY_MS=0`. `messageText` (شامل کد OTP) هرگز لاگ یا بازگردانده نمی‌شود.
+- **حالت بدون-SMS پروداکشن (موقت):** `AUTH_OTP_MODE=mock` + `AUTH_OTP_MOCK_IN_PRODUCTION=true` → **هیچ پیامک واقعی فرستاده نمی‌شود**؛ همه‌ی شماره‌ها کد ثابت `123456` می‌گیرند که UI همان لحظه نشان می‌دهد («لطفا با کد 123456 وارد شوید») و بعد از verify یک session واقعی Supabase ساخته می‌شود. امنیت: هر کسی که کد را بداند می‌تواند با هر شماره‌ای وارد شود — فقط تا وقتی اپ کاربر واقعی ندارد. بعد از رفع SMS، `AUTH_OTP_MODE=mock` حذف شود.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **ریشه پروژه:** `/Users/msl/Documents/GitHub/Apex-Home-Fitness` — مستندات در `docs/`.
