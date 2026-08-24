@@ -135,7 +135,7 @@ const QUIZ_LEVEL_TO_ENUM: Record<string, DifficultyLevel> = {
  * @throws {UnauthenticatedError} if there is no valid session.
  */
 export async function getSupabaseAuthUser(): Promise<SupabaseUser> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {

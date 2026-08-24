@@ -204,7 +204,7 @@ export default async function LocaleLayout({
   // chrome on the very first paint — no flash, no layout shift. The
   // PlatformProvider re-detects on mount (touch capability, manual override)
   // and mirrors it onto <html data-platform="ios|material">.
-  const userAgent = headers().get('user-agent');
+  const userAgent = (await headers()).get('user-agent');
   const messages = await getMessages();
 
   // --- Schema.org structured data (JSON-LD, bilingual) ---------------------

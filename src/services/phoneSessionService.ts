@@ -273,7 +273,7 @@ export async function establishSessionForVerifiedPhone(
   const admin = opts.admin ?? createServiceRoleAdminClient(getSessionProviderConfig());
   const exchange =
     opts.exchangeTokenHash ?? (async (tokenHash) => {
-      const supabase = createServerSupabaseClient();
+      const supabase = await createServerSupabaseClient();
       // Magic-link exchange: the admin-generated link carries `token_hash`;
       // `verifyOtp({ token_hash, type: 'email' })` swaps it for a real
       // session (this supabase-js version has no `verifyTokenHash`). The
