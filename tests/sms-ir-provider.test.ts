@@ -90,6 +90,8 @@ function makeProvider(overrides: Partial<SmsIrOtpProviderConfig> = {}): SmsIrOtp
     store: new InMemoryRateLimitStore(),
     logger: silentLogger(),
     now: () => Date.now(),
+    // Post-send probes are exercised by the dedicated tests below.
+    monitorDelivery: false,
     ...overrides,
   });
 }
@@ -576,4 +578,167 @@ test('rate-limited sends are logged with the masked mobile and reason', async ()
     typeof rateLimited.ctx?.retryAfterMs === 'number' && rateLimited.ctx.retryAfterMs > 0,
     'retryAfterMs must be logged for the cooldown',
   );
+});
+
+// ---------------------------------------------------------------------------
+// Delivery status lookup + post-send probe (GET /v1/send/{messageId})
+// ---------------------------------------------------------------------------
+
+/** Fake fetch: POST /v1/send/verify succeeds; GET /v1/send/{id} reports delivery. */
+function deliveryFetch(overrides: Record<string, unknown> = {}): typeof fetch {
+  return async (input) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/v1/send/verify')) {
+      return jsonResponse(200, {status: 1, message: 'موفق', data: {messageId: 89545112, cost: 1.0}});
+    }
+    return jsonResponse(200, {
+      status: 1,
+      message: 'موفق',
+      data: {
+        messageId: 89545112,
+        mobile: '989123456789',
+        // The provider must never surface this (it contains the plaintext OTP).
+        messageText: 'کد ورود: 12345',
+        sendDateTime: '2026-08-24 07:06:40',
+        deliveryState: 1,
+        deliveryDateTime: '2026-08-24 07:11:00',
+        ...overrides,
+      },
+    });
+  };
+}
+
+test('getDeliveryStatus parses a delivered message and computes the lag', async () => {
+  const provider = makeProvider({fetchImpl: deliveryFetch()});
+
+  const status = await provider.getDeliveryStatus(89545112);
+
+  assert.equal(status.messageId, 89545112);
+  assert.equal(status.state, 'delivered');
+  assert.equal(status.deliveryState, 1);
+  assert.equal(status.sendDateTime, '2026-08-24 07:06:40');
+  assert.equal(status.deliveryDateTime, '2026-08-24 07:11:00');
+  assert.equal(status.deliveryLagSeconds, 260);
+});
+
+test('getDeliveryStatus classifies pending, failed and unknown states', async () => {
+  const pending = makeProvider({fetchImpl: deliveryFetch({deliveryState: 3, deliveryDateTime: undefined})});
+  assert.equal((await pending.getDeliveryStatus(1)).state, 'pending');
+  assert.equal((await pending.getDeliveryStatus(1)).deliveryLagSeconds, undefined);
+
+  const failed = makeProvider({fetchImpl: deliveryFetch({deliveryState: 2, deliveryDateTime: undefined})});
+  assert.equal((await failed.getDeliveryStatus(1)).state, 'failed');
+
+  const unknown = makeProvider({fetchImpl: deliveryFetch({deliveryState: 99, deliveryDateTime: undefined})});
+  assert.equal((await unknown.getDeliveryStatus(1)).state, 'unknown');
+});
+
+test('getDeliveryStatus rejects a malformed messageId without a network call', async () => {
+  const captured: CapturedRequest[] = [];
+  const provider = makeProvider({fetchImpl: okFetch(captured)});
+
+  await assert.rejects(
+    () => provider.getDeliveryStatus('abc'),
+    (error: unknown) => error instanceof SmsIrProviderError,
+  );
+  await assert.rejects(
+    () => provider.getDeliveryStatus('12 34'),
+    (error: unknown) => error instanceof SmsIrProviderError,
+  );
+  assert.equal(captured.length, 0, 'no network request may be made for a malformed messageId');
+});
+
+test('sendOtp schedules one delivery probe that logs the outcome', async () => {
+  const {logger, entries} = collectingLogger();
+  const scheduled: Array<{fn: () => void; delayMs: number}> = [];
+  const provider = makeProvider({
+    logger,
+    fetchImpl: deliveryFetch(),
+    monitorDelivery: true,
+    monitorDelayMs: 60_000,
+    slowDeliveryThresholdMs: 300_000, // delivered in 260 s → not "slow"
+    schedule: (fn, delayMs) => scheduled.push({fn, delayMs}),
+  });
+
+  await provider.sendOtp({mobile: '09123456789', code: '424242'});
+
+  assert.equal(scheduled.length, 1, 'exactly one probe after a successful send');
+  assert.equal(scheduled[0].delayMs, 60_000);
+
+  scheduled[0].fn(); // fire the probe
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const delivered = entries.find((e) => e.msg === 'otp.delivery.delivered');
+  assert.ok(delivered, 'delivered entry expected after the probe');
+  assert.equal(delivered.ctx?.messageId, 89545112);
+  assert.equal(delivered.ctx?.mobile, '9891******89');
+  assert.equal(delivered.ctx?.deliveryLagSeconds, 260);
+
+  const all = JSON.stringify(entries);
+  assert.ok(!all.includes('424242'), 'OTP code must never reach the logger');
+  assert.ok(!all.includes('کد ورود: 12345'), 'messageText must never reach the logger');
+});
+
+test('a probe with a slow delivery logs otp.delivery.slow', async () => {
+  const {logger, entries} = collectingLogger();
+  const scheduled: Array<{fn: () => void; delayMs: number}> = [];
+  const provider = makeProvider({
+    logger,
+    fetchImpl: deliveryFetch(), // lag 260 s > default 60 s threshold
+    monitorDelivery: true,
+    schedule: (fn, delayMs) => scheduled.push({fn, delayMs}),
+  });
+
+  await provider.sendOtp({mobile: '09123456789', code: '424242'});
+  scheduled[0].fn();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const slow = entries.find((e) => e.msg === 'otp.delivery.slow');
+  assert.ok(slow, 'slow entry expected when the delivery lag exceeds the threshold');
+  assert.equal(slow.ctx?.deliveryLagSeconds, 260);
+});
+
+test('a probe that finds the message still pending logs otp.delivery.pending', async () => {
+  const {logger, entries} = collectingLogger();
+  const scheduled: Array<{fn: () => void; delayMs: number}> = [];
+  const provider = makeProvider({
+    logger,
+    fetchImpl: deliveryFetch({deliveryState: 3, deliveryDateTime: undefined}),
+    monitorDelivery: true,
+    schedule: (fn, delayMs) => scheduled.push({fn, delayMs}),
+  });
+
+  await provider.sendOtp({mobile: '09123456789', code: '424242'});
+  scheduled[0].fn();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const pending = entries.find((e) => e.msg === 'otp.delivery.pending');
+  assert.ok(pending, 'pending entry expected');
+  assert.equal(pending.ctx?.deliveryState, 3);
+});
+
+test('a probe that fails to reach the provider logs otp.delivery.check_failed', async () => {
+  const {logger, entries} = collectingLogger();
+  const scheduled: Array<{fn: () => void; delayMs: number}> = [];
+  const failingLookupFetch: typeof fetch = async (input) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/v1/send/verify')) {
+      return jsonResponse(200, {status: 1, message: 'موفق', data: {messageId: 89545112, cost: 1.0}});
+    }
+    return jsonResponse(500, {status: 0, message: 'مشکل در سامانه'});
+  };
+  const provider = makeProvider({
+    logger,
+    fetchImpl: failingLookupFetch,
+    monitorDelivery: true,
+    schedule: (fn, delayMs) => scheduled.push({fn, delayMs}),
+  });
+
+  await provider.sendOtp({mobile: '09123456789', code: '424242'});
+  scheduled[0].fn();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const failed = entries.find((e) => e.msg === 'otp.delivery.check_failed');
+  assert.ok(failed, 'check_failed entry expected when the lookup errors');
+  assert.equal(failed.ctx?.code, SMSIR_ERROR_CODES.PROVIDER_UNAVAILABLE);
 });
