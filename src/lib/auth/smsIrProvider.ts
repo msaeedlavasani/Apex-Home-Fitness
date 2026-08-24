@@ -46,6 +46,18 @@
  * Real credentials / template are NOT present in this repository — tests use
  * an injected fake `fetch` (mock provider tests). `createSmsIrOtpProvider`
  * fails loudly when env is missing, exactly like `createRateLimitStore`.
+ *
+ * Delivery monitoring (on by default)
+ * -----------------------------------
+ * After each successful send the provider schedules ONE best-effort probe of
+ * `GET /v1/send/{messageId}` after `monitorDelayMs` (default 60 s) and logs
+ * the outcome (`otp.delivery.delivered` / `otp.delivery.slow` /
+ * `otp.delivery.pending` / `otp.delivery.failed`). The probe is fire-and-
+ * forget: it never affects the send result, never retries, and swallows its
+ * own errors (logging `otp.delivery.check_failed` instead). Disable with
+ * `SMS_IR_MONITOR_DELAY_MS=0`. The raw `messageText` from the delivery
+ * response is deliberately NOT surfaced or logged — it may contain the
+ * plaintext OTP code.
  */
 
 import {createLogger, type Logger} from '../logger';
@@ -61,10 +73,15 @@ import {
 
 export const SMSIR_BASE_URL = 'https://api.sms.ir';
 export const SMSIR_VERIFY_PATH = '/v1/send/verify';
+export const SMSIR_DELIVERY_PATH_PREFIX = '/v1/send/';
 export const SMSIR_DEFAULT_TIMEOUT_MS = 10_000;
 export const SMSIR_DEFAULT_OTP_PARAMETER_NAME = 'Code';
 /** Max length of a template parameter value (SMS.ir body status 114). */
 export const SMSIR_PARAMETER_MAX_LENGTH = 25;
+/** Delay before the post-send delivery probe (0 disables monitoring). */
+export const SMSIR_DEFAULT_MONITOR_DELAY_MS = 60_000;
+/** Delivery lag above this is logged as a warning (`otp.delivery.slow`). */
+export const SMSIR_SLOW_DELIVERY_THRESHOLD_MS = 60_000;
 
 /** Minimum delay between two OTP sends for the same mobile. */
 export const OTP_RESEND_COOLDOWN_MS = 60_000;
@@ -195,6 +212,59 @@ function parseRetryAfterMs(headers: Headers): number | undefined {
   return undefined;
 }
 
+/**
+ * Maps the raw SMS.ir `deliveryState` to a stable summary. A delivery
+ * timestamp is the strongest signal: its presence means the message reached
+ * the phone even if the numeric state lags behind.
+ */
+export function classifyDeliveryState(
+  raw: number | undefined,
+  deliveryDateTime?: string,
+): SmsDeliveryState {
+  if (deliveryDateTime) return 'delivered';
+  switch (raw) {
+    case 1:
+      return 'delivered';
+    case 2:
+      return 'failed';
+    case 0:
+    case 3:
+      return 'pending';
+    default:
+      return 'unknown';
+  }
+}
+
+/**
+ * Parses a provider timestamp ("YYYY-MM-DD HH:mm:ss", UTC per SMS.ir docs)
+ * into epoch ms. The same zone is assumed for send + delivery, so the
+ * difference stays correct even if the strings are actually local time.
+ */
+function parseProviderDateTimeMs(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const iso = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? t : undefined;
+}
+
+/** Seconds between the send and delivery timestamps (undefined when unparseable). */
+function deliveryLagSeconds(send?: string, delivery?: string): number | undefined {
+  const sendMs = parseProviderDateTimeMs(send);
+  const deliveryMs = parseProviderDateTimeMs(delivery);
+  if (sendMs === undefined || deliveryMs === undefined || deliveryMs < sendMs) return undefined;
+  return Math.round((deliveryMs - sendMs) / 1000);
+}
+
+/**
+ * Default scheduler for the post-send probe: a plain `setTimeout` that is
+ * unref'd so a pending probe never keeps the server (or a test process)
+ * alive.
+ */
+function defaultDeliveryScheduler(fn: () => void, delayMs: number): void {
+  const timer = setTimeout(fn, delayMs);
+  (timer as {unref?: () => void}).unref?.();
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -223,6 +293,14 @@ export interface SmsIrOtpProviderConfig {
   logger?: Logger;
   /** Injectable clock (tests). Defaults to Date.now. */
   now?: () => number;
+  /** After a successful send, schedule one delivery probe (default true). */
+  monitorDelivery?: boolean;
+  /** Delay before the probe (default 60 s; 0 disables monitoring). */
+  monitorDelayMs?: number;
+  /** Delivery lag above this logs `otp.delivery.slow` (default 60 s). */
+  slowDeliveryThresholdMs?: number;
+  /** Injectable scheduler (tests). Defaults to an unref'd setTimeout. */
+  schedule?: (fn: () => void, delayMs: number) => void;
 }
 
 export interface SendOtpInput {
@@ -235,6 +313,23 @@ export interface SendOtpInput {
 export interface SendOtpResult {
   messageId: number;
   cost?: number;
+}
+
+/** Delivery outcome as reported by `GET /v1/send/{messageId}`. */
+export type SmsDeliveryState = 'delivered' | 'pending' | 'failed' | 'unknown';
+
+export interface SmsDeliveryStatus {
+  messageId: number;
+  /** Raw provider `deliveryState` code (0 sending, 1 delivered, 2 failed, 3 queued). */
+  deliveryState?: number;
+  /** Parsed summary of `deliveryState` + delivery timestamp. */
+  state: SmsDeliveryState;
+  /** Provider-formatted send time ("YYYY-MM-DD HH:mm:ss"). */
+  sendDateTime?: string;
+  /** Provider-formatted delivery time — present only once delivered. */
+  deliveryDateTime?: string;
+  /** Seconds between send and delivery (both timestamps parsed). */
+  deliveryLagSeconds?: number;
 }
 
 export type OtpSendGuardReason = 'cooldown' | 'window_limit';
@@ -259,6 +354,10 @@ export class SmsIrOtpProvider {
   private readonly store: RateLimitStore;
   private readonly log: Logger;
   private readonly now: () => number;
+  private readonly monitorDelivery: boolean;
+  private readonly monitorDelayMs: number;
+  private readonly slowDeliveryThresholdMs: number;
+  private readonly schedule: (fn: () => void, delayMs: number) => void;
 
   constructor(config: SmsIrOtpProviderConfig) {
     if (!config.apiKey) {
@@ -282,6 +381,11 @@ export class SmsIrOtpProvider {
     this.store = config.store ?? createRateLimitStore();
     this.log = config.logger ?? createLogger({scope: 'smsIr'});
     this.now = config.now ?? (() => Date.now());
+    const monitorDelayMs = config.monitorDelayMs ?? SMSIR_DEFAULT_MONITOR_DELAY_MS;
+    this.monitorDelayMs = Number.isFinite(monitorDelayMs) && monitorDelayMs > 0 ? monitorDelayMs : 0;
+    this.monitorDelivery = config.monitorDelivery !== false && this.monitorDelayMs > 0;
+    this.slowDeliveryThresholdMs = config.slowDeliveryThresholdMs ?? SMSIR_SLOW_DELIVERY_THRESHOLD_MS;
+    this.schedule = config.schedule ?? defaultDeliveryScheduler;
   }
 
   /**
@@ -396,6 +500,7 @@ export class SmsIrOtpProvider {
           messageId: result.messageId,
           cost: result.cost,
         });
+        this.scheduleDeliveryCheck(result.messageId, mobile);
         return result;
       }
     }
@@ -403,23 +508,128 @@ export class SmsIrOtpProvider {
     throw this.toProviderFailure(response.status, providerStatus, providerMessage, response.headers, mobile);
   }
 
+  /**
+   * Reads the delivery status of a sent message (`GET /v1/send/{messageId}`
+   * per the SMS.ir REST docs). Throws a typed `SmsIrProviderError` on any
+   * failure — monitoring callers should catch and log `otp.delivery.*`.
+   */
+  async getDeliveryStatus(messageId: number | string): Promise<SmsDeliveryStatus> {
+    const id = String(messageId).trim();
+    if (!/^\d+$/.test(id)) {
+      throw new SmsIrProviderError(SMSIR_ERROR_CODES.PROVIDER_REJECTED, 'Invalid SMS.ir messageId');
+    }
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl}${SMSIR_DELIVERY_PATH_PREFIX}${id}`, {
+        method: 'GET',
+        headers: {Accept: 'application/json', 'X-API-KEY': this.apiKey},
+        cache: 'no-store',
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (error) {
+      throw this.toTransportError(error, undefined, 'otp.delivery.lookup_failed');
+    }
+
+    const bodyObj = await readJsonBody(response);
+    const providerStatus = typeof bodyObj?.status === 'number' ? bodyObj.status : undefined;
+    const providerMessage = typeof bodyObj?.message === 'string' ? bodyObj.message : undefined;
+    if (!response.ok || providerStatus !== 1) {
+      throw this.toProviderFailure(
+        response.status,
+        providerStatus,
+        providerMessage,
+        response.headers,
+        undefined,
+        'otp.delivery.lookup_failed',
+      );
+    }
+
+    const data = (bodyObj?.data ?? {}) as Record<string, unknown>;
+    // `messageText` is deliberately NOT read or returned: it may contain the
+    // plaintext OTP code.
+    const deliveryState = typeof data.deliveryState === 'number' ? data.deliveryState : undefined;
+    const sendDateTime = typeof data.sendDateTime === 'string' ? data.sendDateTime : undefined;
+    const deliveryDateTime = typeof data.deliveryDateTime === 'string' ? data.deliveryDateTime : undefined;
+    return {
+      messageId: Number(id),
+      deliveryState,
+      state: classifyDeliveryState(deliveryState, deliveryDateTime),
+      sendDateTime,
+      deliveryDateTime,
+      deliveryLagSeconds: deliveryLagSeconds(sendDateTime, deliveryDateTime),
+    };
+  }
+
+  /**
+   * Fire-and-forget post-send probe. Never throws and never blocks the send
+   * result — a scheduler or probe failure only logs.
+   */
+  private scheduleDeliveryCheck(messageId: number, mobile: string): void {
+    if (!this.monitorDelivery) return;
+    const sentAtMs = this.now();
+    try {
+      this.schedule(() => {
+        void this.runDeliveryCheck(messageId, mobile, sentAtMs);
+      }, this.monitorDelayMs);
+    } catch (error) {
+      this.log.warn('otp.delivery.schedule_failed', {
+        mobile: maskMobile(mobile),
+        messageId,
+        error: error instanceof Error ? error.message : undefined,
+      });
+    }
+  }
+
+  private async runDeliveryCheck(messageId: number, mobile: string, sentAtMs: number): Promise<void> {
+    const elapsedSeconds = Math.max(0, Math.round((this.now() - sentAtMs) / 1000));
+    try {
+      const status = await this.getDeliveryStatus(messageId);
+      const base = {
+        mobile: maskMobile(mobile),
+        messageId,
+        deliveryState: status.deliveryState,
+        elapsedSeconds,
+      };
+      if (status.state === 'delivered') {
+        const lag = status.deliveryLagSeconds;
+        if (lag !== undefined && lag * 1000 > this.slowDeliveryThresholdMs) {
+          this.log.warn('otp.delivery.slow', {...base, deliveryLagSeconds: lag});
+        } else {
+          this.log.info('otp.delivery.delivered', {...base, deliveryLagSeconds: lag});
+        }
+      } else if (status.state === 'failed') {
+        this.log.warn('otp.delivery.failed', base);
+      } else {
+        this.log.info('otp.delivery.pending', base);
+      }
+    } catch (error) {
+      this.log.warn('otp.delivery.check_failed', {
+        mobile: maskMobile(mobile),
+        messageId,
+        code: (error as {code?: string})?.code,
+        elapsedSeconds,
+      });
+    }
+  }
+
   /** Classify transport-level failures (timeout / network / unexpected). */
-  private toTransportError(error: unknown, mobile: string): SmsIrProviderError {
+  private toTransportError(error: unknown, mobile?: string, logMsg = 'otp.send.failed'): SmsIrProviderError {
     if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-      return this.fail(SMSIR_ERROR_CODES.TIMEOUT, 'SMS.ir request timed out', {mobile, retryable: true, cause: error});
+      return this.fail(SMSIR_ERROR_CODES.TIMEOUT, 'SMS.ir request timed out', {mobile, retryable: true, cause: error}, logMsg);
     }
     if (error instanceof TypeError) {
       return this.fail(SMSIR_ERROR_CODES.PROVIDER_UNAVAILABLE, 'Network error while calling SMS.ir', {
         mobile,
         retryable: true,
         cause: error,
-      });
+      }, logMsg);
     }
     return this.fail(SMSIR_ERROR_CODES.PROVIDER_UNAVAILABLE, 'Unexpected error while calling SMS.ir', {
       mobile,
       retryable: true,
       cause: error instanceof Error ? error : undefined,
-    });
+    }, logMsg);
   }
 
   /**
@@ -432,7 +642,8 @@ export class SmsIrOtpProvider {
     providerStatus: number | undefined,
     providerMessage: string | undefined,
     headers: Headers,
-    mobile: string,
+    mobile?: string,
+    logMsg = 'otp.send.failed',
   ): SmsIrProviderError {
     const base = {httpStatus, providerStatus, providerMessage};
     if (httpStatus === 401) {
@@ -502,9 +713,14 @@ export class SmsIrOtpProvider {
   }
 
   /** Construct a typed error, log it redacted, and hand it to the caller. */
-  private fail(code: SmsIrErrorCode, message: string, options: SmsIrProviderErrorOptions & {mobile?: string}): SmsIrProviderError {
+  private fail(
+    code: SmsIrErrorCode,
+    message: string,
+    options: SmsIrProviderErrorOptions & {mobile?: string},
+    logMsg = 'otp.send.failed',
+  ): SmsIrProviderError {
     const error = new SmsIrProviderError(code, message, options);
-    this.log.error('otp.send.failed', {
+    this.log.error(logMsg, {
       code: error.code,
       httpStatus: error.httpStatus,
       providerStatus: error.providerStatus,
@@ -530,6 +746,8 @@ export interface SmsIrProviderEnv extends RateLimitStoreEnv {
   SMS_IR_API_BASE_URL?: string;
   SMS_IR_CODE_PARAMETER?: string;
   SMS_IR_TIMEOUT_MS?: string;
+  /** Delay before the post-send delivery probe in ms (0 disables). */
+  SMS_IR_MONITOR_DELAY_MS?: string;
 }
 
 /**
@@ -559,12 +777,17 @@ export function createSmsIrOtpProvider(env: SmsIrProviderEnv = process.env as Sm
   }
   const timeoutMs = Number.parseInt(env.SMS_IR_TIMEOUT_MS ?? '', 10);
   const parsedTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs >= 500 ? timeoutMs : SMSIR_DEFAULT_TIMEOUT_MS;
+  const monitorDelayRaw = Number.parseInt(env.SMS_IR_MONITOR_DELAY_MS ?? '', 10);
+  const monitorDelayMs =
+    Number.isFinite(monitorDelayRaw) && monitorDelayRaw >= 0 ? monitorDelayRaw : SMSIR_DEFAULT_MONITOR_DELAY_MS;
   return new SmsIrOtpProvider({
     apiKey,
     templateId: parsedTemplateId,
     baseUrl: env.SMS_IR_API_BASE_URL?.trim() || SMSIR_BASE_URL,
     otpParameterName: env.SMS_IR_CODE_PARAMETER?.trim() || SMSIR_DEFAULT_OTP_PARAMETER_NAME,
     timeoutMs: parsedTimeoutMs,
+    monitorDelivery: monitorDelayMs > 0,
+    monitorDelayMs,
     store: createRateLimitStore(env),
   });
 }
