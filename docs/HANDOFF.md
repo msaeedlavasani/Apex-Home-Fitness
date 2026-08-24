@@ -33,6 +33,8 @@
 - **Batch 15:** زبان‌سوییچر سراسری EN/FA و enforce قطعی روزهای استراحت — تکمیل (unit 336/336؛ E2E هدفمند affected سبز).
 - **Workflow Repair Gate completed — isolated agents, staged validation, targeted E2E policy and CI auth coverage are active.**
 - **Production Go مشروط:** قبل از لانچ باید `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، Supabase URL/anon، دامنه HTTPS، redirectها و template فعال تنظیم شوند و smoke test واقعی با شماره رضایت‌دار اجرا شود (چک‌لیست کامل: `docs/OTP_LAUNCH_READINESS.md` §11).
+- **استقرار سرور (self-hosted Docker):** Next 15.5.23 روی `85.198.16.251` (کد در `/opt/apexhomefit/app-new/`، پوشه‌ی قدیمی `/opt/apexhomefit/app-final-fixed/` برای rollback) بالا است. قالب SMS.ir: `SMS_IR_TEMPLATE_ID=976440`، پارامتر قالب: `otp` (`SMS_IR_CODE_PARAMETER=otp`). تأخیر تحویل SMS (~۴ دقیقه) سمت SMS.ir است — قالب باید در بخش «ارسال سریع» پنل تعریف شود.
+- **OTP mock override (production test harness):** برای اینکه توسعه/تست روی سرور به SMS وابسته نباشد، `getOtpService()` در حالت `AUTH_OTP_MODE=mock` + `AUTH_OTP_MOCK_IN_PRODUCTION=true` یک سرویس HYBRID برمی‌گرداند: شماره‌های `AUTH_OTP_MOCK_PHONES` کد موکاپ فوری (`devCode=123456`) + session واقعی Supabase می‌گیرند؛ بقیه به SMS.ir واقعی route می‌شوند (امن: پیش‌فرض OFF، فقط allowlist). جزئیات: `src/lib/auth/otpService.ts` + `tests/otp-mock-production.test.ts`. بعد از رفع SMS، `AUTH_OTP_MODE=mock` حذف شود.
 - **تصمیم Next.js:** ارتقای امنیتی به 15.5.23 (به‌همراه next-intl 4.13.7) روی برنچ `migration/next-15` انجام و typecheck/lint/unit (345/345) سبز شد؛ 14.x دیگر پچ امنیتی نمی‌گیرد، پس این ارتقا قبل از launch الزامی است. ارتقای نهایی به 16.x همچنان به‌عنوان migration مستقل و **بعد از launch** باقی می‌ماند.
 - **تمرکز بعدی:** آمادگی بیلد/استقرار روی سرور (بچ ۱۶) → production smoke و go/no-go لانچ (نیازمند env واقعی از کاربر). بچ جدید فقط با تأیید صریح کاربر.
 
@@ -42,3 +44,4 @@
 3. **قرارداد launch:** `docs/OTP_LAUNCH_READINESS.md` (Go/No-Go، envها، smoke test).
 4. **هوش مصنوعی:** موتور AI در `src/app/api/generate-program/route.ts`.
 5. **کارهای blocked روی کاربر:** env واقعی SMS.ir/Supabase، دامنه HTTPS، اکانت Vercel (فعلاً به تعویق افتاده).
+6. **حالت mock پروداکشن:** اگر `AUTH_OTP_MODE=mock` روی سرور فعال است، حتماً `AUTH_OTP_MOCK_IN_PRODUCTION=true` و `AUTH_OTP_MOCK_PHONES` (allowlist تست) را هم دیده و بعد از رفع SMS حذفش کن.
