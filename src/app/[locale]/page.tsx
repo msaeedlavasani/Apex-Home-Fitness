@@ -1,7 +1,14 @@
 import type {Metadata} from 'next';
 import Link from 'next/link';
 import {getTranslations} from 'next-intl/server';
-import {ArrowRight, Dumbbell, ShieldCheck, Sparkles} from 'lucide-react';
+import {
+  ArrowRight,
+  Dumbbell,
+  Sparkles,
+  TrendingUp,
+  WifiOff,
+  type LucideIcon,
+} from 'lucide-react';
 import {LanguageSwitcher} from '@/components/layout/LanguageSwitcher';
 
 export async function generateMetadata({
@@ -13,6 +20,16 @@ export async function generateMetadata({
   const t = await getTranslations({locale, namespace: 'Landing'});
   return {title: t('title'), description: t('description')};
 }
+
+const FEATURES: Array<{
+  icon: LucideIcon;
+  titleKey: string;
+  bodyKey: string;
+}> = [
+  {icon: Sparkles, titleKey: 'featureAiTitle', bodyKey: 'featureAiBody'},
+  {icon: WifiOff, titleKey: 'featureOfflineTitle', bodyKey: 'featureOfflineBody'},
+  {icon: TrendingUp, titleKey: 'featureProgressTitle', bodyKey: 'featureProgressBody'},
+];
 
 export default async function LandingPage({
   params,
@@ -53,16 +70,25 @@ export default async function LandingPage({
           </Link>
         </section>
 
-        <section aria-label={t('eyebrow')} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <div className="rounded-3xl border border-apex-border bg-apex-card p-6 shadow-sm">
-            <Sparkles className="h-6 w-6 text-apex-primary" aria-hidden="true" />
-            <h2 className="mt-4 text-xl font-semibold">{t('title')}</h2>
-            <p className="mt-2 text-sm leading-6 text-apex-text-secondary">{t('description')}</p>
-          </div>
-          <div className="rounded-3xl border border-apex-border bg-apex-card p-6 shadow-sm">
-            <ShieldCheck className="h-6 w-6 text-apex-state-success-text" aria-hidden="true" />
-            <p className="mt-4 text-sm leading-6 text-apex-text-secondary">{t('description')}</p>
-          </div>
+        <section aria-label={t('featuresLabel')} className="grid gap-4">
+          {FEATURES.map(({icon: Icon, titleKey, bodyKey}) => (
+            <div
+              key={titleKey}
+              className="flex gap-4 rounded-3xl border border-apex-border bg-apex-card p-5 shadow-sm"
+            >
+              <span
+                className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-apex-primary-soft text-apex-primary"
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold">{t(titleKey)}</h2>
+                <p className="mt-1 text-sm leading-6 text-apex-text-secondary">
+                  {t(bodyKey)}
+                </p>
+              </div>
+            </div>
+          ))}
         </section>
       </div>
     </main>

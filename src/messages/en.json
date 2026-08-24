@@ -7,7 +7,14 @@
     "eyebrow": "Apex Home Fitness",
     "title": "Build a plan that fits your life",
     "description": "Answer a few questions and get a personalized home workout program.",
-    "start": "Start the quiz"
+    "start": "Start the quiz",
+    "featuresLabel": "Why Apex",
+    "featureAiTitle": "AI-built for you",
+    "featureAiBody": "A personalized program generated from your goals, level and equipment — no generic templates.",
+    "featureOfflineTitle": "Works offline",
+    "featureOfflineBody": "Install it as an app and keep training without a connection; your sessions sync when you're back online.",
+    "featureProgressTitle": "Progress you can see",
+    "featureProgressBody": "History, streaks and analytics that show how far you've come — in English or Persian."
   },
   "Nav": {
     "home": "Home",
