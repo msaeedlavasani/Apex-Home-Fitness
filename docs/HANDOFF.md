@@ -33,7 +33,7 @@
 - **Batch 15:** زبان‌سوییچر سراسری EN/FA و enforce قطعی روزهای استراحت — تکمیل (unit 336/336؛ E2E هدفمند affected سبز).
 - **Workflow Repair Gate completed — isolated agents, staged validation, targeted E2E policy and CI auth coverage are active.**
 - **Production Go مشروط:** قبل از لانچ باید `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، Supabase URL/anon، دامنه HTTPS، redirectها و template فعال تنظیم شوند و smoke test واقعی با شماره رضایت‌دار اجرا شود (چک‌لیست کامل: `docs/OTP_LAUNCH_READINESS.md` §11).
-- **تصمیم Next.js:** ارتقا به 16.3.1 به‌عنوان migration مستقل و **بعد از launch**.
+- **تصمیم Next.js:** ارتقای امنیتی به 15.5.23 (به‌همراه next-intl 4.13.7) روی برنچ `migration/next-15` انجام و typecheck/lint/unit (345/345) سبز شد؛ 14.x دیگر پچ امنیتی نمی‌گیرد، پس این ارتقا قبل از launch الزامی است. ارتقای نهایی به 16.x همچنان به‌عنوان migration مستقل و **بعد از launch** باقی می‌ماند.
 - **تمرکز بعدی:** آمادگی بیلد/استقرار روی سرور (بچ ۱۶) → production smoke و go/no-go لانچ (نیازمند env واقعی از کاربر). بچ جدید فقط با تأیید صریح کاربر.
 
 ## نکات کلیدی برای ایجنت بعدی

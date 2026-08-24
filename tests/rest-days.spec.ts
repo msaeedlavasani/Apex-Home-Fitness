@@ -14,7 +14,7 @@ import {expect, test, type Page} from '@playwright/test';
 /** Walks steps 1–5 (theme, level, goals, equipment, limitations-skip). */
 async function navigateToRestDaysStep(page: Page, {locale = 'en'}: {locale?: 'en' | 'fa'} = {}) {
   const isFa = locale === 'fa';
-  const next = page.getByRole('button', {name: isFa ? 'بعدی' : 'Next'});
+  const next = page.getByRole('button', {name: isFa ? 'بعدی' : 'Next', exact: true});
 
   await page.goto(`/${locale}/quiz`);
   // Step 1 — visual style.

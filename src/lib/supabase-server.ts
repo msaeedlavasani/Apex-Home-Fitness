@@ -18,12 +18,12 @@ import { getSupabaseConfig } from './supabase';
  * request's cookies. Call `auth.getUser()` to resolve the signed-in user.
  *
  * @example
- *   const supabase = createServerSupabaseClient();
+ *   const supabase = await createServerSupabaseClient();
  *   const { data: { user } } = await supabase.auth.getUser();
  */
-export function createServerSupabaseClient(): SupabaseClient {
+export async function createServerSupabaseClient(): Promise<SupabaseClient> {
   const { url, anonKey } = getSupabaseConfig();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {
     cookies: {

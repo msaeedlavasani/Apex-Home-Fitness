@@ -121,8 +121,8 @@ test.describe('Onboarding quiz — keyboard', () => {
     await light.press('Enter');
     await expect(light).toHaveAttribute('aria-pressed', 'true');
 
-    await tabTo(page, page.getByRole('button', {name: 'Next'}));
-    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(page.getByText('What is your current training level?')).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
 
@@ -131,8 +131,8 @@ test.describe('Onboarding quiz — keyboard', () => {
     await tabTo(page, beginner);
     await beginner.press('Enter');
 
-    await tabTo(page, page.getByRole('button', {name: 'Next'}));
-    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(page.getByText('What are your goals?')).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
 
@@ -148,8 +148,8 @@ test.describe('Onboarding quiz — keyboard', () => {
     await expect(flexibility).toBeChecked();
     await expect(strength).toBeChecked();
 
-    await tabTo(page, page.getByRole('button', {name: 'Next'}));
-    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(
       page.getByText('What equipment do you have available?'),
     ).toBeVisible();
@@ -160,8 +160,8 @@ test.describe('Onboarding quiz — keyboard', () => {
     await dumbbells.press('Space');
     await expect(dumbbells).toBeChecked();
 
-    await tabTo(page, page.getByRole('button', {name: 'Next'}));
-    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(
       page.getByText('Do you have any injuries or limitations?'),
     ).toBeVisible();
@@ -172,8 +172,8 @@ test.describe('Onboarding quiz — keyboard', () => {
     await none.press('Space');
     await expect(none).toBeChecked();
 
-    await tabTo(page, page.getByRole('button', {name: 'Next'}));
-    await page.getByRole('button', {name: 'Next'}).press('Enter');
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '6');
 
@@ -207,7 +207,7 @@ test.describe('Onboarding quiz — keyboard', () => {
   }) => {
     await page.goto('/en/quiz');
 
-    const next = page.getByRole('button', {name: 'Next'});
+    const next = page.getByRole('button', {name: 'Next', exact: true});
     await tabTo(page, next);
     await next.press('Enter');
 

@@ -12,6 +12,9 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    // Next.js 15 requires an explicit ES2017+ target for top-level `await`
+    // support; `next lint` adds this automatically when missing.
+    "target": "ES2017",
     "plugins": [
       {
         "name": "next"

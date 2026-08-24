@@ -189,12 +189,12 @@ test.describe('Responsive shell — touch targets', () => {
 
   test('quiz navigation buttons meet 44px touch targets', async ({page}) => {
     await open(page, '/en/quiz', MOBILE);
-    const next = await page.getByRole('button', {name: 'Next'}).boundingBox();
+    const next = await page.getByRole('button', {name: 'Next', exact: true}).boundingBox();
     expect(next).not.toBeNull();
     expect(next!.height).toBeGreaterThanOrEqual(44);
 
     await open(page, '/fa/quiz', MOBILE);
-    const faNext = await page.getByRole('button', {name: 'بعدی'}).boundingBox();
+    const faNext = await page.getByRole('button', {name: 'بعدی', exact: true}).boundingBox();
     expect(faNext).not.toBeNull();
     expect(faNext!.height).toBeGreaterThanOrEqual(44);
   });

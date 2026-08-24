@@ -16,7 +16,7 @@ import {logger} from '@/lib/logger';
 export async function POST() {
   try {
     const {createServerSupabaseClient} = await import('@/lib/supabase-server');
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     await supabase.auth.signOut();
     logger.info('auth.logout');
   } catch {
