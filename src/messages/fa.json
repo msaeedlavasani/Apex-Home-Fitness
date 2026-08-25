@@ -14,7 +14,19 @@
     "featureOfflineTitle": "حتی آفلاین هم تمرین کن",
     "featureOfflineBody": "به‌صورت اپ نصبش کن و بدون اینترنت تمرین کن؛ وقتی آنلاین شدی تمرین‌هایت همگام می‌شوند.",
     "featureProgressTitle": "پیشرفتت را ببین",
-    "featureProgressBody": "تاریخچه، استریک و آمارهایی که نشان می‌دهد چقدر جلو رفته‌ای — به فارسی یا انگلیسی."
+    "featureProgressBody": "تاریخچه، استریک و آمارهایی که نشان می‌دهد چقدر جلو رفته‌ای — به فارسی یا انگلیسی.",
+    "planMeta": "۶ مرحله · برنامه شخصی‌سازی‌شده",
+    "proofPersonalized": "شخصی‌سازی‌شده",
+    "proofHomeFirst": "مناسب خانه",
+    "proofBilingual": "فارسی و انگلیسی",
+    "sessionLabel": "جلسه بعدی تو",
+    "sessionTitle": "تمرکز روی تمام بدن",
+    "minutes": "دقیقه",
+    "exercises": "حرکت",
+    "calories": "کالری",
+    "sessionBuiltTitle": "هماهنگ با برنامه روزانه تو",
+    "sessionBuiltBody": "هدف، سطح، تجهیزات و روزهای استراحت",
+    "ready": "آماده"
   },
   "Nav": {
     "home": "خانه",

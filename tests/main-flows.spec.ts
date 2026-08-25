@@ -10,6 +10,29 @@ import {expect, test} from '@playwright/test';
  * 3. Theme switching (dark / light / system + persistence)
  */
 
+test.describe('Landing visual shell', () => {
+  test('renders the primary action and workout preview in English', async ({page}) => {
+    await page.goto('/en');
+
+    await expect(page.getByRole('heading', {name: 'Build a plan that fits your life'})).toBeVisible();
+    await expect(page.getByRole('link', {name: 'Start the quiz'})).toHaveAttribute('href', '/en/quiz');
+    await expect(page.getByRole('heading', {name: 'Full body focus'})).toBeVisible();
+    await expect(page.getByText('AI-built for you')).toBeVisible();
+    await expect(page.getByText('Works offline')).toBeVisible();
+  });
+
+  test('keeps the landing composition localized and RTL in Persian', async ({page}) => {
+    await page.goto('/fa');
+
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByRole('heading', {name: 'برنامه‌ای بساز که با زندگی تو جور باشد'})).toBeVisible();
+    await expect(page.getByRole('link', {name: 'شروع کوییز'})).toHaveAttribute('href', '/fa/quiz');
+    await expect(page.getByRole('heading', {name: 'تمرکز روی تمام بدن'})).toBeVisible();
+    await expect(page.getByText('ساخته‌شده با هوش مصنوعی برای تو')).toBeVisible();
+  });
+});
+
 test.describe('Localization (EN / FA switching)', () => {
   test('dashboard renders in English (LTR) and switches to Persian (RTL)', async ({
     page,

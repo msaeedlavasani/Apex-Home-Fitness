@@ -1,46 +1,102 @@
 # Apex Home Fitness 🏠🚀
 
-پلتفرم هوشمند تولید برنامه‌های تمرینی شخصی‌سازی‌شده در خانه با حداقل تجهیزات.
+پلتفرم دوزبانه‌ی تولید برنامه‌ی تمرینی شخصی‌سازی‌شده برای تمرین در خانه، با پشتیبانی از برنامه‌ریزی مبتنی بر هوش مصنوعی، ثبت پیشرفت، PWA و تجربه‌ی RTL/LTR.
 
-## 🌟 ویژگی‌های کلیدی
-- **هوش مصنوعی هوشمند:** تولید برنامه بر اساس اهداف، سطح و تجهیزات کاربر (GPT-4o-mini / Gemini).
-- **سیستم طراحی چندپلتفرمی:** رابط کاربری Native برای iOS (Apple HIG)، Android (Material 3) و Web.
-- **موتور تمرین پیشرفته:** مدیریت زنده تمرین با تایمر، شمارنده ست و انیمیشن‌های Lottie/Video.
-- **تحلیل پیشرفت:** نمودارهای پیشرفت، استریک‌های تمرینی و تاریخچه کامل.
-- **قابلیت PWA و TWA:** قابل نصب روی تمام دستگاه‌ها و آماده انتشار در گوگل‌پلی.
-- **دوزبانه (Bilingual):** پشتیبانی کامل از فارسی (RTL) و انگلیسی (LTR).
+A bilingual home-fitness platform for personalized workout plans, progress tracking, AI-assisted programming, PWA support, and RTL/LTR experiences.
 
-## 🛠️ استک فنی
-- **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **Design:** Apple System Design & Material Design 3
-- **Animations:** lottie-react و CSS transitions
-- **Backend/DB:** Supabase (Auth + Postgres + Storage), Prisma ORM
-- **AI Engine:** Vercel AI SDK با OpenAI
-- **Offline:** Dexie (IndexedDB) و Sync Service
+## وضعیت فعلی
 
-## 🚀 شروع به کار
-1. `npm install`
-2. تنظیم فایل `.env` (مشابه `.env.example`)
-3. `npx prisma db push`
-4. `npm run dev`
+- **Framework:** Next.js 15.5.23 App Router + next-intl 4.13.7
+- **Runtime:** Node.js 22، React 18، TypeScript
+- **UI:** Tailwind CSS، Design System چندپلتفرمی، فونت‌های self-hosted
+- **Auth:** OTP با adapter قابل‌تعویض؛ SMS.ir برای حالت live و mock صریح برای توسعه/تست
+- **Data:** Prisma 6 + SQLite در استقرار self-hosted؛ Supabase برای Identity/Session
+- **AI:** Vercel AI SDK + OpenAI (`gpt-4o-mini`)
+- **Offline/PWA:** Dexie، service worker و fallback آفلاین
+- **Deployment:** Docker Compose با image standalone و volume دیتابیس
 
-## 🤖 CI و E2E
-Pipeline در `.github/workflows/ci.yml` به‌ترتیب و fail-fast اجرا می‌شود:
+> در محیط production فعلی، ارسال SMS عمداً با feature flag غیرفعال و ورود آزمایشی با کد ثابت فعال است. این حالت برای کاربر واقعی مناسب نیست؛ جزئیات rollback در `docs/OTP_LAUNCH_READINESS.md` آمده است.
 
-1. **`build`**: `npm ci` → `npx prisma generate` → lint → type check → unit tests → `next build`
-2. **`e2e`** (فقط بعد از موفقیت `build`): `npm ci` → نصب browserهای Playwright (`npx playwright install --with-deps chromium`) → `npm run test:e2e`؛ در صورت failure گزارش در artifact آپلود می‌شود.
+## شروع توسعه
 
-نکته‌های مهم:
-- CI فقط envهای placeholder (بدون secrets واقعی) می‌دهد؛ `DATABASE_URL="file:./ci.db"` کافی است چون E2E فعلی UI-only است و به auth/DB واقعی نیاز ندارد (داشبورد، کوییز، تم، کیبورد، ARIA و آفلاین).
-- E2E روی dev server اجرا می‌شود چون `tests/offline-pwa.spec.ts` رفتار dev-mode (عدم ثبت service worker) را پین کرده است؛ build پروداکشن جداگانه در job اول اعتبارسنجی می‌شود.
-- جریان‌های نیازمند creds واقعی (مثلاً `POST /api/generate-program` با Supabase auth + کلید OpenAI) جزو E2E نیستند — جزئیات در `.env.example` مستند شده است.
-- تست‌ها به‌صورت محلی: `npx playwright install chromium && npm run test:e2e`
+پیش‌نیاز: Node.js 22 و npm.
 
-## 📂 مستندات مرجع
-- [مرجع اصلی وضعیت، تسک‌ها و تاریخچه بچ‌ها](docs/TASKS.md)
-- [پروتکل اجرای بچ و تحویل به ایجنت بعدی](docs/HANDOFF.md)
-- [قرارداد APIهای هوش مصنوعی](docs/AI_API.md)
-- [سیستم طراحی و توکن‌ها](docs/DESIGN_SYSTEM.md)
-- [راهنمای release و TWA/Google Play](docs/RELEASING.md)
+```bash
+npm ci
+cp .env.example .env
+npx prisma generate
+npx prisma migrate deploy
+npm run dev
+```
 
-اسناد تاریخی یا پیشنهادهای مصرف‌شده در ریشه مرجع نگهداری نمی‌شوند؛ تغییرات جدید باید ابتدا به `docs/TASKS.md` اضافه شوند.
+سپس یکی از مسیرهای `/en` یا `/fa` را باز کنید. مقادیر واقعی secret را commit نکنید.
+
+## دستورات استاندارد
+
+```bash
+npm run typecheck       # TypeScript بدون emit
+npm run lint            # ESLint
+npm test                # unit و contract tests
+npm run build           # production build
+npm run test:e2e:auth   # مسیر احراز هویت با mock
+npm run test:e2e:smoke  # مسیر اصلی محصول
+npm run test:e2e:full   # کل regression suite
+```
+
+ممیزی‌های مستقل:
+
+```bash
+npm run audit:assets
+npm run audit:design
+npm run audit:lottie
+```
+
+`audit:lottie` وقتی asset انیمیشن وجود نداشته باشد گزارش خالی تولید می‌کند؛ خروجی پیش‌فرض در `reports/` است و commit نمی‌شود.
+
+## اجرای Docker
+
+```bash
+cp .env.example .env
+# .env را فقط روی سرور/محیط محلی تنظیم کنید
+docker compose up --build -d
+```
+
+سرویس `migrate` migrationهای Prisma را روی volume اجرا می‌کند و سرویس `app` روی پورت 3000 بالا می‌آید. برای production حتماً reverse proxy و HTTPS تنظیم کنید. راهنمای کامل در `docs/RELEASING.md` است.
+
+## معماری پوشه‌ها
+
+```text
+src/app/                 صفحات، layoutها و Route Handlerهای API
+src/components/          کامپوننت‌های رابط کاربری و موتور تمرین
+src/lib/                 منطق زیرساختی auth، AI، offline و ابزارها
+src/services/             سرویس‌های دامنه و persistence
+prisma/                  schema، seed و migrationهای دیتابیس
+infra/ai/prompts/        promptهای versioned تولید برنامه
+scripts/                 auditهای بدون وابستگی
+supabase/migrations/     migrationهای SQL مربوط به Supabase در صورت استفاده
+tests/                   unit، contract و Playwright E2E
+docs/                    مستندات عملیاتی و قراردادهای پروژه
+```
+
+## مستندات
+
+قوانین agent توسعه: [`AGENTS.md`](AGENTS.md)
+
+نقشه‌ی کامل و مرجع هر موضوع: [`docs/INDEX.md`](docs/INDEX.md)
+
+- [`docs/TASKS.md`](docs/TASKS.md) — وضعیت batchها، اولویت‌ها و بدهی فنی
+- [`docs/HANDOFF.md`](docs/HANDOFF.md) — وضعیت فعلی و نکات تحویل
+- [`docs/OTP_LAUNCH_READINESS.md`](docs/OTP_LAUNCH_READINESS.md) — Go/No-Go، envها و smoke test احراز هویت
+- [`docs/RELEASING.md`](docs/RELEASING.md) — Docker، HTTPS، PWA/TWA و release
+- [`docs/CI.md`](docs/CI.md) — سیاست CI، انتخاب E2E و طبقه‌بندی شکست
+- [`docs/AI_API.md`](docs/AI_API.md) — قرارداد API تولید برنامه و analytics
+- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — توکن‌ها و قواعد UI
+- [`docs/ASSETS.md`](docs/ASSETS.md) — asset pipeline، cache و offline
+- [`docs/AI_DEVELOPMENT_SYSTEM.md`](docs/AI_DEVELOPMENT_SYSTEM.md) — سیستم توسعه‌ی خودکار اختصاصی Apex
+- [`docs/AI_CHANGE_TEMPLATE.md`](docs/AI_CHANGE_TEMPLATE.md) — قالب گزارش تغییر و handoff
+
+## CI
+
+Workflow اصلی در `.github/workflows/ci.yml` شامل install، Prisma، lint، typecheck، unit، build و E2Eهای هدفمند است. regression کامل در `.github/workflows/ci-full-e2e.yml` به‌صورت nightly یا دستی اجرا می‌شود.
+
+هر تغییر auth، API، schema، env یا deployment باید مستندات مرتبط و تست مناسب خودش را هم‌زمان به‌روزرسانی کند.

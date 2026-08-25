@@ -14,7 +14,19 @@
     "featureOfflineTitle": "Works offline",
     "featureOfflineBody": "Install it as an app and keep training without a connection; your sessions sync when you're back online.",
     "featureProgressTitle": "Progress you can see",
-    "featureProgressBody": "History, streaks and analytics that show how far you've come — in English or Persian."
+    "featureProgressBody": "History, streaks and analytics that show how far you've come — in English or Persian.",
+    "planMeta": "6 steps · personalized plan",
+    "proofPersonalized": "Personalized",
+    "proofHomeFirst": "Home-first",
+    "proofBilingual": "English + Persian",
+    "sessionLabel": "Your next session",
+    "sessionTitle": "Full body focus",
+    "minutes": "minutes",
+    "exercises": "exercises",
+    "calories": "calories",
+    "sessionBuiltTitle": "Built around your routine",
+    "sessionBuiltBody": "Goals, level, equipment and rest days",
+    "ready": "Ready"
   },
   "Nav": {
     "home": "Home",
