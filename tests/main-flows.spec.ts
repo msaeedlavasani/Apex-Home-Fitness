@@ -74,7 +74,7 @@ test.describe('Localization (EN / FA switching)', () => {
 });
 
 test.describe('Onboarding quiz', () => {
-  test('completes all six steps, persists the draft and hands off to sign-in', async ({
+  test('completes all seven steps, persists the draft and hands off to sign-in', async ({
     page,
   }) => {
     await page.goto('/en/quiz');
@@ -113,21 +113,26 @@ test.describe('Onboarding quiz', () => {
     await expect(page.getByRole('checkbox', {name: /^Fat Loss/})).toBeChecked();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
 
-    // --- Step 4: Equipment ---
+    // --- Step 4: Exercise styles ---
+    await expect(page.getByText('Which exercise styles do you enjoy?')).toBeVisible();
+    await page.getByRole('checkbox', {name: /^Calisthenics/}).check();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
+
+    // --- Step 5: Equipment ---
     await expect(
       page.getByText('What equipment do you have available?'),
     ).toBeVisible();
     await page.getByRole('checkbox', {name: 'Dumbbells'}).check();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
 
-    // --- Step 5: Limitations (optional) ---
+    // --- Step 6: Limitations (optional) ---
     await expect(
       page.getByText('Do you have any injuries or limitations?'),
     ).toBeVisible();
     await page.getByRole('checkbox', {name: 'None — I am healthy'}).check();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
 
-    // --- Step 6: Rest days (1–3 required) ---
+    // --- Step 7: Rest days (1–3 required) ---
     await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
     await page.getByRole('checkbox', {name: 'Wednesday'}).check();
     await page.getByRole('checkbox', {name: 'Sunday'}).check();
@@ -145,11 +150,12 @@ test.describe('Onboarding quiz', () => {
     expect(stored).toBeTruthy();
     const draft = JSON.parse(stored!) as {
       status: string;
-      answers: {level: string; goal: string[]; restDays: string[]};
+      answers: {level: string; goal: string[]; exerciseStyles: string[]; restDays: string[]};
     };
     expect(draft.status).toBe('completed');
     expect(draft.answers.level).toBe('beginner');
     expect(draft.answers.goal).toEqual(['strength', 'fat_loss']);
+    expect(draft.answers.exerciseStyles).toEqual(['calisthenics']);
     expect(draft.answers.restDays).toEqual(['wednesday', 'sunday']);
   });
 
@@ -195,6 +201,9 @@ test.describe('Onboarding quiz', () => {
 
     // Re-select Strength so the selection has two goals, then proceed.
     await strength.check();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
+    await expect(page.getByText('Which exercise styles do you enjoy?')).toBeVisible();
+    await page.getByRole('checkbox', {name: /^Calisthenics/}).check();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     await expect(
       page.getByText('What equipment do you have available?'),

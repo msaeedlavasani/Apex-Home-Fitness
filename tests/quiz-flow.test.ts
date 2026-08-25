@@ -23,6 +23,7 @@ const VALID_ANSWERS = {
   equipment: ['dumbbells', 'bench'],
   limitations: ['none'],
   limitationsDetails: '',
+  exerciseStyles: ['calisthenics', 'pilates'],
   restDays: ['wednesday', 'sunday'],
 };
 
@@ -75,6 +76,7 @@ test('buildGenerationInput maps answers onto the strict generate-program input',
   assert.equal('theme' in input, false);
   assert.deepEqual(Object.keys(input).sort(), [
     'equipment',
+    'exerciseStyles',
     'goal',
     'level',
     'limitations',
@@ -86,6 +88,7 @@ test('buildGenerationInput maps answers onto the strict generate-program input',
   assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse(input).success, true);
   assert.equal(input.level, 'beginner');
   assert.deepEqual(input.goal, ['strength', 'fat_loss']);
+  assert.deepEqual(input.exerciseStyles, ['calisthenics', 'pilates']);
   assert.deepEqual(input.restDays, ['wednesday', 'sunday']);
 });
 

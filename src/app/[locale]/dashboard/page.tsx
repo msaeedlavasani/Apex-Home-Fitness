@@ -2,11 +2,13 @@
 
 import {useFormatter, useLocale, useTranslations} from 'next-intl';
 import Link from 'next/link';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
 import {dayIndexInWeek, mondayPlanIndex, weekDaysFor} from '@/lib/weekCalendar';
 import {AppShell} from '@/components/layout/AppShell';
+import {PreferencesEditor} from '@/components/dashboard/PreferencesEditor';
 import {ANALYTICS_EVENTS, trackEvent} from '@/services/analyticsEvents';
+import {dashboardPlanFromSchedule, type DashboardDayPlan} from '@/lib/programSchedule';
 import {
   CalendarDays,
   Check,
@@ -27,9 +29,19 @@ type Workout = {
   exercises: number;
   calories: number;
   difficulty: Difficulty;
+  focus?: string;
 };
 
 type DayPlan = {type: 'rest'} | {type: 'workout'; workout: Workout};
+
+type CurrentProgramResponse = {
+  program: {restDays: unknown; weeklySchedule: unknown} | null;
+};
+
+type ProfileResponse = {
+  quizCompleted: boolean;
+  preferences: {exerciseStyles: string[]; equipment: string[]};
+};
 
 /**
  * Sample weekly plan (Monday → Sunday). The plan stays anchored to a
@@ -94,6 +106,28 @@ const WEEK_PLAN: DayPlan[] = [
   },
 ];
 
+function fallbackWorkoutPlan(): DayPlan[] {
+  return WEEK_PLAN;
+}
+
+function toDayPlans(schedule: unknown, restDays: readonly string[], level: Difficulty = 'intermediate'): DayPlan[] {
+  return dashboardPlanFromSchedule(schedule, restDays).map((plan) =>
+    plan.type === 'rest'
+      ? plan
+      : {
+          type: 'workout',
+          workout: {
+            nameKey: 'workouts.generated',
+            durationMin: plan.durationMin,
+            exercises: plan.exercises,
+            calories: plan.calories,
+            difficulty: level,
+            focus: plan.focus,
+          },
+        },
+  );
+}
+
 const DIFFICULTY_BADGE: Record<Difficulty, string> = {
   beginner: 'bg-emerald-400/20 text-emerald-300',
   intermediate: 'bg-amber-400/20 text-amber-300',
@@ -121,6 +155,39 @@ export default function DashboardPage() {
   );
 
   const [selectedIndex, setSelectedIndex] = useState(todayIndex);
+  const [program, setProgram] = useState<CurrentProgramResponse['program']>(null);
+  const [programLoading, setProgramLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/profile')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('profile lookup failed');
+        return (await response.json()) as ProfileResponse;
+      })
+      .then((data) => { if (!cancelled) setProfile(data); })
+      .catch(() => { if (!cancelled) setProfile({quizCompleted: false, preferences: {exerciseStyles: [], equipment: []}}); })
+      .finally(() => { if (!cancelled) setProfileLoading(false); });
+    fetch('/api/program/current')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('program lookup failed');
+        return (await response.json()) as CurrentProgramResponse;
+      })
+      .then((data) => {
+        if (!cancelled) setProgram(data.program);
+      })
+      .catch(() => {
+        if (!cancelled) setProgram(null);
+      })
+      .finally(() => {
+        if (!cancelled) setProgramLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const weekDays = useMemo(
     () => weekDaysFor(today, locale),
@@ -132,15 +199,18 @@ export default function DashboardPage() {
     [today],
   );
 
-  const selectedPlan = WEEK_PLAN[mondayPlanIndex(weekDays[selectedIndex])];
+  const actualPlan = useMemo(
+    () => (program ? toDayPlans(program.weeklySchedule, Array.isArray(program.restDays) ? program.restDays as string[] : []) : fallbackWorkoutPlan()),
+    [program],
+  );
+  const selectedPlanIndex = mondayPlanIndex(weekDays[selectedIndex]);
+  const selectedPlan = actualPlan[selectedPlanIndex] ?? {type: 'rest'};
   const isTodaySelected = selectedIndex === todayIndex;
+  const selectedWeekday = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][selectedPlanIndex];
 
-  const sessionsDone = WEEK_PLAN.slice(0, mondayPlanIndex(today)).filter(
-    (plan) => plan.type === 'workout',
-  ).length;
-  const totalSessions = WEEK_PLAN.filter(
-    (plan) => plan.type === 'workout',
-  ).length;
+  const todayPlanIndex = mondayPlanIndex(today);
+  const sessionsDone = actualPlan.slice(0, todayPlanIndex).filter((plan) => plan.type === 'workout').length;
+  const totalSessions = actualPlan.filter((plan) => plan.type === 'workout').length;
 
   const hour = today.getHours();
   const greetingKey =
@@ -167,7 +237,19 @@ export default function DashboardPage() {
     >
       {/* Page content — the platform shell owns safe areas & navigation. */}
       <div className="mx-auto w-full max-w-md px-4 sm:max-w-lg md:max-w-xl">
+        {!profileLoading && profile && !profile.quizCompleted ? (
+          <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
+            <h1 className="text-lg font-bold text-amber-950">{t('quizRequiredTitle')}</h1>
+            <p className="mt-2 text-sm text-amber-800">{t('quizRequiredBody')}</p>
+            <Link href={`/${locale}/quiz`} className="mt-5 inline-flex rounded-xl bg-amber-600 px-5 py-3 font-semibold text-white">{t('quizRequiredCta')}</Link>
+          </section>
+        ) : null}
+        {!profileLoading && profile?.quizCompleted ? <PreferencesEditor labels={{title: t('preferences.title'), save: t('preferences.save'), saved: t('preferences.saved'), error: t('preferences.error'), styles: Object.fromEntries(['yoga','hiit','calisthenics','pilates','mobility','isometric','resistance_band','animal_flow'].map((id) => [id, t(`preferences.styles.${id}`)])), equipment: Object.fromEntries(['none','pull_up_bar','bands','dumbbells','barbell','kettlebells','bench','cable_machine','jump_rope'].map((id) => [id, t(`preferences.equipment.${id}`)]))}} initial={profile.preferences} /> : null}
+        {profileLoading ? (
+          <p role="status" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{t('loading')}</p>
+        ) : null}
 
+        {profile?.quizCompleted && !programLoading ? <>
         {/* Weekly calendar */}
         <section
           aria-label={t('calendarTitle')}
@@ -180,7 +262,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {weekDays.map((day, index) => {
-              const plan = WEEK_PLAN[mondayPlanIndex(day)];
+              const plan = actualPlan[mondayPlanIndex(day)] ?? {type: 'rest'};
               const isToday = index === todayIndex;
               const isSelected = index === selectedIndex;
               const isPast = day.getTime() < startOfToday.getTime();
@@ -296,7 +378,9 @@ export default function DashboardPage() {
                     {isTodaySelected ? t('summaryTitle') : selectedDateLabel}
                   </p>
                   <h2 className="mt-2 text-xl font-bold leading-tight sm:text-2xl">
-                    {t(selectedPlan.workout.nameKey)}
+                    {selectedPlan.workout.nameKey === 'workouts.generated'
+                      ? selectedPlan.workout.focus ?? t('workouts.generated')
+                      : t(selectedPlan.workout.nameKey)}
                   </h2>
                   <span
                     className={[
@@ -337,7 +421,7 @@ export default function DashboardPage() {
               </div>
 
               <Link
-                href={`/${locale}/workout`}
+                href={`/${locale}/workout?day=${selectedWeekday}`}
                 onClick={() =>
                   trackEvent(ANALYTICS_EVENTS.WORKOUT_START_CLICKED, {
                     workout: selectedPlan.workout.nameKey,
@@ -353,6 +437,10 @@ export default function DashboardPage() {
             </>
           )}
         </section>
+        </> : null}
+        {profile?.quizCompleted && programLoading ? (
+          <p role="status" className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{t('loading')}</p>
+        ) : null}
       </div>
     </AppShell>
   );

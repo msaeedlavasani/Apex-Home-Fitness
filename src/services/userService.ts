@@ -53,7 +53,7 @@ import { createServerSupabaseClient } from '../lib/supabase-server';
 
 /**
  * Onboarding quiz answers as produced by `src/components/quiz/OnboardingQuiz`:
- * `{ level, goal, equipment, limitations, limitationsDetails, restDays }`.
+ * `{ level, goal, exerciseStyles, equipment, limitations, limitationsDetails, restDays }`.
  * `goal` accepts the current multi-select string array and the legacy single
  * string. The schema stores the payload as a flexible Json value, so extra
  * keys are allowed (e.g. future steps such as `timePerSessionMin`).
@@ -63,6 +63,8 @@ export interface QuizAnswers {
   level?: string;
   /** Current multi-select ids, or one legacy goal id. */
   goal?: string | string[];
+  /** Preferred training-style ids selected in the quiz. */
+  exerciseStyles?: string[];
   equipment?: string[];
   limitations?: string[];
   limitationsDetails?: string;

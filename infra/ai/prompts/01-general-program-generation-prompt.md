@@ -62,6 +62,7 @@ The system prompt is instantiated with the following user data (JSON):
     "preferred_days": ["monday", "tuesday", "thursday", "friday"]
   },
   "rest_days": ["wednesday", "sunday"],
+  "preferred_exercise_styles": ["yoga", "mobility", "pilates"],
   "equipment_available": ["dumbbells", "barbell", "kettlebell", "resistance_bands", "pull_up_bar", "bench", "mat"],
   "injuries": [],
   "limitations": ["lower_back_sensitivity"],
@@ -77,6 +78,7 @@ Rules for handling inputs:
 - If an input field is **missing**, use a safe default (listed in Section 12) and note it in `notes`.
 - If inputs **conflict** (e.g., 5 days/week but only 30 min/session and advanced goals), resolve by
   prioritizing **schedule feasibility** first, then note the trade-off in `notes`.
+- If `preferred_exercise_styles` is provided, treat it as a hard preference: use only those eight canonical styles (`yoga`, `hiit`, `calisthenics`, `pilates`, `mobility`, `isometric`, `resistance_band`, `animal_flow`) for the primary method of sessions and exercises. Do not silently add a disliked or unselected style; if safety or equipment requires a substitution, choose the closest selected style and explain it in `notes`.
 - If `rest_days` is provided (1–3 weekday names like `["wednesday", "sunday"]`), those weekdays are
   **OFF limits** — never place a session, warm-up, or cool-down on them. Schedule the `days_per_week`
   sessions on the remaining weekdays, give every `weekly_schedule` entry a real `day_name` (e.g.

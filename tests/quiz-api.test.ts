@@ -27,6 +27,7 @@ function answers(): Record<string, unknown> {
     theme: 'dark',
     level: 'beginner',
     goal: ['strength'],
+    exerciseStyles: ['calisthenics'],
     equipment: ['dumbbells'],
     limitations: [],
     limitationsDetails: '',
@@ -37,6 +38,7 @@ function answers(): Record<string, unknown> {
 const GENERATION_INPUT: GenerateProgramInput = {
   level: 'beginner',
   goal: ['strength'],
+  exerciseStyles: ['calisthenics'],
   equipment: ['dumbbells'],
   limitations: [],
   limitationsDetails: '',

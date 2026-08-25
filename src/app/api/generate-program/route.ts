@@ -261,7 +261,15 @@ export async function POST(req: Request) {
     if (!parsedInput.success) {
       return NextResponse.json({error: 'Invalid workout profile.'}, {status: 400});
     }
-    const {level, goal, equipment, limitations, limitationsDetails, restDays = []} = parsedInput.data;
+    const {
+      level,
+      goal,
+      exerciseStyles,
+      equipment,
+      limitations,
+      limitationsDetails,
+      restDays = [],
+    } = parsedInput.data;
     // `goal` is normalized by the Zod schema to a canonical array
     // (legacy single strings are wrapped), e.g. ['strength', 'fat_loss'].
     const goals = goal.join(', ');
@@ -377,10 +385,15 @@ export async function POST(req: Request) {
       prompt: `Generate a workout program for a user with the following profile:
         - Level: ${level}
         - Goals: ${goals}
+        - Preferred exercise styles (use only these styles unless a safety substitution is necessary): ${exerciseStyles.join(', ')}
         - Available Equipment: ${equipment.join(', ')}
         - Injuries/Limitations: ${limitations.join(', ')}
         - Details: ${limitationsDetails || 'None'}
         - Rest days (weekdays that MUST NOT contain any workout): ${restDaysJoined || 'None specified'}
+          The user selected exercise styles intentionally. Do not include a session
+          or exercise whose primary method is outside the selected styles unless
+          it is required as a brief safety warm-up or cooldown. Explain any
+          unavoidable substitution in notes.
           Place sessions ONLY on weekdays that are not rest days. Every
           weekly_schedule entry MUST carry BOTH a numeric day (the ISO
           weekday number: 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday,
@@ -445,6 +458,7 @@ export async function POST(req: Request) {
           program: generated,
           level,
           goal: goals,
+          exerciseStyles,
           restDays,
           idempotencyRecordId,
         })
@@ -452,6 +466,7 @@ export async function POST(req: Request) {
           program: generated,
           level,
           goal: goals,
+          exerciseStyles,
           restDays,
         });
 

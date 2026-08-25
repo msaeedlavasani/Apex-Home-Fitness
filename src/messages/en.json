@@ -8,6 +8,7 @@
     "title": "Build a plan that fits your life",
     "description": "Answer a few questions and get a personalized home workout program.",
     "start": "Start the quiz",
+    "signIn": "Sign in",
     "featuresLabel": "Why Apex",
     "featureAiTitle": "AI-built for you",
     "featureAiBody": "A personalized program generated from your goals, level and equipment — no generic templates.",
@@ -15,7 +16,7 @@
     "featureOfflineBody": "Install it as an app and keep training without a connection; your sessions sync when you're back online.",
     "featureProgressTitle": "Progress you can see",
     "featureProgressBody": "History, streaks and analytics that show how far you've come — in English or Persian.",
-    "planMeta": "6 steps · personalized plan",
+    "planMeta": "7 steps · personalized plan",
     "proofPersonalized": "Personalized",
     "proofHomeFirst": "Home-first",
     "proofBilingual": "English + Persian",
@@ -56,6 +57,11 @@
       "evening": "Good evening"
     },
     "weekLabel": "Your weekly training plan",
+    "loading": "Loading your plan…",
+    "quizRequiredTitle": "Finish your setup first",
+    "quizRequiredBody": "Answer the onboarding questions so Apex can build your plan.",
+    "quizRequiredCta": "Complete the quiz",
+    "preferences": {"title": "Update your training preferences", "save": "Save preferences", "saved": "Saved", "error": "Could not save preferences.", "styles": {"yoga": "Yoga", "hiit": "HIIT", "calisthenics": "Bodyweight", "pilates": "Pilates", "mobility": "Mobility", "isometric": "Isometric", "resistance_band": "Resistance band", "animal_flow": "Animal flow"}, "equipment": {"none": "None — bodyweight only", "pull_up_bar": "Pull-up bar", "bands": "Resistance bands", "dumbbells": "Dumbbells", "barbell": "Barbell", "kettlebells": "Kettlebells", "bench": "Bench", "cable_machine": "Cable machine", "jump_rope": "Jump rope"}},
     "calendarTitle": "Weekly calendar",
     "weekProgress": "{done} of {total} sessions done this week",
     "summaryTitle": "Today's workout",
@@ -78,6 +84,7 @@
       "advanced": "Advanced"
     },
     "workouts": {
+      "generated": "Personalized workout",
       "fullBodyHiit": "Full Body HIIT",
       "yogaFlow": "Morning Yoga Flow",
       "upperBody": "Upper Body Calisthenics",

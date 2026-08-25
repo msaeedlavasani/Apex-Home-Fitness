@@ -70,7 +70,8 @@ export default async function LandingPage({
           <p className="mt-5 max-w-xl text-base leading-7 text-apex-text-secondary sm:text-lg sm:leading-8">
             {t('description')}
           </p>
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="mt-8 flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href={`/${locale}/quiz`}
               className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-semibold text-apex-on-primary shadow-apple-lg transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-apex-surface active:translate-y-0"
@@ -79,8 +80,16 @@ export default async function LandingPage({
               {t('start')}
               <ArrowRight className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
             </Link>
+            <Link
+              href={`/${locale}/auth/login?next=/${locale}/dashboard`}
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-apex-border bg-apex-card px-6 py-3.5 font-semibold text-apex-text-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+            >
+              {t('signIn')}
+            </Link>
+            </div>
             <span className="text-sm text-apex-text-secondary">{t('planMeta')}</span>
           </div>
+
 
           <div className="mt-9 flex flex-wrap gap-x-5 gap-y-2 text-sm text-apex-text-secondary">
             {[

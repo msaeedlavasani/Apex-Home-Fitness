@@ -8,6 +8,7 @@
     "title": "برنامه‌ای بساز که با زندگی تو جور باشد",
     "description": "چند سؤال کوتاه جواب بده و برنامه تمرینی شخصی‌سازی‌شده بگیر.",
     "start": "شروع کوییز",
+    "signIn": "ورود",
     "featuresLabel": "چرا اپکس؟",
     "featureAiTitle": "ساخته‌شده با هوش مصنوعی برای تو",
     "featureAiBody": "برنامه‌ای شخصی‌سازی‌شده بر اساس اهداف، سطح و تجهیزات تو — نه قالب‌های تکراری.",
@@ -15,7 +16,7 @@
     "featureOfflineBody": "به‌صورت اپ نصبش کن و بدون اینترنت تمرین کن؛ وقتی آنلاین شدی تمرین‌هایت همگام می‌شوند.",
     "featureProgressTitle": "پیشرفتت را ببین",
     "featureProgressBody": "تاریخچه، استریک و آمارهایی که نشان می‌دهد چقدر جلو رفته‌ای — به فارسی یا انگلیسی.",
-    "planMeta": "۶ مرحله · برنامه شخصی‌سازی‌شده",
+    "planMeta": "۷ مرحله · برنامه شخصی‌سازی‌شده",
     "proofPersonalized": "شخصی‌سازی‌شده",
     "proofHomeFirst": "مناسب خانه",
     "proofBilingual": "فارسی و انگلیسی",
@@ -56,6 +57,11 @@
       "evening": "شب بخیر"
     },
     "weekLabel": "برنامه تمرینی هفتگی تو",
+    "loading": "در حال بارگذاری برنامه…",
+    "quizRequiredTitle": "اول تنظیماتت را کامل کن",
+    "quizRequiredBody": "به سؤال‌های اولیه جواب بده تا اپکس برنامه‌ات را بسازد.",
+    "quizRequiredCta": "تکمیل کوییز",
+    "preferences": {"title": "به‌روزرسانی ترجیحات تمرین", "save": "ذخیره ترجیحات", "saved": "ذخیره شد", "error": "ذخیره ترجیحات ممکن نبود.", "styles": {"yoga": "یوگا", "hiit": "هیت", "calisthenics": "وزن بدن", "pilates": "پیلاتس", "mobility": "تحرک", "isometric": "ایزومتریک", "resistance_band": "کش ورزشی", "animal_flow": "آنیمال فلو"}, "equipment": {"none": "هیچ‌کدام — فقط وزن بدن", "pull_up_bar": "میله بارفیکس", "bands": "کش مقاومتی", "dumbbells": "دمبل", "barbell": "هالتر", "kettlebells": "کتل‌بل", "bench": "نیمکت", "cable_machine": "دستگاه سیم‌کش", "jump_rope": "طناب پرش"}},
     "calendarTitle": "تقویم هفتگی",
     "weekProgress": "{done} از {total} جلسه این هفته انجام شد",
     "summaryTitle": "تمرین امروز",
@@ -78,6 +84,7 @@
       "advanced": "پیشرفته"
     },
     "workouts": {
+      "generated": "تمرین شخصی‌سازی‌شده",
       "fullBodyHiit": "اچآیتی تمام بدن",
       "yogaFlow": "یوگای صبحگاهی",
       "upperBody": "کالیستنیک بالاتنه",
