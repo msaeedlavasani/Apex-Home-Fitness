@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type {ReactNode} from 'react';
 
-export type AppSection = 'dashboard' | 'history' | 'analytics' | 'profile';
+export type AppSection = 'dashboard' | 'history' | 'analytics' | 'profile' | 'preferences';
 
 export interface NavItem {
   section: AppSection;
@@ -47,6 +47,7 @@ export function useActiveSection(): AppSection {
   if (rest.startsWith('/analytics')) return 'analytics';
   // `/faq` is a pushed screen from Profile → Support, so the Profile tab
   // stays highlighted while it is open.
+  if (rest.startsWith('/preferences')) return 'preferences';
   if (rest.startsWith('/profile') || rest.startsWith('/faq')) return 'profile';
   return 'dashboard';
 }

@@ -37,6 +37,7 @@
     "quiz": "Quiz",
     "history": "History",
     "analytics": "Analytics",
+    "preferences": "Training preferences",
     "back": "Back",
     "navLabel": "Main navigation",
     "navLabelMobile": "Mobile navigation"
@@ -93,6 +94,47 @@
       "upperBody": "Upper Body Calisthenics",
       "corePilates": "Core Pilates",
       "mobility": "Mobility & Stretch"
+    }
+  },
+  "Preferences": {
+    "pageTitle": "Training preferences",
+    "pageSubtitle": "Choose what your next personalized program should be built around.",
+    "title": "Update your training preferences",
+    "save": "Save preferences and regenerate",
+    "saved": "Preferences saved and program regenerated",
+    "generating": "Generating your new program…",
+    "generated": "Program regenerated",
+    "error": "Could not save your preferences.",
+    "generationError": "Preferences were saved, but the new program could not be generated. Press the button again to retry.",
+    "loading": "Loading your preferences…",
+    "authTitle": "Sign in to edit your preferences",
+    "authBody": "Your training preferences belong to your account.",
+    "authCta": "Sign in",
+    "quizTitle": "Complete the quiz first",
+    "quizBody": "Answer the onboarding questions before changing your training preferences.",
+    "quizCta": "Complete the quiz",
+    "styles": {
+      "title": "Training styles",
+      "yoga": "Yoga",
+      "hiit": "HIIT",
+      "calisthenics": "Bodyweight",
+      "pilates": "Pilates",
+      "mobility": "Mobility",
+      "isometric": "Isometric",
+      "resistance_band": "Resistance band",
+      "animal_flow": "Animal flow"
+    },
+    "equipment": {
+      "title": "Available equipment",
+      "none": "None — bodyweight only",
+      "pull_up_bar": "Pull-up bar",
+      "bands": "Resistance bands",
+      "dumbbells": "Dumbbells",
+      "barbell": "Barbell",
+      "kettlebells": "Kettlebells",
+      "bench": "Bench",
+      "cable_machine": "Cable machine",
+      "jump_rope": "Jump rope"
     }
   },
   "WorkoutPlayer": {

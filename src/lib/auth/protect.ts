@@ -14,6 +14,7 @@ export const PROTECTED_SEGMENTS = [
   'analytics',
   'challenges',
   'profile',
+  'preferences',
 ] as const;
 
 /** Public app segments users may be returned to after signing in. */

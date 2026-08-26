@@ -6,7 +6,6 @@ import {useEffect, useMemo, useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
 import {dayIndexInWeek, mondayPlanIndex, weekDaysFor} from '@/lib/weekCalendar';
 import {AppShell} from '@/components/layout/AppShell';
-import {PreferencesEditor} from '@/components/dashboard/PreferencesEditor';
 import {ANALYTICS_EVENTS, trackEvent} from '@/services/analyticsEvents';
 import {dashboardPlanFromSchedule, type DashboardDayPlan} from '@/lib/programSchedule';
 import {
@@ -205,21 +204,6 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-amber-800">{t('quizRequiredBody')}</p>
             <Link href={`/${locale}/quiz`} className="mt-5 inline-flex rounded-xl bg-amber-600 px-5 py-3 font-semibold text-white">{t('quizRequiredCta')}</Link>
           </section>
-        ) : null}
-        {!profileLoading && profile?.quizCompleted ? (
-          <PreferencesEditor
-            labels={{
-              title: t('preferences.title'),
-              save: t('preferences.save'),
-              saved: t('preferences.saved'),
-              error: t('preferences.error'),
-              stylesTitle: t('preferences.styles.title'),
-              equipmentTitle: t('preferences.equipment.title'),
-              styles: Object.fromEntries(['yoga','hiit','calisthenics','pilates','mobility','isometric','resistance_band','animal_flow'].map((id) => [id, t(`preferences.styles.${id}`)])),
-              equipment: Object.fromEntries(['none','pull_up_bar','bands','dumbbells','barbell','kettlebells','bench','cable_machine','jump_rope'].map((id) => [id, t(`preferences.equipment.${id}`)])),
-            }}
-            initial={profile.preferences}
-          />
         ) : null}
         {profileLoading ? (
           <p role="status" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{t('loading')}</p>

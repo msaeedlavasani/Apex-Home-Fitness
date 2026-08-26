@@ -1,13 +1,18 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {EXERCISE_STYLE_IDS} from '@/lib/exerciseStyles';
+import {generateProgramApi, QuizApiError} from '@/lib/quiz/quizApi';
+import type {GenerateProgramInput} from '@/lib/ai/requestSecurity';
 
-type Labels = {
+export type PreferenceLabels = {
   title: string;
   save: string;
   saved: string;
+  generating: string;
+  generated: string;
   error: string;
+  generationError: string;
   stylesTitle: string;
   equipmentTitle: string;
   styles: Record<string, string>;
@@ -15,7 +20,7 @@ type Labels = {
 };
 
 type Props = {
-  labels: Labels;
+  labels: PreferenceLabels;
   initial: {exerciseStyles: string[]; equipment: string[]};
 };
 
@@ -24,7 +29,8 @@ const EQUIPMENT = ['none', 'pull_up_bar', 'bands', 'dumbbells', 'barbell', 'kett
 export function PreferencesEditor({labels, initial}: Props) {
   const [exerciseStyles, setExerciseStyles] = useState(initial.exerciseStyles);
   const [equipment, setEquipment] = useState(initial.equipment.length > 0 ? initial.equipment : ['none']);
-  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [state, setState] = useState<'idle' | 'saving' | 'generating' | 'saved' | 'error'>('idle');
+  const generationKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     setExerciseStyles(initial.exerciseStyles);
@@ -48,14 +54,33 @@ export function PreferencesEditor({labels, initial}: Props) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({exerciseStyles, equipment}),
       });
-      setState(response.ok ? 'saved' : 'error');
-    } catch {
-      setState('error');
+      const data = await response.json().catch(() => null) as {generationInput?: GenerateProgramInput | null} | null;
+      if (!response.ok) throw new Error('preferences update failed');
+
+      if (data?.generationInput) {
+        setState('generating');
+        if (!generationKeyRef.current) {
+          const suffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          generationKeyRef.current = `preferences-${suffix}`;
+        }
+        await generateProgramApi(data.generationInput, generationKeyRef.current);
+      }
+      generationKeyRef.current = null;
+      setState('saved');
+    } catch (error) {
+      // Preferences are persisted before generation starts. Keep the user on
+      // this page with an actionable message if the new program could not be
+      // generated; retrying reuses the same idempotency key.
+      if (error instanceof QuizApiError) {
+        setState('error');
+      } else {
+        setState('error');
+      }
     }
   }
 
   return (
-    <section aria-label={labels.title} className="mt-5 rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
+    <section aria-label={labels.title} className="rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
       <h2 className="text-base font-bold text-[color:var(--apex-text)]">{labels.title}</h2>
       <fieldset className="mt-4">
         <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.stylesTitle}</legend>
@@ -79,10 +104,10 @@ export function PreferencesEditor({labels, initial}: Props) {
           ))}
         </div>
       </fieldset>
-      <button type="button" onClick={() => void save()} disabled={state === 'saving' || exerciseStyles.length === 0 || equipment.length === 0} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
-        {state === 'saving' ? '…' : state === 'saved' ? labels.saved : labels.save}
+      <button type="button" onClick={() => void save()} disabled={state === 'saving' || state === 'generating' || exerciseStyles.length === 0 || equipment.length === 0} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
+        {state === 'saving' ? '…' : state === 'generating' ? labels.generating : state === 'saved' ? labels.generated : labels.save}
       </button>
-      {state === 'error' ? <p role="alert" className="mt-2 text-sm text-red-600">{labels.error}</p> : null}
+      {state === 'error' ? <p role="alert" className="mt-2 text-sm text-red-600">{labels.generationError || labels.error}</p> : null}
     </section>
   );
 }

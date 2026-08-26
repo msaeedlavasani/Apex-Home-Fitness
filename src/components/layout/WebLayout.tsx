@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useLocale, useTranslations} from 'next-intl';
-import {ChevronLeft, Dumbbell} from 'lucide-react';
+import {ChevronLeft, Dumbbell, Settings2} from 'lucide-react';
 import {
   APP_NAV,
   sectionPath,
@@ -42,6 +42,10 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
           {APP_NAV.map((item) => (
             <SidebarItem key={item.section} item={item} active={item.section === active} />
           ))}
+          <SidebarItem
+            item={{section: 'preferences', messageKey: 'preferences', icon: Settings2}}
+            active={active === 'preferences'}
+          />
         </nav>
         <div className="flex items-center justify-between gap-3 border-t border-apex-border px-5 py-4">
           <span className="min-w-0 truncate text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
