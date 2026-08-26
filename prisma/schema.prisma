@@ -118,6 +118,14 @@ model WeightEntry {
 // e.g. ["yoga mat"], ["resistance band", "pull-up bar"], [].
 model Exercise {
   id              String           @id @default(cuid())
+  // Canonical source-controlled resolution alias (GATE A GA-01/GA-06, S02-B).
+  // The DB `id` remains the durable identity; `name` remains the display/fallback
+  // field; `slug` is a UNIQUE canonical resolution handle that is NULL for all
+  // existing rows until a later (S02-E) backfill. Populating it is deferred.
+  slug            String?          @unique
+  // Canonical Persian display name. ABSENT/undefined for all existing rows
+  // (GATE A found no Persian corpus); display metadata only, never identity.
+  faName          String?
   name            String           @unique
   description     String
   category        ExerciseCategory

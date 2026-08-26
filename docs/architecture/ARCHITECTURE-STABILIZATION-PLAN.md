@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02 GATE A APPROVED + S02-A COMPLETE 2026-08-27; S02-B..S02-E + S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B COMPLETE 2026-08-27; S02-C..S02-E + S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -137,8 +137,19 @@ Rationale (evidence-based):
   exercise-domain foundation created at `src/lib/exercise/` (`contracts.ts`,
   `catalog.ts`, `resolver.ts`, `index.ts`) + `tests/exercise-domain.test.ts`
   (16 tests) + `docs/architecture/S02A-SOURCE-VOCABULARY.md`. Pure/no side
-  effects; typecheck clean, eslint clean, full unit 410/410. S02-B (additive
-  schema) NOT started; requires a fresh owner checkpoint before DDL.
+  effects; typecheck clean, eslint clean, full unit 410/410.
+- **S02-B COMPLETE (2026-08-27)**: additive schema foundation only.
+  `Exercise.slug String? @unique` + `Exercise.faName String?` added to
+  `prisma/schema.prisma`; migration
+  `20260827011500_add_exercise_canonical_identity_fields` created and applied
+  to the local/dev DB (40 Exercise rows intact, ids/names unchanged, slug
+  & faName NULL). Prisma SQLite table-rebuild of `Program` reviewed as
+  lossless (standard RedefineTables, all columns/relations preserved).
+  No backfill, no aliases field. **Aliases decision: DEFER** — no DB
+aliases persistence (see §aliases note). Validation: `prisma validate`
+  clean, migration status in sync (no drift), typecheck clean, full unit
+  410/410 (no code needed adapting to nullable columns → old-code
+  compatibility `YES`).
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive
@@ -277,6 +288,14 @@ If canonical exercise identity eventually requires schema changes (GATE A):
   rollback (forward-compatible); backfill is replayable.
 - **Unresolved historical names**: surfaced explicitly (report/registry), not
   silently mapped; ambiguity resolution requires owner input.
+
+> **Aliases persistence decision (S02-B, recorded 2026-08-27):** system
+exercise aliases remain source-controlled in `src/lib/exercise/catalog.ts`
+during S02-B. DB alias persistence is **not** currently justified and remains
+deferred until a concrete mutable/queryable alias use case exists (e.g. a
+future custom/coach-created exercise editing or authority path). This does not
+prohibit a future relational `ExerciseAlias` model; it does not lock the
+architecture into a JSON array.
 
 ## 8. Stable Session State contract (conceptual — NOT coded)
 

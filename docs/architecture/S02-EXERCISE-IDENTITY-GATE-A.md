@@ -28,7 +28,16 @@ S-01 complete (2026-08-27, contract ownership).
 | GA-03 | Catalog model | Hybrid: system catalog source-controlled in `src/lib/exercise/catalog.ts`, seeded into the existing DB `Exercise` table | **APPROVED** |
 | GA-04 | Resolver policy | Precedence id → slug → normalized name → alias → UNRESOLVED; never silent fuzzy match; AMBIGUOUS on multiple hits | **APPROVED** |
 | GA-05 | Unknown exercise policy | Preserve as unresolved (keep name, no id, queue for catalog review); never drop/reject data | **APPROVED** |
-| GA-06 | Schema evolution | Additive only: `Exercise.slug` (unique, nullable→backfilled), `Exercise.faName?`, `Exercise.aliases?` (Json); no other table changes | **APPROVED** |
+| GA-06 | Schema evolution | Additive only: `Exercise.slug` (unique, nullable→backfilled), `Exercise.faName?`, `exercise.aliases*` deferred (see note) | **APPROVED** |
+
+> **GA-06 aliases note (recorded at S02-B, 2026-08-27):** the proposed
+> `Exercise.aliases Json?` field was **NOT** added. Per the S02-B aliases
+> preflight (Q1-Q5), no current runtime path queries aliases from the DB and
+> S02-C/S02-D can resolve entirely via the source-controlled catalog
+> (`src/lib/exercise/catalog.ts`) + resolver. System aliases remain
+> source-controlled during S02-B. DB alias persistence is deferred until a
+> concrete mutable/queryable alias use case exists and does not lock the
+> architecture into JSON (a relational `ExerciseAlias` model stays possible).
 | GA-07 | Backfill strategy | Classify AUTO / ALIAS / AMBIGUOUS / UNRESOLVED; dry-run → stats → apply → verify; idempotent; never guess | **APPROVED** |
 | GA-08 | Compatibility policy | No flag-day; name-first everywhere retained; new contract + resolver fallback + gradual adoption | **APPROVED** |
 
@@ -179,8 +188,12 @@ Additive only, on the existing `Exercise` model:
 
 - `slug String? @unique` — canonical source-controlled alias (nullable during
   backfill, then made required in a later additive step if approved);
-- `faName String?` — canonical Persian display name (optional);
-- `aliases Json?` — historical name variants / aliases for resolution.
+- `faName String?` — canonical Persian display name (optional).
+
+> **S02-B decision (recorded 2026-08-27):** the originally proposed
+> `aliases Json?` field was **deferred** (see the decision-table note). System
+> aliases stay in `src/lib/exercise/catalog.ts`; DB persistence is not needed
+> until a concrete mutable/queryable alias use case exists.
 
 No changes to `ProgramExercise` / `WorkoutSessionExercise` (already keyed by
 `Exercise.id`). No changes to the `weeklySchedule` JSON shape at this stage
@@ -242,7 +255,8 @@ stays identical when resolution fails.
 | Phase | Content | Gate / note |
 |---|---|---|
 | S02-A | `src/lib/exercise/` contracts + source-controlled catalog + resolver (no DB, no runtime change) | after GATE A approval |
-| S02-B | Additive schema (`slug`/`faName`/`aliases`) + seed/catalog sync | additive migration; forward-compatible |
+| S02-B | Additive schema (`slug`/`faName`; `aliases` deferred) | **COMPLETE 2026-08-27** — `slug String? @unique` + `faName String?` added;
+  migration `20260827011500_add_exercise_canonical_identity_fields` applied to dev DB; additive/forward-compatible |
 | S02-C | Generation normalization: resolver in `persistProgramTransaction` (upsert by slug, name fallback, unresolved preserved) | behavior-parity tests |
 | S02-D | Client adoption: player plan + logs + snapshots carry canonical id (additive, versioned) | coordinates with S-05 |
 | S02-E | Backfill dry-run → apply → verify (GA-07) | separately observable |
