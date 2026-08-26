@@ -17,7 +17,10 @@
 | محصول: ویژن سطح‌بالا | [`product/PRODUCT-VISION.md`](product/PRODUCT-VISION.md) | AUTHORITATIVE — CURRENT (تمایز CURRENT / DIRECTION / PLANNED) |
 | محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | وضعیت: PRODUCT / UX VISION — NOT YET IMPLEMENTED |
 | محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات باز محصول/معماری برای صاحب محصول |
-| معماری (اصول کلی) | **NO CANONICAL SOURCE YET** | بخشی در `AGENTS.md` §۴، `DESIGN_SYSTEM.md`، `ASSETS.md`، `AI_API.md`؛ سند معماری واحد تا Modularity Audit ایجاد نشود |
+| معماری (اصول کلی) | **NO CANONICAL SOURCE YET** | بخشی در `AGENTS.md` §۴، `DESIGN_SYSTEM.md`، `ASSETS.md`، `AI_API.md`؛ اصول پیشنهادی: [`architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md`](architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md) (PROPOSED — نیازمند تأیید owner)؛ سند معماری واحد پس از پذیرش اصول ایجاد شود |
+| معماری (ممیزی مدولاریتی) | [`architecture/MODULARITY-AUDIT.md`](architecture/MODULARITY-AUDIT.md) | AUDIT RECORD — NOT AN ARCHITECTURE DECISION |
+| معماری (رجیستر ریسک کوپلینگ) | [`architecture/COUPLING-RISK-REGISTER.md`](architecture/COUPLING-RISK-REGISTER.md) | AUDIT RECORD — NOT AN IMPLEMENTATION BACKLOG |
+| معماری (فهرست قابلیت‌ها) | [`architecture/CAPABILITY-INVENTORY-PROPOSAL.md`](architecture/CAPABILITY-INVENTORY-PROPOSAL.md) | PROPOSED — NOT AUTHORITATIVE (ورودی Registry آینده) |
 | تصمیم‌های معماری (ADR) | [`adr/README.md`](adr/README.md) | مکانیزم فعال؛ هنوز هیچ ADR پذیرفته‌ای وجود ندارد |
 | قرارداد APIهای AI و analytics | [`AI_API.md`](AI_API.md) | request/response، خطاها و محدودیت‌ها |
 | asset و cache | [`ASSETS.md`](ASSETS.md) | PWA، service worker، font و media policy |
