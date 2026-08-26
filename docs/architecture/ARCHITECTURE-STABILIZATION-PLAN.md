@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A, S02-B, S02-C, S02-D1, S02-D2 COMPLETE 2026-08-27; S02-E + S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A..D2, S03-A COMPLETE 2026-08-27; S02-E + S03-B..F + S-04..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -212,15 +212,25 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   `useWorkoutEngine.ts`; the hook becomes an adapter. **GATE B before
   extraction** (owner approval of target boundaries, public contract, parity
   test plan).
-- **GATE B (2026-08-27) — DESIGN READY, OWNER DECISION PENDING**: decision
-  package [`S03-SESSION-CORE-GATE-B.md`](./S03-SESSION-CORE-GATE-B.md)
-  (GB-01..GB-10 all `PENDING OWNER APPROVAL`). Trace confirmed the hook's
-  responsibilities split cleanly into pure domain (transitions, derived state,
-  hydrate) vs adapter (React binding, heartbeat/lifecycle, accumulator) —
-  persistence/audio/haptics/analytics/session APIs are already consumed outside
-  the hook via callbacks. `wallClock` stays untouched; the core consumes
-  elapsed-seconds as input; snapshot shape pinned to `WorkoutEngineState`
-  (S-05 governs versioning). Extraction must NOT begin until approved.
+- **GATE B (2026-08-27) — APPROVED** (GB-01..GB-10 accepted as recommended):
+  decision package [`S03-SESSION-CORE-GATE-B.md`](./S03-SESSION-CORE-GATE-B.md).
+  Trace confirmed the hook's responsibilities split cleanly into pure domain
+  (transitions, derived state, hydrate) vs adapter (React binding,
+  heartbeat/lifecycle, accumulator) — persistence/audio/haptics/analytics/
+  session APIs are already consumed outside the hook via callbacks. `wallClock`
+  stays untouched; the core consumes elapsed-seconds as input; snapshot shape
+  pinned to `WorkoutEngineState` (S-05 governs versioning).
+- **S03-A COMPLETE (2026-08-27)**: parity baseline frozen BEFORE extraction.
+  Pure contracts `src/lib/workout/sessionContracts.ts` (phase/state/command/
+  effect/summary/hydrate — no React, no V2 semantics); test-only golden-trace
+  harness `tests/helpers/goldenTrace.tsx` (injectable `now` + mock timers +
+  lifecycle stubs) driving the CURRENT hook; 17 golden traces GT-01..GT-12 in
+  `tests/session-golden-trace.test.tsx` freezing states + EXACT callback order
+  (state→phase on START; set→state→phase on auto-advance;
+  set→exercise→workout→state→phase on completion; hydrate emits `state` only).
+  Baseline doc `S03A-SESSION-PARITY-BASELINE.md`. Validation: typecheck clean,
+  eslint clean, full unit **451/451** (+17). `sessionCore.ts` NOT created;
+  `useWorkoutEngine` unchanged. S03-B (pure core) NOT started.
 - **Why now**: R-02; V2 session work, Voice Coach and recovery need a
   non-React-consumable core (ADR-0002).
 - **Files/domains expected to change**: new pure core (proposed

@@ -1,6 +1,11 @@
 # S-03 — Pure Workout Session Core: GATE B Decision Package
 
-`STATUS: PROPOSED — OWNER APPROVAL REQUIRED` (GATE B, 2026-08-27)
+`STATUS: APPROVED — 2026-08-27 (GB-01..GB-10 ACCEPTED AS RECOMMENDED)`
+
+> **Original status (investigation record):** `PROPOSED — OWNER APPROVAL REQUIRED`.
+> The owner reviewed and approved the package on 2026-08-27; the decisions table
+> below now records `APPROVED`. Historical technical findings are unchanged.
+> S03-A (contracts + golden-trace baseline) proceeded under this approval.
 
 Phase: `S-03 — Pure Workout Session Core` (Architecture Stabilization Plan).
 ADR-0002 is ACCEPTED: extract a framework-independent session/timeline core from
@@ -386,48 +391,49 @@ semantics beyond current behavior. GATE B is architecture-extraction only.
 
 ### GB-01 — Pure Core Ownership
 **Recommendation:** new `src/lib/workout/sessionCore.ts` (pure domain module),
-with contracts co-located. **`PENDING OWNER APPROVAL`**
+with contracts co-located. **`APPROVED`**
 
 ### GB-02 — Core State Boundary
 **Recommendation:** the 10 `WorkoutEngineState` fields + `restTarget` internals;
-derived fields computed in core. **`PENDING OWNER APPROVAL`**
+derived fields computed in core. **`APPROVED`**
 
 ### GB-03 — React Adapter Boundary
 **Recommendation:** `useWorkoutEngine` (same filename/API) holds React binding,
-accumulator/heartbeat/lifecycle, callback mapping + suppression. **`PENDING OWNER APPROVAL`**
+accumulator/heartbeat/lifecycle, callback mapping + suppression. **`APPROVED`**
 
 ### GB-04 — Time Model
 **Recommendation:** transitions take elapsed-seconds (or `now`) as input; core
-never reads the clock; `wallClock` unchanged and adapter-held. **`PENDING OWNER APPROVAL`**
+never reads the clock; `wallClock` unchanged and adapter-held. **`APPROVED`**
 
 ### GB-05 — Stable Session State Read Model
 **Recommendation:** public read model = `WorkoutEngineState` + existing derived
-readers; serialized shape pinned (snapshot compatibility). **`PENDING OWNER APPROVAL`**
+readers; serialized shape pinned (snapshot compatibility). **`APPROVED`**
 
 ### GB-06 — Command Contract
 **Recommendation:** exactly the current commands (start/pause/resume/completeSet/
-skipRest/next/prev/jumpTo/reset/restart/hydrate + time input); no new commands. **`PENDING OWNER APPROVAL`**
+skipRest/next/prev/jumpTo/reset/restart/hydrate + time input); no new commands. **`APPROVED`**
 
 ### GB-07 — Effect/Intent Contract
 **Recommendation:** formalize existing callbacks as semantic effects
 (PHASE_CHANGED, SET_COMPLETED, EXERCISE_COMPLETED, WORKOUT_COMPLETED,
-STATE_CHANGED); no event bus. **`PENDING OWNER APPROVAL`**
+STATE_CHANGED); no event bus. **`APPROVED`**
 
 ### GB-08 — Hydration Boundary
 **Recommendation:** core validates/accepts hydrated state (pure); persistence
 stays in `workoutPersistence.ts`/`db.ts`; adapter decides when to hydrate +
-suppresses phase callback. **`PENDING OWNER APPROVAL`**
+suppresses phase callback. **`APPROVED`**
 
 ### GB-09 — Parity Test Strategy
 **Recommendation:** golden-trace harness + pure-core Node tests mirroring the 12
-existing engine behaviors; existing hook suite retained as adapter parity. **`PENDING OWNER APPROVAL`**
+existing engine behaviors; existing hook suite retained as adapter parity. **`APPROVED`**
 
 ### GB-10 — Extraction Sequence
 **Recommendation:** S03-A (contracts+fixtures) → B (pure core+tests) → C
 (adapter delegates) → D (timer decisions into core) → E (effect intents) → F
-(remove duplicated logic). **`PENDING OWNER APPROVAL`**
+(remove duplicated logic). **`APPROVED`**
 
 ---
 
-*GATE B is a stop, not a suggestion. No S-03 extraction work may begin until
-GB-01..GB-10 are approved by the owner.*
+*GATE B APPROVED 2026-08-27 (GB-01..GB-10 accepted as recommended). S03-A
+(contracts + parity baseline) executed under this approval; the pure core
+implementation itself is S03-B and requires owner review of the S03-A baseline.*
