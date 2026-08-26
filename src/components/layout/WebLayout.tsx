@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useLocale, useTranslations} from 'next-intl';
-import {ChevronLeft, Dumbbell, Play} from 'lucide-react';
+import {ChevronLeft, Play} from 'lucide-react';
 import {
   APP_NAV,
   sectionPath,
@@ -10,6 +10,7 @@ import {
   type LayoutChromeProps,
   type NavItem,
 } from './nav';
+import {BrandIcon} from './BrandIcon';
 import {LanguageSwitcher} from './LanguageSwitcher';
 import {ThemeToggle} from './ThemeToggle';
 
@@ -43,12 +44,13 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
 
   return (
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
-      {/* ── Desktop corner controls (language + theme) ────────
-          The toggles live in the TOP corner of the site on desktop — the
-          end corner opposite the sidebar: top-LEFT in the Persian (RTL)
-          version, top-RIGHT in English (LTR). The mobile top bar keeps its
-          own copies in the same header row. */}
+      {/* ── Desktop corner controls (brand + language + theme) ──
+          The Apex mark and the toggles live in the TOP corner of the site on
+          desktop — the end corner opposite the sidebar: top-LEFT in the
+          Persian (RTL) version, top-RIGHT in English (LTR). The mobile top
+          bar keeps its own copies in the same header row. */}
       <div className="glass-strong fixed top-3 z-50 hidden items-center gap-1 rounded-full p-1 md:flex ltr:right-3 rtl:left-3">
+        <BrandIcon href="/dashboard" />
         <LanguageSwitcher />
         <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
       </div>
@@ -149,13 +151,7 @@ function BrandLink({href, compact = false}: {href: string; compact?: boolean}) {
         compact ? 'px-1 py-1' : 'px-5 py-5',
       ].join(' ')}
     >
-      <span
-        aria-hidden="true"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-apex-on-primary shadow-apple-glow"
-        style={{background: 'var(--apex-gradient-brand)'}}
-      >
-        <Dumbbell className="h-5 w-5" />
-      </span>
+      <BrandIcon />
       {!compact ? (
         <span className="text-[15px] font-bold tracking-tight">
           Apex <span className="text-apex-primary-text">Home Fitness</span>

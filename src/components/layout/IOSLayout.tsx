@@ -10,6 +10,7 @@ import {
   type LayoutChromeProps,
   type NavItem,
 } from './nav';
+import {BrandIcon} from './BrandIcon';
 import {LanguageSwitcher} from './LanguageSwitcher';
 import {ThemeToggle} from './ThemeToggle';
 
@@ -37,9 +38,9 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
       {/* Scrollable content — the large title lives here (iOS pattern) */}
       <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
-        {/* Top row: back affordance (pushed screens only) on the start side,
-            language + theme toggles on the end side — the desktop corner
-            controls, mirrored onto iOS. */}
+        {/* Top row: back affordance (pushed screens only) on the start side;
+            brand mark + language + theme toggles on the end side — the
+            desktop corner controls, mirrored onto iOS. */}
         <div className="flex items-center justify-between gap-2">
           {backHref ? (
             <Link
@@ -51,6 +52,7 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
             </Link>
           ) : <span />}
           <div className="flex items-center gap-1">
+            <BrandIcon href="/dashboard" />
             <LanguageSwitcher />
             <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
           </div>

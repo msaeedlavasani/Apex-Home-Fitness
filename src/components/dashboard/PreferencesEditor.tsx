@@ -97,12 +97,12 @@ export function PreferencesEditor({labels, initial}: Props) {
     }
   }
 
+  // Each category (styles / equipment / rest days) is its own card so the
+  // page reads as three distinct settings groups instead of one long list.
   return (
-    <section aria-label={labels.title} className="rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
-      <h2 className="text-base font-bold text-[color:var(--apex-text)]">{labels.title}</h2>
-      <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.stylesTitle}</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+    <div className="space-y-4" aria-label={labels.title}>
+      <PreferenceCard title={labels.stylesTitle}>
+        <div className="grid grid-cols-2 gap-2">
           {EXERCISE_STYLE_IDS.map((id) => (
             <label key={id} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${exerciseStyles.includes(id) ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)]'}`}>
               <input type="checkbox" checked={exerciseStyles.includes(id)} onChange={() => toggle(id, exerciseStyles, setExerciseStyles)} className="h-4 w-4 shrink-0 accent-emerald-600" />
@@ -110,10 +110,10 @@ export function PreferencesEditor({labels, initial}: Props) {
             </label>
           ))}
         </div>
-      </fieldset>
-      <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.equipmentTitle}</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+      </PreferenceCard>
+
+      <PreferenceCard title={labels.equipmentTitle}>
+        <div className="grid grid-cols-2 gap-2">
           {EQUIPMENT.map((id) => (
             <label key={id} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${equipment.includes(id) ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)]'}`}>
               <input type="checkbox" checked={equipment.includes(id)} onChange={() => toggle(id, equipment, setEquipment)} className="h-4 w-4 shrink-0 accent-emerald-600" />
@@ -121,11 +121,10 @@ export function PreferencesEditor({labels, initial}: Props) {
             </label>
           ))}
         </div>
-      </fieldset>
-      <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.restDaysTitle}</legend>
-        <p className="mt-1 text-xs text-[color:var(--apex-text-secondary)]">{labels.restDaysSubtitle}</p>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      </PreferenceCard>
+
+      <PreferenceCard title={labels.restDaysTitle} subtitle={labels.restDaysSubtitle}>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {getWeekdayOptions(locale).map(({id}) => {
             const selected = restDays.includes(id);
             const atMax = restDays.length >= REST_DAY_MAX;
@@ -143,11 +142,25 @@ export function PreferencesEditor({labels, initial}: Props) {
             );
           })}
         </div>
-      </fieldset>
-      <button type="button" onClick={() => void save()} disabled={state === 'saving' || state === 'generating' || exerciseStyles.length === 0 || equipment.length === 0 || restDays.length === 0} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
-        {state === 'saving' ? '…' : state === 'generating' ? labels.generating : state === 'saved' ? labels.generated : labels.save}
-      </button>
-      {state === 'error' ? <p role="alert" className="mt-2 text-sm text-red-600">{labels.generationError || labels.error}</p> : null}
+      </PreferenceCard>
+
+      <div className="rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
+        <button type="button" onClick={() => void save()} disabled={state === 'saving' || state === 'generating' || exerciseStyles.length === 0 || equipment.length === 0 || restDays.length === 0} className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
+          {state === 'saving' ? '…' : state === 'generating' ? labels.generating : state === 'saved' ? labels.generated : labels.save}
+        </button>
+        {state === 'error' ? <p role="alert" className="mt-2 text-sm text-red-600">{labels.generationError || labels.error}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+/** One settings card: bordered surface with a title and optional subtitle. */
+function PreferenceCard({title, subtitle, children}: {title: string; subtitle?: string; children: React.ReactNode}) {
+  return (
+    <section className="rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
+      <h2 className="text-sm font-bold text-[color:var(--apex-text)]">{title}</h2>
+      {subtitle ? <p className="mt-1 text-xs leading-relaxed text-[color:var(--apex-text-secondary)]">{subtitle}</p> : null}
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
