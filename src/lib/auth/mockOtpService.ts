@@ -61,22 +61,35 @@ export function mockOtpStoreSize(): number {
   return store.size;
 }
 
-export interface MockOtpServiceDeps {
+export interface MockOtpServiceOptions {
   /**
-   * Hook invoked AFTER a code verifies (default: none — dev/CI mock). The
-   * production override passes `establishSessionForVerifiedPhone` so a
-   * verified phone gets a REAL Supabase SSR session; if it throws, the code
-   * stays consumed and the client simply requests a fresh code.
+   * When set, only these normalized (E.164 `+98…`) phones receive mock codes;
+   * every other phone is rejected with `provider_error`. Used by the explicit
+   * production test mode — dev/CI mock stays open (no allowlist), exactly as
+   * today.
+   */
+  allowedPhones?: ReadonlySet<string>;
+  /**
+   * Session side effect invoked AFTER a mock code verifies successfully.
+   * Production test mode wires this to `establishSessionForVerifiedPhone` so
+   * an allowlisted tester actually lands in the signed-in app. Dev/CI mock
+   * leaves it unset (no session — same behaviour as today).
    */
   onVerified?: (phone: string) => Promise<unknown>;
 }
 
-export function createMockOtpService(deps: MockOtpServiceDeps = {}): OtpService {
-  const onVerified = deps.onVerified;
+export function createMockOtpService(options: MockOtpServiceOptions = {}): OtpService {
+  const {allowedPhones, onVerified} = options;
   return {
     async requestCode({phone}): Promise<RequestCodeResult> {
       const normalized = normalizePhone(phone);
       if (!normalized) return {ok: false, error: 'invalid_phone'};
+      if (allowedPhones && !allowedPhones.has(normalized)) {
+        // Belt-and-suspenders: the production hybrid routes non-listed phones
+        // to the secure service before reaching the mock. A direct call for a
+        // non-listed number is an honest delivery error, never a mock code.
+        return {ok: false, error: 'provider_error'};
+      }
 
       const now = Date.now();
       const existing = store.get(normalized);
@@ -108,6 +121,9 @@ export function createMockOtpService(deps: MockOtpServiceDeps = {}): OtpService 
     async verifyCode({phone, code}): Promise<VerifyCodeResult> {
       const normalized = normalizePhone(phone);
       if (!normalized) return {ok: false, error: 'invalid_phone'};
+      if (allowedPhones && !allowedPhones.has(normalized)) {
+        return {ok: false, error: 'provider_error'};
+      }
 
       const entry = store.get(normalized);
       if (!entry) return {ok: false, error: 'not_requested'};
@@ -130,7 +146,15 @@ export function createMockOtpService(deps: MockOtpServiceDeps = {}): OtpService 
 
       // Single-use: the verified code is consumed immediately.
       store.delete(normalized);
-      if (onVerified) await onVerified(normalized);
+      if (onVerified) {
+        try {
+          await onVerified(normalized);
+        } catch {
+          // The phone is proven and the code is consumed; a session failure is
+          // surfaced honestly so the client re-requests a fresh code.
+          return {ok: false, error: 'provider_error'};
+        }
+      }
       return {ok: true};
     },
   };

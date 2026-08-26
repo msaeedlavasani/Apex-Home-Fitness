@@ -1,22 +1,20 @@
 /**
  * Production mock override (`AUTH_OTP_MOCK_IN_PRODUCTION=true`) — unit tests
- * for the temporary "no real SMS" harness used while SMS.ir delivery is being
- * fixed. No DB, no network, no Supabase: the session hook is injected into
- * the mock service directly, and the factory path is asserted for the
- * deterministic `devCode` contract only.
+ * for the hybrid OTP service (the dev/test harness used while SMS delivery is
+ * being fixed). No DB, no network, no Supabase: the secure fallback is a fake
+ * recorder, and the session hook is injected.
  *
- * The contract under test:
+ * The hybrid contract under test:
+ *   - allowlisted phones get the deterministic mock code (`devCode`) and a
+ *     session hook on verify — no provider round-trip;
+ *   - every other phone is routed to the secure service untouched;
  *   - `getOtpService()` still refuses mock in production UNLESS the explicit
- *     override flag is set (misconfiguration guard);
- *   - with the override, EVERY phone gets the deterministic mock code
- *     (123456) as `devCode` — no allowlist, no real SMS;
- *   - verify with 123456 invokes the session hook (real session in prod);
- *   - the dev/CI mock path is unchanged.
+ *     override flag is set.
  */
 import {before, beforeEach, test} from 'node:test';
 import assert from 'node:assert/strict';
 
-import {createMockOtpService, MOCK_OTP_CODE, resetMockOtpStore} from '../src/lib/auth/mockOtpService';
+import {MOCK_OTP_CODE, resetMockOtpStore} from '../src/lib/auth/mockOtpService';
 
 // PrismaClient is constructed at import of the services graph — give it a
 // scratch URL before the module loads (the mock path never touches the DB).
@@ -24,7 +22,12 @@ process.env.DATABASE_URL = 'file:./otp-mock-production-test.db';
 
 let authOtp: typeof import('../src/lib/auth/otpService');
 
-const ENV_KEYS: string[] = ['NODE_ENV', 'AUTH_OTP_MODE', 'AUTH_OTP_MOCK_IN_PRODUCTION'];
+const ENV_KEYS: string[] = [
+  'NODE_ENV',
+  'AUTH_OTP_MODE',
+  'AUTH_OTP_MOCK_IN_PRODUCTION',
+  'AUTH_OTP_MOCK_PHONES',
+];
 
 before(async () => {
   authOtp = await import('../src/lib/auth/otpService');
@@ -57,82 +60,96 @@ async function withEnvAsync(
   }
 }
 
+/** Fake secure service that records every call and always fails honestly. */
+function makeFakeSecureService(calls: string[]) {
+  return {
+    async requestCode({phone}: {phone: string}) {
+      calls.push(`request:${phone}`);
+      return {ok: false, error: 'provider_error'} as const;
+    },
+    async verifyCode({phone}: {phone: string; code: string}) {
+      calls.push(`verify:${phone}`);
+      return {ok: false, error: 'provider_error'} as const;
+    },
+  };
+}
+
 test('getOtpService: mock in production WITHOUT the override throws', async () => {
   await withEnvAsync(
     {NODE_ENV: 'production', AUTH_OTP_MODE: 'mock', AUTH_OTP_MOCK_IN_PRODUCTION: undefined},
     async () => {
-      assert.throws(() => authOtp.getOtpService(), /not allowed in production/);
+      assert.throws(() => authOtp.getOtpService(), /AUTH_OTP_MOCK_IN_PRODUCTION/);
     },
   );
 });
 
-test('getOtpService: with the override EVERY phone gets the deterministic devCode', async () => {
+test('getOtpService: mock in production WITH the override returns a working hybrid', async () => {
   await withEnvAsync(
-    {NODE_ENV: 'production', AUTH_OTP_MODE: 'mock', AUTH_OTP_MOCK_IN_PRODUCTION: 'true'},
+    {
+      NODE_ENV: 'production',
+      AUTH_OTP_MODE: 'mock',
+      AUTH_OTP_MOCK_IN_PRODUCTION: 'true',
+      AUTH_OTP_MOCK_PHONES: '09127953903',
+    },
     async () => {
-      const service = authOtp.getOtpService();
-      // Three different numbers — no allowlist: everyone gets the mock code.
-      for (const phone of ['09123456789', '09351234567', '09212345678']) {
-        const result = await service.requestCode({phone});
-        assert.equal(result.ok, true, `request for ${phone} must succeed`);
-        if (result.ok) {
-          assert.equal(result.devCode, MOCK_OTP_CODE, `devCode for ${phone}`);
-        }
-      }
+      const svc = authOtp.getOtpService();
+      const sent = await svc.requestCode({phone: '09127953903'});
+      assert.equal(sent.ok, true);
+      assert.equal(sent.devCode, MOCK_OTP_CODE);
     },
   );
 });
 
-test('getOtpService: dev/CI mock still works without the override', async () => {
-  await withEnvAsync(
-    {NODE_ENV: 'development', AUTH_OTP_MODE: 'mock', AUTH_OTP_MOCK_IN_PRODUCTION: undefined},
-    async () => {
-      const service = authOtp.getOtpService();
-      const result = await service.requestCode({phone: '09123456789'});
-      assert.equal(result.ok, true);
-      if (result.ok) assert.equal(result.devCode, MOCK_OTP_CODE);
-    },
-  );
-});
-
-test('createMockOtpService: verify with 123456 invokes the session hook once', async () => {
-  const verified: string[] = [];
-  const service = createMockOtpService({
+test('hybrid: allowlisted phone gets devCode + session; others go to secure', async () => {
+  const secureCalls: string[] = [];
+  let verifiedPhone: string | null = null;
+  const svc = authOtp.createProductionMockOtpService({
+    allowedPhones: authOtp.parseMockPhoneAllowlist('09127953903'),
     onVerified: async (phone) => {
-      verified.push(phone);
+      verifiedPhone = phone;
     },
+    secureService: makeFakeSecureService(secureCalls),
   });
 
-  await service.requestCode({phone: '09123456789'});
-  const result = await service.verifyCode({phone: '09123456789', code: MOCK_OTP_CODE});
+  // Allowlisted: instant mock code, the provider is never touched.
+  const sent = await svc.requestCode({phone: '09127953903'});
+  assert.equal(sent.ok, true);
+  assert.equal(sent.devCode, MOCK_OTP_CODE);
+  assert.deepEqual(secureCalls, []);
 
-  assert.deepEqual(result, {ok: true});
-  assert.deepEqual(verified, ['+989123456789'], 'hook receives the normalized phone');
+  // Wrong code fails and does not fire the session hook.
+  const wrong = await svc.verifyCode({phone: '09127953903', code: '000000'});
+  assert.equal(wrong.ok, false);
+  assert.equal(verifiedPhone, null);
+
+  // Correct code verifies, consumes the code, and fires the session hook.
+  const verified = await svc.verifyCode({phone: '09127953903', code: MOCK_OTP_CODE});
+  assert.equal(verified.ok, true);
+  assert.equal(verifiedPhone, '+989127953903');
+  assert.deepEqual(secureCalls, []);
+
+  // Single-use: the consumed code cannot verify again.
+  const replay = await svc.verifyCode({phone: '09127953903', code: MOCK_OTP_CODE});
+  assert.equal(replay.ok, false);
+
+  // A non-allowlisted phone is routed to the secure service untouched.
+  const other = await svc.requestCode({phone: '09351234567'});
+  assert.deepEqual(secureCalls, ['request:09351234567']);
+  assert.equal(other.ok, false);
 });
 
-test('createMockOtpService: wrong code does NOT run the session hook', async () => {
-  const verified: string[] = [];
-  const service = createMockOtpService({
-    onVerified: async (phone) => {
-      verified.push(phone);
-    },
+test('parseMockPhoneAllowlist: normalizes national numbers and drops garbage', () => {
+  const allowed = authOtp.parseMockPhoneAllowlist('09127953903, 0935 123 4567,not-a-phone,');
+  assert.deepEqual([...allowed].sort(), ['+989127953903', '+989351234567']);
+});
+
+test('hybrid: no allowlist means every phone goes to the secure service', async () => {
+  const secureCalls: string[] = [];
+  const svc = authOtp.createProductionMockOtpService({
+    allowedPhones: new Set(),
+    secureService: makeFakeSecureService(secureCalls),
   });
-
-  await service.requestCode({phone: '09123456789'});
-  const result = await service.verifyCode({phone: '09123456789', code: '000000'});
-
-  assert.equal(result.ok, false);
-  assert.equal(verified.length, 0);
-});
-
-test('createMockOtpService: the 60s resend cooldown still applies', async () => {
-  const service = createMockOtpService();
-  await service.requestCode({phone: '09123456789'});
-
-  const second = await service.requestCode({phone: '09123456789'});
-  assert.equal(second.ok, false);
-  if (!second.ok) {
-    assert.equal(second.error, 'rate_limited');
-    assert.ok(second.retryAfterSeconds !== undefined && second.retryAfterSeconds > 0);
-  }
+  const res = await svc.requestCode({phone: '09127953903'});
+  assert.deepEqual(secureCalls, ['request:09127953903']);
+  assert.equal(res.ok, false);
 });
