@@ -42,14 +42,16 @@ test.describe('Localization (EN / FA switching)', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
     await expect(page.getByText('Your weekly training plan')).toBeVisible();
-    await expect(page.getByText('Weekly calendar')).toBeVisible();
+    // Signed out there is no program yet — the setup CTA is what renders
+    // (the weekly calendar only appears once a program exists).
+    await expect(page.getByText('Finish your setup first')).toBeVisible();
 
     // --- Switch to Persian via the /fa locale URL ---
     await page.goto('/fa/dashboard');
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByText('برنامه تمرینی هفتگی تو')).toBeVisible();
-    await expect(page.getByText('تقویم هفتگی')).toBeVisible();
+    await expect(page.getByText('اول تنظیماتت را کامل کن')).toBeVisible();
 
     // --- And back to English ---
     await page.goto('/en/dashboard');
