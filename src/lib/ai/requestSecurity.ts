@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {createRateLimitStore, type RateLimitStore} from './rateLimitStore';
 import {REST_DAYS_SCHEMA} from './restDays';
+import {EXERCISE_STYLE_IDS} from '@/lib/exerciseStyles';
 
 /** Allowed goal ids (must stay in sync with the quiz's `GOAL_IDS`). */
 const GOAL_VALUES = ['strength', 'fat_loss', 'flexibility', 'functional_fitness'] as const;
@@ -27,6 +28,14 @@ export const GENERATE_PROGRAM_INPUT_SCHEMA = z
   .object({
     level: z.enum(['beginner', 'intermediate', 'advanced']),
     goal: GOAL_SCHEMA,
+    // Preferred training styles. Optional keeps older direct API clients valid;
+    // omitted values expand to the full supported style set.
+    exerciseStyles: z
+      .array(z.enum(EXERCISE_STYLE_IDS))
+      .min(1)
+      .max(EXERCISE_STYLE_IDS.length)
+      .refine((items) => new Set(items).size === items.length, 'Duplicate exercise styles are not allowed')
+      .default([...EXERCISE_STYLE_IDS]),
     // Weekdays the user wants to keep workout-free (1–3). Optional for
     // backward compatibility — absent → no rest-day constraint (the route
     // treats it as []); an explicit empty array is rejected (min 1).

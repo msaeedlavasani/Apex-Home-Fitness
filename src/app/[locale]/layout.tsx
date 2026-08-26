@@ -13,6 +13,7 @@ import {PlatformProvider} from '@/components/ui/platform/context/PlatformProvide
 import {detectPlatform} from '@/components/ui/platform/lib/platform';
 import PWALoader from '@/components/PWALoader';
 import MonitoringProvider from '@/components/providers/MonitoringProvider';
+import {MuiProvider} from '@/components/providers/MuiProvider';
 import '../globals.css';
 
 /**
@@ -107,7 +108,7 @@ export async function generateMetadata({
   const ogImage = absUrl('/icons/icon-512x512.png');
 
   return {
-    ...(siteUrl ? {metadataBase: new URL(siteUrl)} : {}),
+    metadataBase: new URL(siteUrl ?? 'https://apexfit.app'),
 
     // Bilingual title & description — resolved per-locale at request time.
     // `template` appends the localized site name to child pages' titles
@@ -275,7 +276,9 @@ export default async function LocaleLayout({
       <body className={`${inter.variable} ${roboto.variable} ${vazirmatn.variable}`}>
         <ThemeProvider>
           <PlatformProvider defaultPlatform={userAgent ? detectPlatform(userAgent) : 'web'}>
-            <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+            <MuiProvider>
+              <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+            </MuiProvider>
           </PlatformProvider>
         </ThemeProvider>
         {/* Registers /service-worker.js for offline + installability (production only). */}

@@ -265,6 +265,28 @@ function defaultDeliveryScheduler(fn: () => void, delayMs: number): void {
   (timer as {unref?: () => void}).unref?.();
 }
 
+/**
+ * Create a request signal with an explicit, clean-upable timer.
+ * `AbortSignal.timeout()` uses an unref'd timer in Node, which can let a
+ * server-side request promise remain pending after the event loop drains.
+ */
+function createRequestTimeout(timeoutMs: number): {
+  signal: AbortSignal;
+  clear: () => void;
+} {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    const timeout = new Error('SMS.ir request timed out');
+    timeout.name = 'TimeoutError';
+    controller.abort(timeout);
+  }, timeoutMs);
+
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timer),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -468,6 +490,7 @@ export class SmsIrOtpProvider {
     this.log.debug('otp.send.attempt', {mobile: maskMobile(mobile), templateId: this.templateId});
 
     let response: Response;
+    const requestTimeout = createRequestTimeout(this.timeoutMs);
     try {
       response = await this.fetchImpl(`${this.baseUrl}${SMSIR_VERIFY_PATH}`, {
         method: 'POST',
@@ -478,10 +501,12 @@ export class SmsIrOtpProvider {
         },
         body,
         cache: 'no-store',
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal: requestTimeout.signal,
       });
     } catch (error) {
       throw this.toTransportError(error, mobile);
+    } finally {
+      requestTimeout.clear();
     }
 
     const bodyObj = await readJsonBody(response);
@@ -520,15 +545,18 @@ export class SmsIrOtpProvider {
     }
 
     let response: Response;
+    const requestTimeout = createRequestTimeout(this.timeoutMs);
     try {
       response = await this.fetchImpl(`${this.baseUrl}${SMSIR_DELIVERY_PATH_PREFIX}${id}`, {
         method: 'GET',
         headers: {Accept: 'application/json', 'X-API-KEY': this.apiKey},
         cache: 'no-store',
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal: requestTimeout.signal,
       });
     } catch (error) {
       throw this.toTransportError(error, undefined, 'otp.delivery.lookup_failed');
+    } finally {
+      requestTimeout.clear();
     }
 
     const bodyObj = await readJsonBody(response);

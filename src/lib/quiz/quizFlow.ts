@@ -42,6 +42,7 @@
 import { z } from 'zod';
 
 import { REST_DAYS_SCHEMA } from '@/lib/ai/restDays';
+import { EXERCISE_STYLE_IDS } from '@/lib/exerciseStyles';
 import type { GenerateProgramInput } from '@/lib/ai/requestSecurity';
 
 // Client-safe mirror of the server's goal contract. Do not import
@@ -111,6 +112,13 @@ function uniqueItems<T extends string>(items: T[]): boolean {
   return new Set(items).size === items.length;
 }
 
+const EXERCISE_STYLE_SCHEMA = z
+  .array(z.enum(EXERCISE_STYLE_IDS))
+  .min(1)
+  .max(EXERCISE_STYLE_IDS.length)
+  .refine(uniqueItems, 'Duplicate exercise styles are not allowed')
+  .default([...EXERCISE_STYLE_IDS]);
+
 function noneIsExclusive<T extends string>(items: T[]): boolean {
   return !items.includes('none' as T) || items.length === 1;
 }
@@ -128,6 +136,7 @@ export const QUIZ_ANSWERS_SCHEMA = z
     theme: z.string().trim().max(20).optional(),
     level: z.enum(LEVEL_VALUES),
     goal: GOAL_SCHEMA,
+    exerciseStyles: EXERCISE_STYLE_SCHEMA,
     equipment: z
       .array(z.enum(EQUIPMENT_VALUES))
       .min(1)
@@ -160,6 +169,7 @@ export function buildGenerationInput(answers: QuizAnswersNormalized): GeneratePr
   return {
     level: answers.level,
     goal: answers.goal,
+    exerciseStyles: answers.exerciseStyles,
     equipment: answers.equipment,
     limitations: answers.limitations,
     limitationsDetails: answers.limitationsDetails,

@@ -4,11 +4,13 @@ import ProgressBar from './components/ProgressBar';
 import NavigationButtons from './components/NavigationButtons';
 import ThemeStep from './steps/ThemeStep';
 import CurrentLevelStep from './steps/CurrentLevelStep';
+import ExerciseStylesStep from './steps/ExerciseStylesStep';
 import GoalStep from './steps/GoalStep';
 import EquipmentStep from './steps/EquipmentStep';
 import LimitationsStep from './steps/LimitationsStep';
 import RestDaysStep from './steps/RestDaysStep';
 import { normalizeGoals } from './goals';
+import { normalizeExerciseStyles } from './exerciseStyles';
 import { REST_DAY_MAX, REST_DAY_MIN, normalizeRestDays } from './restDays';
 import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import './quiz.css';
@@ -34,6 +36,11 @@ const STEP_CONFIG = [
     // validate.
     validate: (answers) => normalizeGoals(answers.goal).length > 0,
     errorKey: 'quiz.error.goal.required',
+  },
+  {
+    key: 'exerciseStyles',
+    validate: (answers) => normalizeExerciseStyles(answers.exerciseStyles).length > 0,
+    errorKey: 'quiz.error.exerciseStyles.required',
   },
   {
     key: 'equipment',
@@ -63,6 +70,9 @@ const INITIAL_ANSWERS = {
   // Goals are a multi-select array; legacy sessions restored via
   // `initialData` may still carry a single string — GoalStep normalizes it.
   goal: [],
+  // Preferred training methods. Older drafts omit this field and are treated
+  // as broad-profile answers by the validation layer.
+  exerciseStyles: [],
   equipment: [],
   limitations: [],
   limitationsDetails: '',
@@ -100,9 +110,10 @@ function resolveDocumentLocale(localeProp) {
  *   2. Current Level     (Beginner / Intermediate / Advanced)
  *   3. Goals             (multi-select — Strength / Fat Loss / Flexibility /
  *                         Functional Fitness; at least one required)
- *   4. Equipment         (multi-select checkboxes, "None" is exclusive)
- *   5. Limitations       (injury checkboxes + free-text details, optional)
- *   6. Rest days         (multi-select weekdays, 1–3 — kept workout-free
+ *   4. Exercise styles   (multi-select — one or more of the 8 supported styles)
+ *   5. Equipment         (multi-select checkboxes, "None" is exclusive)
+ *   6. Limitations       (injury checkboxes + free-text details, optional)
+ *   7. Rest days         (multi-select weekdays, 1–3 — kept workout-free
  *                         by the generated program)
  *
  * All user-facing strings go through `t('key')` so the quiz can be
@@ -185,6 +196,8 @@ export default function OnboardingQuiz({
         theme: answers.theme,
         level: answers.level,
         goal: normalizeGoals(answers.goal),
+        exerciseStyles: normalizeExerciseStyles(answers.exerciseStyles),
+        exerciseStylesCount: normalizeExerciseStyles(answers.exerciseStyles).length,
         equipmentCount: Array.isArray(answers.equipment) ? answers.equipment.length : 0,
         limitationsCount: Array.isArray(answers.limitations) ? answers.limitations.length : 0,
         restDays: normalizeRestDays(answers.restDays),
@@ -237,6 +250,15 @@ export default function OnboardingQuiz({
         );
       case 3:
         return (
+          <ExerciseStylesStep
+            value={answers.exerciseStyles}
+            onChange={(exerciseStyles) => updateAnswers({ exerciseStyles })}
+            error={errors.exerciseStyles}
+            t={localizedT}
+          />
+        );
+      case 4:
+        return (
           <EquipmentStep
             value={answers.equipment}
             onChange={(equipment) => updateAnswers({ equipment })}
@@ -244,7 +266,7 @@ export default function OnboardingQuiz({
             t={localizedT}
           />
         );
-      case 4:
+      case 5:
         return (
           <LimitationsStep
             value={answers.limitations}
@@ -254,7 +276,7 @@ export default function OnboardingQuiz({
             t={localizedT}
           />
         );
-      default:
+      case 6:
         return (
           <RestDaysStep
             value={answers.restDays}
@@ -264,6 +286,8 @@ export default function OnboardingQuiz({
             locale={activeLocale}
           />
         );
+      default:
+        return null;
     }
   };
 

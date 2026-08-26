@@ -141,6 +141,7 @@ model Program {
   // programs created before this feature. It is nullable because SQLite
   // (this repo's datasource) does not support @default() on Json fields.
   restDays        Json?
+  weeklySchedule  Json?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 

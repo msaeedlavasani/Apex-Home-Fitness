@@ -5,6 +5,11 @@
 .quiz {
   max-width: 640px;
   margin: 0 auto;
+  padding: 24px;
+  border: 1px solid var(--apex-border);
+  border-radius: 24px;
+  background: var(--apex-card);
+  box-shadow: var(--surface-card-shadow);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--apex-text-primary);
   line-height: 1.5;
@@ -12,7 +17,16 @@
 
 /* Header */
 .quiz__header {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+}
+.quiz__header::before {
+  content: '';
+  display: block;
+  width: 44px;
+  height: 5px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: var(--apex-gradient-brand);
 }
 .quiz__title {
   font-size: 1.5rem;
@@ -27,9 +41,12 @@
 /* Progress */
 .quiz-progress {
   margin-bottom: 28px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--apex-surface);
 }
 .quiz-progress__track {
-  height: 8px;
+  height: 10px;
   background: var(--apex-fill);
   border-radius: 999px;
   overflow: hidden;
@@ -96,8 +113,9 @@
   gap: 12px;
 }
 .quiz-option {
+  min-height: 76px;
   text-align: start; /* logical — mirrors in RTL (fa) */
-  padding: 14px 16px;
+  padding: 16px;
   border: 2px solid var(--apex-border);
   border-radius: 12px;
   background: var(--apex-card);
@@ -133,6 +151,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 52px;
   padding: 12px 14px;
   border: 2px solid var(--apex-border);
   border-radius: 10px;
@@ -198,6 +217,7 @@
   margin-bottom: 6px;
 }
 .quiz-field__input {
+  min-height: 52px;
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
@@ -237,6 +257,9 @@
 /* Navigation */
 .quiz-nav {
   display: flex;
+  position: sticky;
+  bottom: 12px;
+  padding-top: 12px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -248,6 +271,7 @@
 .quiz-nav__back,
 .quiz-nav__next {
   /* 12px/24px padding → ≥ 48px touch target */
+  min-height: 52px;
   padding: 12px 24px;
   border-radius: 10px;
   font-weight: 600;
@@ -292,6 +316,25 @@
 /* ------------------------------------------------------------------ */
 .dark .quiz {
   color: var(--apex-text-primary);
+  background: var(--apex-card);
+}
+
+@media (max-width: 480px) {
+  .quiz {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+  .quiz__title {
+    font-size: 1.35rem;
+  }
+  .quiz-step__options {
+    grid-template-columns: 1fr;
+  }
+  .quiz-nav__back,
+  .quiz-nav__next {
+    flex: 1;
+    padding-inline: 14px;
+  }
 }
 .dark .quiz__subtitle,
 .dark .quiz-step__subtitle,

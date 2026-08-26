@@ -68,7 +68,28 @@ const EN = {
   'quiz.goal.functional_fitness': 'Functional Fitness',
   'quiz.goal.functional_fitness.hint': 'Move better in everyday life and sports',
 
-  // ---- Step 4 — Equipment ----
+  // ---- Step 4 — Exercise styles (multi-select) ----
+  'quiz.exerciseStyles.title': 'Which exercise styles do you enjoy?',
+  'quiz.exerciseStyles.subtitle': 'Choose one or more styles to shape the program around what you like.',
+  'quiz.exerciseStyles.yoga': 'Yoga',
+  'quiz.exerciseStyles.yoga.hint': 'Breathing, balance and mindful mobility',
+  'quiz.exerciseStyles.hiit': 'HIIT',
+  'quiz.exerciseStyles.hiit.hint': 'Short, challenging intervals and conditioning',
+  'quiz.exerciseStyles.calisthenics': 'Calisthenics',
+  'quiz.exerciseStyles.calisthenics.hint': 'Bodyweight strength and control',
+  'quiz.exerciseStyles.pilates': 'Pilates',
+  'quiz.exerciseStyles.pilates.hint': 'Core control, posture and precision',
+  'quiz.exerciseStyles.mobility': 'Mobility',
+  'quiz.exerciseStyles.mobility.hint': 'Range of motion and joint-friendly movement',
+  'quiz.exerciseStyles.isometric': 'Isometric',
+  'quiz.exerciseStyles.isometric.hint': 'Strength through controlled holds',
+  'quiz.exerciseStyles.resistance_band': 'Resistance bands',
+  'quiz.exerciseStyles.resistance_band.hint': 'Portable resistance and low-impact strength',
+  'quiz.exerciseStyles.animal_flow': 'Animal flow',
+  'quiz.exerciseStyles.animal_flow.hint': 'Ground-based movement, coordination and flow',
+  'quiz.error.exerciseStyles.required': 'Please choose at least one exercise style to continue.',
+
+  // ---- Step 5 — Equipment ----
   'quiz.equipment.title': 'What equipment do you have available?',
   'quiz.equipment.subtitle':
     'Select everything you can use. Choose "None" if you train with bodyweight only.',
@@ -183,7 +204,28 @@ const FA = {
   'quiz.goal.functional_fitness': 'آمادگی عملکردی',
   'quiz.goal.functional_fitness.hint': 'حرکت بهتر در زندگی روزمره و ورزش',
 
-  // ---- Step 4 — Equipment ----
+  // ---- Step 4 — Exercise styles (multi-select) ----
+  'quiz.exerciseStyles.title': 'چه سبک‌هایی از ورزش را دوست داری؟',
+  'quiz.exerciseStyles.subtitle': 'یک یا چند سبک را انتخاب کن تا برنامه بر اساس علاقه‌ات ساخته شود.',
+  'quiz.exerciseStyles.yoga': 'یوگا',
+  'quiz.exerciseStyles.yoga.hint': 'تنفس، تعادل و تحرک آگاهانه',
+  'quiz.exerciseStyles.hiit': 'تمرین تناوبی شدید',
+  'quiz.exerciseStyles.hiit.hint': 'بازه‌های کوتاه و چالش‌برانگیز برای آمادگی',
+  'quiz.exerciseStyles.calisthenics': 'کالیستنیک',
+  'quiz.exerciseStyles.calisthenics.hint': 'قدرت و کنترل با وزن بدن',
+  'quiz.exerciseStyles.pilates': 'پیلاتس',
+  'quiz.exerciseStyles.pilates.hint': 'کنترل مرکز بدن، وضعیت و دقت',
+  'quiz.exerciseStyles.mobility': 'تحرک',
+  'quiz.exerciseStyles.mobility.hint': 'دامنه حرکتی و حرکت سازگار با مفاصل',
+  'quiz.exerciseStyles.isometric': 'ایزومتریک',
+  'quiz.exerciseStyles.isometric.hint': 'افزایش قدرت با نگه‌داشتن کنترل‌شده',
+  'quiz.exerciseStyles.resistance_band': 'کش مقاومتی',
+  'quiz.exerciseStyles.resistance_band.hint': 'مقاومت قابل حمل و قدرت کم‌فشار',
+  'quiz.exerciseStyles.animal_flow': 'آنیمال فلو',
+  'quiz.exerciseStyles.animal_flow.hint': 'حرکت زمینی، هماهنگی و جریان بدن',
+  'quiz.error.exerciseStyles.required': 'لطفاً حداقل یک سبک ورزشی انتخاب کن تا ادامه بدیم.',
+
+  // ---- Step 5 — Equipment ----
   'quiz.equipment.title': 'چه وسایلی در دسترس داری؟',
   'quiz.equipment.subtitle':
     'هر چیزی که می‌تونی استفاده کنی رو انتخاب کن. اگه فقط با وزن بدن تمرین می‌کنی، «هیچ‌کدام» رو بزن.',

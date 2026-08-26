@@ -1,7 +1,7 @@
 import {expect, test, type Page} from '@playwright/test';
 
 /**
- * E2E coverage for the quiz's rest-days step (step 6):
+ * E2E coverage for the quiz's rest-days step (step 7):
  *
  * 1. min bound — finishing without a rest day shows the bilingual error;
  * 2. max bound — the selection caps at 3 and unchecked options disable;
@@ -11,7 +11,7 @@ import {expect, test, type Page} from '@playwright/test';
  * 4. Persian — the step is fully localized (labels + RTL page).
  */
 
-/** Walks steps 1–5 (theme, level, goals, equipment, limitations-skip). */
+/** Walks steps 1–6 (theme, level, goals, styles, equipment, limitations-skip). */
 async function navigateToRestDaysStep(page: Page, {locale = 'en'}: {locale?: 'en' | 'fa'} = {}) {
   const isFa = locale === 'fa';
   const next = page.getByRole('button', {name: isFa ? 'بعدی' : 'Next', exact: true});
@@ -26,10 +26,13 @@ async function navigateToRestDaysStep(page: Page, {locale = 'en'}: {locale?: 'en
   // Step 3 — goals.
   await page.getByRole('checkbox', {name: isFa ? /^قدرت/ : /^Strength/}).check();
   await next.click();
-  // Step 4 — equipment.
+  // Step 4 — exercise styles.
+  await page.getByRole('checkbox', {name: isFa ? /^کالیستنیک/ : /^Calisthenics/}).check();
+  await next.click();
+  // Step 5 — equipment.
   await page.getByRole('checkbox', {name: isFa ? 'دمبل' : 'Dumbbells'}).check();
   await next.click();
-  // Step 5 — limitations (optional, skip).
+  // Step 6 — limitations (optional, skip).
   await next.click();
 }
 

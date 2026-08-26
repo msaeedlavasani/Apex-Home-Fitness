@@ -186,6 +186,8 @@ export interface SaveGeneratedProgramInput {
    * (e.g. `"strength, fat_loss"`); a single legacy string works too.
    */
   goal?: string;
+  /** Preferred exercise-style ids selected in the onboarding quiz. */
+  exerciseStyles?: string[];
   /**
    * Optional explicit program name. Defaults to `AI Program <program_id>`
    * (unique, since the AI emits a fresh `program_id` per generation and
@@ -309,6 +311,8 @@ export interface ProgramDraft {
   sessionsPerWeek: number;
   /** Rest-day weekday ids (persisted on `Program.restDays`). */
   restDays: string[];
+  /** Full enforced AI schedule, retained for the dashboard and workout route. */
+  weeklySchedule: AiWeeklySession[];
   /** Exercise rows to create (create-only — existing rows are left untouched). */
   exercises: Prisma.ExerciseCreateInput[];
   programExercises: ProgramExerciseDraft[];
@@ -381,6 +385,7 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
     durationWeeks: PROGRAM_DURATION_WEEKS,
     sessionsPerWeek: trainingSessions.length,
     restDays: input.restDays ?? [],
+    weeklySchedule: program.weekly_schedule ?? [],
     exercises,
     programExercises,
   };
@@ -538,6 +543,7 @@ async function persistProgramTransaction(
       durationWeeks: draft.durationWeeks,
       sessionsPerWeek: draft.sessionsPerWeek,
       restDays: draft.restDays,
+      weeklySchedule: draft.weeklySchedule as unknown as Prisma.InputJsonValue,
       ownerId: userId,
     },
   });

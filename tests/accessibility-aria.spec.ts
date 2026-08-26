@@ -101,10 +101,10 @@ test.describe('Onboarding quiz — ARIA', () => {
   test('exposes progress, option, note and error semantics', async ({page}) => {
     await page.goto('/en/quiz');
 
-    // Progress bar: 1 of 6 on the first step.
+    // Progress bar: 1 of 7 on the first step.
     const progress = page.getByRole('progressbar');
     await expect(progress).toHaveAttribute('aria-valuemin', '0');
-    await expect(progress).toHaveAttribute('aria-valuemax', '6');
+    await expect(progress).toHaveAttribute('aria-valuemax', '7');
     await expect(progress).toHaveAttribute('aria-valuenow', '1');
 
     // Single-choice step is a labelled radiogroup of toggle buttons.
@@ -148,13 +148,15 @@ test.describe('Onboarding quiz — ARIA', () => {
   }) => {
     await page.goto('/en/quiz');
 
-    // Navigate to the equipment step (step 4) using buttons.
+    // Navigate to the equipment step (step 5) using buttons.
     await page.getByRole('button', {name: 'Dark'}).click();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     await page.getByRole('button', {name: 'Beginner'}).click();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     // Goal step is a multi-select — check one goal to continue.
     await page.getByRole('checkbox', {name: /^Strength/}).check();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
+    await page.getByRole('checkbox', {name: /^Calisthenics/}).check();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
 
     // Checkboxes are reachable by their (label-derived) accessible names.

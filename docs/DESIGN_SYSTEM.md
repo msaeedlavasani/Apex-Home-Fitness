@@ -1,8 +1,8 @@
-# Apex Home Fitness — Multi-Platform Design System (v2.0)
+# Apex Home Fitness — Design System & UI Architecture (v2.1)
 
-> **Version:** 2.0 · **Status:** Production-Ready · **Last updated:** 2026-08-15
+> **Version:** 2.1 · **Status:** Frontend source of truth · **Last updated:** 2026-08-25
 >
-> A unified design language for home fitness, ensuring a consistent brand identity across **iOS**, **Android**, and **Web**, while respecting the native user experience patterns of each platform.
+> این سند منبع حقیقت بصری Apex Home Fitness است. قوانین آن برای وب Next.js، تجربه‌ی RTL/LTR، PWA و مسیرهای تمرین/کوییز نوشته شده و جایگزین طراحی‌های پراکنده‌ی صفحه‌ای است.
 
 ---
 
@@ -65,6 +65,28 @@ The neutral ramp is purely semantic to avoid developer error in dark mode.
 | **Alert** | `#FF3B30` / `#FF453A` | `#FFFFFF` / `#FFFFFF` | `rgba(255,59,48, 0.1)` | `rgba(255,59,48, 0.40)` |
 
 ---
+
+## 3. Foundation و Platform Idioms
+
+### 3.0 Foundation فعلی
+
+- **CURRENT:** Tailwind CSS و tokenهای CSS در `src/app/globals.css` منبع اصلی ظاهر موجود هستند.
+- **CURRENT:** MUI `9.3.1` با Emotion به‌عنوان foundation دوم اضافه شده و از tokenهای `--apex-*` مصرف می‌کند.
+- **CONSTRAINT:** فعلاً هیچ صفحه‌ای بازنویسی گسترده نمی‌شود؛ مهاجرت MUI باید تدریجی، component-by-component و با حفظ ظاهر فعلی باشد.
+- **RULE:** برای component جدید عمومی، ابتدا MUI موجود یا primitive مشترک را بررسی کن؛ برای componentهای legacy همان قرارداد فعلی را حفظ کن.
+- `MuiProvider` فقط یک بار در layout locale قرار می‌گیرد. provider موازی یا نصب نسخه‌ی دوم MUI ممنوع است.
+
+### MUI usage example
+
+```tsx
+import {Button} from '@mui/material';
+
+<Button variant="contained" color="primary">
+  Start workout
+</Button>
+```
+
+مقادیر رنگ و typography را در component hard-code نکن؛ theme bridge آن‌ها را از tokenهای Apex می‌گیرد.
 
 ## 3. Platform Idioms
 
@@ -130,7 +152,27 @@ The neutral ramp is purely semantic to avoid developer error in dark mode.
 
 ---
 
-## 7. Implementation Snippets
+## 7. تصمیم‌های معماری UI
+
+- قبل از ساخت component، `src/components` و primitiveهای موجود را جست‌وجو کن.
+- یک Section را فقط وقتی Card کن که واقعاً یک واحد اطلاعاتی مستقل باشد؛ صفحه نباید به مجموعه‌ای از کارت‌های تزئینی تبدیل شود.
+- سطح‌بندی بصری Apex بر این ترتیب است: **هدف کاربر → وضعیت/پیشرفت → اقدام اصلی → جزئیات ثانویه**.
+- مسیرهای اصلی Landing → Quiz → Auth → Dashboard باید از یک زبان بصری مشترک استفاده کنند، اما هر صفحه hierarchy مخصوص خود را حفظ کند.
+- حالت‌های interaction باید علاوه بر رنگ با متن، آیکون، border، تغییر position یا status قابل تشخیص باشند.
+- componentهای تخصصی مانند player یا نمودار فقط capability می‌دهند؛ tokenها و قواعد Apex هویت بصری را تعیین می‌کنند.
+
+## 8. UI Completion Checklist
+
+- [ ] tokenهای semantic موجود استفاده شده‌اند
+- [ ] مسیرهای `en` و `fa` بررسی شده‌اند
+- [ ] در viewportهای 360px به بالا overflow ناخواسته وجود ندارد
+- [ ] loading، empty، error، disabled و success state مشخص است
+- [ ] focus، keyboard، aria label و contrast بررسی شده است
+- [ ] reduced motion رعایت شده است
+- [ ] component یا dependency موازی بدون دلیل ساخته نشده است
+- [ ] تغییر فقط در scope موردنظر انجام شده است
+
+## 9. Implementation Snippets
 
 ### Tailwind Config (Updated)
 ```js

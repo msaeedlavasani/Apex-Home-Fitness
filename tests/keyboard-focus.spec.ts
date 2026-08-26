@@ -110,7 +110,7 @@ test.describe('Theme toggle — keyboard', () => {
 });
 
 test.describe('Onboarding quiz — keyboard', () => {
-  test('completes all six steps with the keyboard only', async ({page}) => {
+  test('completes all seven steps with the keyboard only', async ({page}) => {
     await page.goto('/en/quiz');
 
     // Step 1 — visual style. OptionCards expose "title + description" as
@@ -150,11 +150,19 @@ test.describe('Onboarding quiz — keyboard', () => {
 
     await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
     await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
-    await expect(
-      page.getByText('What equipment do you have available?'),
-    ).toBeVisible();
+    await expect(page.getByText('Which exercise styles do you enjoy?')).toBeVisible();
 
-    // Step 4 — equipment (native checkbox, toggled with Space).
+    // Step 4 — exercise styles (native checkbox, toggled with Space).
+    const calisthenics = page.getByRole('checkbox', {name: /^Calisthenics/});
+    await tabTo(page, calisthenics);
+    await calisthenics.press('Space');
+    await expect(calisthenics).toBeChecked();
+
+    await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
+    await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
+    await expect(page.getByText('What equipment do you have available?')).toBeVisible();
+
+    // Step 5 — equipment (native checkbox, toggled with Space).
     const dumbbells = page.getByRole('checkbox', {name: 'Dumbbells'});
     await tabTo(page, dumbbells);
     await dumbbells.press('Space');
@@ -166,7 +174,7 @@ test.describe('Onboarding quiz — keyboard', () => {
       page.getByText('Do you have any injuries or limitations?'),
     ).toBeVisible();
 
-    // Step 5 — limitations (optional; pick "None").
+    // Step 6 — limitations (optional; pick "None").
     const none = page.getByRole('checkbox', {name: 'None — I am healthy'});
     await tabTo(page, none);
     await none.press('Space');
@@ -175,9 +183,9 @@ test.describe('Onboarding quiz — keyboard', () => {
     await tabTo(page, page.getByRole('button', {name: 'Next', exact: true}));
     await page.getByRole('button', {name: 'Next', exact: true}).press('Enter');
     await expect(page.getByText('Which weekdays are your rest days?')).toBeVisible();
-    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '6');
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '7');
 
-    // Step 6 — rest days (1–3 required; pick two weekdays with Space).
+    // Step 7 — rest days (1–3 required; pick two weekdays with Space).
     const wednesday = page.getByRole('checkbox', {name: 'Wednesday'});
     await tabTo(page, wednesday);
     await wednesday.press('Space');
