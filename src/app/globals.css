@@ -574,6 +574,41 @@
     border-bottom: none;
   }
 
+  /* Apple HIG form control (text, email, number, select) — used by the
+     profile editor. Solid rounded field on the grouped background with
+     enough horizontal padding that RTL/LTR values never clip at the edges
+     (an unstyled input clips the first glyph of a long value). */
+  .input-apple {
+    display: block;
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--apple-separator);
+    background-color: var(--apple-grouped-background-tertiary);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    color: var(--apple-label);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input-apple::placeholder {
+    color: var(--apple-label-tertiary);
+  }
+  .input-apple:focus {
+    outline: none;
+    border-color: var(--apple-blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 25%, transparent);
+  }
+  /* iOS-like number fields in the profile editor — no native spinners. */
+  .input-apple[type='number']::-webkit-inner-spin-button,
+  .input-apple[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .input-apple[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
   /* Material 3 elevation scale (1–5) — also maps to layered iOS glass
      on the default platform. Usage: <div class="surface-3"> */
   .surface-1,
