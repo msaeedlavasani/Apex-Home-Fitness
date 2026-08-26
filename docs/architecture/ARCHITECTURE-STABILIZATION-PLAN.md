@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02 GATE A DESIGN READY — OWNER DECISION PENDING; S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02 GATE A APPROVED + S02-A COMPLETE 2026-08-27; S02-B..S02-E + S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -131,10 +131,14 @@ Rationale (evidence-based):
   inventory of name-keyed usages. **No schema change (GATE A).**
 - **Why now**: R-01 is the highest-risk coupling and blocks Workout V2,
   preview, media mapping and sync joins.
-- **GATE A (2026-08-27) — DESIGN READY, OWNER DECISION PENDING**: the
-  decision package is [`S02-EXERCISE-IDENTITY-GATE-A.md`](./S02-EXERCISE-IDENTITY-GATE-A.md)
-  (GA-01..GA-08, all PENDING OWNER APPROVAL). No schema change, migration,
-  backfill or runtime change may begin until approved.
+- **GATE A (2026-08-27) — APPROVED**; decision package
+  [`S02-EXERCISE-IDENTITY-GATE-A.md`](./S02-EXERCISE-IDENTITY-GATE-A.md)
+  (GA-01..GA-08 all APPROVED as recommended). **S02-A COMPLETE (2026-08-27):**
+  exercise-domain foundation created at `src/lib/exercise/` (`contracts.ts`,
+  `catalog.ts`, `resolver.ts`, `index.ts`) + `tests/exercise-domain.test.ts`
+  (16 tests) + `docs/architecture/S02A-SOURCE-VOCABULARY.md`. Pure/no side
+  effects; typecheck clean, eslint clean, full unit 410/410. S02-B (additive
+  schema) NOT started; requires a fresh owner checkpoint before DDL.
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive

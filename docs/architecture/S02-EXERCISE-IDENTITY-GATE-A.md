@@ -1,6 +1,12 @@
 # S-02 — Canonical Exercise Identity: GATE A Decision Package
 
-`STATUS: PROPOSED — OWNER APPROVAL REQUIRED`
+`STATUS: APPROVED — 2026-08-27 (GA-01..GA-08 ACCEPTED AS RECOMMENDED)`
+
+> **Original status (investigation record):** `PROPOSED — OWNER APPROVAL REQUIRED`.
+> The owner reviewed and approved the package on 2026-08-27; the decisions table
+> below now records `APPROVED`. Historical investigation findings below are
+> unchanged. S02-A (domain foundation) proceeded under this approval; S02-B
+> (additive schema work) requires a fresh owner checkpoint before starting.
 
 Phase: `S-02 — Canonical Exercise Identity Foundation` (Architecture Stabilization Plan).
 Baseline: ADR-0001 (ACCEPTED — exerciseId is identity; names are display metadata);
@@ -10,18 +16,21 @@ S-01 complete (2026-08-27, contract ownership).
 > GA-01..GA-08 below are approved.** This document is the technical design that
 > GATE A requires; it contains no implementation.
 
-## Gate A Decisions Requested
+## Gate A Decisions (decision table)
+
+> **Status:** all APPROVED by the owner on 2026-08-27 (S02-A proceeded under
+> this approval; S02-B requires a fresh checkpoint).
 
 | ID | Decision | Recommendation | Status |
 |---|---|---|---|
-| GA-01 | ID strategy | Hybrid: opaque stable `ExerciseId` (existing cuid pattern) as identity + canonical unique `slug` as source-controlled alias + names as display metadata | **PENDING OWNER APPROVAL** |
-| GA-02 | Exercise domain ownership | New `src/lib/exercise/` (contracts, catalog, resolver) — narrow, no giant service | **PENDING OWNER APPROVAL** |
-| GA-03 | Catalog model | Hybrid: system catalog source-controlled in `src/lib/exercise/catalog.ts`, seeded into the existing DB `Exercise` table | **PENDING OWNER APPROVAL** |
-| GA-04 | Resolver policy | Precedence id → slug → normalized name → alias → UNRESOLVED; never silent fuzzy match; AMBIGUOUS on multiple hits | **PENDING OWNER APPROVAL** |
-| GA-05 | Unknown exercise policy | Preserve as unresolved (keep name, no id, queue for catalog review); never drop/reject data | **PENDING OWNER APPROVAL** |
-| GA-06 | Schema evolution | Additive only: `Exercise.slug` (unique, nullable→backfilled), `Exercise.faName?`, `Exercise.aliases?` (Json); no other table changes | **PENDING OWNER APPROVAL** |
-| GA-07 | Backfill strategy | Classify AUTO / ALIAS / AMBIGUOUS / UNRESOLVED; dry-run → stats → apply → verify; idempotent; never guess | **PENDING OWNER APPROVAL** |
-| GA-08 | Compatibility policy | No flag-day; name-first everywhere retained; new contract + resolver fallback + gradual adoption | **PENDING OWNER APPROVAL** |
+| GA-01 | ID strategy | Hybrid: opaque stable `ExerciseId` (existing cuid pattern) as identity + canonical unique `slug` as source-controlled alias + names as display metadata | **APPROVED** |
+| GA-02 | Exercise domain ownership | New `src/lib/exercise/` (contracts, catalog, resolver) — narrow, no giant service | **APPROVED** |
+| GA-03 | Catalog model | Hybrid: system catalog source-controlled in `src/lib/exercise/catalog.ts`, seeded into the existing DB `Exercise` table | **APPROVED** |
+| GA-04 | Resolver policy | Precedence id → slug → normalized name → alias → UNRESOLVED; never silent fuzzy match; AMBIGUOUS on multiple hits | **APPROVED** |
+| GA-05 | Unknown exercise policy | Preserve as unresolved (keep name, no id, queue for catalog review); never drop/reject data | **APPROVED** |
+| GA-06 | Schema evolution | Additive only: `Exercise.slug` (unique, nullable→backfilled), `Exercise.faName?`, `Exercise.aliases?` (Json); no other table changes | **APPROVED** |
+| GA-07 | Backfill strategy | Classify AUTO / ALIAS / AMBIGUOUS / UNRESOLVED; dry-run → stats → apply → verify; idempotent; never guess | **APPROVED** |
+| GA-08 | Compatibility policy | No flag-day; name-first everywhere retained; new contract + resolver fallback + gradual adoption | **APPROVED** |
 
 ---
 
