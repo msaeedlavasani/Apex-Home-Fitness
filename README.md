@@ -11,7 +11,7 @@ A bilingual home-fitness platform for personalized workout plans, progress track
 - **UI:** Tailwind CSS، Design System چندپلتفرمی، فونت‌های self-hosted
 - **Auth:** OTP با adapter قابل‌تعویض؛ SMS.ir برای حالت live و mock صریح برای توسعه/تست
 - **Data:** Prisma 6 + SQLite در استقرار self-hosted؛ Supabase برای Identity/Session
-- **AI:** Vercel AI SDK + OpenAI (`gpt-4o-mini`)
+- **AI:** Vercel AI SDK با resolver صریح (Groq یا OpenAI از طریق env) + fallback قطعی rules engine
 - **Offline/PWA:** Dexie، service worker و fallback آفلاین
 - **Deployment:** Docker Compose با image standalone و volume دیتابیس
 
@@ -89,11 +89,13 @@ docs/                    مستندات عملیاتی و قراردادهای �
 - [`docs/OTP_LAUNCH_READINESS.md`](docs/OTP_LAUNCH_READINESS.md) — Go/No-Go، envها و smoke test احراز هویت
 - [`docs/RELEASING.md`](docs/RELEASING.md) — Docker، HTTPS، PWA/TWA و release
 - [`docs/CI.md`](docs/CI.md) — سیاست CI، انتخاب E2E و طبقه‌بندی شکست
+- [`docs/TRANSFORMATION_ROADMAP.md`](docs/TRANSFORMATION_ROADMAP.md) — سند تحول: ریسرچ رقبا و نقشه‌ی قابلیت‌های آینده
+- [`docs/EXECUTION_ROADMAP.md`](docs/EXECUTION_ROADMAP.md) — آرشیو نقشه‌ی اجرایی قبلی
 - [`docs/AI_API.md`](docs/AI_API.md) — قرارداد API تولید برنامه و analytics
+- [`docs/AI_CHANGE_TEMPLATE.md`](docs/AI_CHANGE_TEMPLATE.md) — قالب گزارش تغییر و handoff
+- [`docs/AI_DEVELOPMENT_SYSTEM.md`](docs/AI_DEVELOPMENT_SYSTEM.md) — سیستم توسعه‌ی خودکار اختصاصی Apex
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — توکن‌ها و قواعد UI
 - [`docs/ASSETS.md`](docs/ASSETS.md) — asset pipeline، cache و offline
-- [`docs/AI_DEVELOPMENT_SYSTEM.md`](docs/AI_DEVELOPMENT_SYSTEM.md) — سیستم توسعه‌ی خودکار اختصاصی Apex
-- [`docs/AI_CHANGE_TEMPLATE.md`](docs/AI_CHANGE_TEMPLATE.md) — قالب گزارش تغییر و handoff
 
 ## CI
 
