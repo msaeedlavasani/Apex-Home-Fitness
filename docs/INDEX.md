@@ -17,6 +17,8 @@
 | انتشار و rollback | [`RELEASING.md`](RELEASING.md) | Docker، reverse proxy، PWA/TWA و release |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |
 | سند تحول و به‌روزرسانی | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) | ریسرچ رقبا، گپ‌ها و فهرست قابلیت‌های آینده (دونه‌دونه) |
+| محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | ویژن Guided Workout Player — وضعیت: NOT YET IMPLEMENTED |
+| محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات محصول/معماری باز برای تصمیم صاحب محصول |
 
 ## قانون به‌روزرسانی
 

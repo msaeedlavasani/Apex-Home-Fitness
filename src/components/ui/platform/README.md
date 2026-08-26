@@ -113,4 +113,4 @@ Consumed utilities (all Light/Dark aware):
 - Surfaces: `glass`, `glass-strong`, `glass-subtle`, `card-surface`, `surface-1..5`
 - Motion: `ease-apple-ease`, `ease-material-standard`, `ease-material-emphasized`
 
-See `DESIGN_SYSTEM.md` (repo root) for the token source of truth.
+See `docs/DESIGN_SYSTEM.md` for the token source of truth.
