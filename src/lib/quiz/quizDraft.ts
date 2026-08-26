@@ -27,7 +27,7 @@
  * Storage: `localStorage` by default; the storage adapter is injectable so
  * the pure logic is unit-testable without a DOM.
  */
-import type { QuizAnswers } from '@/services/userService';
+import type { QuizAnswers } from '@/lib/quiz/contracts';
 
 /** Storage key — versioned so a future format change can migrate safely. */
 export const QUIZ_DRAFT_STORAGE_KEY = 'apex:quiz:draft:v1';

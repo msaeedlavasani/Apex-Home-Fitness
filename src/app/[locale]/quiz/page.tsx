@@ -29,7 +29,7 @@ import {
   generateProgramApi,
   saveQuizResponseApi,
 } from '@/lib/quiz/quizApi';
-import type {QuizAnswers} from '@/services/userService';
+import type {QuizAnswers} from '@/lib/quiz/contracts';
 
 /**
  * Onboarding quiz route (e.g. /en/quiz, /fa/quiz) — Batch 14 / task 3.

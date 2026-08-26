@@ -89,7 +89,7 @@ Resume Feature Development
 > نقشه‌ی قابلیت‌های محصول دونه‌دونه در [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) است؛ این بخش backlog فنی را نگه می‌دارد. آیتم‌های زیر deferred/planned هستند و تا تثبیت baseline معماری شروع نمی‌شوند (حذف نشده‌اند).
 
 1. **[~] Full Codebase Modularity, Coupling & Reusability Audit** — تکمیل شد (`docs/architecture/MODULARITY-AUDIT.md` + `COUPLING-RISK-REGISTER.md`، رکورد ممیزی).
-2. **[ ] Execute Architecture Stabilization Plan (فازهای S-01..S-06)** — تصمیمات AD-1..AD-5 پذیرفته شدند (`docs/adr/0001..0003`)؛ اصول معماری AUTHORITATIVE شد (`ARCHITECTURE-PRINCIPLES.md`)؛ برنامه و گیت‌های A/B/C در `ARCHITECTURE-STABILIZATION-PLAN.md` آماده است — **IMPLEMENTATION NOT STARTED**؛ اجرای phased با توقف الزامی در گیت‌ها و بدون شروع Workout V2.
+2. **[~] Execute Architecture Stabilization Plan (فازهای S-01..S-06)** — تصمیمات AD-1..AD-5 پذیرفته شدند (`docs/adr/0001..0003`)؛ اصول معماری AUTHORITATIVE شد (`ARCHITECTURE-PRINCIPLES.md`)؛ برنامه و گیت‌های A/B/C در `ARCHITECTURE-STABILIZATION-PLAN.md` — **IN PROGRESS**؛ فاز S-01 (Shared Contract Ownership) تکمیل شد (2026-08-27؛ contracts در `src/lib/quiz/contracts.ts` و `src/lib/ai/contracts.ts`؛ typecheck/lint/unit 394 سبز). S-02 (هویت متعارف تمرین) بعدی — توقف الزامی در GATE A قبل از هر تغییر schema؛ بدون شروع Workout V2.
 3. **[ ] ارتقای Next.js به 16.x:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف؛ deferred).
 4. **[ ] Progress Check-in (`TRANSFORMATION_ROADMAP.md` آیتم ۱):** deferred — بعد از معماری پایدار.
 5. **[ ] سایر آیتم‌های `TRANSFORMATION_ROADMAP.md`:** deferred؛ آیتم‌های مربوط به logging تمرین (PR/ثبت ست‌به‌ست) باید با Technical Spec تمرین V2 هماهنگ شوند (D-02).

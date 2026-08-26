@@ -47,30 +47,16 @@ import { DifficultyLevel, Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { createServerSupabaseClient } from '../lib/supabase-server';
 import { normalizePhone } from '../lib/auth/phone';
+import type { QuizAnswers } from '../lib/quiz/contracts';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/**
- * Onboarding quiz answers as produced by `src/components/quiz/OnboardingQuiz`:
- * `{ level, goal, exerciseStyles, equipment, limitations, limitationsDetails, restDays }`.
- * `goal` accepts the current multi-select string array and the legacy single
- * string. The schema stores the payload as a flexible Json value, so extra
- * keys are allowed (e.g. future steps such as `timePerSessionMin`).
- */
-export interface QuizAnswers {
-  /** 'beginner' | 'intermediate' | 'advanced' */
-  level?: string;
-  /** Current multi-select ids, or one legacy goal id. */
-  goal?: string | string[];
-  /** Preferred training-style ids selected in the quiz. */
-  exerciseStyles?: string[];
-  equipment?: string[];
-  limitations?: string[];
-  limitationsDetails?: string;
-  [key: string]: unknown;
-}
+// Canonical owner of the quiz answers contract: `src/lib/quiz/contracts.ts`
+// (S-01 Shared Contract Ownership). Re-exported here for compatibility — new
+// code should import `QuizAnswers` from `@/lib/quiz/contracts`.
+export type { QuizAnswers };
 
 export interface SaveQuizResponseInput {
   answers: QuizAnswers;

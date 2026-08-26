@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 
 import type {GenerateProgramInput} from '@/lib/ai/requestSecurity';
 import {WEEKDAY_VALUES, type Weekday} from '@/lib/ai/restDays';
-import type {AiExercise, AiGeneratedProgram, AiMethod} from '@/services/programService';
+import type {AiExercise, AiGeneratedProgram, AiMethod} from '@/lib/ai/contracts';
 
 type Limitation = Exclude<GenerateProgramInput['limitations'][number], 'none'>;
 type ExerciseTemplate = Omit<AiExercise, 'id'>;

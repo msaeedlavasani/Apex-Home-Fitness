@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IMPLEMENTATION NOT STARTED`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -109,6 +109,20 @@ Rationale (evidence-based):
   documented deliberate exceptions); typecheck/lint/unit green; diff is
   import/type-only.
 - **Dependency**: none. **Risk**: LOW.
+- **Executed (2026-08-27) — COMPLETE**: canonical owners created —
+  `src/lib/quiz/contracts.ts` (`QuizAnswers`) and `src/lib/ai/contracts.ts`
+  (`AiMethod`, `AiEquipment`, `AiProgramMode`, `AiExercise`, `AiWeeklySession`,
+  `AiGeneratedProgram`); both services now re-export them for compatibility;
+  the inverted imports were migrated to the canonical owners
+  (`src/lib/ai/ruleBasedProgram.ts`, `src/lib/quiz/quizDraft.ts`) plus the quiz
+  page consumer (`src/app/[locale]/quiz/page.tsx`). Validation: `tsc --noEmit`
+  clean, eslint 0 errors on changed files, full unit suite 394/394. No
+  `@/services/*` import remains in `src/lib/`.
+
+  > Note: the actual neutral homes differ from the proposal above
+  > (`lib/program/types.ts` / `lib/quiz/types.ts`) — the audit-era proposal was
+  > refined to `lib/ai/contracts.ts` + `lib/quiz/contracts.ts` so contracts live
+  > with the domain that owns their meaning (Architecture Principle §2/§4).
 
 ### Phase S-02 — Canonical Exercise Identity Foundation
 
