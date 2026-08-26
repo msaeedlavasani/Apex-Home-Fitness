@@ -18,8 +18,9 @@
 | محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | وضعیت: PRODUCT / UX VISION — NOT YET IMPLEMENTED |
 | محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات باز محصول/معماری برای صاحب محصول |
 | معماری (اصول کلی) | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) | AUTHORITATIVE — CURRENT (extension `AGENTS.md`؛ پیشنهاد قبلی: [`ARCHITECTURE-PRINCIPLES-PROPOSAL.md`](architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md) SUPERSEDED) |
-| معماری (برنامه تثبیت) | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) | APPROVED DIRECTION — IN PROGRESS (S-01 کامل؛ S-02 GATE A تآیید شد + S02-A و S02-B و S02-C کامل؛ گیت‌های A/B/C) |
+| معماری (برنامه تثبیت) | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) | APPROVED DIRECTION — IN PROGRESS (S-01 کامل؛ S-02 GATE A تآیید شد + S02-A و S02-B و S02-C و S02-D1 کامل؛ گیت‌های A/B/C) |
 | معماری (GATE A — هویت متعارف تمرین) | [`architecture/S02-EXERCISE-IDENTITY-GATE-A.md`](architecture/S02-EXERCISE-IDENTITY-GATE-A.md) | APPROVED (GA-01..GA-08, 2026-08-27) |
+| معماری (S02-D1 — قرارداد انتشار هویت تمرین) | [`architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md`](architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md) | IMPLEMENTED CONTRACT FOUNDATION — CLIENT ADOPTION NOT STARTED (S02-D1) |
 | معماری (S02-A — vocab تحلیل تمرین) | [`architecture/S02A-SOURCE-VOCABULARY.md`](architecture/S02A-SOURCE-VOCABULARY.md) | DEVELOPMENT-TIME ANALYSIS (S02-A) |
 | Exercise domain (foundation) | [`../src/lib/exercise/index.ts`](../src/lib/exercise/index.ts) | PURE domain: contracts + catalog + resolver (S02-A) |
 | معماری (ممیزی مدولاریتی) | [`architecture/MODULARITY-AUDIT.md`](architecture/MODULARITY-AUDIT.md) | AUDIT RECORD — NOT AN ARCHITECTURE DECISION |

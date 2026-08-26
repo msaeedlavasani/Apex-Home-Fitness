@@ -1,8 +1,11 @@
 import {isRestDay, weekdayOf} from '@/lib/ai/restDays';
+import type { ExerciseId, ExerciseSlug } from '@/lib/exercise';
 
 export type PersistedScheduleExercise = {
   id?: unknown;
   name?: unknown;
+  /** Optional canonical resolution slug hint (S02-D1 propagation). */
+  slug?: unknown;
   sets?: unknown;
   reps?: unknown;
   duration_seconds?: unknown;
@@ -100,4 +103,132 @@ export function scheduleExerciseCount(
   restDays: readonly string[] = [],
 ): number {
   return workoutExercisesFromSchedule(schedule, weekday, restDays).length;
+}
+
+// --------------------------------------------------------------------------
+// S02-D1 — canonical Exercise-identity propagation contract
+//
+// A pure enrichment seam: it joins a persisted weekly-schedule exercise with
+// the relational `ProgramExercise → Exercise` data that `GET /api/program/current`
+// already returns, so downstream consumers can receive canonical exercise
+// identity WHERE AVAILABLE while every existing legacy path keeps working.
+//
+// Source of truth = the persisted `Exercise` row id. Canonical identity is
+// never invented; it is always read from a matched relational row.
+//
+// Identity model (Exercise identity ≠ workout-step identity):
+//   - `exerciseId` = the movement's durable identity (DB Exercise.id).
+//   - `legacyId`  = the workout STEP's existing session-local id
+//                   (EX-001 / rule-{day}-{n} / generated-{n}).
+// Two step entries may share the same `exerciseId` (same movement twice /
+// alias collapse) while remaining distinct steps via `legacyId` + position.
+// --------------------------------------------------------------------------
+
+/** The relational program→exercise data available from the current API. */
+export type RelationalExercise = {
+  /** Global 1-based order within the program (informational). */
+  order: number;
+  exercise: {
+    /** Canonical durable identity (DB `Exercise.id`). */
+    id: string;
+    /** Display name of the persisted row (incoming or canonical). */
+    name: string;
+    /** Canonical resolution slug when the row has been resolved (S02-C). */
+    slug?: string | null;
+  };
+};
+
+/**
+ * The propagation contract a consumer receives for one workout exercise.
+ * Canonical identity is ADDITIVE — every field except `legacyId`/`name` is
+ * optional and only present when it can be sourced from persisted data.
+ */
+export type WorkoutExerciseIdentity = {
+  /** Canonical movement identity (persisted `Exercise.id`) when resolvable. */
+  exerciseId?: ExerciseId;
+  /** Canonical source-controlled slug when available. */
+  slug?: ExerciseSlug;
+  /** The workout STEP's existing generated/session-local id (always present). */
+  legacyId: string;
+  /** Display/metadata name (never identity). */
+  name: string;
+};
+
+/** Name/slug lookup index over the relational program exercises. */
+export type ExerciseIdentityIndex = {
+  byName: Map<string, RelationalExercise['exercise']>;
+  bySlug: Map<string, RelationalExercise['exercise']>;
+};
+
+/**
+ * Builds a match index from the relational `program.exercises` payload. First
+ * occurrence wins for each name/slug (the composite program PK already makes
+ * each exercise unique per program). Slug keys are only populated from rows
+ * that actually carry one.
+ */
+export function exerciseIdentityIndex(
+  exercises: readonly RelationalExercise[],
+): ExerciseIdentityIndex {
+  const byName = new Map<string, RelationalExercise['exercise']>();
+  const bySlug = new Map<string, RelationalExercise['exercise']>();
+  for (const { exercise } of exercises) {
+    if (!byName.has(exercise.name)) byName.set(exercise.name, exercise);
+    if (exercise.slug && !bySlug.has(exercise.slug)) bySlug.set(exercise.slug, exercise);
+  }
+  return { byName, bySlug };
+}
+
+/**
+ * Matching policy (S02-D1, GA-04-derived, NO fuzzy matching):
+ *   1. exact relational display-name match (strongest — the DB relation);
+ *   2. exact relational slug match (when the input already carries a slug);
+ *   3. legacy-only reference (no invented canonical id).
+ *
+ * Canonical identity is read ONLY from a matched relational row. If no row
+ * matches, the reference returns the preserved legacy id + name.
+ */
+export function enrichExerciseIdentity(
+  exercise: PersistedScheduleExercise,
+  index: number,
+  identityIndex: ExerciseIdentityIndex,
+): WorkoutExerciseIdentity {
+  const name =
+    typeof exercise.name === 'string' && exercise.name.trim()
+      ? exercise.name.trim()
+      : `Exercise ${index + 1}`;
+  const legacyId = typeof exercise.id === 'string' ? exercise.id : `generated-${index}`;
+
+  const byName = identityIndex.byName.get(name);
+  if (byName) {
+    return {
+      exerciseId: byName.id as ExerciseId,
+      slug: (byName.slug ?? undefined) as ExerciseSlug | undefined,
+      legacyId,
+      name,
+    };
+  }
+
+  if (typeof exercise.slug === 'string') {
+    const bySlug = identityIndex.bySlug.get(exercise.slug);
+    if (bySlug) {
+      return {
+        exerciseId: bySlug.id as ExerciseId,
+        slug: exercise.slug as ExerciseSlug,
+        legacyId,
+        name,
+      };
+    }
+  }
+
+  return { legacyId, name };
+}
+
+/** Enrich an ordered array of schedule exercises into identity references. */
+export function enrichScheduleExercises(
+  scheduleExercises: readonly PersistedScheduleExercise[],
+  identityIndex: ExerciseIdentityIndex,
+): WorkoutExerciseIdentity[] {
+  return scheduleExercises.map((exercise, index) =>
+    enrichExerciseIdentity(exercise, index, identityIndex),
+  );
 }

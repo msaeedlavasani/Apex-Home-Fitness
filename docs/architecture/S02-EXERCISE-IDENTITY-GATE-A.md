@@ -258,7 +258,7 @@ stays identical when resolution fails.
 | S02-B | Additive schema (`slug`/`faName`; `aliases` deferred) | **COMPLETE 2026-08-27** — `slug String? @unique` + `faName String?` added;
   migration `20260827011500_add_exercise_canonical_identity_fields` applied to dev DB; additive/forward-compatible |
 | S02-C | Generation normalization: resolver in `persistProgramTransaction` (upsert by slug, name fallback, unresolved preserved) | **COMPLETE 2026-08-27** — `upsertCanonicalExercise` + slug-first link resolution; name fallback preserved; P2002 slug collision degrades to name-only; AI + rules same path; full unit 418/418 |
-| S02-D | Client adoption: player plan + logs + snapshots carry canonical id (additive, versioned) | coordinates with S-05 |
+| S02-D | Client adoption: player plan + logs + snapshots carry canonical id (additive, versioned) | **D1 COMPLETE 2026-08-27** (propagation contract + pure seam in `programSchedule.ts`; no player change). D2 (player/plan adoption) NOT started — owner checkpoint required |
 | S02-E | Backfill dry-run → apply → verify (GA-07) | separately observable |
 | (later) | Media metadata, Workout V2 binding | outside GATE A |
 

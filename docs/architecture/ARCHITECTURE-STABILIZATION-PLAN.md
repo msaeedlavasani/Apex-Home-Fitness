@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B + S02-C COMPLETE 2026-08-27; S02-D..S02-E + S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B + S02-C + S02-D1 COMPLETE 2026-08-27; S02-D2..S02-E + S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -154,14 +154,27 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   `persistProgramTransaction` via `upsertCanonicalExercise` + `buildProgramDraft`
   (`src/services/programService.ts`). Resolved names attach the catalog `slug`
   (by-slug reuse → name attach → create-with-slug; P2002 slug collision degrades
-  to name-only); unresolved/ambiguous input falls back to the exact legacy
+  to name-only);  unresolved/ambiguous input falls back to the exact legacy
   name-upsert. `ProgramExercise` links resolve slug-first so aliases link to the
   canonical row. `name` preserved as display, `faName` never populated. AI and
-  rules both converge on the same path (source-independent). Genre: `weeklySchedule`
-  / API shape / WorkoutPlayer / logs / snapshots unchanged. Validation: typecheck
+  rules both converge on the same path (source-independent). Properties:
+  `weeklySchedule` / API shape / WorkoutPlayer / logs / snapshots unchanged. Validation: typecheck
   clean, eslint clean, `prisma validate` clean, full unit **418/418** (+8 new
   `tests/exercise-persistence.test.ts`). S02-D (client adoption) + S02-E
   (backfill) NOT started.
+- **S02-D1 COMPLETE (2026-08-27)**: canonical identity **propagation contract**
+  established (`src/lib/programSchedule.ts`, pure — no API/player change).
+  Source of truth = persisted DB `Exercise.id` (`GET /api/program/current`
+  already returns it relationally). New types `WorkoutExerciseIdentity`,
+  `RelationalExercise`, `ExerciseIdentityIndex` + pure `exerciseIdentityIndex` /
+  `enrichExerciseIdentity` / `enrichScheduleExercises` seam; canonical id read
+  only from matched relational rows (byName → bySlug → legacy-only; no fuzzy
+  matching, no invented ids). Exercise identity kept distinct from workout-step
+  identity (`legacyId` + position); same-exercise-multiple-steps preserved;
+  `weeklySchedule` / API / logs / snapshots / player unchanged. Validation:
+  typecheck clean, eslint clean, full unit **427/427** (+9 new
+  `tests/identity-propagation.test.ts`). S02-D2 (client/player adoption) NOT
+  started.
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive
