@@ -38,6 +38,7 @@
     "history": "تاریخچه",
     "analytics": "آمار",
     "preferences": "ترجیحات تمرین",
+    "startWorkout": "شروع تمرین",
     "back": "بازگشت",
     "navLabel": "ناوبری اصلی",
     "navLabelMobile": "ناوبری موبایل"
@@ -134,6 +135,17 @@
       "bench": "نیمکت",
       "cable_machine": "دستگاه سیم‌کش",
       "jump_rope": "طناب پرش"
+    },
+    "restDays": {
+      "title": "روزهای استراحت",
+      "subtitle": "۱ تا ۳ روز هفته را انتخاب کن که بدون تمرین بمانند — با ذخیره، برنامه همان‌جا به‌روزرسانی می‌شود.",
+      "monday": "دوشنبه",
+      "tuesday": "سه‌شنبه",
+      "wednesday": "چهارشنبه",
+      "thursday": "پنجشنبه",
+      "friday": "جمعه",
+      "saturday": "شنبه",
+      "sunday": "یکشنبه"
     }
   },
   "WorkoutPlayer": {
@@ -203,6 +215,14 @@
     "list": {
       "title": "گزارش تمرین‌ها"
     },
+    "calendar": {
+      "title": "تقویم تمرین",
+      "prevMonth": "ماه قبل",
+      "nextMonth": "ماه بعد",
+      "legendWorkout": "تمرین انجام شد",
+      "legendRest": "روز استراحت",
+      "legendMissed": "جا افتاده"
+    },
     "meta": "{date} · {duration} دقیقه · {calories} کیلوکالری",
     "empty": "هنوز جلسه‌ای با این فیلتر نیست.",
     "difficulty": {
@@ -247,6 +267,13 @@
       "sets": "{count} ست",
       "minutes": "{count} دقیقه",
       "calories": "{count} کیلوکالری"
+    },
+    "bmi": {
+      "title": "روند BMI",
+      "subtitle": "شاخص توده بدنی از وزن‌های ثبت‌شده",
+      "current": "BMI فعلی",
+      "noData": "برای نمایش چارت BMI، قد و حداقل دو ثبت وزن لازم است.",
+      "healthyBand": "محدوده سالم ۱۸.۵ تا ۲۵"
     },
     "loading": "در حال بارگذاری آمار…",
     "emptyState": {
@@ -293,8 +320,15 @@
     },
     "userInfo": {
       "email": "ایمیل",
+      "phone": "شماره موبایل",
       "goal": "هدف",
       "level": "سطح"
+    },
+    "avatar": {
+      "alt": "عکس پروفایل",
+      "upload": "تغییر عکس پروفایل",
+      "remove": "حذف عکس",
+      "error": "آپلود عکس ممکن نشد؛ تصویری کوچک‌تر انتخاب کن."
     },
     "goals": {
       "strength": "قدرت‌سازی",

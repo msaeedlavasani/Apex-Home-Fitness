@@ -1,8 +1,10 @@
 'use client';
 
 import {useEffect, useRef, useState} from 'react';
+import {useLocale} from 'next-intl';
 import {EXERCISE_STYLE_IDS} from '@/lib/exerciseStyles';
 import {generateProgramApi, QuizApiError} from '@/lib/quiz/quizApi';
+import {getWeekdayOptions, REST_DAY_MAX} from '@/components/quiz/restDays';
 import type {GenerateProgramInput} from '@/lib/ai/requestSecurity';
 
 export type PreferenceLabels = {
@@ -15,26 +17,32 @@ export type PreferenceLabels = {
   generationError: string;
   stylesTitle: string;
   equipmentTitle: string;
+  restDaysTitle: string;
+  restDaysSubtitle: string;
   styles: Record<string, string>;
   equipment: Record<string, string>;
+  restDays: Record<string, string>;
 };
 
 type Props = {
   labels: PreferenceLabels;
-  initial: {exerciseStyles: string[]; equipment: string[]};
+  initial: {exerciseStyles: string[]; equipment: string[]; restDays: string[]};
 };
 
 const EQUIPMENT = ['none', 'pull_up_bar', 'bands', 'dumbbells', 'barbell', 'kettlebells', 'bench', 'cable_machine', 'jump_rope'];
 
 export function PreferencesEditor({labels, initial}: Props) {
+  const locale = useLocale();
   const [exerciseStyles, setExerciseStyles] = useState(initial.exerciseStyles);
   const [equipment, setEquipment] = useState(initial.equipment.length > 0 ? initial.equipment : ['none']);
+  const [restDays, setRestDays] = useState(initial.restDays);
   const [state, setState] = useState<'idle' | 'saving' | 'generating' | 'saved' | 'error'>('idle');
   const generationKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     setExerciseStyles(initial.exerciseStyles);
     setEquipment(initial.equipment.length > 0 ? initial.equipment : ['none']);
+    setRestDays(initial.restDays);
   }, [initial]);
 
   const toggle = (value: string, list: string[], setList: (next: string[]) => void) => {
@@ -46,13 +54,23 @@ export function PreferencesEditor({labels, initial}: Props) {
     setList(withoutNone.includes(value) ? withoutNone.filter((item) => item !== value) : [...withoutNone, value]);
   };
 
+  // Rest days: 1–3 weekdays (REST_DAY_MAX). Selecting beyond the maximum is
+  // ignored, and unselected days are disabled once the cap is reached.
+  const toggleRestDay = (value: string) => {
+    setRestDays((current) => {
+      if (current.includes(value)) return current.filter((day) => day !== value);
+      if (current.length >= REST_DAY_MAX) return current;
+      return [...current, value];
+    });
+  };
+
   async function save() {
     setState('saving');
     try {
       const response = await fetch('/api/profile', {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({exerciseStyles, equipment}),
+        body: JSON.stringify({exerciseStyles, equipment, restDays}),
       });
       const data = await response.json().catch(() => null) as {generationInput?: GenerateProgramInput | null} | null;
       if (!response.ok) throw new Error('preferences update failed');
@@ -104,7 +122,29 @@ export function PreferencesEditor({labels, initial}: Props) {
           ))}
         </div>
       </fieldset>
-      <button type="button" onClick={() => void save()} disabled={state === 'saving' || state === 'generating' || exerciseStyles.length === 0 || equipment.length === 0} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
+      <fieldset className="mt-4">
+        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.restDaysTitle}</legend>
+        <p className="mt-1 text-xs text-[color:var(--apex-text-secondary)]">{labels.restDaysSubtitle}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {getWeekdayOptions(locale).map(({id}) => {
+            const selected = restDays.includes(id);
+            const atMax = restDays.length >= REST_DAY_MAX;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={selected}
+                disabled={!selected && atMax}
+                onClick={() => toggleRestDay(id)}
+                className={`flex min-h-12 items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${selected ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent'}`}
+              >
+                {labels.restDays[id] ?? id}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      <button type="button" onClick={() => void save()} disabled={state === 'saving' || state === 'generating' || exerciseStyles.length === 0 || equipment.length === 0 || restDays.length === 0} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
         {state === 'saving' ? '…' : state === 'generating' ? labels.generating : state === 'saved' ? labels.generated : labels.save}
       </button>
       {state === 'error' ? <p role="alert" className="mt-2 text-sm text-red-600">{labels.generationError || labels.error}</p> : null}

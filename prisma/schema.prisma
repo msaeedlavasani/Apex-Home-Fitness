@@ -72,6 +72,9 @@ model User {
   // Canonical phone identity from the verified OTP flow. Nullable for legacy
   // rows created before phone-backed login; new phone accounts always set it.
   phone         String?          @unique
+  // Uploaded profile avatar stored as a compact image data URL (the client
+  // resizes to ≤256px JPEG before upload). Nullable until the user uploads one.
+  avatarUrl     String?
   name          String
   passwordHash  String
   heightCm      Int?

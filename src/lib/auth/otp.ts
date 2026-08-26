@@ -29,7 +29,7 @@ import {randomInt, randomBytes, scryptSync, timingSafeEqual} from 'node:crypto';
 export interface OtpPolicy {
   /** Length of the generated numeric code (default 6). */
   codeLength: number;
-  /** How long a challenge stays valid before it expires (default 10 min). */
+  /** How long a challenge stays valid before it expires (default 15 min). */
   codeTtlMs: number;
   /** Minimum delay before a NEW challenge can replace an active one (default 60 s). */
   resendCooldownMs: number;
@@ -65,7 +65,7 @@ function intFromEnv(
 export function getOtpPolicy(env: Record<string, string | undefined> = process.env): OtpPolicy {
   return {
     codeLength: intFromEnv(env, 'OTP_CODE_LENGTH', 6, 4),
-    codeTtlMs: intFromEnv(env, 'OTP_CODE_TTL_MS', 600_000, 60_000),
+    codeTtlMs: intFromEnv(env, 'OTP_CODE_TTL_MS', 900_000, 60_000),
     resendCooldownMs: intFromEnv(env, 'OTP_RESEND_COOLDOWN_MS', 60_000, 10_000),
     maxAttempts: intFromEnv(env, 'OTP_MAX_ATTEMPTS', 5, 1),
     requestPhoneWindowMs: intFromEnv(env, 'OTP_REQUEST_PHONE_WINDOW_MS', 900_000, 60_000),

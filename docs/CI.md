@@ -74,7 +74,7 @@
 | Landing/Quiz/draft/generation | `main-flows.spec.ts` |
 | RTL/responsive | `rtl-layout.spec.ts`, `responsive-layout.spec.ts` |
 | keyboard/ARIA | `keyboard-focus.spec.ts`, `accessibility-aria.spec.ts` |
-| Profile | `profile-shell.spec.ts` |
+| Profile | `profile-shell.spec.ts`، `profile-features.spec.ts` (full-auth — نیازمند `E2E_REQUIRES_AUTH=1`) |
 | FAQ | `faq.spec.ts` |
 | rest-days/calendar | `rest-days.spec.ts`, `week-calendar-order.spec.ts` |
 | workout/offline | `workout-route.spec.ts`, `offline-pwa.spec.ts` |
@@ -86,6 +86,7 @@
 - mock هرگز session/SMS جعلی production نمی‌سازد؛ فقط route protection و UI OTP را بدون credentials اجرا می‌کند (در صورت نبود Supabase، login API صادقانه 503 می‌دهد).
 - full provider journey با SMS.ir/Supabase فقط در staging/manual/nightly با GitHub Environment secrets.
 - تست «request → verify → dashboard → logout» عمداً skip است تا provider واقعی تنظیم شود.
+- `tests/profile-features.spec.ts`: مسیر full-auth (نمایش شماره + آپلود/حذف آواتار) با `E2E_REQUIRES_AUTH=1` گیت شده و بدون آن transparently skip می‌شود؛ تست signed-out گیتینگ همیشه در سوئیت اجرا می‌شود.
 
 ## Benchmark (ثبت 2026-08-16، Node 22.23.1)
 
@@ -93,6 +94,7 @@
 |---|---|
 | unit (319 تست) | ~۱۰ ثانیه |
 | unit (336 تست پس از بچ ۱۵) | ~۸ ثانیه |
+| unit (387 تست پس از بچ ۱۷) | ~۲۰ ثانیه |
 | build | ~۱-۲ دقیقه |
 | E2E auth (mock) | ~۵۳ ثانیه |
 | E2E smoke (main-flows) | ~۳۴ ثانیه |

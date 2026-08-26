@@ -16,6 +16,8 @@
 - **Deployment:** self-hosted Docker Compose؛ سرویس app روی پورت 3000. DNS کانتینر app صراحتاً به `1.1.1.1` و `8.8.8.8` تنظیم شده تا lookup ناپایدار Supabase (`EAI_AGAIN`) باعث شکست OTP نشود.
 - **Program generation:** explicit resolver in `src/lib/ai/provider.ts`; production can use `Groq → rules` or `OpenAI → rules` through env only. Recommended current env: `PROGRAM_GENERATOR=ai`, `AI_PROVIDER=groq`, `AI_GENERATION_FALLBACK=rules`, `GROQ_MODEL=openai/gpt-oss-120b`. `@ai-sdk/groq` is pinned to compatible `1.2.9`; `@ai-sdk/openai` remains `1.3.24`. Both keys are server-only and never logged.
 - **Profile/workout tracking:** profile contact email is editable separately from the synthetic auth email; verified phone stays immutable. Weight changes update the current profile and append `WeightEntry` history. Starting and completing a generated workout creates/finishes an owned `WorkoutSession`, which feeds dashboard completion markers, History and Analytics.
+- **Avatar storage:** production uses Supabase Storage — create a PRIVATE bucket named `avatars` (objects `<userId>.<ext>`, served via short-lived signed URLs; no RLS needed, service-role writes/signs). `User.avatarUrl` stores the object path; legacy data-URL rows keep working. Without `SUPABASE_SERVICE_ROLE_KEY` the app falls back to storing the data URL in the DB (dev/mock).
+- **Program regeneration:** regenerating (quiz re-run or preferences save, incl. rest-day changes) updates the user's existing `Program` IN PLACE (same id) — workout history stays attached and no orphaned program rows accumulate.
 
 ## وضعیت فعلی پروژه (Current Status) 🟢
 - **Batch 8:** بهینه‌سازی بصری، Design System، پیشنهاد AI، TWA و SEO — تکمیل.
@@ -26,6 +28,7 @@
 - **Batch 13:** empty-stateها، فونت Vazirmatn، Profile با sidebar/back، FAQ دوزبانه، ترتیب روزهای فارسی — تکمیل (unit 207/207؛ E2E متمرکز 51/51).
 - **Batch 14:** adapter امن SMS.ir، OTP lifecycle/session، Landing→Quiz→OTP→save→generate→Dashboard، auth UI/route protection و readiness checklist — تکمیل (unit 319/319؛ auth mock E2E 12/12؛ main-flows 8/8).
 - **Batch 15:** زبان‌سوییچر سراسری EN/FA و enforce قطعی روزهای استراحت — تکمیل (unit 336/336؛ E2E هدفمند affected سبز).
+- **Batch 17:** پروفایل کامل (شماره موبایل، آواتار با Supabase Storage + signed URL، ترتیب سایدبار، خروج→لندینگ)، تقویم ماهانه تاریخچه، چارت‌های آمار، OTP TTL=۱۵ دقیقه و بازتولید درجای برنامه + ویرایش روزهای استراحت در ترجیحات — تکمیل (unit 387/387).
 - **Workflow Repair Gate completed — isolated agents, staged validation, targeted E2E policy and CI auth coverage are active.**
 - **Production Go مشروط:** قبل از لانچ باید `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، Supabase URL/anon، دامنه HTTPS، redirectها و template فعال تنظیم شوند و smoke test واقعی با شماره رضایت‌دار اجرا شود (چک‌لیست کامل: `docs/OTP_LAUNCH_READINESS.md` §11).
 - **استقرار سرور (self-hosted Docker):** Next 15.5.23 روی `85.198.16.251` (کد در `/opt/apexhomefit/app-new/`، پوشه‌ی قدیمی `/opt/apexhomefit/app-final-fixed/` برای rollback) بالا است. قالب SMS.ir: `SMS_IR_TEMPLATE_ID=976440`، پارامتر قالب: `otp` (`SMS_IR_CODE_PARAMETER=otp`). OTP mock allowlist با `123456`، session Supabase و مسیر HTTPS تا dashboard در 2026-08-26 smoke-test شد. تأخیر تحویل SMS (~۴ دقیقه) سمت SMS.ir است — قالب باید در بخش «ارسال سریع» پنل تعریف شود.

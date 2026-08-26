@@ -26,7 +26,7 @@
 | `SMS_IR_CODE_PARAMETER` | ❌ (پیش‌فرض `CODE`) | نام پارامتر قالب که کد را دریافت می‌کند | `CODE` |
 | `SMS_IR_TIMEOUT_MS` | ❌ (پیش‌فرض ۵۰۰۰) | timeout درخواست خروجی به SMS.ir | `5000` |
 | `OTP_CODE_LENGTH` | ❌ (پیش‌فرض ۶) | طول کد | `6` |
-| `OTP_CODE_TTL_MS` | ❌ (پیش‌فرض ۶۰۰۰۰۰) | طول عمر کد (۱۰ دقیقه) | `600000` |
+| `OTP_CODE_TTL_MS` | ❌ (پیش‌فرض ۹۰۰۰۰۰) | طول عمر کد (۱۵ دقیقه) | `900000` |
 | `OTP_RESEND_COOLDOWN_MS` | ❌ (پیش‌فرض ۶۰۰۰۰) | فاصله‌ی مجاز بین درخواست کد جدید برای یک شماره | `60000` |
 | `OTP_MAX_ATTEMPTS` | ❌ (پیش‌فرض ۵) | سقف تلاش اشتباه برای هر کد | `5` |
 | `OTP_REQUEST_PHONE_*` / `OTP_REQUEST_IP_*` | ❌ (پیش‌فرض‌ها در `.env.example`) | پنجره‌ها و سقف‌های rate limit درخواست کد | پیش‌فرض‌ها |
@@ -144,7 +144,7 @@
 | تأیید کد به ازای IP | ۱۰ / ۱۵ دقیقه | `OTP_VERIFY_IP_WINDOW_MS` + `OTP_VERIFY_IP_LIMIT` |
 | Cooldown بین دو درخواست همان شماره | ۶۰ ثانیه | `OTP_RESEND_COOLDOWN_MS` |
 | تلاش verify اشتباه به ازای کد | ۵ | `OTP_MAX_ATTEMPTS` |
-| expiry کد | ۱۰ دقیقه | `OTP_CODE_TTL_MS` |
+| expiry کد | ۱۵ دقیقه | `OTP_CODE_TTL_MS` |
 
 - پیاده‌سازی نهایی باید از همان store اشتراکی (`src/lib/ai/rateLimitStore.ts`) استفاده کند تا رفتار در چند-اینستنس یکسان باشد.
 - برای شماره‌های تست، `SMOKE_TEST_MODE` نباید محدودیت‌ها را دور بزند مگر صریحاً در staging.

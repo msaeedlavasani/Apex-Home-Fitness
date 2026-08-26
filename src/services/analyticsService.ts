@@ -113,6 +113,16 @@ export interface WeeklyVolume {
   reps: number;
 }
 
+/** One week of the rolling weekly trend (Monday → Sunday, local time). */
+export interface WeeklyTrendPoint {
+  /** Monday 00:00 local — inclusive start of the week. */
+  weekStart: Date;
+  /** Completed sessions within the week. */
+  sessions: number;
+  /** Actual sets performed (completed exercises only). */
+  sets: number;
+}
+
 export interface WorkoutAnalytics {
   /** Owner id — populated by the server-side entry point. */
   userId?: string;
@@ -142,6 +152,19 @@ export interface WorkoutAnalytics {
   /** First / most recent completed session. */
   firstWorkoutAt: Date | null;
   lastWorkoutAt: Date | null;
+  /**
+   * ISO instants of every completed session's `startedAt`, oldest first.
+   * Clients bucket them into LOCAL calendar days (their own timezone), e.g.
+   * to mark days on a training calendar. Optional so legacy callers/tests
+   * that build a `WorkoutAnalytics` manually keep working.
+   */
+  sessionStarts?: string[];
+  /**
+   * Rolling weekly trend (sessions + sets per Monday → Sunday week), oldest
+   * first, ending with the CURRENT week. Optional for the same reason as
+   * `sessionStarts`.
+   */
+  weeklyTrend?: Array<{weekStart: string; sessions: number; sets: number}>;
 }
 
 // ---------------------------------------------------------------------------
@@ -480,6 +503,49 @@ export function computeWeeklyVolume(
 }
 
 /**
+ * Rolling weekly trend: for each of the last `weeks` Monday → Sunday weeks
+ * (ending with the week containing `opts.now`), the completed sessions and
+ * actual sets performed. Oldest week first.
+ */
+export function computeWeeklyTrend(
+  sessions: readonly AnalyticsSession[],
+  opts: AnalyticsOptions & {weeks?: number} = {},
+): WeeklyTrendPoint[] {
+  const timeZone = opts.timeZone ?? defaultTimeZone();
+  const now = opts.now ?? new Date();
+  const weeks = Math.max(1, Math.min(12, opts.weeks ?? 8));
+
+  const nowKey = dayKey(now, timeZone);
+  const currentMondayKey = nowKey - ((wallClockDate(now, timeZone).getUTCDay() + 6) % 7);
+
+  const buckets = new Map<number, {sessions: number; sets: number}>();
+  for (const session of sessions) {
+    if (!isCompletedSession(session)) continue;
+    const started = toDate(session.startedAt);
+    const mondayKey =
+      dayKey(started, timeZone) - ((wallClockDate(started, timeZone).getUTCDay() + 6) % 7);
+    const entry = buckets.get(mondayKey) ?? {sessions: 0, sets: 0};
+    entry.sessions += 1;
+    const volume = volumeOf(session);
+    entry.sets += volume.sets;
+    buckets.set(mondayKey, entry);
+  }
+
+  const points: WeeklyTrendPoint[] = [];
+  for (let i = weeks - 1; i >= 0; i -= 1) {
+    // `i` is a week INDEX — step back 7 days at a time to the previous Monday.
+    const mondayKey = currentMondayKey - i * 7;
+    const entry = buckets.get(mondayKey) ?? {sessions: 0, sets: 0};
+    points.push({
+      weekStart: new Date(localMidnightMs(mondayKey, timeZone)),
+      sessions: entry.sessions,
+      sets: entry.sets,
+    });
+  }
+  return points;
+}
+
+/**
  * Current streak: consecutive calendar days (in `opts.timeZone`) with at least
  * one completed session, ending today — or ending yesterday when today has no
  * workout yet (the current day isn't over, so the streak remains alive).
@@ -565,6 +631,14 @@ export function computeWorkoutAnalytics(
     streakEndDate: streak.endDate,
     firstWorkoutAt,
     lastWorkoutAt,
+    // ISO instants for client-side local-day bucketing (calendar checks).
+    sessionStarts: completed.map((session) => toDate(session.startedAt).toISOString()),
+    // Rolling 8-week trend (sessions + sets), oldest first.
+    weeklyTrend: computeWeeklyTrend(completed, opts).map((point) => ({
+      weekStart: point.weekStart.toISOString(),
+      sessions: point.sessions,
+      sets: point.sets,
+    })),
   };
 }
 

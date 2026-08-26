@@ -1,9 +1,12 @@
 'use client';
 
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
+import Link from 'next/link';
 import {useParams, useRouter} from 'next/navigation';
+import {House} from 'lucide-react';
 
 import OnboardingQuiz from '@/components/quiz/OnboardingQuiz';
+import {LanguageSwitcher} from '@/components/layout/LanguageSwitcher';
 import {t as quizT} from '@/components/quiz/i18n';
 import {
   QUIZ_DRAFT_TTL_MS,
@@ -273,8 +276,22 @@ export default function QuizPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <main className="flex min-h-screen min-h-dvh items-start justify-center bg-apex-surface py-10 text-apex-text-primary">
+    <main className="flex min-h-screen min-h-dvh items-start justify-center bg-apex-surface py-6 text-apex-text-primary sm:py-10">
       <div className="w-full max-w-lg px-4">
+        {/* Top bar — the quiz is a standalone flow, so it always offers a way
+            back to the landing page and a language switch (no sidebar here). */}
+        <header className="mb-6 flex items-center justify-between gap-3">
+          <Link
+            href={`/${locale}`}
+            aria-label={t('quiz.header.home')}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+          >
+            <House className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
+            {t('quiz.header.home')}
+          </Link>
+          <LanguageSwitcher />
+        </header>
+
         {phase === 'quiz' ? (
           <OnboardingQuiz
             locale={locale as 'en' | 'fa'}

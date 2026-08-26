@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   computeActiveDays,
+  computeWeeklyTrend,
   computeWorkoutAnalytics,
   formatDate,
   formatRelativeDay,
@@ -82,6 +83,51 @@ test('empty history produces an all-zero snapshot with activeDays 0', () => {
   assert.equal(analytics.currentStreak, 0);
   assert.equal(analytics.firstWorkoutAt, null);
   assert.equal(analytics.lastWorkoutAt, null);
+  assert.deepEqual(analytics.sessionStarts, []);
+  assert.equal(analytics.weeklyTrend?.length, 8);
+  assert.ok(analytics.weeklyTrend?.every((point) => point.sessions === 0 && point.sets === 0));
+});
+
+test('computeWorkoutAnalytics exposes session instants for calendar checks', () => {
+  const sessions: AnalyticsSession[] = [
+    completedSession('2026-08-10T08:00:00Z'),
+    completedSession('2026-08-11T08:00:00Z'),
+  ];
+  const analytics = computeWorkoutAnalytics(sessions, UTC_OPTS);
+  assert.deepEqual(analytics.sessionStarts, [
+    '2026-08-10T08:00:00.000Z',
+    '2026-08-11T08:00:00.000Z',
+  ]);
+});
+
+test('computeWeeklyTrend buckets the last weeks ending with the current week', () => {
+  const sessions: AnalyticsSession[] = [
+    // Monday 2026-08-10 (UTC) — one session, 3 sets.
+    completedSession('2026-08-10T08:00:00Z', {
+      exercises: [{completed: true, actualSets: 3, actualReps: 12}],
+    }),
+    // Same week, second session.
+    completedSession('2026-08-12T08:00:00Z'),
+    // Previous week (Mon 2026-08-03).
+    completedSession('2026-08-04T08:00:00Z', {
+      exercises: [{completed: true, actualSets: 5, actualReps: 20}],
+    }),
+  ];
+  const trend = computeWeeklyTrend(sessions, {
+    ...UTC_OPTS,
+    now: new Date('2026-08-14T12:00:00Z'), // Friday of the current week
+    weeks: 3,
+  });
+  // Oldest → newest, ending with the CURRENT week (Mon 2026-08-10).
+  assert.equal(trend.length, 3);
+  assert.equal(trend[0].weekStart.toISOString(), '2026-07-27T00:00:00.000Z');
+  assert.equal(trend[0].sessions, 0);
+  assert.equal(trend[1].weekStart.toISOString(), '2026-08-03T00:00:00.000Z');
+  assert.equal(trend[1].sessions, 1);
+  assert.equal(trend[1].sets, 5);
+  assert.equal(trend[2].weekStart.toISOString(), '2026-08-10T00:00:00.000Z');
+  assert.equal(trend[2].sessions, 2);
+  assert.equal(trend[2].sets, 3);
 });
 
 test('formatShortDate renders en and fa (Persian calendar) compact dates', () => {

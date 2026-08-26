@@ -44,6 +44,15 @@
 4. **[x] production build با full env:** build با placeholder کامل envها (site URL، Supabase، SMS، release) سبز (۳۴/۳۴ صفحه). — تکمیل شد.
 5. **[x] ممیزی Supabase و بهروزرسانی readiness:** وضعیت real در `OTP_LAUNCH_READINESS.md` ثبت شد (Prisma/SQLite برای دیتابیس، Supabase فقط Identity Provider).
 
+## Batch 17: پروفایل، تاریخچه/آمار و بازتولید درجای برنامه 🎯 (تکمیل شد)
+1. **[x] پروفایل کاربری کامل:** نمایش شماره موبایل ورود (با فرمت `+98 …`) در کارت پروفایل و بخش اطلاعات کاربری؛ آپلود/حذف آواتار؛ آخرین آیتم منوی کناری شدن پروفایل؛ خروج → لندینگ (نه کوییز)؛ هدر مستقل برای صفحه کوییز (خانه + تغییر زبان).
+2. **[x] آواتار با Supabase Storage:** بایت‌ها در bucket خصوصی `avatars` با مسیر `<userId>.<ext>` (upsert)؛ `User.avatarUrl` مسیر شیء را نگه می‌دارد و خواندن‌ها signed URL کوتاه‌مدت (۷ روز) برمی‌گردانند؛ ردیف‌های قدیمی data URL بدون تغییر برگردانده می‌شوند؛ بدون env استوریج fallback به ذخیره‌ی data URL در DB (mock/dev). سرویس: `src/services/avatarStorage.ts` + ۱۳ تست.
+3. **[x] چیدمان سایدبار و سربرگ:** حذف لوگوی بریده‌شده، دکمه «شروع تمرین» در پایین سایدبار، انتقال دکمه‌های زبان/تم به گوشه بالا (چپ در فارسی، راست در انگلیسی).
+4. **[x] OTP TTL به ۱۵ دقیقه:** افزایش `OTP_CODE_TTL_MS` به ۹۰۰٬۰۰۰ms و همگام‌سازی `.env.example`، `docs/OTP_LAUNCH_READINESS.md` و تست‌ها.
+5. **[x] تاریخچه و آمار:** تقویم ماهانه تعاملی (تیک سبز تمرین / نقطه خاکستری استراحت / نقطه قرمز جاافتاده؛ شمسی با شروع از شنبه در فارسی، میلادی در انگلیسی) و چارت‌های SVG دستی روند BMI و حجم هفتگی بدون وابستگی جدید.
+6. **[x] بازتولید درجای برنامه:** `persistProgramForUser` به‌جای ردیف جدید، همان `Program` را به‌روزرسانی می‌کند (تاریخچه‌ی `WorkoutSession` و ارجاع‌ها حفظ می‌شوند، ردیف یتیم نمی‌ماند)؛ ویرایش روزهای استراحت (۱–۳ روز) در صفحه «ترجیحات تمرین»؛ ۳ تست regression در `tests/program-inplace-regeneration.test.ts`.
+7. **[x] تست E2E پروفایل:** `tests/profile-features.spec.ts` — نمایش شماره + آپلود/حذف آواتار (مسیر full-auth با `E2E_REQUIRES_AUTH=1`) + گیتینگ signed-out همیشه‌اجرا.
+
 ## تسک‌های پیشنهادی بعدی (بعد از Batch 14) 🧭
 2. **[x] enforce قطعی روزهای استراحت:** جلوگیری از قرارگرفتن تمرین در روزهای انتخابی در خروجی تولیدشده — enforce در `enforceRestDays` + لایه persistence (`programService`) + پین کردن قرارداد روز در پرامپت؛ پشتیبانی نام فارسی روزها (شنبه→جمعه) و fallback عددی ISO؛ ۱۲ تست regression + تست زنجیره retry/idempotency. — تکمیل شد (Batch 15).
 3. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف).

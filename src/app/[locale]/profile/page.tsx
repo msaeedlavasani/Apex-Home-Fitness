@@ -34,12 +34,18 @@ export default async function ProfilePage() {
   let user: ProfileUser | null = null;
   try {
     const {getCurrentUserProfile} = await import('@/services/userService');
+    const {resolveAvatarUrl} = await import('@/services/avatarStorage');
     const profile = await getCurrentUserProfile();
     user = {
       email: profile.profileEmail ?? profile.email,
       authEmail: profile.email,
       weightHistory: profile.weightEntries ?? [],
       name: profile.name,
+      // The verified phone used to sign in (canonical `+98…` form).
+      phone: profile.phone ?? null,
+      // Legacy rows carry a data URL (returned as-is); storage rows resolve
+      // to a fresh signed URL. null when signing fails — never an error.
+      avatarUrl: await resolveAvatarUrl(profile.avatarUrl),
       fitnessGoal: profile.fitnessGoal ?? null,
       fitnessLevel: profile.fitnessLevel ?? null,
       heightCm: profile.heightCm ?? null,

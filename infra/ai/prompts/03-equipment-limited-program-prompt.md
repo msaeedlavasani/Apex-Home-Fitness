@@ -84,9 +84,11 @@ and a chair). Output is always **valid JSON** per Section 10.
 - If `floor_type` is `carpet` or `hard_floor` and no mat exists, prefer standing/wall exercises and
   warn that floor plank/supine work may be uncomfortable — offer towel padding tips in `notes`.
 - `rest_days` (1–3 weekday names) are **OFF limits** — never place a session, warm-up, or cool-down on
-  them. Schedule on the remaining weekdays, give every `weekly_schedule` entry a real `day_name`, and
+  them. They are the ONLY rest days: every OTHER weekday must contain exactly one session, so
+  `weekly_schedule` covers all 7 weekdays. Give every `weekly_schedule` entry a real `day_name`, and
   echo `rest_days` into the output's top-level `rest_days` field. If a preferred day collides with a
-  rest day, move the session to the nearest non-rest weekday and note it.
+  rest day, move the session to the nearest non-rest weekday and note it. Never mark a non-rest day as
+  a rest day.
 
 ---
 

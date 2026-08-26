@@ -39,6 +39,7 @@
      #    OPENAI_API_KEY=... and OPENAI_MODEL=gpt-4o-mini (optional alternate)
      #    NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_SUPABASE_URL,
      #    NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
+     #    (for avatars, also create the private Supabase Storage bucket `avatars` — see below)
      # 3. Build and run (includes database migrations)
      docker compose up --build -d
      ```
@@ -84,9 +85,15 @@ docker compose up -d --no-deps --force-recreate app
 
 For a safe provider check, inspect only the presence of the selected env and the runtime model name; never print a key, prompt, provider response, or quiz payload. An opt-in real smoke test may use `RUN_AI_PROVIDER_SMOKE=1` outside CI and only with a consenting test account.
 
-### Editable profile and weight history
+### Editable profile, rest days and avatar storage
 
-The profile API allows editing the display name, contact email, height, current weight, goals, level, exercise styles, and equipment. The verified phone identity remains immutable. Every non-null weight update also creates a `WeightEntry` record, so repeated updates form a chronological history used by the profile and future analytics. Prisma migrations must be applied before starting the app.
+The profile API allows editing the display name, contact email, height, current weight, goals, level, exercise styles, equipment, and rest days (1–3 weekdays). The verified phone identity remains immutable. Every non-null weight update also creates a `WeightEntry` record, so repeated updates form a chronological history used by the profile and analytics.
+
+Regenerating the program (a quiz re-run or a preferences save, including rest-day changes) **updates the user's existing `Program` in place** (same `Program.id`, replaced schedule / rest days / exercise links) — `WorkoutSession` history stays attached and no orphaned program rows accumulate.
+
+Avatars use **Supabase Storage**: create a PRIVATE bucket named `avatars` (objects `<userId>.<ext>`, served via short-lived signed URLs — no RLS needed, writes/signing run with the service-role key). `User.avatarUrl` stores the object path; legacy data-URL rows keep working; without `SUPABASE_SERVICE_ROLE_KEY` the app falls back to storing the avatar data URL in the DB (dev/mock only). See `docs/ASSETS.md` §۲.۳.
+
+Prisma migrations must be applied before starting the app (`npx prisma migrate deploy` — includes `20260827000000_add_user_avatar`).
 
 ### کلید OpenAI و تولید برنامه
 

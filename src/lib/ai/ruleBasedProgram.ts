@@ -112,7 +112,19 @@ function focusFor(goals: readonly string[], index: number): string {
 export function buildRuleBasedProgram(input: GenerateProgramInput): AiGeneratedProgram {
   const restDays = input.restDays ?? [];
   const availableDays = WEEKDAY_VALUES.filter((day) => !restDays.includes(day));
-  const sessions = new Set(availableDays.slice(0, sessionCount(input.level, availableDays.length)));
+  // Honor the user's rest-day selection EXACTLY: every weekday the user did
+  // NOT mark as rest is a training day. The level-based session cap would
+  // otherwise turn leftover available days into EXTRA rest days the user
+  // never selected (e.g. restDays ['thursday', 'friday'] must yield 5
+  // training days, never 4 with a surprise Sunday rest day). The level cap
+  // applies only on the legacy path where no rest days were selected at all.
+  const sessionTarget =
+    restDays.length > 0
+      ? availableDays.length
+      : sessionCount(input.level, availableDays.length);
+  const sessions = new Set(
+    availableDays.slice(0, Math.max(1, Math.min(sessionTarget, availableDays.length))),
+  );
   const methods = input.exerciseStyles
     .map((style) => METHOD_BY_STYLE[style])
     .filter((method): method is AiMethod => Boolean(method));

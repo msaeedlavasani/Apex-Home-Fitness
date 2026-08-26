@@ -26,6 +26,7 @@ const EN = {
   // ---- Generic ----
   'quiz.title': 'Build your training plan',
   'quiz.subtitle': 'Answer a few quick questions so we can personalize your workouts.',
+  'quiz.header.home': 'Back to home',
   'quiz.progress': 'Step {{current}} of {{total}}',
   'quiz.next': 'Next',
   'quiz.back': 'Back',
@@ -163,6 +164,7 @@ const FA = {
   // ---- Generic ----
   'quiz.title': 'برنامه تمرینی خودت رو بساز',
   'quiz.subtitle': 'چند سوال کوتاه جواب بده تا تمرین‌ها رو برای تو شخصی‌سازی کنیم.',
+  'quiz.header.home': 'بازگشت به صفحه اول',
   'quiz.progress': 'مرحله {{current}} از {{total}}',
   'quiz.next': 'بعدی',
   'quiz.back': 'قبلی',

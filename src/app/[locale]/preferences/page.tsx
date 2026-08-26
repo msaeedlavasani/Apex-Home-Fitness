@@ -5,14 +5,16 @@ import {useLocale, useTranslations} from 'next-intl';
 import Link from 'next/link';
 import {AppShell} from '@/components/layout/AppShell';
 import {PreferencesEditor, type PreferenceLabels} from '@/components/dashboard/PreferencesEditor';
+import {WEEKDAY_VALUES} from '@/lib/ai/restDays';
 import type {GenerateProgramInput} from '@/lib/ai/requestSecurity';
 
 const STYLE_IDS = ['yoga', 'hiit', 'calisthenics', 'pilates', 'mobility', 'isometric', 'resistance_band', 'animal_flow'];
 const EQUIPMENT_IDS = ['none', 'pull_up_bar', 'bands', 'dumbbells', 'barbell', 'kettlebells', 'bench', 'cable_machine', 'jump_rope'];
+const REST_DAY_IDS = [...WEEKDAY_VALUES];
 
 type ProfileResponse = {
   quizCompleted: boolean;
-  preferences: {exerciseStyles: string[]; equipment: string[]};
+  preferences: {exerciseStyles: string[]; equipment: string[]; restDays: string[]};
   generationInput?: GenerateProgramInput | null;
 };
 
@@ -45,8 +47,11 @@ export default function PreferencesPage() {
     generationError: t('generationError'),
     stylesTitle: t('styles.title'),
     equipmentTitle: t('equipment.title'),
+    restDaysTitle: t('restDays.title'),
+    restDaysSubtitle: t('restDays.subtitle'),
     styles: Object.fromEntries(STYLE_IDS.map((id) => [id, t(`styles.${id}`)])),
     equipment: Object.fromEntries(EQUIPMENT_IDS.map((id) => [id, t(`equipment.${id}`)])),
+    restDays: Object.fromEntries(REST_DAY_IDS.map((id) => [id, t(`restDays.${id}`)])),
   };
 
   return (

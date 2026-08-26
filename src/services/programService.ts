@@ -43,7 +43,11 @@
  *   3. In ONE `prisma.$transaction`:
  *      a. Upserts every referenced exercise by its unique name — create-only
  *         when missing, so curated seed rows are never overwritten.
- *      b. Creates the `Program` owned by the user.
+ *      b. Creates the `Program` owned by the user, or — when the user
+ *         already has one (the app is single-program) — updates that
+ *         program IN PLACE (same `Program.id`, replaced schedule / rest days
+ *         / exercise links) so stored workout history stays attached across
+ *         regenerations.
  *      c. Links exercises through `ProgramExercise` with the AI prescription
  *         (sets / reps / rest) in program order.
  *
@@ -435,6 +439,11 @@ export type ProgramWithDetails = Prisma.ProgramGetPayload<typeof programWithDeta
  * Persists a validated AI program for a given user inside a single
  * transaction (exercise upserts + Program + ProgramExercise links).
  *
+ * In-place regeneration: when the user already owns a program, its existing
+ * row is updated (same `Program.id`) instead of a new one being inserted, so
+ * `WorkoutSession.programId` history and `QuizResponse.recommendedProgramId`
+ * stay attached across regenerations (see `persistProgramTransaction`).
+ *
  * Timeouts: the transaction runs with a bounded budget — `withTimeout`
  * (PERSIST_TIMEOUT_MS) enforces the client-side deadline and rejects with a
  * stable `TimeoutError` (code `PERSISTENCE_TIMEOUT`), while Prisma's native
@@ -528,6 +537,17 @@ export async function persistProgramForUserWithIdempotency(
  * The core persistence steps shared by `persistProgramForUser` and
  * `persistProgramForUserWithIdempotency` (they differ only in finalizing the
  * idempotency record inside the same transaction).
+ *
+ * In-place regeneration: when the user ALREADY owns a program (the app is
+ * single-program — the dashboard reads the latest), the existing Program row
+ * is UPDATED in place (same `Program.id`) rather than a new row being
+ * inserted. This keeps every `WorkoutSession.programId` reference, the
+ * `QuizResponse.recommendedProgramId` link and the generation-ledger
+ * `programId` pointing at the SAME program, so stored workout history stays
+ * attached across regenerations and no orphaned program rows accumulate.
+ * The old exercise links are replaced by the new prescription in the same
+ * transaction (they only reference `Exercise` rows, which are never deleted,
+ * so historical `WorkoutSessionExercise` rows are untouched).
  */
 async function persistProgramTransaction(
   tx: Prisma.TransactionClient,
@@ -546,21 +566,47 @@ async function persistProgramTransaction(
     });
   }
 
-  // 2) Program — linked to the current authenticated user. The user's
-  //    rest-day selection is persisted alongside (Json array of weekday ids)
-  //    so the stored program keeps its rest-day contract.
-  const program = await tx.program.create({
-    data: {
-      name: draft.name,
-      description: draft.description,
-      level: draft.level,
-      durationWeeks: draft.durationWeeks,
-      sessionsPerWeek: draft.sessionsPerWeek,
-      restDays: draft.restDays,
-      weeklySchedule: draft.weeklySchedule as unknown as Prisma.InputJsonValue,
-      ownerId: userId,
-    },
+  // 2) Program — the user's current program (latest) is replaced IN PLACE;
+  //    only the first generation creates a new row. The user's rest-day
+  //    selection is persisted alongside (Json array of weekday ids) so the
+  //    stored program keeps its rest-day contract.
+  const existing = await tx.program.findFirst({
+    where: {ownerId: userId},
+    orderBy: {createdAt: 'desc'},
+    select: {id: true},
   });
+
+  const program = existing
+    ? await (async () => {
+        // Replace the exercise links of the current program with the new
+        // prescription. `WorkoutSessionExercise` references `Exercise` only,
+        // so completed/in-progress sessions are not affected.
+        await tx.programExercise.deleteMany({where: {programId: existing.id}});
+        return await tx.program.update({
+          where: {id: existing.id},
+          data: {
+            name: draft.name,
+            description: draft.description,
+            level: draft.level,
+            durationWeeks: draft.durationWeeks,
+            sessionsPerWeek: draft.sessionsPerWeek,
+            restDays: draft.restDays,
+            weeklySchedule: draft.weeklySchedule as unknown as Prisma.InputJsonValue,
+          },
+        });
+      })()
+    : await tx.program.create({
+        data: {
+          name: draft.name,
+          description: draft.description,
+          level: draft.level,
+          durationWeeks: draft.durationWeeks,
+          sessionsPerWeek: draft.sessionsPerWeek,
+          restDays: draft.restDays,
+          weeklySchedule: draft.weeklySchedule as unknown as Prisma.InputJsonValue,
+          ownerId: userId,
+        },
+      });
 
   // 3) ProgramExercise links with the AI prescription, in program order.
   if (draft.programExercises.length > 0) {

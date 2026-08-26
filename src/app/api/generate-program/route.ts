@@ -437,6 +437,8 @@ export async function POST(req: Request) {
         - Injuries/Limitations: ${limitations.join(', ')}
         - Details: ${limitationsDetails || 'None'}
         - Rest days (weekdays that MUST NOT contain any workout): ${restDaysJoined || 'None specified'}
+          These are the ONLY rest days — every other weekday must contain
+          exactly one session, so the weekly_schedule covers all 7 weekdays.
           The user selected exercise styles intentionally. Do not include a session
           or exercise whose primary method is outside the selected styles unless
           it is required as a brief safety warm-up or cooldown. Explain any
@@ -445,7 +447,8 @@ export async function POST(req: Request) {
           weekly_schedule entry MUST carry BOTH a numeric day (the ISO
           weekday number: 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday,
           5=Friday, 6=Saturday, 7=Sunday) AND an English day_name
-          ("Monday" … "Sunday"); never schedule a session on a rest day.
+          ("Monday" … "Sunday"); never schedule a session on a rest day, and
+          never mark a non-rest day as a rest day.
 
         RECENT WORKOUT HISTORY (newest first, last ${HISTORY_SESSION_LIMIT} sessions):
         ${workoutHistory}

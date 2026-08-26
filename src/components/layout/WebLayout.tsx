@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useLocale, useTranslations} from 'next-intl';
-import {ChevronLeft, Dumbbell, Settings2} from 'lucide-react';
+import {ChevronLeft, Dumbbell, Play, Settings2} from 'lucide-react';
 import {
   APP_NAV,
   sectionPath,
@@ -23,10 +23,22 @@ import {ThemeToggle} from './ThemeToggle';
  *  - Mobile (<md): sticky glass top bar (brand mark + appearance toggle)
  *    and a horizontally scrollable pill nav — the mobile-first top-nav.
  *
+ * Sidebar order: Home, History, Analytics, Preferences, Profile — Profile is
+ * deliberately the LAST entry (settings screens sit above it), while the
+ * mobile pill nav and the iOS/Android tab bars keep the shared `APP_NAV`
+ * order (Profile included, no Preferences).
+ *
  * Uses `apple-*` semantic surfaces and the shared Apex brand tokens, so it
  * matches iOS/Android branding while feeling like a native web app. Logical
  * properties keep it RTL-aware; every color flips with the active theme.
  */
+
+/** Desktop-sidebar order — Profile last, Preferences just above it. */
+const sidebarOrder: NavItem[] = [
+  ...APP_NAV.filter((item) => item.section !== 'profile'),
+  {section: 'preferences', messageKey: 'preferences', icon: Settings2},
+  ...APP_NAV.filter((item) => item.section === 'profile'),
+];
 export function WebLayout({title, subtitle, overline, backHref, children}: LayoutChromeProps) {
   const locale = useLocale();
   const t = useTranslations('Nav');
@@ -35,24 +47,38 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
 
   return (
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
+      {/* ── Desktop corner controls (language + theme) ────────
+          The toggles live in the TOP corner of the site on desktop — the
+          end corner opposite the sidebar: top-LEFT in the Persian (RTL)
+          version, top-RIGHT in English (LTR). The mobile top bar keeps its
+          own copies in the same header row. */}
+      <div className="glass-strong fixed top-3 z-50 hidden items-center gap-1 rounded-full p-1 md:flex ltr:right-3 rtl:left-3">
+        <LanguageSwitcher />
+        <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+      </div>
+
       {/* ── Desktop sidebar ─────────────────────────────────── */}
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-apex-border bg-[color:color-mix(in_srgb,var(--apex-card)_85%,transparent)] backdrop-blur-md md:flex">
         <BrandLink href={`/${locale}/dashboard`} />
         <nav aria-label={t('navLabel')} className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {APP_NAV.map((item) => (
+          {sidebarOrder.map((item) => (
             <SidebarItem key={item.section} item={item} active={item.section === active} />
           ))}
-          <SidebarItem
-            item={{section: 'preferences', messageKey: 'preferences', icon: Settings2}}
-            active={active === 'preferences'}
-          />
         </nav>
-        <div className="flex items-center justify-between gap-3 border-t border-apex-border px-5 py-4">
-          <span className="min-w-0 truncate text-xs text-apex-text-tertiary">{tProfile('footer')}</span>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-xl text-apex-text-secondary transition-colors hover:bg-apex-fill" />
-          </div>
+        {/* Primary action pinned to the bottom of the sidebar, above the
+            version line. The version text is centered and never truncated. */}
+        <div className="space-y-2.5 border-t border-apex-border p-3">
+          <Link
+            href={`/${locale}/workout`}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-semibold text-apex-on-primary transition-colors hover:opacity-95 active:scale-[0.99] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+            style={{background: 'var(--apex-gradient-brand)'}}
+          >
+            <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+            {t('startWorkout')}
+          </Link>
+          <p className="px-2 text-center text-[11px] leading-relaxed text-apex-text-tertiary">
+            {tProfile('footer')}
+          </p>
         </div>
       </aside>
 

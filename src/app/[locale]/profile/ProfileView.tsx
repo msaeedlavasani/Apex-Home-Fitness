@@ -1,10 +1,10 @@
 'use client';
 
-import {useState, type ReactNode} from 'react';
+import {useRef, useState, type ReactNode} from 'react';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
 import {useLocale, useTranslations} from 'next-intl';
-import {ChevronRight, CircleHelp, LifeBuoy, Loader2, LogOut, Mail, Monitor, Moon, Pencil, Save, Sun, Target, TrendingUp, UserRound, type LucideIcon} from 'lucide-react';
+import {Camera, ChevronRight, CircleHelp, LifeBuoy, Loader2, LogOut, Mail, Monitor, Moon, Pencil, Phone, Save, Sun, Target, TrendingUp, UserRound, X, type LucideIcon} from 'lucide-react';
 import {useTheme, type Theme} from '@/components/providers/ThemeProvider';
 import {createBrowserSupabaseClient} from '@/lib/supabase';
 import {AppShell} from '@/components/layout/AppShell';
@@ -13,6 +13,13 @@ export interface ProfileUser {
   email: string;
   authEmail?: string;
   name: string | null;
+  /** The verified phone used to sign in (canonical `+98…` form), when known. */
+  phone?: string | null;
+  /**
+   * Directly-renderable avatar URL: a Supabase Storage signed URL in
+   * production, a legacy in-DB data URL for older rows, or null when unset.
+   */
+  avatarUrl?: string | null;
   fitnessGoal: string | null;
   fitnessLevel: string | null;
   heightCm: number | null;
@@ -56,7 +63,9 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
     } catch {
       try { await createBrowserSupabaseClient().auth.signOut(); } catch { /* best effort */ }
     }
-    router.replace(`/${locale}/quiz`);
+    // Logging out returns to the public landing page — never into the quiz
+    // (the quiz is a gated onboarding flow, not a post-logout destination).
+    router.replace(`/${locale}`);
     router.refresh();
   }
 
@@ -64,7 +73,7 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
     <AppShell title={t('title')} subtitle={t('subtitle')} backHref={`/${locale}/dashboard`}>
       <div className="-mx-4 min-h-dvh bg-apple-grouped-background px-4 pb-8 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10">
         <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl">
-          {user ? <ProfileSummaryCard user={user} onEdit={() => {setProfileError(false); setEditing(true);}} editLabel={t('edit')} /> : <SignedOutCard />}
+          {user ? <ProfileSummaryCard user={user} onEdit={() => {setProfileError(false); setEditing(true);}} editLabel={t('edit')} onAvatarSaved={() => router.refresh()} /> : <SignedOutCard />}
           {user && editing ? (
             <ProfileEditor
               user={user}
@@ -88,7 +97,13 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
           {user ? (
             <Section title={t('sections.userInfo')}>
               <div className="divide-y divide-apple-separator">
-                <InfoRow icon={Mail} chip="text-apple-blue" label={t('userInfo.email')} value={user.email || t('notSet')} />
+                {/* The synthetic `phone-*@phone.apex.invalid` identity email is
+                    meaningless to users — the verified phone number is the real
+                    identifier, so it replaces the email row when present. */}
+                {!isSyntheticPhoneEmail(user) ? (
+                  <InfoRow icon={Mail} chip="text-apple-blue" label={t('userInfo.email')} value={user.email || t('notSet')} />
+                ) : null}
+                {user.phone ? <InfoRow icon={Phone} chip="text-apple-green" label={t('userInfo.phone')} value={formatPhoneNumber(user.phone)} /> : null}
                 <InfoRow icon={Target} chip="text-apple-orange" label={t('userInfo.goal')} value={goalLabel(t, user.fitnessGoal)} />
                 <InfoRow icon={TrendingUp} chip="text-apple-purple" label={t('userInfo.level')} value={levelLabel(t, user.fitnessLevel)} />
               </div>
@@ -141,8 +156,86 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
   );
 }
 
-function ProfileSummaryCard({user, onEdit, editLabel}: {user: ProfileUser; onEdit: () => void; editLabel: string}) {
-  return <div className="flex items-center gap-4 rounded-3xl border border-apple-separator bg-apple-grouped-background-secondary p-5 shadow-apple-sm sm:p-6"><div aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-apple-blue to-apple-purple text-lg font-bold text-white shadow-apple-glow sm:h-16 sm:w-16 sm:text-xl">{initialsOf(user)}</div><div className="min-w-0 flex-1"><p className="truncate text-lg font-bold tracking-tight sm:text-xl">{user.name?.trim() || user.email || user.authEmail}</p><p className="mt-0.5 truncate text-sm text-apple-label-secondary" dir="auto">{user.email || user.authEmail}</p></div><button type="button" onClick={onEdit} aria-label={editLabel} className={`rounded-xl p-2 text-apple-blue hover:bg-apple-fill ${FOCUS_RING}`}><Pencil className="h-5 w-5" aria-hidden="true" /></button></div>;
+function ProfileSummaryCard({user, onEdit, editLabel, onAvatarSaved}: {user: ProfileUser; onEdit: () => void; editLabel: string; onAvatarSaved: () => void}) {
+  const t = useTranslations('Profile');
+  const [uploading, setUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const displayName = user.name?.trim() || user.email || user.authEmail || 'Apex Athlete';
+  const subtitle = user.phone ? formatPhoneNumber(user.phone) : user.email || user.authEmail;
+
+  async function uploadAvatar(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarError(true);
+      return;
+    }
+    setAvatarError(false);
+    setUploading(true);
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({avatar: dataUrl}),
+      });
+      if (!response.ok) throw new Error('avatar upload failed');
+      onAvatarSaved();
+    } catch {
+      setAvatarError(true);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setAvatarError(false);
+    setUploading(true);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({avatar: null}),
+      });
+      if (!response.ok) throw new Error('avatar removal failed');
+      onAvatarSaved();
+    } catch {
+      setAvatarError(true);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4 rounded-3xl border border-apple-separator bg-apple-grouped-background-secondary p-5 shadow-apple-sm sm:p-6">
+      <div className="relative shrink-0">
+        {user.avatarUrl ? (
+          // The avatar is a Supabase Storage signed URL (or a legacy in-DB data
+          // URL) — no CDN/optimizer, so a plain <img> is intentional.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.avatarUrl} alt={t('avatar.alt')} className="h-14 w-14 rounded-full object-cover sm:h-16 sm:w-16" />
+        ) : (
+          <div aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-apple-blue to-apple-purple text-lg font-bold text-white shadow-apple-glow sm:h-16 sm:w-16 sm:text-xl">{initialsOf(user)}</div>
+        )}
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} aria-label={t('avatar.upload')} className={`absolute -bottom-1 -end-1 flex h-7 w-7 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm transition-colors hover:bg-apple-blue/90 disabled:opacity-60 ${FOCUS_RING}`}>
+          {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Camera className="h-3.5 w-3.5" aria-hidden="true" />}
+        </button>
+        {user.avatarUrl && !uploading ? (
+          <button type="button" onClick={() => void removeAvatar()} aria-label={t('avatar.remove')} className={`absolute -start-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-apple-label-tertiary text-white shadow-sm transition-colors hover:bg-apple-label-secondary ${FOCUS_RING}`}>
+            <X className="h-3 w-3" aria-hidden="true" />
+          </button>
+        ) : null}
+        <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" aria-hidden="true" tabIndex={-1} onChange={(event) => { void uploadAvatar(event.target.files?.[0]); event.target.value = ''; }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-lg font-bold tracking-tight sm:text-xl">{displayName}</p>
+        <p className="mt-0.5 truncate text-sm text-apple-label-secondary" dir="auto">{subtitle}</p>
+        {avatarError ? <p role="alert" className="mt-1.5 text-xs font-medium text-apple-red">{t('avatar.error')}</p> : null}
+      </div>
+      <button type="button" onClick={onEdit} aria-label={editLabel} className={`rounded-xl p-2 text-apple-blue hover:bg-apple-fill ${FOCUS_RING}`}><Pencil className="h-5 w-5" aria-hidden="true" /></button>
+    </div>
+  );
 }
 
 type EditorLabels = {title: string; save: string; cancel: string; name: string; email: string; height: string; weight: string; goal: string; level: string; weightHistory: string; error: string; goals: Record<string, string>; levels: Record<string, string>};
@@ -173,6 +266,63 @@ function InfoRow({icon: Icon, chip, label, value}: {icon: LucideIcon; chip: stri
 function LinkRow({href, icon: Icon, chip, label, value}: {href: string; icon: LucideIcon; chip: string; label: string; value?: string}) { return <Link href={href} className={`flex items-center gap-3 px-4 py-3 transition-colors touch-manipulation hover:bg-apple-fill sm:px-5 ${FOCUS_RING}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-apple-fill ${chip}`}><Icon className="h-4 w-4" aria-hidden="true" /></span><span className="text-[15px] text-apple-label">{label}</span>{value ? <span className="ms-auto min-w-0 truncate text-[15px] text-apple-label-secondary" dir="auto">{value}</span> : null}<ChevronRight className="h-4 w-4 shrink-0 text-apple-label-tertiary rtl:rotate-180" aria-hidden="true" /></Link>; }
 function PreferenceRow({label, children}: {label: string; children: ReactNode}) { return <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 px-4 py-3.5 sm:px-5"><span className="text-[15px] text-apple-label">{label}</span><div className="ms-auto w-full min-w-48 sm:w-auto sm:min-w-0">{children}</div></div>; }
 function Segmented<T extends string>({ariaLabel, options, value, onChange}: {ariaLabel: string; options: {key: T; label: string; icon?: LucideIcon}[]; value: T; onChange: (key: T) => void}) { return <div role="radiogroup" aria-label={ariaLabel} className="flex w-full gap-1 rounded-xl bg-apple-fill p-1 sm:w-auto">{options.map(({key, label, icon: Icon}) => <button key={key} type="button" role="radio" aria-checked={key === value} onClick={() => onChange(key)} className={`flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors touch-manipulation sm:flex-none ${FOCUS_RING} ${key === value ? 'bg-apple-grouped-background-secondary text-apple-label shadow-sm' : 'text-apple-label-secondary hover:text-apple-label'}`}>{Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}{label}</button>)}</div>; }
-function initialsOf(user: ProfileUser): string { const source = user.name?.trim() || user.email || '?'; const parts = source.split(/[\s._-]+/).filter(Boolean); return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : source.slice(0, 2).toUpperCase(); }
+function initialsOf(user: ProfileUser): string {
+  const name = user.name?.trim();
+  if (name) {
+    const parts = name.split(/[\s._-]+/).filter(Boolean);
+    return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+  }
+  // No name yet — fall back to the phone's last digits (meaningful identity)
+  // before the synthetic phone-identity email.
+  if (user.phone) return user.phone.slice(-4);
+  const source = user.email || '?'; const parts = source.split(/[\s._-]+/).filter(Boolean); return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : source.slice(0, 2).toUpperCase();
+}
+
+/** True when the profile only carries the synthetic phone-identity email. */
+function isSyntheticPhoneEmail(user: ProfileUser): boolean {
+  return Boolean(user.authEmail?.endsWith('@phone.apex.invalid') && user.email === user.authEmail);
+}
+
+/** `+989121234567` → `+98 912 345 6789`; unknown formats pass through unchanged. */
+function formatPhoneNumber(phone: string): string {
+  const compact = phone.replace(/[\s-]/g, '');
+  const match = /^(\+98)(9\d{2})(\d{3})(\d{4})$/.exec(compact);
+  return match ? `${match[1]} ${match[2]} ${match[3]} ${match[4]}` : compact;
+}
+
+/**
+ * Reads an image file and returns a small JPEG data URL (max 256px longest
+ * side) so avatars stay light — the API uploads it to Supabase Storage (or
+ * stores it on the user record in the legacy fallback).
+ */
+function fileToAvatarDataUrl(file: File): Promise<string> {
+  const MAX_SIDE = 256;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('avatar read failed'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('avatar decode failed'));
+      image.onload = () => {
+        try {
+          const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));
+          const width = Math.max(1, Math.round(image.width * scale));
+          const height = Math.max(1, Math.round(image.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('avatar canvas unavailable');
+          ctx.drawImage(image, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error('avatar processing failed'));
+        }
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 function goalLabel(t: (key: string) => string, goal: string | null): string { if (!goal) return t('notSet'); const values = goal.split(',').map((item) => item.trim()).filter(Boolean).map((item) => GOAL_KEYS.includes(item as typeof GOAL_KEYS[number]) ? t(`goals.${item}`) : item); return values.join('، '); }
 function levelLabel(t: (key: string) => string, level: string | null): string { if (!level) return t('notSet'); const key = level.trim().toLowerCase(); return LEVEL_KEYS.includes(key as typeof LEVEL_KEYS[number]) ? t(`levels.${key}`) : level; }

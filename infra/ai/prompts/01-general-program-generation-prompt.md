@@ -80,10 +80,12 @@ Rules for handling inputs:
   prioritizing **schedule feasibility** first, then note the trade-off in `notes`.
 - If `preferred_exercise_styles` is provided, treat it as a hard preference: use only those eight canonical styles (`yoga`, `hiit`, `calisthenics`, `pilates`, `mobility`, `isometric`, `resistance_band`, `animal_flow`) for the primary method of sessions and exercises. Do not silently add a disliked or unselected style; if safety or equipment requires a substitution, choose the closest selected style and explain it in `notes`.
 - If `rest_days` is provided (1–3 weekday names like `["wednesday", "sunday"]`), those weekdays are
-  **OFF limits** — never place a session, warm-up, or cool-down on them. Schedule the `days_per_week`
-  sessions on the remaining weekdays, give every `weekly_schedule` entry a real `day_name` (e.g.
-  `"Monday"`), and echo the user's `rest_days` into the output's top-level `rest_days` field. If a
-  preferred day collides with a rest day, move the session to the nearest non-rest weekday and note it.
+  **OFF limits** — never place a session, warm-up, or cool-down on them. They are the ONLY rest days:
+  every OTHER weekday must contain exactly one session, so `weekly_schedule` covers all 7 weekdays.
+  Give every `weekly_schedule` entry a real `day_name` (e.g. `"Monday"`), and echo the user's
+  `rest_days` into the output's top-level `rest_days` field. If a preferred day collides with a rest
+  day, move the session to the nearest non-rest weekday and note it. Never mark a non-rest day as a
+  rest day.
 - If `injuries` is non-empty, automatically apply the **injury screening rules** from the
   Injury-Focused scenario (Section 9 equivalent) for any listed body part — never skip this.
 

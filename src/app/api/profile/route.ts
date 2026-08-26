@@ -1,8 +1,10 @@
 import {DifficultyLevel} from '@prisma/client';
 import {NextResponse} from 'next/server';
 import {EXERCISE_STYLE_IDS} from '@/lib/exerciseStyles';
+import {REST_DAYS_SCHEMA, WEEKDAY_VALUES} from '@/lib/ai/restDays';
 import {buildGenerationInput, QUIZ_ANSWERS_SCHEMA} from '@/lib/quiz/quizFlow';
 import {prisma} from '@/lib/prisma';
+import {deleteAvatarObject, isLegacyAvatarDataUrl, resolveAvatarUrl, uploadAvatarDataUrl} from '@/services/avatarStorage';
 import {getCurrentUserProfile, getSupabaseAuthUser, syncUserWithSupabase} from '@/services/userService';
 
 const EQUIPMENT_IDS = ['none', 'pull_up_bar', 'bands', 'dumbbells', 'barbell', 'kettlebells', 'bench', 'cable_machine', 'jump_rope'] as const;
@@ -23,6 +25,10 @@ type ProfilePatch = {
   fitnessLevel?: unknown;
   exerciseStyles?: unknown;
   equipment?: unknown;
+  /** Rest-day weekday ids (1–3) — regenerates the program in place when changed. */
+  restDays?: unknown;
+  /** Avatar as an image data URL, or null/'' to remove the current one. */
+  avatar?: unknown;
 };
 
 function cleanName(value: unknown): string | null {
@@ -50,6 +56,29 @@ function cleanList(value: unknown, allowed?: readonly string[]): string[] {
   const values = value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean);
   return allowed ? [...new Set(values.filter((item) => allowed.includes(item)))] : [...new Set(values)];
 }
+
+/**
+ * Avatar policy: a small image data URL (png/jpeg/webp/gif), or null/'' to
+ * remove the avatar. Anything else is invalid (returns null with the flag
+ * distinguishing "invalid" from "remove").
+ */
+const AVATAR_DATA_URL_RE = /^data:image\/(png|jpeg|webp|gif);base64,/;
+const AVATAR_MAX_LENGTH = 800_000; // ≈ 600 KB of binary after base64
+
+/**
+ * Discriminated result: `{ remove: true }` clears the avatar, `{ remove:
+ * false, url }` carries the validated data URL. Invalid payloads → null.
+ */
+type CleanAvatar = { remove: true; url: null } | { remove: false; url: string } | null;
+
+function cleanAvatar(value: unknown): CleanAvatar {
+  if (value === null || value === '') return { remove: true, url: null };
+  if (typeof value !== 'string') return null; // invalid payload
+  const trimmed = value.trim();
+  if (trimmed === '') return { remove: true, url: null };
+  if (trimmed.length > AVATAR_MAX_LENGTH || !AVATAR_DATA_URL_RE.test(trimmed)) return null;
+  return { remove: false, url: trimmed };
+}
 function answerRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
@@ -67,10 +96,14 @@ export async function GET() {
     ]);
     const answers = answerRecord(response?.answers);
     return NextResponse.json({
-      profile: {email: user.profileEmail ?? '', name: user.name, heightCm: user.heightCm, weightKg: user.weightKg, fitnessGoal: user.fitnessGoal, fitnessLevel: user.fitnessLevel},
+      profile: {email: user.profileEmail ?? '', name: user.name, heightCm: user.heightCm, weightKg: user.weightKg, fitnessGoal: user.fitnessGoal, fitnessLevel: user.fitnessLevel, phone: user.phone, avatarUrl: await resolveAvatarUrl(user.avatarUrl)},
       weightHistory,
       quizCompleted: Boolean(response),
-      preferences: {exerciseStyles: cleanList(answers.exerciseStyles, EXERCISE_STYLE_IDS), equipment: cleanList(answers.equipment, EQUIPMENT_IDS)},
+      preferences: {
+        exerciseStyles: cleanList(answers.exerciseStyles, EXERCISE_STYLE_IDS),
+        equipment: cleanList(answers.equipment, EQUIPMENT_IDS),
+        restDays: cleanList(answers.restDays, WEEKDAY_VALUES),
+      },
       generationInput: response ? generationInputFromAnswers(answers) : null,
     });
   } catch {
@@ -85,11 +118,11 @@ export async function PATCH(request: Request) {
     const body = await request.json().catch(() => null) as ProfilePatch | null;
     if (!body) return NextResponse.json({error: 'PROFILE_UPDATE_REQUIRED'}, {status: 400});
 
-    const hasPreferences = body.exerciseStyles !== undefined || body.equipment !== undefined;
-    const hasProfileDetails = body.name !== undefined || body.heightCm !== undefined || body.weightKg !== undefined || body.email !== undefined || body.fitnessGoal !== undefined || body.fitnessLevel !== undefined;
+    const hasPreferences = body.exerciseStyles !== undefined || body.equipment !== undefined || body.restDays !== undefined;
+    const hasProfileDetails = body.name !== undefined || body.heightCm !== undefined || body.weightKg !== undefined || body.email !== undefined || body.fitnessGoal !== undefined || body.fitnessLevel !== undefined || body.avatar !== undefined;
     if (!hasPreferences && !hasProfileDetails) return NextResponse.json({error: 'PROFILE_UPDATE_REQUIRED'}, {status: 400});
 
-    const data: {profileEmail?: string; name?: string; heightCm?: number | null; weightKg?: number | null; fitnessGoal?: string; fitnessLevel?: DifficultyLevel | null} = {};
+    const data: {profileEmail?: string; name?: string; heightCm?: number | null; weightKg?: number | null; fitnessGoal?: string; fitnessLevel?: DifficultyLevel | null; avatarUrl?: string | null} = {};
     if (body.email !== undefined) {
       const email = cleanEmail(body.email);
       if (!email) return NextResponse.json({error: 'INVALID_EMAIL'}, {status: 422});
@@ -120,9 +153,45 @@ export async function PATCH(request: Request) {
       if (level === null && body.fitnessLevel !== null) return NextResponse.json({error: 'INVALID_LEVEL'}, {status: 422});
       data.fitnessLevel = level;
     }
+    if (body.avatar !== undefined) {
+      const avatar = cleanAvatar(body.avatar);
+      if (avatar === null) return NextResponse.json({error: 'INVALID_AVATAR'}, {status: 422});
+      if (avatar.remove) {
+        // Best-effort storage cleanup — clearing the DB row is what removes
+        // the avatar from the app even if the object deletion fails (a stale
+        // orphan object is harmless; a stuck avatar is not).
+        const storedAvatarPath =
+          typeof user.avatarUrl === 'string' && !isLegacyAvatarDataUrl(user.avatarUrl)
+            ? user.avatarUrl
+            : null;
+        if (storedAvatarPath) {
+          try {
+            await deleteAvatarObject(storedAvatarPath);
+          } catch (error) {
+            console.warn('Avatar deletion failed:', error instanceof Error ? error.message : 'unknown');
+          }
+        }
+        data.avatarUrl = null;
+      } else {
+        try {
+          // Supabase Storage object path when configured; the data URL itself
+          // in the legacy fallback (no bucket / mock dev).
+          data.avatarUrl = await uploadAvatarDataUrl(avatar.url, user.id);
+        } catch (error) {
+          console.warn('Avatar upload failed:', error instanceof Error ? error.message : 'unknown');
+          return NextResponse.json({error: 'AVATAR_UPLOAD_FAILED'}, {status: 502});
+        }
+      }
+    }
 
     const exerciseStyles = cleanList(body.exerciseStyles, EXERCISE_STYLE_IDS);
     const equipment = cleanList(body.equipment, EQUIPMENT_IDS);
+    let restDays: string[] | null = null;
+    if (body.restDays !== undefined) {
+      const parsed = REST_DAYS_SCHEMA.safeParse(body.restDays);
+      if (!parsed.success) return NextResponse.json({error: 'INVALID_REST_DAYS'}, {status: 422});
+      restDays = parsed.data;
+    }
     if (hasPreferences && (exerciseStyles.length === 0 || equipment.length === 0)) return NextResponse.json({error: 'PREFERENCES_REQUIRED'}, {status: 422});
     if (equipment.includes('none') && equipment.length > 1) return NextResponse.json({error: 'EQUIPMENT_NONE_EXCLUSIVE'}, {status: 422});
 
@@ -132,6 +201,11 @@ export async function PATCH(request: Request) {
     const weightChanged = typeof data.weightKg === 'number' && data.weightKg !== user.weightKg;
     const weightToRecord: number | null = weightChanged ? data.weightKg! : null;
 
+    // The rest-day selection this request will persist: the validated payload
+    // when provided, otherwise the user's existing selection (styles/equipment
+    // may change while rest days stay untouched).
+    const effectiveRestDays: string[] = restDays ?? cleanList(answerRecord(latest?.answers).restDays, WEEKDAY_VALUES);
+
     let generationInput = null;
     await prisma.$transaction(async (tx) => {
       if (Object.keys(data).length > 0) await tx.user.update({where: {id: user.id}, data});
@@ -140,6 +214,7 @@ export async function PATCH(request: Request) {
         const answers = {
           ...answerRecord(latest.answers),
           ...(hasPreferences ? {exerciseStyles, equipment} : {}),
+          ...(restDays !== null ? {restDays} : {}),
           ...(body.fitnessGoal !== undefined ? {goal: cleanGoals(body.fitnessGoal)} : {}),
         };
         await tx.quizResponse.update({where: {id: latest.id}, data: {answers}});
@@ -153,9 +228,11 @@ export async function PATCH(request: Request) {
     ]);
     return NextResponse.json({
       ok: true,
-      profile: {email: updated.profileEmail ?? '', name: updated.name, heightCm: updated.heightCm, weightKg: updated.weightKg, fitnessGoal: updated.fitnessGoal, fitnessLevel: updated.fitnessLevel},
+      profile: {email: updated.profileEmail ?? '', name: updated.name, heightCm: updated.heightCm, weightKg: updated.weightKg, fitnessGoal: updated.fitnessGoal, fitnessLevel: updated.fitnessLevel, phone: updated.phone, avatarUrl: await resolveAvatarUrl(updated.avatarUrl)},
       weightHistory,
-      preferences: hasPreferences ? {exerciseStyles, equipment} : undefined,
+      preferences: hasPreferences
+        ? {exerciseStyles, equipment, restDays: effectiveRestDays}
+        : undefined,
       generationInput,
     });
   } catch (error) {

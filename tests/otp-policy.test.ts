@@ -124,7 +124,7 @@ test('normalizes request ids (8-64 URL-safe chars) or returns null', () => {
 test('policy falls back to secure defaults when env is empty', () => {
   const policy = getOtpPolicy({});
   assert.equal(policy.codeLength, 6);
-  assert.equal(policy.codeTtlMs, 600_000);
+  assert.equal(policy.codeTtlMs, 900_000);
   assert.equal(policy.resendCooldownMs, 60_000);
   assert.equal(policy.maxAttempts, 5);
 });

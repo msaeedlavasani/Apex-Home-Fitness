@@ -44,12 +44,22 @@
 - خطای fatal: `NETWORK_ERROR` → restart، `MEDIA_ERROR` → `recoverMediaError`، سایر → حالت خطا با دکمهٔ Retry.
 - `poster` اختیاری است و از `img-src` CSP تبعیت می‌کند (نه `media-src`).
 
-### ۲.۳ سرویس‌ورکر (ناوبری آفلاین)
+### ۲.۳ آواتار پروفایل (Supabase Storage)
+بایت‌های آواتار در یک bucket **خصوصی** به نام `avatars` نگهداری می‌شوند (`src/services/avatarStorage.ts`):
+
+- مسیر شیء: `<userId>.<ext>` — ثابت در هر آپلود مجدد (overwrite با `upsert`، بدون نسخهٔ یتیم) و جدا برای هر کاربر.
+- `User.avatarUrl` در DB **مسیر شیء** را نگه می‌دارد (نه data URL)؛ هر خواندن (GET `/api/profile` و صفحهٔ پروفایل) آن را به **signed URL کوتاه‌مدت (۷ روز)** تبدیل می‌کند — bucket خصوصی است و مرورگر هرگز نمی‌تواند آواتار کاربران دیگر را حدس بزند یا فهرست بگیرد.
+- ردیف‌های قدیمی که data URL (`data:image/...`) دارند بدون تغییر برمی‌گردند؛ با آپلود/حذف بعدی به مسیر storage منتقل می‌شوند.
+- بدون `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (mock/dev/CI) رفتار قدیمی حفظ می‌شود: data URL در DB ذخیره می‌شود و حذف‌ها no-op هستند.
+- CSP: `img-src` شامل `https://*.supabase.co` است (بخش ۳.۳)، پس signed URLها قابل رندر هستند.
+- راه‌اندازی: در Supabase یک bucket خصوصی `avatars` بسازید (نیازی به RLS نیست؛ نوشتن و sign با service-role انجام می‌شود).
+
+### ۲.۴ سرویس‌ورکر (ناوبری آفلاین)
 1. `fetch(request)` — network-first.
 2. شکست شبکه → `caches.match(request)` — دقیقاً همین URL اگر قبلاً باز شده باشد.
 3. نبود در cache → `caches.match('/offline.html')` — صفحهٔ static fallback.
 
-### ۲.۴ رسانهٔ دموی خارجی
+### ۲.۵ رسانهٔ دموی خارجی
 کاتالوگ دموی Exercise Library از دو origin خارجی استفاده می‌کند که در CSP allowlist شده‌اند:
 - `https://*.mux.dev` — استریم HLS دمو (`connect-src` + `media-src https:`).
 - `https://commondatastorage.googleapis.com` — ویدیوهای mp4 دمو (`media-src https:`) و **پوسترهای jpg دمو (`img-src`)**.
