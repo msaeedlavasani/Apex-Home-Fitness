@@ -67,6 +67,11 @@ test('provider failure categories are fallback-eligible while unrelated errors a
     [new TypeError('fetch failed'), 'ai_network_failure'],
     [{message: 'schema validation failed'}, 'ai_schema_validation_failed'],
     [{message: 'credit_balance_exhausted'}, 'ai_quota_exhausted'],
+    // Provider credential/authorization rejections (invalid, revoked or
+    // restricted API key) must route to the rules engine, not a 500.
+    [{status: 401, name: 'AI_APICallError', message: 'Unauthorized'}, 'ai_configuration_error'],
+    [{status: 403, name: 'AI_APICallError', message: 'Forbidden'}, 'ai_configuration_error'],
+    [{status: 402, name: 'AI_APICallError', message: 'Payment Required'}, 'ai_configuration_error'],
   ];
   for (const [error, category] of cases) {
     assert.equal(classifyAiGenerationError(error), category);

@@ -73,6 +73,11 @@ export function classifyAiGenerationError(error: unknown): AiFallbackCategory | 
     if (depth > 4 || value == null) return null;
     if (typeof value === 'number') {
       if (value === 429) return 'ai_rate_limited';
+      // 401/402/403 — provider rejects the credential or the account/region
+      // cannot use the API (invalid, revoked, restricted or unpaid key).
+      // The app cannot fix this at request time, so it is treated as a
+      // configuration problem and routes to the rules engine.
+      if (value === 401 || value === 402 || value === 403) return 'ai_configuration_error';
       if (value >= 500 && value <= 599) return 'ai_provider_5xx';
       return null;
     }
