@@ -150,9 +150,10 @@ const EN = {
   'quiz.flow.error.retryable':
     'We could not finish saving your plan. Check your connection and try again — your answers are safe.',
   'quiz.flow.error.permanent':
-    'We could not create your program with these answers. Please review them and try again.',
-  'quiz.flow.error.authNotConfigured':
+    'We could not create your program with these answers. Please review them and try again.',  'quiz.flow.error.authNotConfigured':
     'Sign-in is not available right now. Please try again later.',
+  'quiz.flow.error.aiCreditsUnavailable':
+    'Program generation is temporarily unavailable. Please try again after the AI service is available.',
   'quiz.flow.retry': 'Try again',
   'quiz.flow.review': 'Review answers',
   'quiz.flow.restart': 'Start over',
@@ -289,6 +290,8 @@ const FA = {
     'نتونستیم با این پاسخ‌ها برنامه‌ات رو بسازیم. لطفاً آن‌ها رو بازبینی کن و دوباره تلاش کن.',
   'quiz.flow.error.authNotConfigured':
     'ورود در حال حاضر در دسترس نیست. لطفاً بعداً دوباره تلاش کن.',
+  'quiz.flow.error.aiCreditsUnavailable':
+    'ساخت برنامه فعلاً در دسترس نیست. بعد از فعال‌شدن سرویس هوش مصنوعی دوباره تلاش کن.',
   'quiz.flow.retry': 'تلاش دوباره',
   'quiz.flow.review': 'بازبینی پاسخ‌ها',
   'quiz.flow.restart': 'شروع دوباره',

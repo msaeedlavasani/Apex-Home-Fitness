@@ -2,10 +2,10 @@
 
 import {useLocale, useTranslations} from 'next-intl';
 import {useSearchParams} from 'next/navigation';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {AppShell} from '@/components/layout/AppShell';
 import {WorkoutPlayer} from '@/components/workout/WorkoutPlayer';
-import type {WorkoutExercise} from '@/components/workout/useWorkoutEngine';
+import type {WorkoutExercise, WorkoutSummary} from '@/components/workout/useWorkoutEngine';
 import {
   generatedExerciseDefaults,
   workoutExercisesFromSchedule,
@@ -91,6 +91,47 @@ export default function WorkoutPage() {
 
   const isGeneratedRestDay = Boolean(program && selectedDay && generatedExercises.length === 0);
   const exercises = program ? generatedExercises : fallbackExercises;
+
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionStartRef = useRef<Promise<void> | null>(null);
+
+  function startPersistedSession() {
+    const startPromise = (async () => {
+      try {
+        const response = await fetch('/api/workout/session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          action: 'start',
+          programId: program?.id,
+          exerciseNames: exercises.map((exercise) => exercise.name),
+        }),
+      });
+        if (!response.ok) return;
+        const data = await response.json() as {session?: {id?: string}};
+        sessionIdRef.current = data.session?.id ?? null;
+      } catch {
+        // The local player remains usable when a session write is temporarily offline.
+      }
+    })();
+    sessionStartRef.current = startPromise;
+    return startPromise;
+  }
+
+  async function completePersistedSession(summary: WorkoutSummary) {
+    await sessionStartRef.current;
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+    try {
+      await fetch('/api/workout/session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'complete', sessionId, durationSeconds: summary.durationSeconds, completedSets: summary.completedSets}),
+      });
+    } catch {
+      // Completion remains available locally; a later sync can be added without blocking UX.
+    }
+  }
   const subtitle = program && selectedDay
     ? (isGeneratedRestDay ? tDashboard('summaryRest') : tDashboard('workouts.generated'))
     : tDashboard(`workouts.${fallbackKey}`);
@@ -114,7 +155,11 @@ export default function WorkoutPage() {
             <p className="mt-2 text-sm text-[color:var(--apex-text-secondary)]">{tDashboard('summaryRestDesc')}</p>
           </section>
         ) : (
-          <WorkoutPlayer exercises={exercises} />
+          <WorkoutPlayer
+            exercises={exercises}
+            onWorkoutStart={() => { void startPersistedSession(); }}
+            onWorkoutComplete={(summary) => { void completePersistedSession(summary); }}
+          />
         )}
       </div>
     </AppShell>

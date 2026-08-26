@@ -35,80 +35,17 @@ type Workout = {
 type DayPlan = {type: 'rest'} | {type: 'workout'; workout: Workout};
 
 type CurrentProgramResponse = {
-  program: {restDays: unknown; weeklySchedule: unknown} | null;
+  program: {
+    restDays: unknown;
+    weeklySchedule: unknown;
+    workoutSessions?: Array<{id: string; startedAt: string; completedAt: string | null}>;
+  } | null;
 };
 
 type ProfileResponse = {
   quizCompleted: boolean;
   preferences: {exerciseStyles: string[]; equipment: string[]};
 };
-
-/**
- * Sample weekly plan (Monday → Sunday). The plan stays anchored to a
- * Monday-start week in both locales; the calendar's column order depends on
- * the locale (en: Monday → Sunday, fa: Saturday → Friday) and is mapped back
- * to this ordering via `mondayPlanIndex` (see lib/weekCalendar).
- * Swap this for real data (Program / WorkoutSession from Prisma)
- * once the data layer is wired up.
- */
-const WEEK_PLAN: DayPlan[] = [
-  {
-    type: 'workout',
-    workout: {
-      nameKey: 'workouts.fullBodyHiit',
-      durationMin: 30,
-      exercises: 6,
-      calories: 280,
-      difficulty: 'intermediate',
-    },
-  },
-  {
-    type: 'workout',
-    workout: {
-      nameKey: 'workouts.yogaFlow',
-      durationMin: 20,
-      exercises: 8,
-      calories: 120,
-      difficulty: 'beginner',
-    },
-  },
-  {type: 'rest'},
-  {
-    type: 'workout',
-    workout: {
-      nameKey: 'workouts.upperBody',
-      durationMin: 35,
-      exercises: 5,
-      calories: 240,
-      difficulty: 'intermediate',
-    },
-  },
-  {
-    type: 'workout',
-    workout: {
-      nameKey: 'workouts.corePilates',
-      durationMin: 25,
-      exercises: 7,
-      calories: 160,
-      difficulty: 'beginner',
-    },
-  },
-  {type: 'rest'},
-  {
-    type: 'workout',
-    workout: {
-      nameKey: 'workouts.mobility',
-      durationMin: 20,
-      exercises: 6,
-      calories: 100,
-      difficulty: 'beginner',
-    },
-  },
-];
-
-function fallbackWorkoutPlan(): DayPlan[] {
-  return WEEK_PLAN;
-}
 
 function toDayPlans(schedule: unknown, restDays: readonly string[], level: Difficulty = 'intermediate'): DayPlan[] {
   return dashboardPlanFromSchedule(schedule, restDays).map((plan) =>
@@ -134,31 +71,29 @@ const DIFFICULTY_BADGE: Record<Difficulty, string> = {
   advanced: 'bg-rose-400/20 text-rose-300',
 };
 
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
 export default function DashboardPage() {
   const t = useTranslations('Dashboard');
   const format = useFormatter();
   const locale = useLocale();
 
-  const today = useMemo(() => new Date(), []);
-
-  const todayIndex = useMemo(
-    () => dayIndexInWeek(today, locale),
-    [today, locale],
-  );
-
-  const [selectedIndex, setSelectedIndex] = useState(todayIndex);
+  const [today, setToday] = useState<Date | null>(null);
+  const [clientTimeZone, setClientTimeZone] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [program, setProgram] = useState<CurrentProgramResponse['program']>(null);
   const [programLoading, setProgramLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    // Calendar dates must come from the visitor's device, not the server's
+    // timezone. This also avoids a server/client midnight mismatch.
+    const clientToday = new Date();
+    setToday(clientToday);
+    setClientTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+    setSelectedIndex(dayIndexInWeek(clientToday, locale));
+  }, [locale]);
+
+  const todayIndex = today ? dayIndexInWeek(today, locale) : 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -190,29 +125,44 @@ export default function DashboardPage() {
   }, []);
 
   const weekDays = useMemo(
-    () => weekDaysFor(today, locale),
+    () => (today ? weekDaysFor(today, locale) : []),
     [today, locale],
   );
 
   const startOfToday = useMemo(
-    () => new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+    () => (today ? new Date(today.getFullYear(), today.getMonth(), today.getDate()) : null),
     [today],
   );
 
   const actualPlan = useMemo(
-    () => (program ? toDayPlans(program.weeklySchedule, Array.isArray(program.restDays) ? program.restDays as string[] : []) : fallbackWorkoutPlan()),
+    () => program
+      ? toDayPlans(
+          program.weeklySchedule,
+          Array.isArray(program.restDays) ? program.restDays as string[] : [],
+        )
+      : [],
     [program],
   );
-  const selectedPlanIndex = mondayPlanIndex(weekDays[selectedIndex]);
-  const selectedPlan = actualPlan[selectedPlanIndex] ?? {type: 'rest'};
+  const selectedDay = weekDays[selectedIndex] ?? null;
+  const selectedPlanIndex = selectedDay ? mondayPlanIndex(selectedDay) : 0;
+  const selectedPlan: DayPlan = actualPlan[selectedPlanIndex] ?? {type: 'rest'};
   const isTodaySelected = selectedIndex === todayIndex;
   const selectedWeekday = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][selectedPlanIndex];
 
-  const todayPlanIndex = mondayPlanIndex(today);
-  const sessionsDone = actualPlan.slice(0, todayPlanIndex).filter((plan) => plan.type === 'workout').length;
-  const totalSessions = actualPlan.filter((plan) => plan.type === 'workout').length;
+  const completedSessionDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const session of program?.workoutSessions ?? []) {
+      const date = new Date(session.startedAt);
+      dates.add(`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`);
+    }
+    return dates;
+  }, [program]);
 
-  const hour = today.getHours();
+  const dateKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  const isSelectedDayCompleted = selectedDay ? completedSessionDates.has(dateKey(selectedDay)) : false;
+  const sessionsDone = weekDays.filter((day) => completedSessionDates.has(dateKey(day))).length;
+  const totalSessions = actualPlan.filter((plan) => plan.type === 'workout').length;
+  const hour = today?.getHours() ?? 12;
   const greetingKey =
     hour < 12
       ? 'greeting.morning'
@@ -220,19 +170,31 @@ export default function DashboardPage() {
         ? 'greeting.afternoon'
         : 'greeting.evening';
 
-  const selectedDateLabel = format.dateTime(weekDays[selectedIndex], {
-    weekday: 'long',
-    day: 'numeric',
-  });
+  const formatDateTime = (
+    date: Date,
+    options: Pick<Intl.DateTimeFormatOptions, 'weekday' | 'day' | 'month'>,
+  ) => new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR' : 'en-US', {
+    ...options,
+    ...(clientTimeZone ? {timeZone: clientTimeZone} : {}),
+  }).format(date);
+
+  const selectedDateLabel = selectedDay
+    ? formatDateTime(selectedDay, {
+        weekday: 'long',
+        day: 'numeric',
+      })
+    : '';
 
   return (
     <AppShell
       overline={t(greetingKey)}
-      title={format.dateTime(today, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      })}
+      title={today
+        ? formatDateTime(today, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          })
+        : t('loading')}
       subtitle={t('weekLabel')}
     >
       {/* Page content — the platform shell owns safe areas & navigation. */}
@@ -244,12 +206,34 @@ export default function DashboardPage() {
             <Link href={`/${locale}/quiz`} className="mt-5 inline-flex rounded-xl bg-amber-600 px-5 py-3 font-semibold text-white">{t('quizRequiredCta')}</Link>
           </section>
         ) : null}
-        {!profileLoading && profile?.quizCompleted ? <PreferencesEditor labels={{title: t('preferences.title'), save: t('preferences.save'), saved: t('preferences.saved'), error: t('preferences.error'), styles: Object.fromEntries(['yoga','hiit','calisthenics','pilates','mobility','isometric','resistance_band','animal_flow'].map((id) => [id, t(`preferences.styles.${id}`)])), equipment: Object.fromEntries(['none','pull_up_bar','bands','dumbbells','barbell','kettlebells','bench','cable_machine','jump_rope'].map((id) => [id, t(`preferences.equipment.${id}`)]))}} initial={profile.preferences} /> : null}
+        {!profileLoading && profile?.quizCompleted ? (
+          <PreferencesEditor
+            labels={{
+              title: t('preferences.title'),
+              save: t('preferences.save'),
+              saved: t('preferences.saved'),
+              error: t('preferences.error'),
+              stylesTitle: t('preferences.styles.title'),
+              equipmentTitle: t('preferences.equipment.title'),
+              styles: Object.fromEntries(['yoga','hiit','calisthenics','pilates','mobility','isometric','resistance_band','animal_flow'].map((id) => [id, t(`preferences.styles.${id}`)])),
+              equipment: Object.fromEntries(['none','pull_up_bar','bands','dumbbells','barbell','kettlebells','bench','cable_machine','jump_rope'].map((id) => [id, t(`preferences.equipment.${id}`)])),
+            }}
+            initial={profile.preferences}
+          />
+        ) : null}
         {profileLoading ? (
           <p role="status" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{t('loading')}</p>
         ) : null}
 
-        {profile?.quizCompleted && !programLoading ? <>
+        {profile?.quizCompleted && !programLoading && !program ? (
+          <section className="mt-5 rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
+            <h2 className="text-lg font-bold text-amber-950">{t('programPendingTitle')}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-amber-800">{t('programPendingBody')}</p>
+            <Link href={`/${locale}/quiz`} className="mt-5 inline-flex rounded-xl bg-amber-600 px-5 py-3 font-semibold text-white">{t('programPendingCta')}</Link>
+          </section>
+        ) : null}
+
+        {profile?.quizCompleted && !programLoading && program && today ? <>
         {/* Weekly calendar */}
         <section
           aria-label={t('calendarTitle')}
@@ -260,20 +244,21 @@ export default function DashboardPage() {
             {t('calendarTitle')}
           </h2>
 
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div dir={locale === 'fa' ? 'rtl' : 'ltr'} className="grid grid-cols-7 gap-1 sm:gap-2">
             {weekDays.map((day, index) => {
               const plan = actualPlan[mondayPlanIndex(day)] ?? {type: 'rest'};
               const isToday = index === todayIndex;
               const isSelected = index === selectedIndex;
-              const isPast = day.getTime() < startOfToday.getTime();
+              const isPast = startOfToday ? day.getTime() < startOfToday.getTime() : false;
               const isRest = plan.type === 'rest';
+              const isDayCompleted = completedSessionDates.has(dateKey(day));
 
               return (
                 <button
                   key={day.toISOString()}
                   type="button"
                   aria-pressed={isSelected}
-                  aria-label={format.dateTime(day, {
+                  aria-label={formatDateTime(day, {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'long',
@@ -294,7 +279,7 @@ export default function DashboardPage() {
                       isSelected ? 'text-emerald-100' : 'text-slate-400',
                     ].join(' ')}
                   >
-                    {format.dateTime(day, {weekday: 'short'})}
+                    {formatDateTime(day, {weekday: 'short'})}
                   </span>
                   <span
                     className={[
@@ -306,10 +291,10 @@ export default function DashboardPage() {
                           : 'text-slate-800',
                     ].join(' ')}
                   >
-                    {format.dateTime(day, {day: 'numeric'})}
+                    {formatDateTime(day, {day: 'numeric'})}
                   </span>
 
-                  {isPast ? (
+                  {isDayCompleted ? (
                     <Check
                       className={[
                         'h-3 w-3',

@@ -15,6 +15,12 @@ export async function GET() {
           orderBy: {order: 'asc'},
           include: {exercise: true},
         },
+        workoutSessions: {
+          where: {completedAt: {not: null}},
+          orderBy: {startedAt: 'desc'},
+          take: 100,
+          select: {id: true, startedAt: true, completedAt: true},
+        },
       },
     });
 

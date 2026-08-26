@@ -1,7 +1,14 @@
-import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
+import { buildRuleBasedProgram } from '@/lib/ai/ruleBasedProgram';
+import {
+  AI_ENGINE_VERSION,
+  classifyAiGenerationError,
+  resolveAiProvider,
+  type AiProviderName,
+  type AiFallbackCategory,
+} from '@/lib/ai/provider';
 import { enforceRestDays } from '@/lib/ai/restDays';
 import { NextResponse } from 'next/server';
 
@@ -236,6 +243,14 @@ function formatWorkoutHistory(sessions: HistorySession[]): string {
   return lines.join('\n');
 }
 
+function isAiQuotaError(error: unknown): boolean {
+  return classifyAiGenerationError(error) === 'ai_quota_exhausted';
+}
+
+function safeGenerationLog(category: AiFallbackCategory): void {
+  console.warn(category);
+}
+
 export async function POST(req: Request) {
   let generationUserId: string | null = null;
   let slotAcquired = false;
@@ -378,11 +393,43 @@ export async function POST(req: Request) {
     const workoutHistory = formatWorkoutHistory(recentSessions);
 
     const systemPrompt = await loadSystemPrompt(mode);
+    const fallbackEnabled = (process.env.AI_GENERATION_FALLBACK ?? 'rules').trim().toLowerCase() === 'rules';
+    let provider: ReturnType<typeof resolveAiProvider> | null = null;
+    let generatedOutput!: z.infer<typeof ProgramSchema>;
+    let generationSource: 'ai' | 'rules' = 'rules';
+    let generationProvider: AiProviderName | null = null;
+    let generationModel: string | null = null;
+    let fallbackReason: AiFallbackCategory | null = null;
 
-    const generation = generateObject({
-      model: openai('gpt-4o-mini'),
-      schema: ProgramSchema,
-      prompt: `Generate a workout program for a user with the following profile:
+    try {
+      provider = resolveAiProvider();
+    } catch (error) {
+      const category = classifyAiGenerationError(error);
+      if (!fallbackEnabled || category !== 'ai_configuration_error') throw error;
+      fallbackReason = category;
+      safeGenerationLog(category);
+      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+      generationSource = 'rules';
+    }
+
+    if (!provider) {
+      // Configuration fallback intentionally avoids constructing an external
+      // provider or making any network request.
+      generationProvider = null;
+      generationModel = null;
+    } else if (provider.generator === 'rules') {
+      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+      generationSource = 'rules';
+      generationProvider = null;
+      generationModel = null;
+    } else {
+      generationProvider = provider.provider;
+      generationModel = provider.modelName;
+      try {
+        const generation = generateObject({
+          model: provider.model as NonNullable<typeof provider.model>,
+          schema: ProgramSchema,
+          prompt: `Generate a workout program for a user with the following profile:
         - Level: ${level}
         - Goals: ${goals}
         - Preferred exercise styles (use only these styles unless a safety substitution is necessary): ${exerciseStyles.join(', ')}
@@ -422,16 +469,25 @@ export async function POST(req: Request) {
          rest) and in the progression_plan.
          The output disclaimer must include this safety message or its equivalent:
          ${MEDICAL_DISCLAIMER}`,
-      system: systemPrompt,
-    });
-
-    // The generation is bounded by the AI budget; `withTimeout` rejects with a
-    // coded `TimeoutError` and swallows any late completion/rejection of the
-    // underlying OpenAI request (no unhandled rejections).
-    const result = await withTimeout(generation, AI_GENERATION_TIMEOUT_MS, {
-      message: 'AI generation timeout',
-      code: TIMEOUT_CODES.AI,
-    });
+          system: systemPrompt,
+        });
+        const result = await withTimeout(generation, AI_GENERATION_TIMEOUT_MS, {
+          message: 'AI generation timeout',
+          code: TIMEOUT_CODES.AI,
+        });
+        generatedOutput = result.object;
+        generationSource = 'ai';
+      } catch (error) {
+        const category = classifyAiGenerationError(error);
+        if (!fallbackEnabled || !category) throw error;
+        fallbackReason = category;
+        safeGenerationLog(category);
+        generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+        generationSource = 'rules';
+        generationProvider = provider.provider;
+        generationModel = provider.modelName;
+      }
+    }
     // Enforce the rest-day invariant deterministically — regardless of model
     // behavior: any weekly_schedule entry placed on a user-selected rest day
     // is rewritten into an explicit rest entry (is_rest_day: true, NO
@@ -442,10 +498,17 @@ export async function POST(req: Request) {
     // enforcement result is what gets persisted and replayed on idempotent
     // retries, so every output path (fresh generation, retry/replay) is
     // covered.
-    const enforced = enforceRestDays(result.object, restDays);
+    const enforced = enforceRestDays(generatedOutput, restDays);
     const generated = {
       ...enforced,
       disclaimer: enforced.disclaimer.trim() || MEDICAL_DISCLAIMER,
+      metadata: {
+        source: generationSource,
+        provider: generationSource === 'ai' ? generationProvider : generationProvider,
+        model: generationSource === 'ai' ? generationModel : generationModel,
+        fallbackReason,
+        engineVersion: AI_ENGINE_VERSION,
+      },
     };
 
     // Persist the validated program into `Program` / `ProgramExercise`,
@@ -494,6 +557,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {error: timeoutErrorMessage(error.code), code: error.code},
         {status: 504},
+      );
+    }
+    if (isAiQuotaError(error)) {
+      return NextResponse.json(
+        {
+          error: 'Program generation is temporarily unavailable because the configured AI service has no remaining credit.',
+          code: 'AI_CREDITS_UNAVAILABLE',
+        },
+        {status: 503},
       );
     }
     // Log only a stable error category; never include prompts, profiles, or API details.

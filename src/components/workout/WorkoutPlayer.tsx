@@ -97,6 +97,8 @@ export interface WorkoutPlayerProps {
   soundEnabled?: boolean;
   /** Enables haptic feedback (Vibration API) for workout events. Default true. */
   hapticsEnabled?: boolean;
+  /** Fired once when the user starts the workout. */
+  onWorkoutStart?: () => void;
   /** Fired once with a summary when the whole workout is finished. */
   onWorkoutComplete?: (summary: WorkoutSummary) => void;
   /** Extra classes applied to the root element. */
@@ -110,6 +112,7 @@ export function WorkoutPlayer({
   soundEnabled = true,
   hapticsEnabled = true,
   onWorkoutComplete,
+  onWorkoutStart,
   className = '',
 }: WorkoutPlayerProps) {
   const t = useTranslations('WorkoutPlayer');
@@ -407,6 +410,7 @@ export function WorkoutPlayer({
                     exercises: totalExercises,
                     sets: totalSets,
                   });
+                  onWorkoutStart?.();
                   start();
                 }}
                 className={cn(BUTTON_BASE, BUTTON_PRIMARY)}

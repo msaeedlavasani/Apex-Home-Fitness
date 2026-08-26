@@ -53,7 +53,7 @@
   "Dashboard": {
     "greeting": {
       "morning": "صبح بخیر",
-      "afternoon": "ظهر بخیر",
+      "afternoon": "بعدازظهر بخیر",
       "evening": "شب بخیر"
     },
     "weekLabel": "برنامه تمرینی هفتگی تو",
@@ -61,8 +61,10 @@
     "quizRequiredTitle": "اول تنظیماتت را کامل کن",
     "quizRequiredBody": "به سؤال‌های اولیه جواب بده تا اپکس برنامه‌ات را بسازد.",
     "quizRequiredCta": "تکمیل کوییز",
-    "preferences": {"title": "به‌روزرسانی ترجیحات تمرین", "save": "ذخیره ترجیحات", "saved": "ذخیره شد", "error": "ذخیره ترجیحات ممکن نبود.", "styles": {"yoga": "یوگا", "hiit": "هیت", "calisthenics": "وزن بدن", "pilates": "پیلاتس", "mobility": "تحرک", "isometric": "ایزومتریک", "resistance_band": "کش ورزشی", "animal_flow": "آنیمال فلو"}, "equipment": {"none": "هیچ‌کدام — فقط وزن بدن", "pull_up_bar": "میله بارفیکس", "bands": "کش مقاومتی", "dumbbells": "دمبل", "barbell": "هالتر", "kettlebells": "کتل‌بل", "bench": "نیمکت", "cable_machine": "دستگاه سیم‌کش", "jump_rope": "طناب پرش"}},
-    "calendarTitle": "تقویم هفتگی",
+    "programPendingTitle": "برنامه‌ات هنوز آماده نیست",
+    "programPendingBody": "پاسخ‌های کوییزت ذخیره شده‌اند؛ برای ساخت برنامه، دوباره تلاش کن.",
+    "programPendingCta": "ادامه ساخت برنامه",
+    "preferences": {"title": "به‌روزرسانی ترجیحات تمرین", "save": "ذخیره ترجیحات", "saved": "ذخیره شد", "error": "ذخیره ترجیحات ممکن نبود.", "styles": {"title": "سبک‌های تمرین", "yoga": "یوگا", "hiit": "هیت", "calisthenics": "وزن بدن", "pilates": "پیلاتس", "mobility": "تحرک", "isometric": "ایزومتریک", "resistance_band": "کش ورزشی", "animal_flow": "آنیمال فلو"}, "equipment": {"title": "تجهیزات در دسترس", "none": "هیچ‌کدام — فقط وزن بدن", "pull_up_bar": "میله بارفیکس", "bands": "کش مقاومتی", "dumbbells": "دمبل", "barbell": "هالتر", "kettlebells": "کتل‌بل", "bench": "نیمکت", "cable_machine": "دستگاه سیم‌کش", "jump_rope": "طناب پرش"}},    "calendarTitle": "تقویم هفتگی",
     "weekProgress": "{done} از {total} جلسه این هفته انجام شد",
     "summaryTitle": "تمرین امروز",
     "summaryRest": "روز استراحت",
@@ -232,9 +234,15 @@
     }
   },
   "Profile": {
-    "metaTitle": "پروفایل",
-    "title": "پروفایل",
+    "metaTitle": "پروفایل","title": "پروفایل",
     "subtitle": "حساب کاربری و تنظیمات تو",
+    "edit": "ویرایش پروفایل",
+    "editTitle": "ویرایش اطلاعات پروفایل",
+    "saveChanges": "ذخیره تغییرات",
+    "cancel": "انصراف",
+    "editError": "ذخیره تغییرات ممکن نبود. دوباره تلاش کن.",
+    "fields": {"name": "نام", "email": "ایمیل", "height": "قد (سانتی‌متر)", "weight": "وزن (کیلوگرم)"},
+    "weightHistory": {"title": "تاریخچه وزن", "unit": "کیلوگرم"},
     "sections": {
       "userInfo": "اطلاعات کاربری",
       "preferences": "تنظیمات",

@@ -66,6 +66,9 @@ enum GenerationRequestStatus {
 model User {
   id            String           @id @default(cuid())
   email         String           @unique
+  // Editable contact address shown in the profile. `email` remains the
+  // immutable synthetic Supabase identity used by phone OTP.
+  profileEmail  String?
   // Canonical phone identity from the verified OTP flow. Nullable for legacy
   // rows created before phone-backed login; new phone accounts always set it.
   phone         String?          @unique
@@ -87,10 +90,24 @@ model User {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
+  weightEntries  WeightEntry[]
+
   programs        Program[]        @relation("UserPrograms")
   workoutSessions WorkoutSession[]
   quizResponses   QuizResponse[]
   generationRequests ProgramGenerationRequest[]
+}
+
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  weightKg  Float
+  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
 }
 
 // A single exercise. Category drives the program builder; the

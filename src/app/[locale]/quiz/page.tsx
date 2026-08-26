@@ -329,11 +329,13 @@ export default function QuizPage() {
           <FlowCard
             title={t('quiz.flow.error.title')}
             body={
-              errorCode === 'AUTH_BACKEND_NOT_CONFIGURED'
-                ? t('quiz.flow.error.authNotConfigured')
-                : errorKind === 'permanent'
-                  ? t('quiz.flow.error.permanent')
-                  : t('quiz.flow.error.retryable')
+              errorCode === 'AI_CREDITS_UNAVAILABLE'
+                ? t('quiz.flow.error.aiCreditsUnavailable')
+                : errorCode === 'AUTH_BACKEND_NOT_CONFIGURED'
+                  ? t('quiz.flow.error.authNotConfigured')
+                  : errorKind === 'permanent'
+                    ? t('quiz.flow.error.permanent')
+                    : t('quiz.flow.error.retryable')
             }
             actions={
               <div className="flex flex-col gap-3">

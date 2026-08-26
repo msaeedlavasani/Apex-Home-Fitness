@@ -36,10 +36,14 @@ export default async function ProfilePage() {
     const {getCurrentUserProfile} = await import('@/services/userService');
     const profile = await getCurrentUserProfile();
     user = {
-      email: profile.email,
+      email: profile.profileEmail ?? profile.email,
+      authEmail: profile.email,
+      weightHistory: profile.weightEntries ?? [],
       name: profile.name,
       fitnessGoal: profile.fitnessGoal ?? null,
       fitnessLevel: profile.fitnessLevel ?? null,
+      heightCm: profile.heightCm ?? null,
+      weightKg: profile.weightKg ?? null,
     };
   } catch {
     user = null;

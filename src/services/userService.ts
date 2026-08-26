@@ -169,7 +169,8 @@ function profileUpdateData(
 ): Prisma.UserUpdateInput {
   const data: Prisma.UserUpdateInput = {};
   if (existing.email !== email) data.email = email;
-  if (existing.name !== name) data.name = name;
+  // `name` is profile-editable in the app. Never overwrite it from Supabase
+  // metadata on routine session syncs.
   // Never reassign a phone already owned by another account. The lookup by
   // phone happens before this helper, so a missing legacy phone can be filled
   // safely while the verified phone remains the account identity.
@@ -246,7 +247,11 @@ export async function syncUserWithSupabase(supabaseUser: SupabaseUser) {
  */
 export async function getCurrentUserProfile() {
   const supabaseUser = await getSupabaseAuthUser();
-  return syncUserWithSupabase(supabaseUser);
+  const user = await syncUserWithSupabase(supabaseUser);
+  return prisma.user.findUniqueOrThrow({
+    where: {id: user.id},
+    include: {weightEntries: {orderBy: {recordedAt: 'desc'}, take: 52}},
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -167,9 +167,23 @@ export interface AiGeneratedProgram {
     week_6: string;
     overload_variables: string[];
   };
+  adjustments?: {
+    summary: string;
+    progression: string[];
+    regression: string[];
+    rationale: string;
+  };
   warnings: string[];
   notes: string;
   disclaimer: string;
+  /** Traceable source information returned with the generation response. */
+  metadata?: {
+    source: 'ai' | 'rules';
+    provider: 'groq' | 'openai' | null;
+    model: string | null;
+    fallbackReason: string | null;
+    engineVersion: string;
+  };
 }
 
 export interface SaveGeneratedProgramInput {

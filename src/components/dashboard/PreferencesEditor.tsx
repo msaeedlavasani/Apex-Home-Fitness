@@ -8,6 +8,8 @@ type Labels = {
   save: string;
   saved: string;
   error: string;
+  stylesTitle: string;
+  equipmentTitle: string;
   styles: Record<string, string>;
   equipment: Record<string, string>;
 };
@@ -53,26 +55,26 @@ export function PreferencesEditor({labels, initial}: Props) {
   }
 
   return (
-    <section aria-label={labels.title} className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold text-slate-800">{labels.title}</h2>
+    <section aria-label={labels.title} className="mt-5 rounded-3xl border border-[color:var(--apex-border)] bg-[color:var(--apex-card)] p-5 shadow-sm">
+      <h2 className="text-base font-bold text-[color:var(--apex-text)]">{labels.title}</h2>
       <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-slate-600">{labels.styles.title}</legend>
+        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.stylesTitle}</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {EXERCISE_STYLE_IDS.map((id) => (
-            <label key={id} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm">
-              <input type="checkbox" checked={exerciseStyles.includes(id)} onChange={() => toggle(id, exerciseStyles, setExerciseStyles)} />
-              {labels.styles[id] ?? id}
+            <label key={id} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${exerciseStyles.includes(id) ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)]'}`}>
+              <input type="checkbox" checked={exerciseStyles.includes(id)} onChange={() => toggle(id, exerciseStyles, setExerciseStyles)} className="h-4 w-4 shrink-0 accent-emerald-600" />
+              <span className="leading-5">{labels.styles[id] ?? id}</span>
             </label>
           ))}
         </div>
       </fieldset>
       <fieldset className="mt-4">
-        <legend className="text-sm font-semibold text-slate-600">{labels.equipment.title}</legend>
+        <legend className="text-sm font-semibold text-[color:var(--apex-text-secondary)]">{labels.equipmentTitle}</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {EQUIPMENT.map((id) => (
-            <label key={id} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm">
-              <input type="checkbox" checked={equipment.includes(id)} onChange={() => toggle(id, equipment, setEquipment)} />
-              {labels.equipment[id] ?? id}
+            <label key={id} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${equipment.includes(id) ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)]'}`}>
+              <input type="checkbox" checked={equipment.includes(id)} onChange={() => toggle(id, equipment, setEquipment)} className="h-4 w-4 shrink-0 accent-emerald-600" />
+              <span className="leading-5">{labels.equipment[id] ?? id}</span>
             </label>
           ))}
         </div>

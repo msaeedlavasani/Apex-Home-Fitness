@@ -14,7 +14,8 @@
 - **OTP فعلی production:** موقتاً mock؛ ارسال SMS واقعی خاموش است و کد نمایشی `123456` است.
 - **SMS template live:** شناسه `976440` با نام پارامتر `otp`
 - **Deployment:** self-hosted Docker Compose؛ سرویس app روی پورت 3000. DNS کانتینر app صراحتاً به `1.1.1.1` و `8.8.8.8` تنظیم شده تا lookup ناپایدار Supabase (`EAI_AGAIN`) باعث شکست OTP نشود.
-- **کلید OpenAI:** `OPENAI_API_KEY` برای ساخت برنامه لازم است، server-only است و فقط در `/opt/apexhomefit/app-new/.env` قرار می‌گیرد؛ بعد از تغییر، فقط `docker compose up -d --no-deps --force-recreate app` اجرا شود. نام متغیر `OPENAI_MODEL` در نسخه فعلی مصرف نمی‌شود؛ مدل در کد `gpt-4o-mini` است.
+- **Program generation:** explicit resolver in `src/lib/ai/provider.ts`; production can use `Groq → rules` or `OpenAI → rules` through env only. Recommended current env: `PROGRAM_GENERATOR=ai`, `AI_PROVIDER=groq`, `AI_GENERATION_FALLBACK=rules`, `GROQ_MODEL=openai/gpt-oss-120b`. `@ai-sdk/groq` is pinned to compatible `1.2.9`; `@ai-sdk/openai` remains `1.3.24`. Both keys are server-only and never logged.
+- **Profile/workout tracking:** profile contact email is editable separately from the synthetic auth email; verified phone stays immutable. Weight changes update the current profile and append `WeightEntry` history. Starting and completing a generated workout creates/finishes an owned `WorkoutSession`, which feeds dashboard completion markers, History and Analytics.
 
 ## وضعیت فعلی پروژه (Current Status) 🟢
 - **Batch 8:** بهینه‌سازی بصری، Design System، پیشنهاد AI، TWA و SEO — تکمیل.

@@ -142,6 +142,21 @@ test('generate: repeated IN_PROGRESS beyond the budget surfaces as in_progress (
   );
 });
 
+test('generate: AI credit exhaustion preserves the stable code for a clear user message', async () => {
+  mock.method(globalThis, 'fetch', () =>
+    Promise.resolve(
+      jsonResponse({error: 'Program generation unavailable', code: 'AI_CREDITS_UNAVAILABLE'}, 503),
+    ),
+  );
+  await assert.rejects(
+    generateProgramApi(GENERATION_INPUT, 'quiz-api-0008'),
+    (err: unknown) =>
+      err instanceof QuizApiError &&
+      err.kind === 'retryable' &&
+      err.code === 'AI_CREDITS_UNAVAILABLE',
+  );
+});
+
 test('generate: 401 is classified as auth', async () => {
   mock.method(globalThis, 'fetch', () =>
     Promise.resolve(jsonResponse({error: 'Authentication required'}, 401)),

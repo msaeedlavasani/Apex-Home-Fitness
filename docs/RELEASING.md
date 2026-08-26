@@ -32,7 +32,11 @@
      cp .env.example .env
      
      # 2. Set server-only secrets in .env (never commit this file), including:
-     #    OPENAI_API_KEY=sk-...
+     #    PROGRAM_GENERATOR=ai
+     #    AI_PROVIDER=groq
+     #    AI_GENERATION_FALLBACK=rules
+     #    GROQ_API_KEY=... and GROQ_MODEL=openai/gpt-oss-120b
+     #    OPENAI_API_KEY=... and OPENAI_MODEL=gpt-4o-mini (optional alternate)
      #    NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_SUPABASE_URL,
      #    NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
      # 3. Build and run (includes database migrations)
@@ -52,6 +56,37 @@
    npx lighthouse https://your-production-domain.example --view
    npx @bubblewrap/cli validate --url=https://your-production-domain.example
    ```
+
+### Provider configuration and program generation
+
+Program generation uses an explicit provider resolver. Keys never select a provider implicitly. The recommended production configuration while OpenAI credit is unavailable is:
+
+```env
+PROGRAM_GENERATOR=ai
+AI_PROVIDER=groq
+AI_GENERATION_FALLBACK=rules
+AI_MODEL=
+GROQ_API_KEY=...
+GROQ_MODEL=openai/gpt-oss-120b
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Set `PROGRAM_GENERATOR=rules` to disable all external AI calls. Set `AI_PROVIDER=openai` to use OpenAI instead. `AI_MODEL`, when non-empty, overrides the provider-specific model. If the configured provider fails during generation (quota, rate limit, timeout, network, 5xx, invalid output, or configuration failure), `AI_GENERATION_FALLBACK=rules` selects the deterministic rule engine; validation, authentication, medical clearance, rate limits, idempotency, and persistence failures never trigger that fallback.
+
+`GROQ_API_KEY` and `OPENAI_API_KEY` are server-only. Keep them only in `/opt/apexhomefit/app-new/.env`, set that file to mode `600`, and recreate only the app service after changing them:
+
+```bash
+chmod 600 /opt/apexhomefit/app-new/.env
+cd /opt/apexhomefit/app-new
+docker compose up -d --no-deps --force-recreate app
+```
+
+For a safe provider check, inspect only the presence of the selected env and the runtime model name; never print a key, prompt, provider response, or quiz payload. An opt-in real smoke test may use `RUN_AI_PROVIDER_SMOKE=1` outside CI and only with a consenting test account.
+
+### Editable profile and weight history
+
+The profile API allows editing the display name, contact email, height, current weight, goals, level, exercise styles, and equipment. The verified phone identity remains immutable. Every non-null weight update also creates a `WeightEntry` record, so repeated updates form a chronological history used by the profile and future analytics. Prisma migrations must be applied before starting the app.
 
 ### کلید OpenAI و تولید برنامه
 

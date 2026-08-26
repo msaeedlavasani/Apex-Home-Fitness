@@ -15,11 +15,11 @@
 | Base path | Same-origin (no prefix; the i18n middleware only matches `/` and `/(fa\|en)/:path*`, so API routes are served as-is) |
 | Runtime | Next.js App Router Route Handlers (`src/app/api/**/route.ts`) |
 | Language | TypeScript, Zod v3 for validation, Prisma for persistence |
-| AI provider | Vercel AI SDK (`ai` v4) + `@ai-sdk/openai`, model `gpt-4o-mini` |
+| AI provider | Vercel AI SDK v4 + explicit resolver: `@ai-sdk/groq@1.2.9` or `@ai-sdk/openai@1.3.24`; deterministic rules fallback |
 
 Covered endpoints:
 
-1. `POST /api/generate-program` — generates a personalized workout program with OpenAI and persists it for the authenticated user.
+1. `POST /api/generate-program` — generates a personalized workout program through the explicitly configured Groq/OpenAI provider or a deterministic rules engine, then persists it for the authenticated user.
 2. `POST /api/analytics/events` — first-party ingestion endpoint for client-side analytics events (validates and writes each event to the structured server log).
 
 ---
@@ -41,7 +41,7 @@ Source: `src/app/api/generate-program/route.ts` · helpers: `src/lib/ai/requestS
 
 ### 3.1 Summary / خلاصه
 
-Takes the user's workout profile (level, goal, equipment, limitations), checks safety (medical clearance), enforces per-IP / per-user rate limits and per-user concurrency, reads the user's recent workout history (last 10 sessions, up to 12 exercises each), calls `gpt-4o-mini` with a mode-specific system prompt and a strict Zod output schema (`generateObject`), then persists the validated program in **one Prisma transaction** and returns both the DB record and the full AI output.
+Takes the user's workout profile (level, goal, equipment, limitations), checks safety (medical clearance), enforces per-IP / per-user rate limits and per-user concurrency, reads the user's recent workout history (last 10 sessions, up to 12 exercises each), resolves the explicitly configured provider immediately before generation, validates the structured output (`ProgramSchema`), and persists exactly one final program in **one Prisma transaction**. When `AI_GENERATION_FALLBACK=rules` and only the AI-generation step fails with an eligible provider error, the deterministic rules engine produces and validates the final output instead.
 
 ### 3.2 Request / بدنه درخواست
 
@@ -104,8 +104,12 @@ Cookie: sb-<ref>-auth-token=<session>…   (Supabase session)
    - else → `general`
 8. Load the mode-specific system prompt from `infra/ai/prompts/` (`loadSystemPrompt`)
 9. Load recent `WorkoutSession` history (newest first, `take: 10`, exercises limited to 12 per session; completion status + actual sets/reps/duration drive the AI's progression/regression `adjustments`) — bounded by `HISTORY_QUERY_TIMEOUT_MS = 5_000` via `withTimeout` (see §3.6)
-10. `generateObject({ model: openai('gpt-4o-mini'), schema: ProgramSchema, ... })` bounded by a **45 000 ms** timeout (`AI_GENERATION_TIMEOUT_MS`) via `withTimeout` (see §3.6)
-11. Persist the validated program (transactional, bounded — see §3.7) and return `200`; with a claimed key, `persistProgramForUserWithIdempotency` finalizes the record to `SUCCEEDED` **in the same transaction**
+10. Resolve generation mode/provider with `resolveAiProvider()` **immediately before** generation:
+    - `PROGRAM_GENERATOR=rules` → no external request;
+    - `PROGRAM_GENERATOR=ai` + `AI_PROVIDER=groq|openai` → calls only that provider; API-key presence never selects a provider;
+    - `AI_MODEL`, when non-empty, overrides `GROQ_MODEL`/`OPENAI_MODEL`.
+11. `generateObject({ model: provider.model, schema: ProgramSchema, ... })` bounded by a **45 000 ms** timeout (`AI_GENERATION_TIMEOUT_MS`) via `withTimeout` (see §3.6). If and only if generation/configuration fails with an eligible provider category and `AI_GENERATION_FALLBACK=rules`, validates a rule-based output with the same `ProgramSchema`.
+12. Persist the single validated final program (transactional, bounded — see §3.7) and return `200`; with a claimed key, `persistProgramForUserWithIdempotency` finalizes the record to `SUCCEEDED` **in the same transaction**
 
 ### 3.4 Rate limits & concurrency / محدودیت نرخ و همزمانی
 
@@ -150,7 +154,7 @@ All bounded operations go through the `withTimeout` helper (`src/lib/timeout.ts`
 - `AI_GENERATION_TIMEOUT_MS = 45_000` — if the AI call does not resolve within 45 s, the route responds `504 {"error":"Program generation timed out. Please try again.","code":"AI_TIMEOUT"}`.
 - `HISTORY_QUERY_TIMEOUT_MS = 5_000` — bounds the recent-workout-history read (`prisma.workoutSession.findMany`).
 - Persistence timeouts — see §3.7.
-- The underlying OpenAI request is **not aborted** (it may still complete server-side, but nothing is persisted). `withTimeout` swallows late completions/rejections of the timed-out operation, so a slow operation that finally fails after the timeout can never become an unhandled rejection (this was a latent risk with the previous inline `Promise.race`).
+- The underlying provider request is **not aborted** (it may still complete server-side, but nothing is persisted). `withTimeout` swallows late completions/rejections of the timed-out operation, so a slow operation that finally fails after the timeout can never become an unhandled rejection. When the timeout originates inside the generation boundary and rules fallback is enabled, it produces one rules output; a history or persistence timeout never falls back.
 - The route does not set `maxDuration`/`runtime` — it runs on the default Node.js runtime. On serverless platforms with a default function duration shorter than the AI + persistence budget (~55 s worst case), the platform may kill the function first; configure `maxDuration` if deploying there.
 
 ### 3.7 Persistence / ذخیره‌سازی
@@ -257,7 +261,7 @@ Shape of `generated` (validated by `ProgramSchema` in the route):
     - `equipment` ∈ `none | dumbbell | barbell | kettlebell | resistance_band | pull_up_bar | bench | mat | cardio_machine | other`
 - `progression_plan`: `{ weeks_1_2, weeks_3_5, week_6, overload_variables[] }`
 - `adjustments`: `{ summary, progression[], regression[], rationale }` — required by the schema; grounded in workout history (falls back to a baseline statement when there is no history)
-- `warnings[]`, `notes`, `disclaimer` — `disclaimer` is trimmed and falls back to the app's `MEDICAL_DISCLAIMER` when empty
+- `metadata`: `{ source: 'ai' | 'rules', provider: 'groq' | 'openai' | null, model: string | null, fallbackReason: string | null, engineVersion: string }`. Metadata is response/idempotency payload only; no migration is required and no provider key, prompt, quiz payload, medical detail, or raw provider response is stored or logged.
 
 `program` is the persisted Prisma `Program` including ordered `exercises` (with their `exercise` records) and `owner` (`{ id, email, name }`).
 
@@ -275,7 +279,7 @@ Shape of `generated` (validated by `ProgramSchema` in the route):
 | `429` | IP / user / daily rate limit exceeded | see §3.4 |
 | `504` | AI call exceeded 45 s | `{"error":"Program generation timed out. Please try again.","code":"AI_TIMEOUT"}` |
 | `504` | Persistence (history query or program save) exceeded its budget | `{"error":"Your program could not be processed right now. Please try again.","code":"PERSISTENCE_TIMEOUT"}` |
-| `500` | Internal error (Prisma, prompt file missing, provider error, user-sync error, program-name collision) — logs only a stable error category, never prompts/profiles/API details | `{"error":"Failed to generate program"}` |
+| `500` | Internal error (prompt/history/Prisma/persistence/provider error outside the eligible generation boundary, user-sync error, program-name collision) — logs only a stable category, never prompts/profiles/API details | `{"error":"Failed to generate program"}` |
 
 ### 3.10 Idempotency / تکرارناپذیری
 
@@ -382,23 +386,30 @@ Per-event check (`isValidEvent`) — **invalid events are silently dropped** (ne
 
 ## 5. Environment variables / متغیرهای محیطی
 
-Names only — no values (see `.env.example`). Runtime source of truth: `src/lib/supabase.ts`, `src/lib/prisma`, `@ai-sdk/openai`.
+Names only — no values (see `.env.example`). Runtime source of truth: `src/lib/ai/provider.ts`, `src/lib/supabase.ts`, and `src/lib/prisma`.
 
 | Variable | Needed by | Required? |
 |---|---|---|
+| `PROGRAM_GENERATOR` | `generate-program` provider resolver: `ai` (default) or `rules` | ❌ optional (default `ai`) |
+| `AI_PROVIDER` | Explicit provider selection: `groq` or `openai` | ⚠️ conditional when generator is `ai` |
+| `AI_GENERATION_FALLBACK` | Enables deterministic `rules` fallback for eligible generation/configuration failures | ❌ optional (default `rules`) |
+| `AI_MODEL` | Global model override | ❌ optional |
+| `GROQ_API_KEY` | Groq generation | ⚠️ conditional |
+| `GROQ_MODEL` | Groq model (default `openai/gpt-oss-120b`) | ❌ optional |
+| `OPENAI_API_KEY` | OpenAI generation | ⚠️ conditional |
+| `OPENAI_MODEL` | OpenAI model (default `gpt-4o-mini`) | ❌ optional |
+| `RUN_AI_PROVIDER_SMOKE` | Opt-in real provider smoke test only; never ordinary CI | ❌ optional |
 | `NEXT_PUBLIC_SUPABASE_URL` | `generate-program` (auth + user sync) | ✅ |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `generate-program` (auth + user sync) | ✅ |
 | `DATABASE_URL` | `generate-program` (Prisma: history query + persistence) | ✅ |
-| `OPENAI_API_KEY` | `generate-program` (default env var read by `@ai-sdk/openai`) | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | PWA / TWA release, OG metadata (not read by these routes) | ❌ optional |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | error tracking (console reporter fallback without it) | ❌ optional |
-| `RATE_LIMIT_STORE` | `generate-program` rate limiting — `memory` (default, local fallback) or `redis` (shared multi-instance backend) | ❌ optional (default `memory`) |
-| `REDIS_REST_URL` | Redis REST store base URL (only when `RATE_LIMIT_STORE=redis`) | ⚠️ conditional |
-| `REDIS_REST_TOKEN` | Redis REST store auth token (only when `RATE_LIMIT_STORE=redis`; never commit a real value) | ⚠️ conditional |
+| `RATE_LIMIT_STORE` | `generate-program` rate limiting — `memory` (default) or `redis` | ❌ optional |
+| `REDIS_REST_URL` / `REDIS_REST_TOKEN` | Redis REST store when `RATE_LIMIT_STORE=redis` | ⚠️ conditional |
 
-`OPENAI_API_KEY` is server-only: it belongs in the ignored deployment `.env` file (`/opt/apexhomefit/app-new/.env` for the current self-hosted server), **not** in a `NEXT_PUBLIC_*` variable, source file, or git. Restart/recreate only the `app` service after changing it so the container receives the new environment. The current model is fixed in `src/app/api/generate-program/route.ts` as `gpt-4o-mini`; `OPENAI_MODEL` is not read by this release.
+The provider is selected only by `PROGRAM_GENERATOR` and `AI_PROVIDER`; the presence of a key never silently changes the route. The AI call is created only after input/auth/medical/idempotency/rate-limit/history checks. `PROGRAM_GENERATOR=rules` makes no external AI call. With `AI_GENERATION_FALLBACK=rules`, only provider-generation/configuration categories (`ai_quota_exhausted`, `ai_rate_limited`, `ai_timeout`, `ai_network_failure`, `ai_provider_5xx`, `ai_schema_validation_failed`, `ai_configuration_error`) select the rules engine; validation, auth, medical, rate-limit, history, Prisma, persistence, and unknown programming errors do not.
 
-`analytics/events` requires **no** environment variables (logger only).
+`GROQ_API_KEY` and `OPENAI_API_KEY` are server-only: keep them in the ignored deployment `.env`, never in `NEXT_PUBLIC_*`, source, git, prompts, or logs. `metadata` reports only source/provider/model/category/engine version; no secret or user payload is recorded.
 
 ---
 
@@ -406,7 +417,8 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 
 - **Prompt files (deployment artifact):** `infra/ai/prompts/01-general-program-generation-prompt.md`, `02-injury-focused-program-prompt.md`, `03-equipment-limited-program-prompt.md` are read from `process.cwd()` at request time by `loadSystemPrompt(mode)`. A missing file → `500 {"error":"Failed to generate program"}`. They must be present in the deployed artifact.
 - **Database:** SQLite via Prisma (`DATABASE_URL`), with migrations in `prisma/` — `WorkoutSession`, `User`, `Program`, `ProgramExercise`, `Exercise` are read/written by `generate-program`, plus the `ProgramGenerationRequest` idempotency ledger (§3.10).
-- **AI call:** one `gpt-4o-mini` structured-output call per request (OpenAI API). `OPENAI_API_KEY` must be injected as a server-only runtime environment variable; the route does not read an `OPENAI_MODEL` override. The route does **not** configure `maxDuration`; default Node.js runtime. See §3.6.
+- **AI call:** one structured-output call per request through the explicitly configured provider (`groq` or `openai`). `GROQ_API_KEY`/`OPENAI_API_KEY` are server-only runtime variables; model selection is `AI_MODEL` then provider-specific model. The route does not configure `maxDuration`; default Node.js runtime. See §3.6.
+- **Workout tracking:** `POST /api/workout/session` creates and completes user-owned `WorkoutSession` rows used by dashboard completion markers, History, Analytics and future generation history.
 - **Body size:** no app-level limit on `generate-program` (platform default applies); `analytics/events` enforces 64 KiB itself.
 - **Logging:** `analytics/events` output goes to structured logs (scope `analytics`); in production each entry is a single JSON line suitable for aggregation (CloudWatch, Datadog, …). Sensitive keys are redacted by the logger.
 
