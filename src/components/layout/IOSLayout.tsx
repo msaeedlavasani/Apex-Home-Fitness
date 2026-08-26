@@ -38,9 +38,10 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
       {/* Scrollable content — the large title lives here (iOS pattern) */}
       <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
-        {/* Top row: back affordance (pushed screens only) on the start side;
-            brand mark + language + theme toggles on the end side — the
-            desktop corner controls, mirrored onto iOS. */}
+        {/* Top row: on tab screens (no back) the brand — mark + wordmark —
+            sits on the START side (right in Persian, left in English); on
+            pushed screens the back affordance replaces it. Language + theme
+            toggles stay on the end side, like the desktop corner. */}
         <div className="flex items-center justify-between gap-2">
           {backHref ? (
             <Link
@@ -50,9 +51,10 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
               <ChevronLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
               {t('back')}
             </Link>
-          ) : <span />}
+          ) : (
+            <BrandIcon href="/dashboard" wordmark />
+          )}
           <div className="flex items-center gap-1">
-            <BrandIcon href="/dashboard" />
             <LanguageSwitcher />
             <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
           </div>

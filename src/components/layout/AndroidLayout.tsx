@@ -52,7 +52,10 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
             >
               <ArrowLeft className="h-6 w-6 rtl:rotate-180" aria-hidden="true" />
             </Link>
-          ) : null}
+          ) : (
+            // Brand on the start side — right in Persian, left in English.
+            <BrandIcon href="/dashboard" wordmark />
+          )}
 
           <div className="min-w-0 flex-1 px-1">
             {overline ? (
@@ -69,7 +72,6 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
           </div>
 
           <div className="flex items-center gap-1">
-            <BrandIcon size="h-8 w-8" iconClass="h-4 w-4" href="/dashboard" />
             <LanguageSwitcher />
             <ThemeToggle className="flex h-12 w-12 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
           </div>

@@ -44,13 +44,13 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
 
   return (
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
-      {/* ── Desktop corner controls (brand + language + theme) ──
-          The Apex mark and the toggles live in the TOP corner of the site on
-          desktop — the end corner opposite the sidebar: top-LEFT in the
-          Persian (RTL) version, top-RIGHT in English (LTR). The mobile top
-          bar keeps its own copies in the same header row. */}
+      {/* ── Desktop corner controls (language + theme) ────────
+          The toggles live in the TOP end corner of the site on desktop —
+          opposite the sidebar (top-RIGHT in English, top-LEFT in Persian).
+          The brand itself (mark + name) sits at the top of the sidebar, on
+          the START side: right in Persian, left in English. The mobile top
+          bar keeps its own brand + toggles in the same header row. */}
       <div className="glass-strong fixed top-3 z-50 hidden items-center gap-1 rounded-full p-1 md:flex ltr:right-3 rtl:left-3">
-        <BrandIcon href="/dashboard" />
         <LanguageSwitcher />
         <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
       </div>
@@ -86,7 +86,9 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
         style={{paddingTop: 'env(safe-area-inset-top)'}}
       >
         <div className="flex h-14 items-center justify-between px-4">
-          <BrandLink href={`/${locale}/dashboard`} compact />
+          {/* Brand on the start side — right in Persian, left in English.
+              Icon + wordmark, matching the desktop sidebar. */}
+          <BrandIcon href="/dashboard" wordmark />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
@@ -142,21 +144,16 @@ export function WebLayout({title, subtitle, overline, backHref, children}: Layou
 }
 
 /** Apex brand mark — gradient logo (apex-gradient-brand) + wordmark. */
-function BrandLink({href, compact = false}: {href: string; compact?: boolean}) {
+function BrandLink({href}: {href: string}) {
   return (
     <Link
       href={href}
-      className={[
-        'flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring',
-        compact ? 'px-1 py-1' : 'px-5 py-5',
-      ].join(' ')}
+      className="flex items-center gap-2.5 px-5 py-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
     >
       <BrandIcon />
-      {!compact ? (
-        <span className="text-[15px] font-bold tracking-tight">
-          Apex <span className="text-apex-primary-text">Home Fitness</span>
-        </span>
-      ) : null}
+      <span className="text-[15px] font-bold tracking-tight">
+        Apex <span className="text-apex-primary-text">Home Fitness</span>
+      </span>
     </Link>
   );
 }
