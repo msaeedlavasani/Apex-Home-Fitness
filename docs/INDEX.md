@@ -22,6 +22,7 @@
 | معماری (GATE A — هویت متعارف تمرین) | [`architecture/S02-EXERCISE-IDENTITY-GATE-A.md`](architecture/S02-EXERCISE-IDENTITY-GATE-A.md) | APPROVED (GA-01..GA-08, 2026-08-27) |
 | معماری (S02-D1 — قرارداد انتشار هویت تمرین) | [`architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md`](architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md) | IMPLEMENTED CONTRACT FOUNDATION (S02-D1؛ adoption در S02-D2 شد) |
 | معماری (S02-D2 — پذیرش هویت در پلن workout) | [`architecture/S02D2-CLIENT-IDENTITY-ADOPTION.md`](architecture/S02D2-CLIENT-IDENTITY-ADOPTION.md) | IMPLEMENTED — LOG/SNAPSHOT ADOPTION DEFERRED (S02-D2) |
+| معماری (S-03 — GATE B هسته‌ی خالص Session) | [`architecture/S03-SESSION-CORE-GATE-B.md`](architecture/S03-SESSION-CORE-GATE-B.md) | PROPOSED — OWNER APPROVAL REQUIRED (GB-01..GB-10 PENDING) |
 | معماری (S02-A — vocab تحلیل تمرین) | [`architecture/S02A-SOURCE-VOCABULARY.md`](architecture/S02A-SOURCE-VOCABULARY.md) | DEVELOPMENT-TIME ANALYSIS (S02-A) |
 | Exercise domain (foundation) | [`../src/lib/exercise/index.ts`](../src/lib/exercise/index.ts) | PURE domain: contracts + catalog + resolver (S02-A) |
 | معماری (ممیزی مدولاریتی) | [`architecture/MODULARITY-AUDIT.md`](architecture/MODULARITY-AUDIT.md) | AUDIT RECORD — NOT AN ARCHITECTURE DECISION |

@@ -212,6 +212,15 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   `useWorkoutEngine.ts`; the hook becomes an adapter. **GATE B before
   extraction** (owner approval of target boundaries, public contract, parity
   test plan).
+- **GATE B (2026-08-27) — DESIGN READY, OWNER DECISION PENDING**: decision
+  package [`S03-SESSION-CORE-GATE-B.md`](./S03-SESSION-CORE-GATE-B.md)
+  (GB-01..GB-10 all `PENDING OWNER APPROVAL`). Trace confirmed the hook's
+  responsibilities split cleanly into pure domain (transitions, derived state,
+  hydrate) vs adapter (React binding, heartbeat/lifecycle, accumulator) —
+  persistence/audio/haptics/analytics/session APIs are already consumed outside
+  the hook via callbacks. `wallClock` stays untouched; the core consumes
+  elapsed-seconds as input; snapshot shape pinned to `WorkoutEngineState`
+  (S-05 governs versioning). Extraction must NOT begin until approved.
 - **Why now**: R-02; V2 session work, Voice Coach and recovery need a
   non-React-consumable core (ADR-0002).
 - **Files/domains expected to change**: new pure core (proposed
