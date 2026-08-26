@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S-02 GATE A DESIGN READY — OWNER DECISION PENDING; S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -131,6 +131,10 @@ Rationale (evidence-based):
   inventory of name-keyed usages. **No schema change (GATE A).**
 - **Why now**: R-01 is the highest-risk coupling and blocks Workout V2,
   preview, media mapping and sync joins.
+- **GATE A (2026-08-27) — DESIGN READY, OWNER DECISION PENDING**: the
+  decision package is [`S02-EXERCISE-IDENTITY-GATE-A.md`](./S02-EXERCISE-IDENTITY-GATE-A.md)
+  (GA-01..GA-08, all PENDING OWNER APPROVAL). No schema change, migration,
+  backfill or runtime change may begin until approved.
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive
