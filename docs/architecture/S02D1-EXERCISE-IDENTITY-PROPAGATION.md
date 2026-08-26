@@ -101,16 +101,17 @@ identity fields. The runtime `WorkoutExercise` (player) is **unchanged** in
 S02-D1; S02-D2 will decide how `WorkoutExercise.id` semantics adopt the
 canonical + step distinction.
 
-## S02-D2 handoff (not started)
+## S02-D2 handoff (IMPLEMENTED 2026-08-27)
 
-Downstream surfaces to adopt in S02-D2 (additive, owner-checkpointed):
-- workout page plan build: feed `program.exercises` into
-  `workoutExercisesFromSchedule` via `exerciseIdentityIndex` +
-  `enrichScheduleExercises`, then thread `exerciseId`/`slug`/`legacyId` into
-  the plan without changing player behavior;
-- decision on whether `WorkoutExercise.id` becomes the canonical movement id or
-  remains step-local (documented in the identity-model note above);
-- verify no schedule-step collapse when aliases resolve to one canonical ex.
+S02-D2 adopted this seam into the client workout-plan build:
+- workout page (`src/app/[locale]/workout/page.tsx`) feeds `program.exercises`
+  into `exerciseIdentityIndex` + `enrichScheduleExercises`, threading
+  `exerciseId`/`slug` into each plan step as OPTIONAL canonical metadata.
+- `WorkoutExercise.id` remains the workout-step/legacy identity (unchanged
+  semantics); canonical `exerciseId`/`slug` are separate optional fields
+  (`src/components/workout/useWorkoutEngine.ts`). No step-collapse when aliases
+  resolve to one canonical exercise. See
+  [`S02D2-CLIENT-IDENTITY-ADOPTION.md`](./S02D2-CLIENT-IDENTITY-ADOPTION.md).
 
 ## Exercise logs / S-05 snapshot handoff
 

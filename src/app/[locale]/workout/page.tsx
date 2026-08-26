@@ -7,9 +7,13 @@ import {AppShell} from '@/components/layout/AppShell';
 import {WorkoutPlayer} from '@/components/workout/WorkoutPlayer';
 import type {WorkoutExercise, WorkoutSummary} from '@/components/workout/useWorkoutEngine';
 import {
+  enrichScheduleExercises,
+  exerciseIdentityIndex,
   generatedExerciseDefaults,
   workoutExercisesFromSchedule,
   type PersistedScheduleExercise,
+  type RelationalExercise,
+  type ExerciseIdentityIndex,
 } from '@/lib/programSchedule';
 import {
   SAMPLE_WORKOUT_EXERCISES,
@@ -22,6 +26,8 @@ type CurrentProgramResponse = {
     id: string;
     restDays: unknown;
     weeklySchedule: unknown;
+    /** Relational ProgramExercise → Exercise rows the API already returns (S02-D2). */
+    exercises?: RelationalExercise[];
   } | null;
 };
 
@@ -37,8 +43,21 @@ function validWeekday(value: string | null): (typeof WEEKDAYS)[number] | null {
 
 function generatedExercisesForPlayer(
   exercises: PersistedScheduleExercise[],
+  identityIndex: ExerciseIdentityIndex,
 ): WorkoutExercise[] {
-  return exercises.map((exercise, index) => generatedExerciseDefaults(exercise, index));
+  // S02-D2: enrich the step plan with canonical movement identity where the
+  // relational ProgramExercise→Exercise payload can resolve it. The step's
+  // `id` (generated/session-local) is always preserved — canonical identity
+  // adds optional `exerciseId`/`slug` only. Legacy-only when unresolvable.
+  const enriched = enrichScheduleExercises(exercises, identityIndex);
+  return exercises.map((exercise, index) => {
+    const base = generatedExerciseDefaults(exercise, index);
+    const identity = enriched[index];
+    if (identity?.exerciseId || identity?.slug) {
+      return {...base, exerciseId: identity.exerciseId, slug: identity.slug};
+    }
+    return base;
+  });
 }
 
 export default function WorkoutPage() {
@@ -86,7 +105,13 @@ export default function WorkoutPage() {
   const generatedExercises = useMemo(() => {
     if (!program || !selectedDay) return [];
     const restDays = Array.isArray(program.restDays) ? program.restDays.filter((day): day is string => typeof day === 'string') : [];
-    return generatedExercisesForPlayer(workoutExercisesFromSchedule(program.weeklySchedule, selectedDay, restDays));
+    // Canonical identity comes ONLY from the relational ProgramExercise→Exercise
+    // rows the API already returns (never invented), via the S02-D1 seam.
+    const identityIndex = exerciseIdentityIndex(program.exercises ?? []);
+    return generatedExercisesForPlayer(
+      workoutExercisesFromSchedule(program.weeklySchedule, selectedDay, restDays),
+      identityIndex,
+    );
   }, [program, selectedDay]);
 
   const isGeneratedRestDay = Boolean(program && selectedDay && generatedExercises.length === 0);

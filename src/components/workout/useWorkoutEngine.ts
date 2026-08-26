@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WallClockAccumulator } from '../../lib/workout/wallClock';
+import type { ExerciseId, ExerciseSlug } from '../../lib/exercise';
 
 /**
  * useWorkoutEngine
@@ -40,7 +41,16 @@ export type WorkoutPhase = 'READY' | 'EXERCISING' | 'RESTING' | 'COMPLETED';
 
 /** A single exercise inside a workout plan. Mirrors the Prisma `Exercise` shape. */
 export interface WorkoutExercise {
+  /**
+   * Workout STEP identity (existing generated/session-local id — EX-001 /
+   * rule-{day}-{n} / generated-{n}). This is the identity of the scheduled
+   * step, NOT the canonical movement identity (S02-D2). Unchanged semantics.
+   */
   id: string;
+  /** Canonical movement identity (persisted DB `Exercise.id`) when resolvable (S02-D2). */
+  exerciseId?: ExerciseId;
+  /** Canonical resolution slug when available (S02-D2). */
+  slug?: ExerciseSlug;
   /** Display name (already localized by the caller, or a translation key). */
   name: string;
   /** Number of working sets for this exercise. */

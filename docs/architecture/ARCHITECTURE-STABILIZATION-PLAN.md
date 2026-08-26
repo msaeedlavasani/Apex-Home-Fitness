@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B + S02-C + S02-D1 COMPLETE 2026-08-27; S02-D2..S02-E + S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A, S02-B, S02-C, S02-D1, S02-D2 COMPLETE 2026-08-27; S02-E + S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -175,6 +175,20 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   typecheck clean, eslint clean, full unit **427/427** (+9 new
   `tests/identity-propagation.test.ts`). S02-D2 (client/player adoption) NOT
   started.
+- **S02-D2 COMPLETE (2026-08-27)**: client/workout canonical identity adoption
+  (`src/app/[locale]/workout/page.tsx` + `src/components/workout/useWorkoutEngine.ts`).
+  `WorkoutExercise` gained OPTIONAL `exerciseId`/`slug` (branded types) — `id`
+  stays the workout-STEP/legacy identity unchanged; engine/player drive state via
+  `currentExerciseIndex`, so behavior is identical. The page additively reads
+  relational `program.exercises` and enriches each plan step via the S02-D1 seam
+  (`exerciseIdentityIndex` + `enrichScheduleExercises`); canonical id only from a
+  matched DB `Exercise.id`; legacy-only when unresolvable. `SNAPSHOT_PAYLOAD_UNCHANGED`
+  (serializer projects a fixed field set) and `WORKOUT_LOG_ID_SEMANTICS_CHANGED: NO`
+  (session path is name-based; the log outbox has no `WorkoutExercise.id` caller).
+  Properties unchanged: weeklySchedule / API / player logic / logs / snapshots /
+  DB. Validation: typecheck clean, eslint clean, full unit **434/434** (+7 new
+  `tests/workout-plan-identity.test.ts`). Docs: `S02D2-CLIENT-IDENTITY-ADOPTION.md`.
+  S02-E (backfill) NOT started.
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive
