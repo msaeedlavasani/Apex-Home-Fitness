@@ -82,5 +82,5 @@ test('provider failure categories are fallback-eligible while unrelated errors a
 });
 
 test('provider metadata exposes a stable engine version without secrets', () => {
-  assert.match(AI_ENGINE_VERSION, /^rules-v1\/provider-v1$/);
+  assert.match(AI_ENGINE_VERSION, /^rules-v2\/provider-v1$/);
 });

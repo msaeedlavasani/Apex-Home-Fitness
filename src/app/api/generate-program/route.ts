@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { loadSystemPrompt, PromptMode } from '@/lib/ai/prompts';
-import { buildRuleBasedProgram } from '@/lib/ai/ruleBasedProgram';
+import { buildRuleBasedProgram, summarizeRuleWorkoutHistory } from '@/lib/ai/ruleBasedProgram';
 import {
   AI_ENGINE_VERSION,
   classifyAiGenerationError,
@@ -49,7 +49,7 @@ const ExerciseSchema = z.object({
   id: z.string(),
   name: z.string(),
   method: z.enum(['strength', 'hypertrophy', 'cardio', 'mobility', 'pilates', 'bodyweight', 'isometric', 'flexibility']),
-  equipment: z.enum(['none', 'dumbbell', 'barbell', 'kettlebell', 'resistance_band', 'pull_up_bar', 'bench', 'mat', 'cardio_machine', 'other']),
+  equipment: z.enum(['none', 'dumbbell', 'barbell', 'kettlebell', 'resistance_band', 'pull_up_bar', 'bench', 'mat', 'cardio_machine', 'cable_machine', 'jump_rope', 'other']),
   sets: z.number().nullable(),
   reps: z.string().nullable(),
   rest_seconds: z.number().nullable(),
@@ -82,6 +82,8 @@ const ProgramSchema = z.object({
     pilates_pct: z.number(),
     bodyweight_pct: z.number(),
     isometric_pct: z.number(),
+  }).refine((mix) => Object.values(mix).reduce((sum, value) => sum + value, 0) === 100, {
+    message: 'Method mix percentages must total 100.',
   }),
   weekly_schedule: z.array(z.object({
     day: z.number(),
@@ -284,6 +286,7 @@ export async function POST(req: Request) {
       limitations,
       limitationsDetails,
       restDays = [],
+      trainingDaysPerWeek,
     } = parsedInput.data;
     // `goal` is normalized by the Zod schema to a canonical array
     // (legacy single strings are wrapped), e.g. ['strength', 'fat_loss'].
@@ -391,6 +394,7 @@ export async function POST(req: Request) {
     });
 
     const workoutHistory = formatWorkoutHistory(recentSessions);
+    const ruleHistory = summarizeRuleWorkoutHistory(recentSessions);
 
     const systemPrompt = await loadSystemPrompt(mode);
     const fallbackEnabled = (process.env.AI_GENERATION_FALLBACK ?? 'rules').trim().toLowerCase() === 'rules';
@@ -408,7 +412,7 @@ export async function POST(req: Request) {
       if (!fallbackEnabled || category !== 'ai_configuration_error') throw error;
       fallbackReason = category;
       safeGenerationLog(category);
-      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data, {history: ruleHistory}));
       generationSource = 'rules';
     }
 
@@ -418,7 +422,7 @@ export async function POST(req: Request) {
       generationProvider = null;
       generationModel = null;
     } else if (provider.generator === 'rules') {
-      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+      generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data, {history: ruleHistory}));
       generationSource = 'rules';
       generationProvider = null;
       generationModel = null;
@@ -436,9 +440,12 @@ export async function POST(req: Request) {
         - Available Equipment: ${equipment.join(', ')}
         - Injuries/Limitations: ${limitations.join(', ')}
         - Details: ${limitationsDetails || 'None'}
+        - Desired training sessions per week: ${trainingDaysPerWeek ?? (level === 'beginner' ? 3 : level === 'advanced' ? 5 : 4)}
         - Rest days (weekdays that MUST NOT contain any workout): ${restDaysJoined || 'None specified'}
-          These are the ONLY rest days — every other weekday must contain
-          exactly one session, so the weekly_schedule covers all 7 weekdays.
+          Rest days are availability constraints, not a request to train on
+          every other day. Create exactly the requested number of training
+          sessions (or as many as fit outside the rest days), distribute them
+          across the week, and mark every other schedule entry as recovery.
           The user selected exercise styles intentionally. Do not include a session
           or exercise whose primary method is outside the selected styles unless
           it is required as a brief safety warm-up or cooldown. Explain any
@@ -448,7 +455,7 @@ export async function POST(req: Request) {
           weekday number: 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday,
           5=Friday, 6=Saturday, 7=Sunday) AND an English day_name
           ("Monday" … "Sunday"); never schedule a session on a rest day, and
-          never mark a non-rest day as a rest day.
+          non-training weekdays may be marked as recovery/rest days.
 
         RECENT WORKOUT HISTORY (newest first, last ${HISTORY_SESSION_LIMIT} sessions):
         ${workoutHistory}
@@ -485,7 +492,7 @@ export async function POST(req: Request) {
         if (!fallbackEnabled || !category) throw error;
         fallbackReason = category;
         safeGenerationLog(category);
-        generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data));
+        generatedOutput = ProgramSchema.parse(buildRuleBasedProgram(parsedInput.data, {history: ruleHistory}));
         generationSource = 'rules';
         generationProvider = provider.provider;
         generationModel = provider.modelName;

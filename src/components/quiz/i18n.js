@@ -120,7 +120,17 @@ const EN = {
   'quiz.limitations.details.placeholder':
     'e.g. "Recovering from a sprained ankle — no jumping for 4 weeks"',
 
-  // ---- Step 6 — Rest days ----
+  // ---- Training frequency ----
+  'quiz.trainingDays.title': 'How many days per week do you want to train?',
+  'quiz.trainingDays.subtitle': 'Choose a realistic frequency. Rest-day choices come next and remain workout-free.',
+  'quiz.trainingDays.option': '{{count}} days per week',
+  'quiz.trainingDays.2.hint': 'A gentle, sustainable start',
+  'quiz.trainingDays.3.hint': 'Balanced for most beginners',
+  'quiz.trainingDays.4.hint': 'More practice with recovery',
+  'quiz.trainingDays.5.hint': 'Frequent training for experienced users',
+  'quiz.trainingDays.6.hint': 'High frequency; keep one full recovery day',
+
+  // ---- Rest days ----
   'quiz.restDays.title': 'Which weekdays are your rest days?',
   'quiz.restDays.subtitle': 'Pick 1–3 rest days — we keep them free of workouts.',
   'quiz.restDays.counter': '{{count}} of {{max}} rest days selected',
@@ -258,7 +268,17 @@ const FA = {
   'quiz.limitations.details.placeholder':
     'مثلاً: «در حال بهبود از رگ به رگ شدن مچ پا هستم — تا ۴ هفته بدون پرش»',
 
-  // ---- Step 6 — Rest days ----
+  // ---- تعداد روزهای تمرین ----
+  'quiz.trainingDays.title': 'چند روز در هفته می‌خوای تمرین کنی؟',
+  'quiz.trainingDays.subtitle': 'تعداد واقع‌بینانه‌ای انتخاب کن؛ در مرحله بعد روزهای ممنوع برای تمرین را مشخص می‌کنی.',
+  'quiz.trainingDays.option': '{{count}} روز در هفته',
+  'quiz.trainingDays.2.hint': 'شروع سبک و پایدار',
+  'quiz.trainingDays.3.hint': 'متعادل و مناسب بیشتر مبتدی‌ها',
+  'quiz.trainingDays.4.hint': 'تمرین بیشتر همراه با ریکاوری',
+  'quiz.trainingDays.5.hint': 'تمرین پرتکرار برای افراد باتجربه',
+  'quiz.trainingDays.6.hint': 'تعداد بالا؛ یک روز ریکاوری کامل حفظ می‌شود',
+
+  // ---- روزهای استراحت ----
   'quiz.restDays.title': 'کدام روزهای هفته روز استراحت تو هستند؟',
   'quiz.restDays.subtitle': '۱ تا ۳ روز استراحت انتخاب کن — این روزها را بدون تمرین نگه می‌داریم.',
   'quiz.restDays.counter': '{{count}} از {{max}} روز استراحت انتخاب شده',

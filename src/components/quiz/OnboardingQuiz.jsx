@@ -4,6 +4,7 @@ import ProgressBar from './components/ProgressBar';
 import NavigationButtons from './components/NavigationButtons';
 import ThemeStep from './steps/ThemeStep';
 import CurrentLevelStep from './steps/CurrentLevelStep';
+import TrainingDaysStep from './steps/TrainingDaysStep';
 import ExerciseStylesStep from './steps/ExerciseStylesStep';
 import GoalStep from './steps/GoalStep';
 import EquipmentStep from './steps/EquipmentStep';
@@ -36,6 +37,13 @@ const STEP_CONFIG = [
     // validate.
     validate: (answers) => normalizeGoals(answers.goal).length > 0,
     errorKey: 'quiz.error.goal.required',
+  },
+  {
+    key: 'trainingDaysPerWeek',
+    validate: (answers) => Number.isInteger(answers.trainingDaysPerWeek)
+      && answers.trainingDaysPerWeek >= 2
+      && answers.trainingDaysPerWeek <= 6,
+    errorKey: 'quiz.error.required',
   },
   {
     key: 'exerciseStyles',
@@ -73,6 +81,7 @@ const INITIAL_ANSWERS = {
   // Preferred training methods. Older drafts omit this field and are treated
   // as broad-profile answers by the validation layer.
   exerciseStyles: [],
+  trainingDaysPerWeek: null,
   equipment: [],
   limitations: [],
   limitationsDetails: '',
@@ -110,10 +119,11 @@ function resolveDocumentLocale(localeProp) {
  *   2. Current Level     (Beginner / Intermediate / Advanced)
  *   3. Goals             (multi-select — Strength / Fat Loss / Flexibility /
  *                         Functional Fitness; at least one required)
- *   4. Exercise styles   (multi-select — one or more of the 8 supported styles)
- *   5. Equipment         (multi-select checkboxes, "None" is exclusive)
- *   6. Limitations       (injury checkboxes + free-text details, optional)
- *   7. Rest days         (multi-select weekdays, 1–3 — kept workout-free
+ *   4. Training days     (2–6 sessions per week)
+ *   5. Exercise styles   (multi-select — one or more of the 8 supported styles)
+ *   6. Equipment         (multi-select checkboxes, "None" is exclusive)
+ *   7. Limitations       (injury checkboxes + free-text details, optional)
+ *   8. Rest days         (multi-select weekdays, 1–3 — kept workout-free
  *                         by the generated program)
  *
  * All user-facing strings go through `t('key')` so the quiz can be
@@ -198,6 +208,7 @@ export default function OnboardingQuiz({
         goal: normalizeGoals(answers.goal),
         exerciseStyles: normalizeExerciseStyles(answers.exerciseStyles),
         exerciseStylesCount: normalizeExerciseStyles(answers.exerciseStyles).length,
+        trainingDaysPerWeek: answers.trainingDaysPerWeek,
         equipmentCount: Array.isArray(answers.equipment) ? answers.equipment.length : 0,
         limitationsCount: Array.isArray(answers.limitations) ? answers.limitations.length : 0,
         restDays: normalizeRestDays(answers.restDays),
@@ -250,6 +261,15 @@ export default function OnboardingQuiz({
         );
       case 3:
         return (
+          <TrainingDaysStep
+            value={answers.trainingDaysPerWeek}
+            onChange={(trainingDaysPerWeek) => updateAnswers({trainingDaysPerWeek})}
+            error={errors.trainingDaysPerWeek}
+            t={localizedT}
+          />
+        );
+      case 4:
+        return (
           <ExerciseStylesStep
             value={answers.exerciseStyles}
             onChange={(exerciseStyles) => updateAnswers({ exerciseStyles })}
@@ -257,7 +277,7 @@ export default function OnboardingQuiz({
             t={localizedT}
           />
         );
-      case 4:
+      case 5:
         return (
           <EquipmentStep
             value={answers.equipment}
@@ -266,7 +286,7 @@ export default function OnboardingQuiz({
             t={localizedT}
           />
         );
-      case 5:
+      case 6:
         return (
           <LimitationsStep
             value={answers.limitations}
@@ -276,7 +296,7 @@ export default function OnboardingQuiz({
             t={localizedT}
           />
         );
-      case 6:
+      case 7:
         return (
           <RestDaysStep
             value={answers.restDays}

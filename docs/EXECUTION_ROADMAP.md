@@ -23,7 +23,7 @@
    - هر migration بعدی باید در branch مستقل و با یک primitive کم‌ریسک شروع شود؛ Dialog، Grid، Stepper و فرم auth فعلاً خارج از scope هستند.
 
 2. **OTP production readiness**
-   - mock ثابت `123456` فقط برای محیط آزمایشی مجاز است.
+   - کد mock فقط برای محیط آزمایشی و خارج از مستندات/لاگ مجاز است.
    - قبل از launch عمومی، mock خاموش، قالب `976440` و پارامتر `otp` تأیید، و smoke test واقعی با شماره‌ی رضایت‌دار اجرا شود.
    - plaintext OTP نباید در log، response عمومی یا گزارش‌ها ثبت شود.
 

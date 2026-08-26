@@ -51,6 +51,7 @@ No auth header — identity comes from the Supabase session cookies. `Content-Ty
 |---|---|---|---|
 | `level` | ✅ | `'beginner' \| 'intermediate' \| 'advanced'` | — |
 | `goal` | ✅ | `string` or `string[]` of `'strength' \| 'fat_loss' \| 'flexibility' \| 'functional_fitness'` | Single legacy string or array of 1–4 items; no duplicates; always normalized to an array (`goal: ['strength', 'fat_loss']`) |
+| `trainingDaysPerWeek` | ❌ (level default) | integer `2–6` | Desired workout sessions per week. When omitted, rules mode uses beginner=3, intermediate=4, advanced=5; the result is capped by weekdays available after `restDays` |
 | `equipment` | ✅ | `string[]` of `'none' \| 'pull_up_bar' \| 'bands' \| 'dumbbells' \| 'barbell' \| 'kettlebells' \| 'bench' \| 'cable_machine' \| 'jump_rope'` | 1–9 items; no duplicates; `'none'` cannot be combined with other items |
 | `limitations` | ✅ | `string[]` of `'none' \| 'knee' \| 'lower_back' \| 'shoulder' \| 'wrist' \| 'ankle' \| 'hip' \| 'neck'` | 0–8 items; no duplicates; `'none'` cannot be combined with other items |
 | `limitationsDetails` | ❌ (default `''`) | `string` | trimmed, max 1000 chars |
@@ -72,7 +73,7 @@ Contract (see §3.10): when the header is present, the server guarantees that re
 
 Without the header the route behaves exactly as before (no idempotency guarantee). Clients should generate a fresh key per intended request and reuse it on retries.
 
-Note: `limitations` is required but may be an empty array (`[]`); `equipment` requires at least one item. `goal` accepts the legacy single string (`"goal": "strength"`) **or** a multi-goal array (`"goal": ["strength", "fat_loss"]`); both are normalized to an array before the prompt/persistence step, and the two forms hash identically for idempotency purposes. `restDays` is optional (absent → no constraint, so pre-existing clients keep working); when provided it must contain 1–3 unique weekday ids.
+Note: `limitations` is required but may be an empty array (`[]`); `equipment` requires at least one item. `goal` accepts the legacy single string (`"goal": "strength"`) **or** a multi-goal array (`"goal": ["strength", "fat_loss"]`); both are normalized to an array before the prompt/persistence step, and the two forms hash identically for idempotency purposes. `trainingDaysPerWeek` and `restDays` are separate concepts: the former is workout frequency, while the latter is a hard availability constraint. Both stay optional for older clients.
 
 **Sample request:**
 
@@ -83,6 +84,7 @@ Cookie: sb-<ref>-auth-token=<session>…   (Supabase session)
 {
   "level": "beginner",
   "goal": ["strength", "fat_loss"],
+  "trainingDaysPerWeek": 3,
   "equipment": ["dumbbells", "bench"],
   "limitations": ["knee"],
   "limitationsDetails": "Mild knee discomfort during squats",
@@ -108,7 +110,7 @@ Cookie: sb-<ref>-auth-token=<session>…   (Supabase session)
     - `PROGRAM_GENERATOR=rules` → no external request;
     - `PROGRAM_GENERATOR=ai` + `AI_PROVIDER=groq|openai` → calls only that provider; API-key presence never selects a provider;
     - `AI_MODEL`, when non-empty, overrides `GROQ_MODEL`/`OPENAI_MODEL`.
-11. `generateObject({ model: provider.model, schema: ProgramSchema, ... })` bounded by a **45 000 ms** timeout (`AI_GENERATION_TIMEOUT_MS`) via `withTimeout` (see §3.6). If and only if generation/configuration fails with an eligible provider category and `AI_GENERATION_FALLBACK=rules`, validates a rule-based output with the same `ProgramSchema`.
+11. `generateObject({ model: provider.model, schema: ProgramSchema, ... })` bounded by a **45 000 ms** timeout (`AI_GENERATION_TIMEOUT_MS`) via `withTimeout` (see §3.6). If and only if generation/configuration fails with an eligible provider category and `AI_GENERATION_FALLBACK=rules`, the v2 rules engine applies the requested/default frequency, equipment matching, limitation exclusions and recent-adherence progression/regression, then validates the result with the same `ProgramSchema`.
 12. Persist the single validated final program (transactional, bounded — see §3.7) and return `200`; with a claimed key, `persistProgramForUserWithIdempotency` finalizes the record to `SUCCEEDED` **in the same transaction**
 
 ### 3.4 Rate limits & concurrency / محدودیت نرخ و همزمانی
@@ -251,14 +253,14 @@ Shape of `generated` (validated by `ProgramSchema` in the route):
 - `mode`: `'general' | 'injury_focused' | 'equipment_limited'`
 - `program_id`: string
 - `rest_days`: string[] — the user's rest-day selection echoed from the input (canonical weekday ids, e.g. `["wednesday", "sunday"]`; `[]` when none was provided)
-- `method_mix`: `strength_pct`, `hypertrophy_pct`, `cardio_pct`, `mobility_pct`, `pilates_pct`, `bodyweight_pct`, `isometric_pct` (numbers)
+- `method_mix`: `strength_pct`, `hypertrophy_pct`, `cardio_pct`, `mobility_pct`, `pilates_pct`, `bodyweight_pct`, `isometric_pct` (numbers whose sum must equal exactly 100)
 - `weekly_schedule`: array of `{ day, focus, day_name?, is_rest_day?, warmup[], exercises[], cooldown[], notes? }`
   - `day_name`: weekday of the session (e.g. `"Monday"`) — sessions are never placed on a rest day
-  - `is_rest_day`: `true` only for entries the enforcement pass rewrote because the model placed them on a rest day; those entries have **empty** `warmup`/`exercises`/`cooldown` and are excluded from persistence
+  - `is_rest_day`: `true` for user-selected workout-free days, recovery days outside the requested weekly frequency, or entries rewritten by enforcement; these entries have **empty** `warmup`/`exercises`/`cooldown` and are excluded from persistence
   - `warmup` / `cooldown` items: `{ name, duration_seconds, purpose }`
   - exercise items: `{ id, name, method, equipment, sets|null, reps|null, rest_seconds|null, tempo|null, rpe|null, instruction_cue, alternatives[], contraindicated_for[] }`
     - `method` ∈ `strength | hypertrophy | cardio | mobility | pilates | bodyweight | isometric | flexibility`
-    - `equipment` ∈ `none | dumbbell | barbell | kettlebell | resistance_band | pull_up_bar | bench | mat | cardio_machine | other`
+    - `equipment` ∈ `none | dumbbell | barbell | kettlebell | resistance_band | pull_up_bar | bench | mat | cardio_machine | cable_machine | jump_rope | other`
 - `progression_plan`: `{ weeks_1_2, weeks_3_5, week_6, overload_variables[] }`
 - `adjustments`: `{ summary, progression[], regression[], rationale }` — required by the schema; grounded in workout history (falls back to a baseline statement when there is no history)
 - `metadata`: `{ source: 'ai' | 'rules', provider: 'groq' | 'openai' | null, model: string | null, fallbackReason: string | null, engineVersion: string }`. Metadata is response/idempotency payload only; no migration is required and no provider key, prompt, quiz payload, medical detail, or raw provider response is stored or logged.

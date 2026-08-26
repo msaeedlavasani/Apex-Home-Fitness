@@ -14,7 +14,7 @@ const REST_DAY_IDS = [...WEEKDAY_VALUES];
 
 type ProfileResponse = {
   quizCompleted: boolean;
-  preferences: {exerciseStyles: string[]; equipment: string[]; restDays: string[]};
+  preferences: {exerciseStyles: string[]; equipment: string[]; trainingDaysPerWeek: number; restDays: string[]};
   generationInput?: GenerateProgramInput | null;
 };
 
@@ -47,6 +47,8 @@ export default function PreferencesPage() {
     generationError: t('generationError'),
     stylesTitle: t('styles.title'),
     equipmentTitle: t('equipment.title'),
+    trainingDaysTitle: t('trainingDays.title'),
+    trainingDaysSubtitle: t('trainingDays.subtitle'),
     restDaysTitle: t('restDays.title'),
     restDaysSubtitle: t('restDays.subtitle'),
     styles: Object.fromEntries(STYLE_IDS.map((id) => [id, t(`styles.${id}`)])),

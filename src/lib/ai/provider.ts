@@ -107,4 +107,4 @@ export function isFallbackEligibleAiError(error: unknown): boolean {
   return classifyAiGenerationError(error) !== null;
 }
 
-export const AI_ENGINE_VERSION = 'rules-v1/provider-v1';
+export const AI_ENGINE_VERSION = 'rules-v2/provider-v1';

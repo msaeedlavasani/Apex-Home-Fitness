@@ -55,6 +55,14 @@ test('rejects unsafe or malformed generation profiles', () => {
   );
 });
 
+test('accepts only an integer weekly training frequency from 2 through 6', () => {
+  const base = {level: 'beginner', goal: 'strength', equipment: ['none'], limitations: []};
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, trainingDaysPerWeek: 3}).success, true);
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, trainingDaysPerWeek: 1}).success, false);
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, trainingDaysPerWeek: 7}).success, false);
+  assert.equal(GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({...base, trainingDaysPerWeek: 3.5}).success, false);
+});
+
 test('accepts a legacy single goal string and normalizes it to an array', () => {
   const result = GENERATE_PROGRAM_INPUT_SCHEMA.safeParse({
     level: 'beginner',

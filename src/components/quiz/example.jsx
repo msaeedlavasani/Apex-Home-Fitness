@@ -4,7 +4,7 @@ import OnboardingQuiz from './OnboardingQuiz';
 /**
  * Minimal usage example — mount <OnboardingQuiz /> anywhere in your app.
  *
- * The quiz is self-contained: it renders all six steps with a progress
+ * The quiz is self-contained: it renders all eight steps with a progress
  * bar and navigation, and calls `onSubmit` with the final answers.
  *
  * When mounted inside <ThemeProvider> (the app layout already provides
@@ -23,6 +23,7 @@ export default function Example() {
     //   equipment: ['pull_up_bar', 'dumbbells'],
     //   limitations: ['knee'],
     //   limitationsDetails: 'Mild runner knee — avoid deep squats',
+    //   trainingDaysPerWeek: 3,
     //   restDays: ['wednesday', 'sunday'], // 1–3 weekdays kept workout-free
     // }
     console.log('Onboarding answers:', answers);

@@ -139,6 +139,7 @@ export const QUIZ_ANSWERS_SCHEMA = z
     level: z.enum(LEVEL_VALUES),
     goal: GOAL_SCHEMA,
     exerciseStyles: EXERCISE_STYLE_SCHEMA,
+    trainingDaysPerWeek: z.number().int().min(2).max(6).optional(),
     equipment: z
       .array(z.enum(EQUIPMENT_VALUES))
       .min(1)
@@ -172,6 +173,9 @@ export function buildGenerationInput(answers: QuizAnswersNormalized): GeneratePr
     level: answers.level,
     goal: answers.goal,
     exerciseStyles: answers.exerciseStyles,
+    ...(answers.trainingDaysPerWeek != null
+      ? {trainingDaysPerWeek: answers.trainingDaysPerWeek}
+      : {}),
     equipment: answers.equipment,
     limitations: answers.limitations,
     limitationsDetails: answers.limitationsDetails,

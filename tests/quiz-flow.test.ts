@@ -24,6 +24,7 @@ const VALID_ANSWERS = {
   limitations: ['none'],
   limitationsDetails: '',
   exerciseStyles: ['calisthenics', 'pilates'],
+  trainingDaysPerWeek: 3,
   restDays: ['wednesday', 'sunday'],
 };
 
@@ -82,6 +83,7 @@ test('buildGenerationInput maps answers onto the strict generate-program input',
     'limitations',
     'limitationsDetails',
     'restDays',
+    'trainingDaysPerWeek',
   ]);
 
   // The mapped payload satisfies the server schema verbatim.
@@ -89,6 +91,7 @@ test('buildGenerationInput maps answers onto the strict generate-program input',
   assert.equal(input.level, 'beginner');
   assert.deepEqual(input.goal, ['strength', 'fat_loss']);
   assert.deepEqual(input.exerciseStyles, ['calisthenics', 'pilates']);
+  assert.equal(input.trainingDaysPerWeek, 3);
   assert.deepEqual(input.restDays, ['wednesday', 'sunday']);
 });
 

@@ -148,13 +148,15 @@ test.describe('Onboarding quiz — ARIA', () => {
   }) => {
     await page.goto('/en/quiz');
 
-    // Navigate to the equipment step (step 5) using buttons.
+    // Navigate to the equipment step (step 6) using buttons.
     await page.getByRole('button', {name: 'Dark'}).click();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     await page.getByRole('button', {name: 'Beginner'}).click();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     // Goal step is a multi-select — check one goal to continue.
     await page.getByRole('checkbox', {name: /^Strength/}).check();
+    await page.getByRole('button', {name: 'Next', exact: true}).click();
+    await page.getByRole('button', {name: /^3 days per week/}).click();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
     await page.getByRole('checkbox', {name: /^Calisthenics/}).check();
     await page.getByRole('button', {name: 'Next', exact: true}).click();
