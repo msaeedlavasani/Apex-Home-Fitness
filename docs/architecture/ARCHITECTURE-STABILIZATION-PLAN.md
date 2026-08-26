@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B COMPLETE 2026-08-27; S02-C..S02-E + S-03..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01 COMPLETE 2026-08-27; S02-A + S02-B + S02-C COMPLETE 2026-08-27; S02-D..S02-E + S-03..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -150,6 +150,18 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   clean, migration status in sync (no drift), typecheck clean, full unit
   410/410 (no code needed adapting to nullable columns → old-code
   compatibility `YES`).
+- **S02-C COMPLETE (2026-08-27)**: runtime resolution integrated into
+  `persistProgramTransaction` via `upsertCanonicalExercise` + `buildProgramDraft`
+  (`src/services/programService.ts`). Resolved names attach the catalog `slug`
+  (by-slug reuse → name attach → create-with-slug; P2002 slug collision degrades
+  to name-only); unresolved/ambiguous input falls back to the exact legacy
+  name-upsert. `ProgramExercise` links resolve slug-first so aliases link to the
+  canonical row. `name` preserved as display, `faName` never populated. AI and
+  rules both converge on the same path (source-independent). Genre: `weeklySchedule`
+  / API shape / WorkoutPlayer / logs / snapshots unchanged. Validation: typecheck
+  clean, eslint clean, `prisma validate` clean, full unit **418/418** (+8 new
+  `tests/exercise-persistence.test.ts`). S02-D (client adoption) + S02-E
+  (backfill) NOT started.
 - **Files/domains expected to change**: contracts + resolution helper
   (proposed `src/lib/exercise/`), `workoutTokens.ts`, `samplePlan.ts`,
   `programService.ts` normalization, `syncService.ts` log payloads (additive

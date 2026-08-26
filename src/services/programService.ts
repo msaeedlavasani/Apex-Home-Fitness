@@ -85,6 +85,7 @@ import type {
   AiWeeklySession,
 } from '../lib/ai/contracts';
 import { isRestDay } from '../lib/ai/restDays';
+import { CANONICAL_CATALOG, resolveWithAmbiguity } from '../lib/exercise';
 import {
   PERSIST_MAX_WAIT_MS,
   PERSIST_TIMEOUT_MS,
@@ -233,6 +234,8 @@ function buildInstructions(ex: AiExercise): Prisma.InputJsonValue {
 
 export interface ProgramExerciseDraft {
   exerciseName: string;
+  /** Canonical system-catalog slug when the name resolved (S02-C), else undefined. */
+  slug?: string;
   order: number;
   sets: number | null;
   reps: number | null;
@@ -290,7 +293,15 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
       seen.add(ex.name);
       order += 1;
 
-      exercises.push({
+      // S02-C: best-effort canonical resolution. When the incoming exercise
+      // name resolves uniquely to a system-catalog entry, the DB row gains a
+      // canonical `slug` so identity can progressively become canonical.
+      // The display `name` is preserved as-is (incoming name — see Step 4
+      // name-preservation policy); unresolved/ambiguous input stays NULL.
+      const resolution = resolveWithAmbiguity({ kind: 'name', name: ex.name }, CANONICAL_CATALOG);
+      const resolvedSlug =
+        resolution.status === 'RESOLVED' && resolution.entry ? resolution.entry.slug : undefined;
+      const createInput: Prisma.ExerciseCreateInput = {
         name: ex.name,
         description: ex.instruction_cue || `AI-generated exercise: ${ex.name}.`,
         category: methodToCategory(ex.method, ex.equipment),
@@ -302,10 +313,17 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
         restSeconds: ex.rest_seconds,
         instructions: buildInstructions(ex),
         imageUrl: null,
-      });
+      };
+      if (resolvedSlug) {
+        // Slug is the identity anchor; faName is intentionally NOT populated
+        // (no Persian corpus — Step 5 faName policy).
+        createInput.slug = resolvedSlug;
+      }
+      exercises.push(createInput);
 
       programExercises.push({
         exerciseName: ex.name,
+        slug: resolvedSlug,
         order,
         sets: ex.sets,
         reps: parseReps(ex.reps),
@@ -467,6 +485,79 @@ export async function persistProgramForUserWithIdempotency(
  * transaction (they only reference `Exercise` rows, which are never deleted,
  * so historical `WorkoutSessionExercise` rows are untouched).
  */
+/**
+ * S02-C: canonical-aware exercise upsert. The fallback rule is that a Program
+ * that persists today must keep persisting — resolver/slug work is strictly
+ * additive and best-effort.
+ *
+ * - no slug (unresolved/ambiguous input): existing name-upsert, `slug` stays
+ *   NULL — behavior identical to pre-S02-C.
+ * - with slug (resolved input):
+ *   1. reuse an existing canonical row keyed by `slug` when present;
+ *   2. otherwise reuse/attach by exact `name`: a legacy row is updated with
+ *      the slug (idempotent — the resolver is deterministic, so the same name
+ *      always maps to the same slug), or a new row is created with the slug;
+ *   3. if the slug is already owned by a *differently-named* canonical row
+ *      (a real alias-variant collision, e.g. "Cat Cow" vs "Cat-Cow"), the
+ *      unique constraint is NOT allowed to fail the Program — fall back to the
+ *      legacy name-only upsert and leave the row un-slugged.
+ *
+ * Transactional/serialization note: concurrent interactive transactions on
+ * SQLite serialize on the write lock, so after one commit the by-slug/by-name
+ * lookup sees the committed row; a P2002 in the optimistic re-check just means
+ * another logical position won the row and we degrade cleanly.
+ */
+async function upsertCanonicalExercise(
+  tx: Prisma.TransactionClient,
+  exercise: Prisma.ExerciseCreateInput,
+): Promise<{ id: string; name: string; slug: string | null }> {
+  const { name, slug } = exercise;
+
+  // Unresolved / ambiguous — legacy behavior (no slug to resolve against).
+  if (!slug) {
+    return tx.exercise.upsert({
+      where: { name },
+      update: {},
+      create: exercise,
+      select: { id: true, name: true, slug: true },
+    });
+  }
+
+  // 1) Reuse a pre-existing canonical slug row (avoids creating a duplicate
+  //    when the same canonical exercise is referenced more than once).
+  const canonical = await tx.exercise.findUnique({
+    where: { slug },
+    select: { id: true, name: true, slug: true },
+  });
+  if (canonical) return canonical;
+
+  // 2) Reuse/attach by exact name, or create a new row with the slug.
+  const withSlug = { ...exercise, slug };
+  try {
+    return await tx.exercise.upsert({
+      where: { name },
+      update: { slug }, // attach to a legacy NULL-slug row (idempotent)
+      create: { ...withSlug },
+      select: { id: true, name: true, slug: true },
+    });
+  } catch (err) {
+    // 3) The slug is already owned by a differently-named row (unique
+    //    constraint) — never let slug population fail Program persistence.
+    //    Fall back to the exact legacy name-upsert (strip the slug so this
+    //    cannot re-collide).
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const { slug: _slug, ...withoutSlug } = exercise;
+      return tx.exercise.upsert({
+        where: { name },
+        update: {},
+        create: withoutSlug,
+        select: { id: true, name: true, slug: true },
+      });
+    }
+    throw err;
+  }
+}
+
 async function persistProgramTransaction(
   tx: Prisma.TransactionClient,
   userId: string,
@@ -475,13 +566,20 @@ async function persistProgramTransaction(
   const draft = buildProgramDraft(input);
 
   // 1) Exercises — create-if-missing (upsert by unique name with an empty
-  //    update so curated seed rows are never overwritten).
+  //    update so curated seed rows are never overwritten). S02-C: resolved
+  //    canonical exercises additionally adopt their slug opportunistically
+  //    (reuse an existing canonical row, attach a slug to a legacy exact-name
+  //    row, or create a new row with the slug) — but the name fallback below
+  //    guarantees a Program that persists today still persists identically.
+  //
+  //    The identity map keys every upserted row by BOTH its display name and
+  //    its slug (when set), so `ProgramExercise` links below resolve to the
+  //    canonical row even when an alias/variant display name was reused.
+  const exerciseIdByKey = new Map<string, string>();
   for (const exercise of draft.exercises) {
-    await tx.exercise.upsert({
-      where: {name: exercise.name},
-      update: {},
-      create: exercise,
-    });
+    const row = await upsertCanonicalExercise(tx, exercise);
+    exerciseIdByKey.set(row.name, row.id);
+    if (row.slug) exerciseIdByKey.set(row.slug, row.id);
   }
 
   // 2) Program — the user's current program (latest) is replaced IN PLACE;
@@ -527,18 +625,19 @@ async function persistProgramTransaction(
       });
 
   // 3) ProgramExercise links with the AI prescription, in program order.
+  //    Resolve each link to the canonical row: prefer the slug key (so an
+  //    alias/variant name links to the canonical row), else the exact display
+  //    name (legacy/unresolved). Because every row was upserted above in the
+  //    same transaction, the map is authoritative and no extra query is needed.
   if (draft.programExercises.length > 0) {
-    const names = Array.from(new Set(draft.programExercises.map((row) => row.exerciseName)));
-    const exercises = await tx.exercise.findMany({
-      where: {name: {in: names}},
-      select: {id: true, name: true},
-    });
-    const exerciseIdByName = new Map(exercises.map((e) => [e.name, e.id]));
+    const exerciseIdFor = (row: ProgramExerciseDraft): string =>
+      (row.slug ? exerciseIdByKey.get(row.slug) : undefined) ??
+      exerciseIdByKey.get(row.exerciseName) as string;
 
     await tx.programExercise.createMany({
       data: draft.programExercises.map((row) => ({
         programId: program.id,
-        exerciseId: exerciseIdByName.get(row.exerciseName) as string,
+        exerciseId: exerciseIdFor(row),
         order: row.order,
         sets: row.sets,
         reps: row.reps,
