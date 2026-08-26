@@ -66,4 +66,12 @@ Sequential zero-padded numbers (`0001`, `0002`, …). Never renumber.
 
 ## Current records
 
-None accepted yet.
+| ADR | Status | Decision |
+|---|---|---|
+| [`0001-canonical-exercise-identity.md`](./0001-canonical-exercise-identity.md) | ACCEPTED (2026-08-27) | Exercise identity = durable id; names = display metadata; name fallback during migration (AD-1) |
+| [`0002-pure-workout-session-core.md`](./0002-pure-workout-session-core.md) | ACCEPTED (2026-08-27) | Framework-independent session core + React adapter (AD-2) |
+| [`0003-quiz-onboarding-migration.md`](./0003-quiz-onboarding-migration.md) | ACCEPTED (2026-08-27) — DO WHEN TOUCHED | Quiz JS island → TS + canonical contracts; excluded from immediate stabilization (AD-3) |
+
+Full decision summaries live in the records; do not duplicate ADR text here.
+The Architecture Stabilization Plan (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`)
+carries the execution scope and gates for AD-1/AD-2.

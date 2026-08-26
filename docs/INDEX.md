@@ -17,11 +17,12 @@
 | محصول: ویژن سطح‌بالا | [`product/PRODUCT-VISION.md`](product/PRODUCT-VISION.md) | AUTHORITATIVE — CURRENT (تمایز CURRENT / DIRECTION / PLANNED) |
 | محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | وضعیت: PRODUCT / UX VISION — NOT YET IMPLEMENTED |
 | محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات باز محصول/معماری برای صاحب محصول |
-| معماری (اصول کلی) | **NO CANONICAL SOURCE YET** | بخشی در `AGENTS.md` §۴، `DESIGN_SYSTEM.md`، `ASSETS.md`، `AI_API.md`؛ اصول پیشنهادی: [`architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md`](architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md) (PROPOSED — نیازمند تأیید owner)؛ سند معماری واحد پس از پذیرش اصول ایجاد شود |
+| معماری (اصول کلی) | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) | AUTHORITATIVE — CURRENT (extension `AGENTS.md`؛ پیشنهاد قبلی: [`ARCHITECTURE-PRINCIPLES-PROPOSAL.md`](architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md) SUPERSEDED) |
+| معماری (برنامه تثبیت) | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) | APPROVED DIRECTION — IMPLEMENTATION NOT STARTED (گیت‌ها A/B/C) |
 | معماری (ممیزی مدولاریتی) | [`architecture/MODULARITY-AUDIT.md`](architecture/MODULARITY-AUDIT.md) | AUDIT RECORD — NOT AN ARCHITECTURE DECISION |
 | معماری (رجیستر ریسک کوپلینگ) | [`architecture/COUPLING-RISK-REGISTER.md`](architecture/COUPLING-RISK-REGISTER.md) | AUDIT RECORD — NOT AN IMPLEMENTATION BACKLOG |
 | معماری (فهرست قابلیت‌ها) | [`architecture/CAPABILITY-INVENTORY-PROPOSAL.md`](architecture/CAPABILITY-INVENTORY-PROPOSAL.md) | PROPOSED — NOT AUTHORITATIVE (ورودی Registry آینده) |
-| تصمیم‌های معماری (ADR) | [`adr/README.md`](adr/README.md) | مکانیزم فعال؛ هنوز هیچ ADR پذیرفته‌ای وجود ندارد |
+| تصمیم‌های معماری (ADR) | [`adr/README.md`](adr/README.md) | مکانیزم فعال؛ رکوردهای پذیرفته‌شده: [`0001`](adr/0001-canonical-exercise-identity.md) · [`0002`](adr/0002-pure-workout-session-core.md) · [`0003`](adr/0003-quiz-onboarding-migration.md) (2026-08-27) |
 | قرارداد APIهای AI و analytics | [`AI_API.md`](AI_API.md) | request/response، خطاها و محدودیت‌ها |
 | asset و cache | [`ASSETS.md`](ASSETS.md) | PWA، service worker، font و media policy |
 | UI و accessibility | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) | tokenها، RTL، touch target و motion — Frontend source of truth |

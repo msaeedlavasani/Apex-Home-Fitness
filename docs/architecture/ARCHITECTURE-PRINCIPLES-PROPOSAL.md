@@ -1,6 +1,11 @@
 # Architecture Principles — Proposal
 
-`STATUS: PROPOSED — REQUIRES OWNER REVIEW`
+`STATUS: SUPERSEDED — 2026-08-27`
+
+Superseded by the accepted authoritative document
+[`ARCHITECTURE-PRINCIPLES.md`](./ARCHITECTURE-PRINCIPLES.md)
+(STATUS: CURRENT — AUTHORITATIVE ARCHITECTURE PRINCIPLES). Kept as a
+historical record of the proposal; do not treat it as current rules.
 
 Candidate architecture principles derived from the modularity audit
 (`docs/architecture/MODULARITY-AUDIT.md`). **Nothing here is authoritative.**
@@ -88,3 +93,9 @@ DOCUMENTATION-GOVERNANCE.md`).
   path: owner review → accepted ADR(s) → a canonical architecture document.
 - The audit's only binding input to this process is `AGENTS.md` (already
   authoritative) — everything else here is a recommendation.
+
+---
+
+**Update (2026-08-27):** principles accepted as
+[`ARCHITECTURE-PRINCIPLES.md`](./ARCHITECTURE-PRINCIPLES.md); this file is
+SUPERSEDED.

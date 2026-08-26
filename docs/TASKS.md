@@ -77,22 +77,23 @@
 ترتیب الزامی کارها (مشروح در `docs/HANDOFF.md`):
 
 ```text
-Documentation / Governance Reconciliation  ← جاری
+Documentation / Governance Reconciliation  ← تکمیل شد
         ↓
-Full Codebase Modularity, Coupling & Reusability Audit
+Full Codebase Modularity, Coupling & Reusability Audit ← تکمیل شد
         ↓
-Architecture Stabilization / Approved Modularization
+Architecture Stabilization / Approved Modularization ← جاری (برنامه تأیید شد؛ اجرا نشده)
         ↓
 Resume Feature Development
 ```
 
 > نقشه‌ی قابلیت‌های محصول دونه‌دونه در [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) است؛ این بخش backlog فنی را نگه می‌دارد. آیتم‌های زیر deferred/planned هستند و تا تثبیت baseline معماری شروع نمی‌شوند (حذف نشده‌اند).
 
-1. **[ ] Full Codebase Modularity, Coupling & Reusability Audit** — گام بعدی الزامی؛ بر اساس baseline مستندات سازگارشده و اصل `reuse → extend → compose → create` (`AGENTS.md` §۳).
-2. **[ ] ارتقای Next.js به 16.x:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف؛ deferred).
-3. **[ ] Progress Check-in (`TRANSFORMATION_ROADMAP.md` آیتم ۱):** deferred — بعد از معماری پایدار.
-4. **[ ] سایر آیتم‌های `TRANSFORMATION_ROADMAP.md`:** deferred؛ آیتم‌های مربوط به logging تمرین (PR/ثبت ست‌به‌ست) باید با Technical Spec تمرین V2 هماهنگ شوند (D-02).
-5. **[ ] Workout Experience V2:** NOT YET IMPLEMENTED — عمداً paused تا معماری پایدار شود (جزئیات در `docs/product/`).
+1. **[~] Full Codebase Modularity, Coupling & Reusability Audit** — تکمیل شد (`docs/architecture/MODULARITY-AUDIT.md` + `COUPLING-RISK-REGISTER.md`، رکورد ممیزی).
+2. **[ ] Execute Architecture Stabilization Plan (فازهای S-01..S-06)** — تصمیمات AD-1..AD-5 پذیرفته شدند (`docs/adr/0001..0003`)؛ اصول معماری AUTHORITATIVE شد (`ARCHITECTURE-PRINCIPLES.md`)؛ برنامه و گیت‌های A/B/C در `ARCHITECTURE-STABILIZATION-PLAN.md` آماده است — **IMPLEMENTATION NOT STARTED**؛ اجرای phased با توقف الزامی در گیت‌ها و بدون شروع Workout V2.
+3. **[ ] ارتقای Next.js به 16.x:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف؛ deferred).
+4. **[ ] Progress Check-in (`TRANSFORMATION_ROADMAP.md` آیتم ۱):** deferred — بعد از معماری پایدار.
+5. **[ ] سایر آیتم‌های `TRANSFORMATION_ROADMAP.md`:** deferred؛ آیتم‌های مربوط به logging تمرین (PR/ثبت ست‌به‌ست) باید با Technical Spec تمرین V2 هماهنگ شوند (D-02).
+6. **[ ] Workout Experience V2:** NOT YET IMPLEMENTED — عمداً paused تا معماری پایدار شود (جزئیات در `docs/product/`).
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.

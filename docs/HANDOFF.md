@@ -38,19 +38,19 @@
 - **استقرار سرور (self-hosted Docker):** Next 15.5.23 روی `85.198.16.251`، کد در `/opt/apexhomefit/app-new/` (بدون git؛ سینک دستی با rsync + `docker compose up --build -d`؛ `.deployed-commit` رکورد کامیت دیپلوی‌شده است). **Rollback:** git (checkout کامیت قبلی + rebuild) یا بکاپ‌های `app-new/backups/` (اسنپ‌شات تازه دیتابیس + `current.env`). `/opt/apexhomefit` پاکسازی شد — فقط `app-new`، `backups/` و اسکریپت‌های acme (`acme-auth.sh`/`acme-cleanup.sh` که **برای تمدید گواهی certbot ضروری‌اند**) باقی مانده‌اند. قالب SMS.ir: `SMS_IR_TEMPLATE_ID=976440`، پارامتر قالب: `otp` (`SMS_IR_CODE_PARAMETER=otp`). OTP mock allowlist، session Supabase و مسیر HTTPS تا dashboard در 2026-08-26 smoke-test شد؛ کد mock عمداً مستند نمی‌شود. تأخیر تحویل SMS (~۴ دقیقه) سمت SMS.ir است — قالب باید در بخش «ارسال سریع» پنل تعریف شود.
 - **OTP mock override (production test harness):** برای توسعه/تست سرور، `AUTH_OTP_MODE=mock` + `AUTH_OTP_MOCK_IN_PRODUCTION=true` فقط شماره‌های `AUTH_OTP_MOCK_PHONES` را به session تست می‌رساند؛ مقدار کد توسعه secret-like است و نباید log/document شود. بقیه به SMS.ir واقعی route می‌شوند (پیش‌فرض OFF). بعد از رفع SMS، حالت mock حذف شود.
 - **تصمیم Next.js:** ارتقای امنیتی به 15.5.23 (به‌همراه next-intl 4.13.7) روی برنچ `migration/next-15` انجام و typecheck/lint/unit (345/345) سبز شد؛ 14.x دیگر پچ امنیتی نمی‌گیرد، پس این ارتقا قبل از launch الزامی است. ارتقای نهایی به 16.x همچنان به‌عنوان migration مستقل و **بعد از launch** باقی می‌ماند.
-- **اولویت فعلی (تصمیم D-01، 2026-08-27):**
+- **اولویت فعلی (تصمیم D-01، 2026-08-27؛ به‌روزرسانی 2026-08-27 عصر):**
 
   ```text
-  Documentation / Governance Reconciliation   ← این تسک
+  Documentation / Governance Reconciliation   ← تکمیل شد
           ↓
-  Full Codebase Modularity, Coupling & Reusability Audit
+  Full Codebase Modularity, Coupling & Reusability Audit ← تکمیل شد
           ↓
-  Architecture Stabilization / Approved Modularization
+  Architecture Stabilization / Approved Modularization ← جاری (برنامه تأیید شد، اجرا نشده)
           ↓
   Resume Feature Development
   ```
 
-  آیتم‌های قبلی (Progress Check-in از `TRANSFORMATION_ROADMAP.md` و ارتقای Next.js 16) **حذف نشده‌اند**؛ به‌عنوان deferred/planned دسته‌بندی شدند و تا تثبیت baseline معماری شروع نمی‌شوند (مشروح در `docs/TASKS.md`). Workout Experience V2 نیز عمداً paused است تا baseline معماری آماده شود. بچ جدید فقط با تأیید صریح کاربر.
+  وضعیت معماری (تصمیمات 2026-08-27): تصمیم‌های AD-1 (هویت متعارف تمرین)، AD-2 (هسته‌ی خالص Session) و AD-3 (مهاجرت کوییز، DO WHEN TOUCHED) **پذیرفته شدند** و در `docs/adr/0001..0003` ثبت شدند؛ AD-4 (مالکیت قراردادهای مشترک) پذیرفته و AD-5 (جداسازی offline store) deferred شد. اصول معماری در `docs/architecture/ARCHITECTURE-PRINCIPLES.md` AUTHORITATIVE شد و برنامه‌ی تثبیت (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`) با فازهای S-01..S-06 و گیت‌های A/B/C آماده است — **IMPLEMENTATION NOT STARTED**؛ اجرا فقط به‌صورت phased و با توقف در گیت‌ها. آیتم‌های قبلی (Progress Check-in و ارتقای Next.js 16) **حذف نشده‌اند** و deferred/planned هستند؛ Workout Experience V2 نیز عمداً paused است. بچ جدید فقط با تأیید صریح کاربر.
 
 ## نکات کلیدی برای ایجنت بعدی
 1. **ریشه پروژه:** `/Users/msl/Documents/GitHub/Apex-Home-Fitness` — مستندات در `docs/`؛ قبل از هر تغییری ترتیب مطالعه‌ی §۵ `docs/governance/DOCUMENTATION-GOVERNANCE.md` و نقشه‌ی `docs/INDEX.md` را دنبال کن.
