@@ -1,8 +1,8 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
+import {useTranslations} from 'next-intl';
 import {Check, ChevronLeft, ChevronRight, CalendarDays} from 'lucide-react';
-import type {HistoryTranslator} from './HistorySummary';
 
 /**
  * HistoryCalendar — interactive monthly training calendar (client component).
@@ -30,8 +30,6 @@ export interface HistoryCalendarProps {
   /** Canonical rest-day weekday ids ('monday'…'sunday'), or null without a program. */
   restDays: string[] | null;
   locale: 'en' | 'fa';
-  /** Localized messages under the `History` namespace. */
-  t: HistoryTranslator;
 }
 
 /** Weekday order per locale as `getDay()` values (0 = Sunday … 6 = Saturday). */
@@ -116,7 +114,8 @@ function daysOfMonth(anchor: Date, locale: 'en' | 'fa'): Date[] {
 
 type DayStatus = 'done' | 'rest' | 'missed' | 'plain';
 
-export function HistoryCalendar({sessionStarts, restDays, locale, t}: HistoryCalendarProps) {
+export function HistoryCalendar({sessionStarts, restDays, locale}: HistoryCalendarProps) {
+  const t = useTranslations('History');
   // Resolved after mount so SSR and the first client render agree (null state).
   const [today, setToday] = useState<Date | null>(null);
   const [monthOffset, setMonthOffset] = useState(0);

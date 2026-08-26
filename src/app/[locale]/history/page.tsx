@@ -82,7 +82,6 @@ async function HistoryContent({
         sessionStarts={analytics.sessionStarts ?? []}
         restDays={restDays}
         locale={locale as 'en' | 'fa'}
-        t={t}
       />
     </>
   );
