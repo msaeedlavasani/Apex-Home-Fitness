@@ -31,7 +31,11 @@
      # 1. کپی env و تنظیم مقادیر واقعی (دیتابیس خودکار در volume ذخیره می‌شود)
      cp .env.example .env
      
-     # 2. بیلد و اجرا (شامل اجرای خودکار migrationهای دیتابیس)
+     # 2. Set server-only secrets in .env (never commit this file), including:
+     #    OPENAI_API_KEY=sk-...
+     #    NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_SUPABASE_URL,
+     #    NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
+     # 3. Build and run (includes database migrations)
      docker compose up --build -d
      ```
      اپ روی پورت ۳۰۰۰ بالا می‌آید. یک Reverse Proxy (مثل Nginx یا Caddy) جلوی آن قرار بده و HTTPS را فعال کن.
@@ -48,6 +52,29 @@
    npx lighthouse https://your-production-domain.example --view
    npx @bubblewrap/cli validate --url=https://your-production-domain.example
    ```
+
+### کلید OpenAI و تولید برنامه
+
+`OPENAI_API_KEY` فقط برای `POST /api/generate-program` لازم است و باید فقط در فایل ignored زیر روی سرور قرار بگیرد:
+
+```text
+/opt/apexhomefit/app-new/.env
+```
+
+از نام دقیق زیر استفاده کن؛ آن را با `NEXT_PUBLIC_` شروع نکن و مقدار کلید را در git، چت یا log قرار نده:
+
+```env
+OPENAI_API_KEY=sk-...
+```
+
+پس از تغییر `.env`، فقط app را recreate کن تا env جدید وارد کانتینر شود:
+
+```bash
+cd /opt/apexhomefit/app-new
+docker compose up -d --no-deps --force-recreate app
+```
+
+برای اعتبارسنجی امن، فقط وجود متغیر را (بدون چاپ مقدار) بررسی کن و سپس یک برنامه را با یک حساب تستِ واردشده بساز. مدل فعلی `gpt-4o-mini` در کد تنظیم شده و متغیر `OPENAI_MODEL` در این نسخه استفاده نمی‌شود.
 
 ## Digital Asset Links
 

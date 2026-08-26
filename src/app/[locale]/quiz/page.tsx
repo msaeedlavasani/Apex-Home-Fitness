@@ -237,16 +237,12 @@ export default function QuizPage() {
       setDraft(completed);
       saveQuizDraft(completed);
 
-      const session = await checkQuizSession();
-      if (session.authenticated) {
-        await runCompletion(completed);
-      } else {
-        // OTP login/signup step: the completed draft stays in localStorage;
-        // after verify the auth UI redirects to next (= /quiz) and the boot
-        // effect resumes the flow.
-        setPhase('needs-auth');
-        router.push(quizAuthHandoffUrl(localeRef.current));
-      }
+      // Always hand the completed local draft to the OTP screen. This keeps
+      // the account-selection boundary explicit: the verified phone becomes
+      // the owner when the quiz resumes after auth, even if an old Supabase
+      // session is still present in the browser.
+      setPhase('needs-auth');
+      router.push(quizAuthHandoffUrl(localeRef.current));
     },
     [router, runCompletion],
   );

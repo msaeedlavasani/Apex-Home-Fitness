@@ -396,6 +396,8 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 | `REDIS_REST_URL` | Redis REST store base URL (only when `RATE_LIMIT_STORE=redis`) | ⚠️ conditional |
 | `REDIS_REST_TOKEN` | Redis REST store auth token (only when `RATE_LIMIT_STORE=redis`; never commit a real value) | ⚠️ conditional |
 
+`OPENAI_API_KEY` is server-only: it belongs in the ignored deployment `.env` file (`/opt/apexhomefit/app-new/.env` for the current self-hosted server), **not** in a `NEXT_PUBLIC_*` variable, source file, or git. Restart/recreate only the `app` service after changing it so the container receives the new environment. The current model is fixed in `src/app/api/generate-program/route.ts` as `gpt-4o-mini`; `OPENAI_MODEL` is not read by this release.
+
 `analytics/events` requires **no** environment variables (logger only).
 
 ---
@@ -404,7 +406,7 @@ Names only — no values (see `.env.example`). Runtime source of truth: `src/lib
 
 - **Prompt files (deployment artifact):** `infra/ai/prompts/01-general-program-generation-prompt.md`, `02-injury-focused-program-prompt.md`, `03-equipment-limited-program-prompt.md` are read from `process.cwd()` at request time by `loadSystemPrompt(mode)`. A missing file → `500 {"error":"Failed to generate program"}`. They must be present in the deployed artifact.
 - **Database:** SQLite via Prisma (`DATABASE_URL`), with migrations in `prisma/` — `WorkoutSession`, `User`, `Program`, `ProgramExercise`, `Exercise` are read/written by `generate-program`, plus the `ProgramGenerationRequest` idempotency ledger (§3.10).
-- **AI call:** one `gpt-4o-mini` structured-output call per request (OpenAI API). The route does **not** configure `maxDuration`; default Node.js runtime. See §3.6.
+- **AI call:** one `gpt-4o-mini` structured-output call per request (OpenAI API). `OPENAI_API_KEY` must be injected as a server-only runtime environment variable; the route does not read an `OPENAI_MODEL` override. The route does **not** configure `maxDuration`; default Node.js runtime. See §3.6.
 - **Body size:** no app-level limit on `generate-program` (platform default applies); `analytics/events` enforces 64 KiB itself.
 - **Logging:** `analytics/events` output goes to structured logs (scope `analytics`); in production each entry is a single JSON line suitable for aggregation (CloudWatch, Datadog, …). Sensitive keys are redacted by the logger.
 

@@ -73,7 +73,9 @@ function isValidClientIdempotencyKey(key: string): boolean {
  * back here and the page resumes the save → generate → dashboard flow.
  */
 export function quizAuthHandoffUrl(locale: string): string {
-  return authLoginPath(locale, `/${locale}/quiz`);
+  // `force=1` lets the quiz handoff show OTP even when a stale session is
+  // present; the verified phone is selected as the owner on resume.
+  return `${authLoginPath(locale, `/${locale}/quiz`)}&force=1`;
 }
 
 // ---------------------------------------------------------------------------

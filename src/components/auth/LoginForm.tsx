@@ -80,7 +80,8 @@ export function LoginForm() {
           typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : 60,
         devCode: typeof data.devCode === 'string' ? data.devCode : null,
       });
-      router.push(`/${locale}/auth/verify`);
+      const forceAuth = searchParams.get('force') === '1';
+      router.push(`/${locale}/auth/verify${forceAuth ? '?force=1' : ''}`);
     } catch {
       setError('generic');
     } finally {

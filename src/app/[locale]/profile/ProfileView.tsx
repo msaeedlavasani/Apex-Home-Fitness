@@ -272,7 +272,7 @@ function SignedOutCard() {
         {t('unauthenticated.message')}
       </p>
       <Link
-        href={`/${locale}/auth/login`}
+        href={`/${locale}/auth/login?force=1`}
         className={[
           'mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-apple-blue px-5 py-2.5 text-[15px] font-semibold text-white transition-colors touch-manipulation',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-apple-blue',

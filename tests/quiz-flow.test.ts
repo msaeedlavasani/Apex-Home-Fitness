@@ -115,10 +115,10 @@ test('generation idempotency key rejects invalid completion ids', () => {
 test('hand-off URL points at the canonical auth login with the quiz as next target', () => {
   assert.equal(
     quizAuthHandoffUrl('en'),
-    '/en/auth/login?next=%2Fen%2Fquiz',
+    '/en/auth/login?next=%2Fen%2Fquiz&force=1',
   );
   assert.equal(
     quizAuthHandoffUrl('fa'),
-    '/fa/auth/login?next=%2Ffa%2Fquiz',
+    '/fa/auth/login?next=%2Ffa%2Fquiz&force=1',
   );
 });

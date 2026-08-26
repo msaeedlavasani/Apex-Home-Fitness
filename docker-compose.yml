@@ -11,10 +11,15 @@ services:
     build:
       context: .
       target: build
+      args:
+        # Keep the migration image on the same reachable npm proxy as app.
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://package-mirror.liara.ir/repository/npm/}
     env_file: .env
     environment:
       DATABASE_URL: file:/data/app.db
-    command: sh -c "npx prisma migrate deploy"
+    # The runner uses nextjs:nodejs (100:101); migrate runs as root, so
+    # hand ownership of the SQLite volume back before the app starts.
+    command: sh -c "npx prisma migrate deploy && chown -R 100:101 /data"
     volumes:
       - db-data:/data
 
@@ -23,6 +28,9 @@ services:
       context: .
       target: runner
       args:
+        # Use the domestic npm proxy by default for Iranian deployments. It is
+        # overrideable with NPM_REGISTRY when a different network is faster.
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://package-mirror.liara.ir/repository/npm/}
         # NEXT_PUBLIC_* must reach the build stage (they are inlined into the
         # client bundle at `next build` time). Values come from the .env file.
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
@@ -30,6 +38,12 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
     ports:
       - "3000:3000"
+    # Docker's embedded resolver intermittently returns EAI_AGAIN for the
+    # Supabase host on this deployment. Use stable public resolvers so OTP
+    # session creation does not stall behind transient container DNS failures.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     env_file: .env
     environment:
       DATABASE_URL: file:/data/app.db

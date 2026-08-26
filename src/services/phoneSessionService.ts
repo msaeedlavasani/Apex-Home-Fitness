@@ -39,6 +39,7 @@ import {createHash} from 'node:crypto';
 
 import {createClient} from '@supabase/supabase-js';
 
+import {logger} from '../lib/logger';
 import {createServerSupabaseClient} from '../lib/supabase-server';
 
 // ---------------------------------------------------------------------------
@@ -106,6 +107,39 @@ export class SessionEstablishmentError extends Error {
   constructor(message = 'Session establishment failed.') {
     super(message);
     this.name = 'SessionEstablishmentError';
+  }
+}
+
+/**
+ * Supabase can be intermittently unreachable from the production host. Retry
+ * only transport-like failures; authentication/configuration errors must fail
+ * immediately and must never be hidden by a retry loop.
+ */
+const SESSION_RETRY_DELAYS_MS = [250, 750, 1500] as const;
+
+function isTransientSessionResult(value: unknown): boolean {
+  const providerError = (value as {error?: {message?: string}} | null)?.error;
+  const message = providerError?.message;
+  return typeof message === 'string' && /fetch failed|network|timed out|timeout|econnreset|eai_again/i.test(message);
+}
+
+function isTransientException(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /fetch failed|network|timed out|timeout|econnreset|eai_again/i.test(message);
+}
+
+async function withSessionRetry<T>(
+  operation: () => Promise<T>,
+  shouldRetryResult: (value: T) => boolean = () => false,
+): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const value = await operation();
+      if (!shouldRetryResult(value) || attempt >= SESSION_RETRY_DELAYS_MS.length) return value;
+    } catch (error) {
+      if (!isTransientException(error) || attempt >= SESSION_RETRY_DELAYS_MS.length) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, SESSION_RETRY_DELAYS_MS[attempt] ?? 1500));
   }
 }
 
@@ -212,19 +246,28 @@ export async function ensureAuthUserForPhone(
   const id = phoneToAuthUserId(phone);
   const email = phoneToAuthEmail(phone);
 
-  const existing = await admin.getUserById(id);
+  const existing = await withSessionRetry(() => admin.getUserById(id), isTransientSessionResult);
   if (existing.error && existing.error.code !== 'user_not_found') {
+    logger.error('auth.session.user_lookup_failed', {providerError: existing.error});
     throw new SessionEstablishmentError('Failed to look up the auth user.');
   }
   if (existing.data.user) return existing.data.user;
 
-  const created = await admin.createUser({
-    id,
-    email,
-    email_confirm: true, // the phone was already proven by OTP verification
-    user_metadata: {phone, verifiedBy: 'phone-otp'},
-  });
+  const created = await withSessionRetry(
+    () =>
+      admin.createUser({
+        id,
+        email,
+        email_confirm: true, // the phone was already proven by OTP verification
+        user_metadata: {phone, verifiedBy: 'phone-otp'},
+      }),
+    isTransientSessionResult,
+  );
   if (created.error || !created.data.user) {
+    logger.error('auth.session.user_create_failed', {
+      providerError: created.error,
+      userReturned: Boolean(created.data.user),
+    });
     throw new SessionEstablishmentError('Failed to create the auth user.');
   }
   return created.data.user;
@@ -233,12 +276,13 @@ export async function ensureAuthUserForPhone(
 /**
  * Extracts the token hash from a generated magiclink. The admin API returns
  * `action_link` (full URL) and `hashed_token`; the exchange needs the
- * `token_hash` query parameter of the link.
+ * `token_hash` query parameter of the link. Older Supabase responses may use
+ * `token`, so that is accepted as a compatibility fallback.
  */
 export function extractTokenHashFromLink(actionLink: string): string | null {
   try {
     const url = new URL(actionLink);
-    return url.searchParams.get('token_hash');
+    return url.searchParams.get('token_hash') ?? url.searchParams.get('token');
   } catch {
     return null;
   }
@@ -273,29 +317,56 @@ export async function establishSessionForVerifiedPhone(
   const admin = opts.admin ?? createServiceRoleAdminClient(getSessionProviderConfig());
   const exchange =
     opts.exchangeTokenHash ?? (async (tokenHash) => {
-      const supabase = await createServerSupabaseClient();
-      // Magic-link exchange: the admin-generated link carries `token_hash`;
-      // `verifyOtp({ token_hash, type: 'email' })` swaps it for a real
-      // session (this supabase-js version has no `verifyTokenHash`). The
-      // session cookies are written by the SSR client's cookie store and
-      // attach to the current response. Requires non-PKCE magic links — the
-      // production smoke test (Batch 14 task 5) verifies the live flow.
-      const {data, error} = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type: 'email',
-      });
-      if (error || !data.user) {
+      try {
+        const supabase = await createServerSupabaseClient();
+        // Magic-link exchange: the admin-generated link carries `token_hash`;
+        // `verifyOtp({ token_hash, type: 'email' })` swaps it for a real
+        // session (this supabase-js version has no `verifyTokenHash`). The
+        // session cookies are written by the SSR client's cookie store and
+        // attach to the current response. Requires non-PKCE magic links — the
+        // production smoke test (Batch 14 task 5) verifies the live flow.
+        const {data, error} = await withSessionRetry(
+          () =>
+            supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: 'email',
+            }),
+          isTransientSessionResult,
+        );
+        if (error || !data.user) {
+          logger.error('auth.session.exchange_failed', {
+            providerError: error,
+            userReturned: Boolean(data?.user),
+            sessionReturned: Boolean(data?.session),
+          });
+          throw new SessionEstablishmentError();
+        }
+        return {id: data.user.id, email: data.user.email ?? ''};
+      } catch (error) {
+        if (error instanceof SessionEstablishmentError) throw error;
+        logger.error('auth.session.exchange_exception', {error});
         throw new SessionEstablishmentError();
       }
-      return {id: data.user.id, email: data.user.email ?? ''};
     });
 
   const user = await ensureAuthUserForPhone(admin, phone);
-  const link = await admin.generateLink({type: 'magiclink', email: user.email});
-  if (link.error || !link.data?.properties?.action_link) {
+  const link = await withSessionRetry(
+    () => admin.generateLink({type: 'magiclink', email: user.email}),
+    isTransientSessionResult,
+  );
+  if (link.error || !link.data?.properties) {
+    logger.error('auth.session.link_generation_failed', {
+      providerError: link.error,
+      actionLinkReturned: Boolean(link.data?.properties?.action_link),
+      propertiesReturned: Boolean(link.data?.properties),
+    });
     throw new SessionEstablishmentError('Failed to generate the sign-in link.');
   }
-  const tokenHash = extractTokenHashFromLink(link.data.properties.action_link);
+  const properties = link.data.properties;
+  const tokenHash =
+    properties.token_hash ??
+    properties.hashed_token ??
+    extractTokenHashFromLink(properties.action_link ?? '');
   if (!tokenHash) {
     throw new SessionEstablishmentError('Sign-in link carried no token hash.');
   }

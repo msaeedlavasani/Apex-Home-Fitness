@@ -46,6 +46,7 @@ import { DifficultyLevel, Prisma, PrismaClient } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { createServerSupabaseClient } from '../lib/supabase-server';
+import { normalizePhone } from '../lib/auth/phone';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,6 +154,29 @@ function displayNameFor(supabaseUser: SupabaseUser): string {
   return fullName ?? name ?? supabaseUser.email ?? 'Apex Athlete';
 }
 
+/** Reads the canonical Iranian phone stored in Supabase user metadata. */
+function phoneFor(supabaseUser: SupabaseUser): string | null {
+  const candidate = supabaseUser.user_metadata?.phone;
+  return typeof candidate === 'string' ? normalizePhone(candidate) : null;
+}
+
+/** Builds only changed profile fields so existing legacy rows remain compatible. */
+function profileUpdateData(
+  existing: {email: string; name: string; phone: string | null},
+  email: string,
+  name: string,
+  phone: string | null,
+): Prisma.UserUpdateInput {
+  const data: Prisma.UserUpdateInput = {};
+  if (existing.email !== email) data.email = email;
+  if (existing.name !== name) data.name = name;
+  // Never reassign a phone already owned by another account. The lookup by
+  // phone happens before this helper, so a missing legacy phone can be filled
+  // safely while the verified phone remains the account identity.
+  if (phone && existing.phone === null) data.phone = phone;
+  return data;
+}
+
 /**
  * Ensures a Prisma `User` exists for the given Supabase auth user and returns
  * it. The Prisma user is keyed by the Supabase auth user id so every app
@@ -169,35 +193,47 @@ export async function syncUserWithSupabase(supabaseUser: SupabaseUser) {
     throw new UserServiceError('Supabase user has no email address.');
   }
   const name = displayNameFor(supabaseUser);
+  const phone = phoneFor(supabaseUser);
 
-  // 1) Canonical path — record keyed by the auth user id.
+  // 1) The verified phone is the canonical account identity when available.
+  // This also repairs/reuses a legacy row whose Supabase id was created by an
+  // earlier deployment, instead of creating a second account for one phone.
+  const byPhone = phone
+    ? await prisma.user.findUnique({where: {phone}})
+    : null;
+  if (byPhone) {
+    const data = profileUpdateData(byPhone, email, name, phone);
+    return Object.keys(data).length > 0
+      ? prisma.user.update({where: {id: byPhone.id}, data})
+      : byPhone;
+  }
+
+  // 2) Canonical Supabase path — record keyed by the deterministic auth id.
   const existing = await prisma.user.findUnique({
-    where: { id: supabaseUser.id },
+    where: {id: supabaseUser.id},
   });
   if (existing) {
-    if (existing.email !== email || existing.name !== name) {
-      return prisma.user.update({
-        where: { id: existing.id },
-        data: { email, name },
-      });
-    }
-    return existing;
+    const data = profileUpdateData(existing, email, name, phone);
+    return Object.keys(data).length > 0
+      ? prisma.user.update({where: {id: existing.id}, data})
+      : existing;
   }
 
-  // 2) Email already exists under another id (legacy record) — reuse it.
-  const byEmail = await prisma.user.findUnique({ where: { email } });
+  // 3) Email fallback keeps pre-phone legacy rows compatible.
+  const byEmail = await prisma.user.findUnique({where: {email}});
   if (byEmail) {
-    return prisma.user.update({
-      where: { id: byEmail.id },
-      data: { name },
-    });
+    const data = profileUpdateData(byEmail, email, name, phone);
+    return Object.keys(data).length > 0
+      ? prisma.user.update({where: {id: byEmail.id}, data})
+      : byEmail;
   }
 
-  // 3) First contact — create the Prisma user linked to the auth identity.
+  // 4) First contact — persist the verified phone alongside the auth id.
   return prisma.user.create({
     data: {
       id: supabaseUser.id,
       email,
+      phone,
       name,
       passwordHash: AUTH_PASSWORD_PLACEHOLDER,
     },

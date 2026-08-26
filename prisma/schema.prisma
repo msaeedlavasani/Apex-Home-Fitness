@@ -66,6 +66,9 @@ enum GenerationRequestStatus {
 model User {
   id            String           @id @default(cuid())
   email         String           @unique
+  // Canonical phone identity from the verified OTP flow. Nullable for legacy
+  // rows created before phone-backed login; new phone accounts always set it.
+  phone         String?          @unique
   name          String
   passwordHash  String
   heightCm      Int?

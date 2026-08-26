@@ -254,9 +254,10 @@ export function VerifyForm() {
   function handleChangeNumber() {
     clearPendingOtp();
     const next = pending?.next;
-    router.push(
-      `/${locale}/auth/login${next ? `?next=${encodeURIComponent(next)}` : ''}`,
-    );
+    const query = next
+      ? `?next=${encodeURIComponent(next)}&force=1`
+      : '?force=1';
+    router.push(`/${locale}/auth/login${query}`);
   }
 
   const canSubmit = code.length === CODE_LENGTH && status === 'idle';

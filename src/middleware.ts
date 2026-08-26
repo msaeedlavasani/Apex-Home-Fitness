@@ -101,7 +101,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (authPage && authenticated) {
+  const forceAuth = authPage && request.nextUrl.searchParams.get('force') === '1';
+
+  if (authPage && authenticated && !forceAuth) {
     const url = request.nextUrl.clone();
     url.pathname = postAuthDefaultPath(locale);
     url.search = '';

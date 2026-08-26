@@ -4,9 +4,18 @@
 # --- Stage 1: dependencies ------------------------------------------------
 FROM node:22-alpine AS deps
 WORKDIR /app
+ARG NPM_REGISTRY=https://registry.npmjs.org/
 COPY package.json package-lock.json ./
-# CI=true keeps installs reproducible (no dev-only postinstall surprises).
-RUN npm ci
+# Keep installs reproducible while allowing restricted-network deployments to
+# select a reachable npm proxy. The lockfile's npmjs tarball hosts are
+# rewritten by npm so the mirror is used for the actual downloads too.
+RUN npm ci \
+  --registry="${NPM_REGISTRY}" \
+  --replace-registry-host=always \
+  --fetch-timeout=30000 \
+  --fetch-retries=2 \
+  --fetch-retry-mintimeout=1000 \
+  --fetch-retry-maxtimeout=5000
 
 # --- Stage 2: build --------------------------------------------------------
 # Keeps the full dev toolchain (prisma CLI, typescript, playwright-free) so
@@ -53,7 +62,10 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
 # Ensure the database directory is writable by the nextjs user.
 USER root
-RUN mkdir -p /data && chown -R nextjs:nodejs /data
+# Next may write its incremental image/data cache at runtime. The standalone
+# bundle is copied as root, so create and grant the cache path before dropping
+# privileges; otherwise the first image request produces EACCES noise/errors.
+RUN mkdir -p /data /app/.next/cache && chown -R nextjs:nodejs /data /app/.next
 USER nextjs
 
 EXPOSE 3000

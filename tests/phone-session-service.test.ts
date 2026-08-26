@@ -56,6 +56,10 @@ test('extracts the token_hash from a generated magic link', () => {
   const link =
     'https://example.supabase.co/auth/v1/verify?token=hash&type=magiclink&token_hash=abc123&redirect_to=/dashboard';
   assert.equal(extractTokenHashFromLink(link), 'abc123');
+  assert.equal(
+    extractTokenHashFromLink('https://example.supabase.co/auth/v1/verify?token=legacy123'),
+    'legacy123',
+  );
   assert.equal(extractTokenHashFromLink('not a url'), null);
   assert.equal(extractTokenHashFromLink('https://example.test/link-without-token'), null);
 });
