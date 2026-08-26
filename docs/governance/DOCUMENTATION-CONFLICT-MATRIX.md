@@ -1,11 +1,12 @@
 # Documentation Conflict Matrix
 
-> **STATUS: PROPOSED / AUDIT OUTPUT — NOT YET AUTHORITATIVE**
+> **STATUS: REGISTER — CONFLICT RESOLUTION RECORD**
 >
 > Every meaningful contradiction found during the repository-wide documentation
-> audit (2026-08-27, `main` @ `c256bc7`). No conflict is resolved here; each
-> entry records the evidence and the reconciliation options so an owner can
-> decide. Severity is the audit's assessment, not a rule.
+> audit (2026-08-27, `main` @ `c256bc7`) plus its resolution. All conflicts were
+> resolved by the Documentation & Governance Reconciliation (2026-08-27,
+> approved decisions A-01…A-07, D-01…D-03). The register is kept for traceability;
+> the authoritative rules are in [`DOCUMENTATION-GOVERNANCE.md`](./DOCUMENTATION-GOVERNANCE.md).
 >
 > Related: [REPOSITORY-DOCUMENTATION-AUDIT.md](./REPOSITORY-DOCUMENTATION-AUDIT.md)
 
@@ -63,6 +64,8 @@
 - **Reconciliation options:** correct RELEASING.md to state `OPENAI_MODEL`
   (default `gpt-4o-mini`) is honored, overridden by `AI_MODEL`.
 - **Decision:** Architecture/Ops owner (evidence is conclusive).
+- **Resolution (2026-08-27):** RESOLVED — A-02 approved. `docs/RELEASING.md` corrected: `OPENAI_MODEL` (default `gpt-4o-mini`) is read by the code and `AI_MODEL` overrides it.
+- **Resolution (2026-08-27):** RESOLVED — A-01 approved. `docs/RELEASING.md` provider block updated to the current operational state (`AI_PROVIDER=openai`); Groq documented as a supported provider whose use from the current production environment is unavailable (geo-block), not permanently excluded.
 
 ## C-03 — OTP auth endpoint contract (outdated section)
 
@@ -90,6 +93,7 @@
   (Supabase SSR refresh is handled by middleware/cookies today) and document the
   decision.
 - **Decision:** Architecture owner + launch checklist owner.
+- **Resolution (2026-08-27):** RESOLVED — A-03 approved. `docs/OTP_LAUNCH_READINESS.md` §3 rewritten to the actual contract: routes `request-code` / `verify` / `logout` with their real statuses; `refresh` explicitly documented as non-existent (session refresh happens in `src/middleware.ts` via Supabase SSR; recorded as a future consideration, not existing behavior); empty `auth/otp/*` directories noted as non-routes.
 
 ## C-04 — `SMS_IR_CODE_PARAMETER` default mismatch
 
@@ -106,6 +110,7 @@
 - **Reconciliation options:** state the code default exactly (`Code`), the env
   override (`otp`), and the requirement that the value match the panel template.
 - **Decision:** Ops owner (quick fix).
+- **Resolution (2026-08-27):** RESOLVED — `docs/OTP_LAUNCH_READINESS.md` §1 now states the code default (`Code`) and the production value (`otp`, must match the SMS.ir panel template).
 
 ## C-05 — README OTP mock description
 
@@ -123,6 +128,7 @@
   "OTP login behind feature flag; dev-only mock allowlist; production launch
   pending readiness checklist").
 - **Decision:** Product/Ops owner (evidence conclusive).
+- **Resolution (2026-08-27):** RESOLVED — `README.md` rephrased to the current auth reality (OTP behind feature flag; dev/CI mock is allowlist-based and mints no sessions; public launch gated by the Go/No-Go checklist).
 
 ## C-06 — "What's next" divergence
 
@@ -139,6 +145,7 @@
 - **Reconciliation options:** align TASKS.md "next tasks" with HANDOFF's focus
   (or explicitly defer feature work), and keep the two docs cross-referenced.
 - **Decision:** Product owner (priority ordering).
+- **Resolution (2026-08-27):** RESOLVED — D-01 approved. `docs/HANDOFF.md` and `docs/TASKS.md` now present the single current priority sequence (Documentation/Governance Reconciliation → Modularity Audit → Architecture Stabilization → Feature Development); Progress Check-in and Next.js 16 reclassified as deferred/planned (not deleted).
 
 ## C-07 — Platform README design-system path (fixed)
 
@@ -146,8 +153,7 @@
 - **Document:** `src/components/ui/platform/README.md` — "See DESIGN_SYSTEM.md
   (repo root)".
 - **Code evidence:** the file is `docs/DESIGN_SYSTEM.md`.
-- **Severity:** LOW. **Resolution:** safe-corrected during this audit
-  (reference updated to `docs/DESIGN_SYSTEM.md`). No decision needed.
+- **Severity:** LOW. **Resolution:** safe-corrected during this audit (reference updated to `docs/DESIGN_SYSTEM.md`). No decision needed.
 
 ## C-08 — TASKS.md batch summary omission
 
@@ -159,6 +165,7 @@
 - **Reconciliation options:** add the two summary lines; confirm Batch 20 status
   wording ("آماده validation نهایی") vs HANDOFF's matching statement.
 - **Decision:** none required beyond a mechanical fix (owner: project docs).
+- **Resolution (2026-08-27):** RESOLVED — `docs/TASKS.md` batch summary now includes Batch 16 and 17 lines.
 
 ## C-09 — Change-report template duplication
 
@@ -173,6 +180,7 @@
   replace the §5 copy with a link; or (b) declare `AI_DEVELOPMENT_SYSTEM.md` the
   home and link from the template file. Either way one source of truth.
 - **Decision:** Architecture owner (small).
+- **Resolution (2026-08-27):** RESOLVED — A-04 approved. `docs/AI_CHANGE_TEMPLATE.md` is authoritative; `docs/AI_DEVELOPMENT_SYSTEM.md` §5 now links to it instead of duplicating the template.
 
 ## C-10 — Agent-behavior documentation overlap
 
@@ -192,6 +200,7 @@
   and de-duplicate the template; or (b) MERGE. Option (a) matches the documents'
   own declared scopes.
 - **Decision:** Architecture owner.
+- **Resolution (2026-08-27):** RESOLVED — A-05 approved. Roles declared in both documents: `AGENTS.md` = authoritative agent behavior; `docs/AI_DEVELOPMENT_SYSTEM.md` = process/workflow guidance; explicit cross-references added in both.
 
 ## C-11 — Canonical documentation map incomplete (gap; fixed in part)
 
@@ -205,6 +214,7 @@
   audit (indisputable links, no rule change). Whether the platform UI README
   belongs in INDEX is left to the docs owner.
 - **Decision:** docs owner (if any further rows are desired).
+- **Resolution (2026-08-27):** RESOLVED — `docs/INDEX.md` now includes the `docs/product/*` rows (added during the audit) and was rebuilt into the authoritative map covering governance, ADRs, product vision, data and offline/sync reference rows.
 
 ## C-12 — DATA / offline-sync area has no docs/ reference (gap)
 
@@ -218,6 +228,7 @@
 - **Reconciliation options:** decide whether a `docs/DATA.md` (or a section in
   an existing doc) should own the offline-sync and data-contract knowledge.
 - **Decision:** Architecture owner.
+- **Resolution (2026-08-27):** RESOLVED (discoverability, per A-06) — `docs/INDEX.md` gains an Offline/Sync implementation-reference row (`src/lib/offline/`, `src/services/syncService.ts`, Supabase migration) explicitly marked `NO CANONICAL ARCHITECTURE DOC YET`; a deeper data contract is deferred to the Modularity Audit.
 
 ---
 
@@ -237,7 +248,7 @@
 - `.env.example` matches `src/lib/ai/provider.ts` and `src/lib/auth/*` env
   reads (verified for the AI and OTP sections).
 
-## Summary by severity
+## Summary by severity (audit-time assessment)
 
 | Severity | Count | IDs |
 |---|---|---|
@@ -245,3 +256,8 @@
 | HIGH | 1 | C-01 |
 | MEDIUM | 5 | C-02, C-03, C-09, C-10, C-11 |
 | LOW | 6 | C-04, C-05, C-06, C-07, C-08, C-12 |
+
+**Resolution status (2026-08-27):** all 12 conflicts RESOLVED by the approved
+reconciliation decisions (A-01…A-07, D-01…D-03). No conflict is left open.
+Future conflicts are handled per `docs/governance/DOCUMENTATION-GOVERNANCE.md`
+§3 (hierarchy → evidence-based correction → `OWNER DECISION REQUIRED`).

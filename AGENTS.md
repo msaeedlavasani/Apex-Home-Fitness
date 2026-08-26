@@ -84,13 +84,17 @@ npm run build
 
 ## 8. مستندات
 
-- `AGENTS.md`: رفتار و workflow agent
+- `AGENTS.md`: رفتار و workflow agent — AUTHORITATIVE
+- `docs/AI_DEVELOPMENT_SYSTEM.md`: فرایند/workflow سیستم توسعه‌ی خودکار (مکمل؛ در تعارض AGENTS.md مقدم است)
+- `docs/governance/DOCUMENTATION-GOVERNANCE.md`: قواعد governance مستندات + ترتیب مطالعه‌ی الزامی agent (§۵)
+- `docs/INDEX.md`: نقشه‌ی منبع حقیقت مستندات
 - `docs/DESIGN_SYSTEM.md`: قوانین بصری
 - `README.md`: onboarding و نمای کلی
 - `docs/`: دانش پایدار، عملیات و قراردادها
 - `docs/TASKS.md`: backlog و تاریخچه batchها
+- `docs/adr/`: تصمیم‌های معماری (مکانیزم)
 
-از ایجاد سند موازی خودداری کن. ابتدا canonical home موجود را پیدا کن و فقط اطلاعات durable را مستند کن.
+قبل از تغییر، ترتیب مطالعه‌ی §۵ `docs/governance/DOCUMENTATION-GOVERNANCE.md` را دنبال کن و از ایجاد سند موازی خودداری کن؛ ابتدا canonical home موجود را پیدا کن و فقط اطلاعات durable را مستند کن.
 
 ## 9. گزارش پایان کار
 

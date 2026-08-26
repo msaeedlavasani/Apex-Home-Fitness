@@ -1,11 +1,15 @@
 # Documentation Governance Proposal
 
-> **STATUS: PROPOSED / AUDIT OUTPUT — NOT YET AUTHORITATIVE**
+> **STATUS: SUPERSEDED — PROPOSAL RECORD**
 >
-> Proposed governance rules for repository documentation, prepared for review.
-> Nothing here is in force until adopted. Several principles already exist in
-> the repository (`docs/INDEX.md`'s "one reference doc per topic", `AGENTS.md`
-> §8 "no parallel documents"); this proposal makes them explicit and complete.
+> **SUPERSEDED BY [`DOCUMENTATION-GOVERNANCE.md`](./DOCUMENTATION-GOVERNANCE.md)**
+> (adopted 2026-08-27, decision A-04…A-07/D-01/D-03). This file is kept as the
+> historical proposal record and is NOT authoritative guidance.
+>
+> Original abstract: proposed governance rules for repository documentation,
+> prepared for review. Several principles already exist in the repository
+> (`docs/INDEX.md`'s "one reference doc per topic", `AGENTS.md` §8 "no parallel
+> documents"); this proposal made them explicit and complete.
 >
 > Audit date: 2026-08-27 · Related:
 > [REPOSITORY-DOCUMENTATION-AUDIT.md](./REPOSITORY-DOCUMENTATION-AUDIT.md),

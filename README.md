@@ -15,7 +15,7 @@ A bilingual home-fitness platform for personalized workout plans, progress track
 - **Offline/PWA:** Dexie، service worker و fallback آفلاین
 - **Deployment:** Docker Compose با image standalone و volume دیتابیس
 
-> در محیط production فعلی، ارسال SMS عمداً با feature flag غیرفعال و ورود آزمایشی با کد ثابت فعال است. این حالت برای کاربر واقعی مناسب نیست؛ جزئیات rollback در `docs/OTP_LAUNCH_READINESS.md` آمده است.
+> وضعیت فعلی auth: ورود با OTP (SMS.ir) پشت feature flag است؛ mock فقط dev/CI و با allowlist است و session جعلی نمی‌سازد؛ launch عمومی هنوز منوط به چک‌لیست Go/No-Go است (جزئیات و rollback در `docs/OTP_LAUNCH_READINESS.md`).
 
 ## شروع توسعه
 
@@ -96,6 +96,10 @@ docs/                    مستندات عملیاتی و قراردادهای �
 - [`docs/AI_DEVELOPMENT_SYSTEM.md`](docs/AI_DEVELOPMENT_SYSTEM.md) — سیستم توسعه‌ی خودکار اختصاصی Apex
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — توکن‌ها و قواعد UI
 - [`docs/ASSETS.md`](docs/ASSETS.md) — asset pipeline، cache و offline
+- [`docs/product/PRODUCT-VISION.md`](docs/product/PRODUCT-VISION.md) — ویژن سطح‌بالای محصول
+- [`docs/product/WORKOUT-EXPERIENCE-V2.md`](docs/product/WORKOUT-EXPERIENCE-V2.md) — ویژن تجربه تمرین V2 (NOT YET IMPLEMENTED)
+- [`docs/governance/DOCUMENTATION-GOVERNANCE.md`](docs/governance/DOCUMENTATION-GOVERNANCE.md) — قواعد governance مستندات + ترتیب مطالعه
+- [`docs/adr/README.md`](docs/adr/README.md) — مکانیزم ثبت تصمیم‌های معماری (ADR)
 
 ## CI
 

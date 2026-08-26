@@ -12,6 +12,8 @@
 - **Batch 13:** empty-state History/Analytics، فونت Vazirmatn، پوسته Profile، route دوزبانه FAQ و ترتیب روزهای فارسی — تکمیل شد.
 - **Batch 14:** Auth/OTP با SMS.ir، اتصال Quiz به حساب، محافظت routeها و ابزار readiness — implementation تکمیل شد؛ launch واقعی هنوز به smoke test production وابسته است.
 - **Batch 15:** زبان‌سوییچر سراسری EN/FA (حفظ مسیر، رادیو-گروپ اکسسبل، ۴۴px) و enforce قطعی روزهای استراحت در تولید برنامه (persistence-level + regression) — تکمیل شد.
+- **Batch 16:** آمادگی استقرار روی سرور (feature flag OTP، تکمیل قرارداد env، Docker self-hosted، production build، ممیزی Supabase) — تکمیل شد.
+- **Batch 17:** پروفایل کامل (شماره، آواتار با Supabase Storage، خروج→لندینگ)، تقویم ماهانه و چارت‌های آمار، OTP TTL=۱۵ دقیقه و بازتولید درجای برنامه — تکمیل شد.
 - **Batch 18:** بهبود ناوبری موبایل (تب «ترجیحات تمرین» در تب‌بارها، حذف دکمه بازگشت از صفحات تب، هدر مینیمال دسکتاپ در iOS)، یکپارچگی صفحه پروفایل، اصلاح نام برند فارسی «اپکس هوم فیتنس» + سند تحول (ریسرچ رقبا) — تکمیل شد.
 - **Batch 19:** بازطراحی صفحه «تنظیمات تمرین» (۳ کارت جدا، نام فارسی بهتر)، آیکون برند در هدر همه پلتفرم‌ها، و به‌روزرسانی سند تحول با پروفایل تفصیلی ۶ رقیب — تکمیل شد.
 - **Batch 20:** AI-first + rules-v2 (frequency مستقل، safety filtering، history adaptation، تجهیزات دقیق)، کوییز/تنظیمات ۸مرحله‌ای و اصلاح سند رقبا — آماده validation نهایی؛ CI عمداً خارج از scope این batch است.
@@ -70,10 +72,27 @@
 3. **[x] آیکون برند در هدر:** کامپوننت مشترک `BrandIcon` ساخته شد و به گوشه بالای دسکتاپ، ردیف بالای iOS، اپبار اندروید و نوار بالای موبایل وب اضافه شد.
 4. **[x] ریسرچ عمیق‌تر سند تحول:** پروفایل تفصیلی Hevy، Strong، Fitbod، Freeletics، MyFitnessPal، NTC (+ Boostcamp، Strava) با صفحات، امکانات و مدل درآمد؛ جدول امکانات ۸ ستونه و ۶ نکته‌ی کلیدی جدید.
 
-## تسک‌های پیشنهادی بعدی (پس از Batch 19) 🧭
-> نقشه‌ی قابلیت‌های محصول دونه‌دونه در [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) است؛ این بخش فقط backlog فنی را نگه می‌دارد.
+## اولویت فعلی و تسک‌های بعدی (تصمیم D-01، 2026-08-27) 🧭
 
-1. **[ ] ارتقای Next.js به 16.3.1:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف).
+ترتیب الزامی کارها (مشروح در `docs/HANDOFF.md`):
+
+```text
+Documentation / Governance Reconciliation  ← جاری
+        ↓
+Full Codebase Modularity, Coupling & Reusability Audit
+        ↓
+Architecture Stabilization / Approved Modularization
+        ↓
+Resume Feature Development
+```
+
+> نقشه‌ی قابلیت‌های محصول دونه‌دونه در [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) است؛ این بخش backlog فنی را نگه می‌دارد. آیتم‌های زیر deferred/planned هستند و تا تثبیت baseline معماری شروع نمی‌شوند (حذف نشده‌اند).
+
+1. **[ ] Full Codebase Modularity, Coupling & Reusability Audit** — گام بعدی الزامی؛ بر اساس baseline مستندات سازگارشده و اصل `reuse → extend → compose → create` (`AGENTS.md` §۳).
+2. **[ ] ارتقای Next.js به 16.x:** migration مستقل با codemod، async APIs، proxy/Turbopack و regression کامل — بعد از launch (طبق تصمیم هنداف؛ deferred).
+3. **[ ] Progress Check-in (`TRANSFORMATION_ROADMAP.md` آیتم ۱):** deferred — بعد از معماری پایدار.
+4. **[ ] سایر آیتم‌های `TRANSFORMATION_ROADMAP.md`:** deferred؛ آیتم‌های مربوط به logging تمرین (PR/ثبت ست‌به‌ست) باید با Technical Spec تمرین V2 هماهنگ شوند (D-02).
+5. **[ ] Workout Experience V2:** NOT YET IMPLEMENTED — عمداً paused تا معماری پایدار شود (جزئیات در `docs/product/`).
 
 ## اولویت ۱: امنیت، اعتبار و ایمنی (MVP Ready) 💎 🔴
 1. **[x] اعتبارسنجی API با Zod:** پیاده‌سازی Schema برای تمامی فیلدهای `generate-program`.

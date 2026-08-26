@@ -33,7 +33,8 @@
      
      # 2. Set server-only secrets in .env (never commit this file), including:
      #    PROGRAM_GENERATOR=ai
-     #    AI_PROVIDER=groq
+     #    AI_PROVIDER=openai   (current operational state; Groq is supported but
+     #                          unavailable from the current Iranian egress)
      #    AI_GENERATION_FALLBACK=rules
      #    GROQ_API_KEY=... and GROQ_MODEL=openai/gpt-oss-120b
      #    OPENAI_API_KEY=... and OPENAI_MODEL=gpt-4o-mini (optional alternate)
@@ -60,20 +61,24 @@
 
 ### Provider configuration and program generation
 
-Program generation uses an explicit provider resolver. Keys never select a provider implicitly. The recommended production configuration while OpenAI credit is unavailable is:
+Program generation uses an explicit provider resolver. Keys never select a provider implicitly.
+
+> **Current operational state (2026-08-27):** production uses `AI_PROVIDER=openai`. Groq remains a **supported provider** whose current use from the existing production environment is **unavailable** — Groq geo-blocks the Iranian egress IP (HTTP 403), so a Groq-configured production would always fall back to the rules engine. This is a CURRENT OPERATIONAL STATE, not a permanent architectural commitment; Groq is not documented as "must never be used". Revisit this section when the egress situation or provider setup changes.
+
+Current production configuration:
 
 ```env
 PROGRAM_GENERATOR=ai
-AI_PROVIDER=groq
+AI_PROVIDER=openai
 AI_GENERATION_FALLBACK=rules
 AI_MODEL=
-GROQ_API_KEY=...
+GROQ_API_KEY=            # valid key, but unusable from the current Iranian egress (geo-block)
 GROQ_MODEL=openai/gpt-oss-120b
-OPENAI_API_KEY=
+OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-Set `PROGRAM_GENERATOR=rules` to disable all external AI calls. Set `AI_PROVIDER=openai` to use OpenAI instead. `AI_MODEL`, when non-empty, overrides the provider-specific model. If the configured provider fails during generation (quota, rate limit, timeout, network, 5xx, invalid output, or configuration failure), `AI_GENERATION_FALLBACK=rules` selects the deterministic rule engine; validation, authentication, medical clearance, rate limits, idempotency, and persistence failures never trigger that fallback.
+Set `PROGRAM_GENERATOR=rules` to disable all external AI calls. Set `AI_PROVIDER=groq` to use Groq instead (only where the egress permits it). `AI_MODEL`, when non-empty, overrides the provider-specific model (`GROQ_MODEL` / `OPENAI_MODEL`, which are both honored by the code — default `openai/gpt-oss-120b` and `gpt-4o-mini` respectively). If the configured provider fails during generation (quota, rate limit, timeout, network, 5xx, invalid output, or configuration failure), `AI_GENERATION_FALLBACK=rules` selects the deterministic rule engine; validation, authentication, medical clearance, rate limits, idempotency, and persistence failures never trigger that fallback.
 
 `GROQ_API_KEY` and `OPENAI_API_KEY` are server-only. Keep them only in `/opt/apexhomefit/app-new/.env`, set that file to mode `600`, and recreate only the app service after changing them:
 
@@ -116,7 +121,7 @@ cd /opt/apexhomefit/app-new
 docker compose up -d --no-deps --force-recreate app
 ```
 
-برای اعتبارسنجی امن، فقط وجود متغیر را (بدون چاپ مقدار) بررسی کن و سپس یک برنامه را با یک حساب تستِ واردشده بساز. مدل فعلی `gpt-4o-mini` در کد تنظیم شده و متغیر `OPENAI_MODEL` در این نسخه استفاده نمی‌شود.
+برای اعتبارسنجی امن، فقط وجود متغیر را (بدون چاپ مقدار) بررسی کن و سپس یک برنامه را با یک حساب تستِ واردشده بساز. `OPENAI_MODEL` (پیش‌فرض `gpt-4o-mini`) توسط کد خوانده می‌شود و `AI_MODEL` در صورت غیرخالی بودن آن را override می‌کند.
 
 ## Digital Asset Links
 

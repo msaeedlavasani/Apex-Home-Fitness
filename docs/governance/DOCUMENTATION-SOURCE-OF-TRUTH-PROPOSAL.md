@@ -1,10 +1,15 @@
 # Documentation Source-of-Truth Proposal
 
-> **STATUS: PROPOSED / AUDIT OUTPUT — NOT YET AUTHORITATIVE**
+> **STATUS: SUPERSEDED — PROPOSAL RECORD**
 >
-> A proposed answer to "where should an agent or operator look for each category
-> of project knowledge?", derived from what the repository already has. It does
-> not force a new hierarchy; it maps the existing one and flags the gaps.
+> **SUPERSEDED BY [`../INDEX.md`](../INDEX.md)** (adopted as the authoritative
+> documentation map on 2026-08-27). This file is kept as the historical
+> proposal/evidence record and is NOT authoritative guidance.
+>
+> Original abstract: a proposed answer to "where should an agent or operator
+> look for each category of project knowledge?", derived from what the
+> repository already has. It did not force a new hierarchy; it mapped the
+> existing one and flagged the gaps.
 >
 > Audit date: 2026-08-27 · Related:
 > [REPOSITORY-DOCUMENTATION-AUDIT.md](./REPOSITORY-DOCUMENTATION-AUDIT.md),

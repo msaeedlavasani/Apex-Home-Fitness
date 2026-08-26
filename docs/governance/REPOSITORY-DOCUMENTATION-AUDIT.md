@@ -1,10 +1,13 @@
 # Repository Documentation Audit
 
-> **STATUS: PROPOSED / AUDIT OUTPUT — NOT YET AUTHORITATIVE**
+> **STATUS: HISTORICAL — AUDIT EVIDENCE RECORD (2026-08-27)**
 >
 > This document is the output of a read-only, repository-wide documentation and
-> governance audit. It records findings and proposals only. It does NOT change
-> any rule and must not be treated as a rule set by itself.
+> governance audit. It is a historical audit record: the conflicts it found were
+> resolved by the Documentation & Governance Reconciliation (2026-08-27, see
+> the updated conflict matrix) and the accepted rules now live in
+> [`DOCUMENTATION-GOVERNANCE.md`](./DOCUMENTATION-GOVERNANCE.md). Do not treat
+> this file as current rules.
 >
 > Audit date: 2026-08-27 · Branch: `main` @ `c256bc7` · Scope: entire repository
 > (not only `docs/`).

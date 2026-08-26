@@ -23,7 +23,7 @@
 | `SMS_IR_API_KEY` | ✅ (وقتی OTP live است) | کلید REST API سرویس SMS.ir — هدر `X-API-KEY` | `placeholder-api-key-do-not-commit` |
 | `SMS_IR_TEMPLATE_ID` | ✅ | شناسه‌ی قالب پیامک تأیید (پنل SMS.ir) با پارامتر کد | `100000` (نمونه) |
 | `SMS_IR_API_BASE_URL` | ❌ (پیش‌فرض `https://api.sms.ir`) | override آدرس پایه (تست/mock) | پیش‌فرض |
-| `SMS_IR_CODE_PARAMETER` | ❌ (پیش‌فرض `CODE`) | نام پارامتر قالب که کد را دریافت می‌کند | `CODE` |
+| `SMS_IR_CODE_PARAMETER` | ❌ (پیش‌فرض کد: `Code`) | نام پارامتر قالب که کد را دریافت می‌کند؛ در production فعلی `otp` (باید دقیقاً با قالب پنل SMS.ir یکی باشد) | `Code` |
 | `SMS_IR_TIMEOUT_MS` | ❌ (پیش‌فرض ۵۰۰۰) | timeout درخواست خروجی به SMS.ir | `5000` |
 | `OTP_CODE_LENGTH` | ❌ (پیش‌فرض ۶) | طول کد | `6` |
 | `OTP_CODE_TTL_MS` | ❌ (پیش‌فرض ۹۰۰۰۰۰) | طول عمر کد (۱۵ دقیقه) | `900000` |
@@ -65,24 +65,24 @@
 
 ---
 
-## 3. قرارداد endpointهای verify (منطبق بر کار‌تری فعلی — بعد از تسک ۱–۴ به‌روزرسانی شود)
+## 3. قرارداد endpointهای احراز هویت (منطبق بر پیاده‌سازی فعلی — به‌روزرسانی 2026-08-27)
 
-مسیرهای برنامه‌ریزی‌شده (تحت `/api/*` — خارج از matcher میدل‌ور i18n). قرارداد سرویس در `src/lib/auth/types.ts` است (دو implementation: `mock` برای dev/CI با `devCode` و `supabase` با `signInWithOtp`/`verifyOtp` از `src/lib/supabase-server.ts`):
+مسیرهای canonical (تحت `/api/*` — خارج از matcher میدل‌ور i18n). سرویس از طریق seam قرارداد `src/lib/auth/types.ts` (`OtpService`) با دو implementation حل می‌شود: `mock` (dev/CI فقط، با `devCode`) و `secure` (`src/services/otpService.ts` — ارسال SMS.ir + ledger کد `PhoneOtp` + session بعد از اثبات شماره از `src/services/phoneSessionService.ts`):
 
-| متد و مسیر | نقش | وضعیت کد |
+| متد و مسیر | نقش | وضعیت کد (فعلی) |
 |---|---|---|
-| `POST /api/auth/request-code` | ارسال کد به شماره (با rate limit و cooldown) | 200 / 400 (`INVALID_PHONE`, `INVALID_REQUEST`) / 429 (`COOLDOWN`, `RATE_LIMITED`) / 503 (provider) |
-| `POST /api/auth/verify` | تأیید کد + ساخت session (single-use، attempt limit، expiry) | 200 (session cookie) / 400 / 401 (`INVALID_CODE`) / 410 (`CODE_EXPIRED`) / 429 (`ATTEMPTS_EXHAUSTED`, `RATE_LIMITED`) |
-| `POST /api/auth/refresh` | refresh session از طریق Supabase Auth/SSR | 200 / 401 |
-| `POST /api/auth/logout` | invalidate session + پاک‌کردن cookie | 200 / 401 |
+| `POST /api/auth/request-code` | ارسال کد به شماره (با rate limit و cooldown) | 200 (`{ok:true, retryAfterSeconds}`، `devCode` فقط در mock) / 400 (`invalid_phone`) / 429 (`rate_limited`) / 503 (`provider_error`) |
+| `POST /api/auth/verify` | تأیید کد + ساخت session (single-use، attempt limit، expiry) | 200 (`{ok:true}` — کوکی session در secure) / 400 (`invalid_phone`, `invalid_code`, `not_requested`) / 403 (`expired`, `too_many_attempts`) / 429 (`rate_limited`) / 503 (`provider_error`, `session_unavailable`) |
+| `POST /api/auth/logout` | باطل‌کردن session + پاک‌کردن cookie (idempotent) | 200 (`{ok:true}`) |
 | `POST /api/quiz/save` | نگهداری پاسخ کوییز به حساب کاربر | 200 / 401 |
-| `POST /api/generate-program` | موجود — با session cookie (رجوع به `docs/AI_API.md`) | 200 / 401 / 429 |
-| `GET /api/dashboard` (یا route سروری dashboard) | نمایش برنامه/وضعیت کاربر لاگین‌شده | 200 / 401 |
+| `POST /api/generate-program` | تولید برنامه با session cookie (رجوع به `docs/AI_API.md`) | 200 / 401 / 409 / 422 / 429 / 504 |
 
-خطاها provider-agnostic با `code`های پایدار (`src/lib/auth/otp.ts` → `OTP_ERROR_CODES`) تا UI بتواند پیام دوزبانه نشان دهد؛ پاسخ‌های خطا به client هرگز جزئیات داخلی/کلید/کد را لو نمی‌دهند.
+> ⚠️ **روت `refresh` وجود ندارد.** refresh/validation session از طریق Supabase SSR در `src/middleware.ts` (الگوی استاندارد `@supabase/ssr`: `getUser()` سشن منقضی را refresh و کوکی‌ها را بازنویسی می‌کند) انجام می‌شود. اگر در آینده route جداگانه‌ای برای refresh لازم شد، باید به‌عنوان تصمیم محصول جدا ثبت شود — نه به‌عنوان رفتاری که الان وجود دارد. دایرکتوری‌های خالی `src/app/api/auth/otp/request` و `otp/verify` روت نیستند (باقی‌مانده‌ی خالی؛ در git track نشده‌اند) و نباید مستند شوند. صفحه‌ی dashboard هم API نیست (Server Component با `AppShell`) — `GET /api/dashboard` وجود ندارد.
+
+خطاها provider-agnostic با `code`های پایدار (`src/lib/auth/otp.ts` → `OTP_ERROR_CODES`، union در `src/lib/auth/types.ts`) و نگاشت به پیام‌های دوزبانه در `src/lib/auth/errorKeys.ts`؛ پاسخ‌های خطا به client هرگز جزئیات داخلی/کلید/کد را لو نمی‌دهند.
 
 قراردادهای الزامی:
-- **بدون service-role در client**: هویت از `createServerSupabaseClient()` + `auth.getUser()` (مسیر موجود در `src/lib/supabase-server.ts`)؛ کلید SMS.ir و service-role فقط server-side (رجوع به `src/lib/auth/otp.ts`).
+- **بدون service-role در client**: هویت از `createServerSupabaseClient()` + `auth.getUser()` (مسیر موجود در `src/lib/supabase-server.ts`)؛ کلید SMS.ir و service-role فقط server-side (رجوع به `src/lib/auth/otp.ts` و `src/services/otpService.ts`).
 - کد: `OTP_CODE_LENGTH` رقم؛ hash شده با scrypt و salt تصادفی (`hashOtpCode`)؛ `maxAttempts` و `expiry`؛ **single-use** (`consumedAt` — مدل `PhoneOtp`).
 - `requestId` (idempotency) اختیاری ۸–۶۴ کاراکتر؛ تکرار همان کلید همان challenge را برمی‌گرداند و استفاده برای شماره‌ی دیگر رد می‌شود (`REQUEST_ID_CONFLICT`).
 

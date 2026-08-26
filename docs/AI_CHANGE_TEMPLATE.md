@@ -1,6 +1,8 @@
 # Apex Change Report Template
 
-برای هر تغییر غیرسطحی، این قالب را در توضیح PR یا گزارش handoff تکمیل کن:
+> **STATUS: CURRENT — AUTHORITATIVE CHANGE-REPORT TEMPLATE**
+>
+> برای هر تغییر غیرسطحی، این قالب را در توضیح PR یا گزارش handoff تکمیل کن. این فایل تنها مرجع قالب است (A-04)؛ `docs/AI_DEVELOPMENT_SYSTEM.md` §۵ به آن ارجاع می‌دهد.
 
 ```md
 ## Change report

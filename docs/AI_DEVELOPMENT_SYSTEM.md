@@ -2,7 +2,9 @@
 
 > نسخه ۱ — قرارداد داخلی توسعه، نه عامل خودمختار production
 
-این سند یک سیستم توسعه‌ی خودکارِ مختص Apex Home Fitness تعریف می‌کند. هدف آن این است که هر تغییر از مسئله‌ی محصول تا validation، مستندات و انتشار مسیر قابل‌ردگیری داشته باشد؛ نه اینکه کد یا مستندات پروژه‌ی دیگری کپی شود.
+این سند یک سیستم توسعه‌ی خودکارِ مختص Apex Home Fitness تعریف می‌کند: فرایند/workflow توسعه (چرخه‌ی تغییر، طبقه‌بندی، validation و انتشار).
+
+> **نقش این سند (تفکیک A-05):** `AGENTS.md` مرجع AUTHORITATIVE رفتار agent و قواعد توسعه‌ی ریپو است؛ این سند فقط فرایند/workflow را توصیف می‌کند و در تعارض، `AGENTS.md` بر آن مقدم است. قواعد governance مستندات در `docs/governance/DOCUMENTATION-GOVERNANCE.md` است.
 
 ## 1. مرزهای سیستم
 
@@ -26,12 +28,15 @@
 
 | حوزه | منبع مرجع |
 |---|---|
-| مسیر محصول | `README.md` و `docs/HANDOFF.md` |
+| مسیر محصول | `README.md`، `docs/product/PRODUCT-VISION.md` و `docs/HANDOFF.md` |
+| ویژن محصول (تمرین V2) | `docs/product/WORKOUT-EXPERIENCE-V2.md` (NOT YET IMPLEMENTED) |
 | backlog و بدهی | `docs/TASKS.md` |
 | auth/OTP و Go-No-Go | `docs/OTP_LAUNCH_READINESS.md` |
 | AI generation contract | `docs/AI_API.md` و `infra/ai/prompts/` |
 | UI و accessibility | `docs/DESIGN_SYSTEM.md` |
 | release و rollback | `docs/RELEASING.md` |
+| governance مستندات و ترتیب مطالعه | `docs/governance/DOCUMENTATION-GOVERNANCE.md` |
+| تصمیم‌های معماری | `docs/adr/` (مکانیزم؛ هنوز ADR پذیرفته‌شده‌ای نیست) |
 | validation | `docs/CI.md` و scripts audit |
 
 هر agent باید ابتدا این منابع را بخواند و اگر تناقضی یافت، قبل از تغییر کد آن را در گزارش خود ثبت کند.
@@ -123,19 +128,7 @@ npm run audit:lottie
 
 ## 5. قالب گزارش agent
 
-```md
-## Change report
-- Scope:
-- Category:
-- User-visible effect:
-- Files changed:
-- Invariants checked:
-- Tests run:
-- Risks:
-- Rollback:
-- Docs updated:
-- Follow-up:
-```
+قالب تغییر گزارش AUTHORITATIVE در [`docs/AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) است و این‌جا عمداً کپی کامل نمی‌شود تا دو منبع حقیقت موازی به‌وجود نیاید (A-04). از همان قالب در PR و گزارش handoff استفاده کن و الزامات این سند (ریسک، rollback، docs-updated) را در آن حفظ کن.
 
 ## 6. قرارداد مخصوص OTP فعلی
 
