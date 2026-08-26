@@ -15,6 +15,7 @@
 | توسعه‌ی خودکار | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | چرخه‌ی امن تغییر، validation و release |
 | قوانین agent | [`../AGENTS.md`](../AGENTS.md) | رفتار و مرزهای agent توسعه |
 | نقشه راه اجرا | [`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md) | اولویت‌ها، delegation، وابستگی‌ها و قرارداد ادغام |
+| سند تحول و به‌روزرسانی | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) | ریسرچ رقبا، گپ‌ها و فهرست قابلیت‌های آینده (دونه‌دونه) |
 | قالب گزارش تغییر | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | قالب PR و handoff برای agentها |
 
 ## قانون به‌روزرسانی
