@@ -10,6 +10,8 @@ import {
   type LayoutChromeProps,
   type NavItem,
 } from './nav';
+import {LanguageSwitcher} from './LanguageSwitcher';
+import {ThemeToggle} from './ThemeToggle';
 
 /**
  * IOSLayout — Apple HIG navigation shell.
@@ -17,7 +19,8 @@ import {
  *  - Large-title header (34pt, tight tracking, SF-style) with optional
  *    eyebrow (overline) and subtitle — the classic iOS large-title pattern.
  *  - iOS-style back button (chevron + "Back") above the title when
- *    `backHref` is provided (pushed screens).
+ *    `backHref` is provided (pushed screens), with the language + theme
+ *    toggles pinned to the opposite corner (the minimal desktop header).
  *  - Frosted-glass bottom tab bar (glass-strong) with tinted active icon —
  *    the iOS tab bar idiom — fully safe-area aware (notch / home indicator).
  *
@@ -34,15 +37,24 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
     <div className="min-h-dvh bg-apex-surface text-apex-text-primary">
       {/* Scrollable content — the large title lives here (iOS pattern) */}
       <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
-        {backHref ? (
-          <Link
-            href={backHref}
-            className="-ms-2 inline-flex items-center gap-0.5 rounded-lg px-2 py-1.5 text-[17px] text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
-          >
-            <ChevronLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
-            {t('back')}
-          </Link>
-        ) : null}
+        {/* Top row: back affordance (pushed screens only) on the start side,
+            language + theme toggles on the end side — the desktop corner
+            controls, mirrored onto iOS. */}
+        <div className="flex items-center justify-between gap-2">
+          {backHref ? (
+            <Link
+              href={backHref}
+              className="-ms-2 inline-flex items-center gap-0.5 rounded-lg px-2 py-1.5 text-[17px] text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
+            >
+              <ChevronLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
+              {t('back')}
+            </Link>
+          ) : <span />}
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
+            <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full text-apex-text-secondary transition-colors hover:bg-apex-fill" />
+          </div>
+        </div>
 
         {overline ? (
           <p className="mt-4 text-[13px] font-semibold uppercase tracking-wide text-apex-primary">
@@ -69,7 +81,7 @@ export function IOSLayout({title, subtitle, overline, backHref, children}: Layou
         className="glass-strong fixed inset-x-0 bottom-0 z-50 border-t border-[color:color-mix(in_srgb,var(--apex-border)_60%,transparent)]"
         style={{paddingBottom: 'env(safe-area-inset-bottom)'}}
       >
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-4">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-5">
           {APP_NAV.map((item) => (
             <TabBarItem key={item.section} item={item} active={item.section === active} />
           ))}
@@ -98,7 +110,7 @@ function TabBarItem({item, active}: {item: NavItem; active: boolean}) {
         strokeWidth={active ? 2.4 : 1.7}
         aria-hidden="true"
       />
-      <span className="text-[10px] font-medium leading-none">{t(item.messageKey)}</span>
+      <span className="max-w-full truncate px-1 text-[10px] font-medium leading-none">{t(item.messageKey)}</span>
     </Link>
   );
 }

@@ -69,10 +69,13 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
     router.refresh();
   }
 
+  // Profile is a top-level tab (bottom nav / sidebar), so there is no Back
+  // button — the tab bar already navigates everywhere. The page flows
+  // straight from the shell header into the content on one continuous
+  // surface (no full-bleed box that visually separates title from cards).
   return (
-    <AppShell title={t('title')} subtitle={t('subtitle')} backHref={`/${locale}/dashboard`}>
-      <div className="-mx-4 min-h-dvh bg-apple-grouped-background px-4 pb-8 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10">
-        <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl">
+    <AppShell title={t('title')} subtitle={t('subtitle')}>
+      <div className="mx-auto w-full max-w-md pb-8 sm:max-w-lg md:max-w-xl">
           {user ? <ProfileSummaryCard user={user} onEdit={() => {setProfileError(false); setEditing(true);}} editLabel={t('edit')} onAvatarSaved={() => router.refresh()} /> : <SignedOutCard />}
           {user && editing ? (
             <ProfileEditor
@@ -151,7 +154,6 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
           ) : null}
           <footer className="mt-8 text-center text-xs text-apple-label-tertiary">{t('footer')}</footer>
         </div>
-      </div>
     </AppShell>
   );
 }

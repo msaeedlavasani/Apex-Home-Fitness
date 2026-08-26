@@ -85,7 +85,7 @@ export function AndroidLayout({title, subtitle, overline, backHref, children}: L
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:color-mix(in_srgb,var(--apex-border)_60%,transparent)] bg-apex-surface"
         style={{paddingBottom: 'env(safe-area-inset-bottom)'}}
       >
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-4">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-5">
           {APP_NAV.map((item) => (
             <NavBarItem key={item.section} item={item} active={item.section === active} />
           ))}
@@ -124,7 +124,7 @@ function NavBarItem({item, active}: {item: NavItem; active: boolean}) {
       </span>
       <span
         className={[
-          'text-xs leading-none',
+          'max-w-full truncate px-1 text-xs leading-none',
           active ? 'font-medium text-apex-text-primary' : 'text-apex-text-secondary',
         ].join(' ')}
       >

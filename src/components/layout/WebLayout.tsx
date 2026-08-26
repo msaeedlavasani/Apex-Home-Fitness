@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useLocale, useTranslations} from 'next-intl';
-import {ChevronLeft, Dumbbell, Play, Settings2} from 'lucide-react';
+import {ChevronLeft, Dumbbell, Play} from 'lucide-react';
 import {
   APP_NAV,
   sectionPath,
@@ -24,9 +24,9 @@ import {ThemeToggle} from './ThemeToggle';
  *    and a horizontally scrollable pill nav — the mobile-first top-nav.
  *
  * Sidebar order: Home, History, Analytics, Preferences, Profile — Profile is
- * deliberately the LAST entry (settings screens sit above it), while the
- * mobile pill nav and the iOS/Android tab bars keep the shared `APP_NAV`
- * order (Profile included, no Preferences).
+ * deliberately the LAST entry (settings screens sit above it). The mobile
+ * pill nav and the iOS/Android tab bars share the same `APP_NAV` list, so
+ * Preferences is reachable on every platform.
  *
  * Uses `apple-*` semantic surfaces and the shared Apex brand tokens, so it
  * matches iOS/Android branding while feeling like a native web app. Logical
@@ -34,11 +34,7 @@ import {ThemeToggle} from './ThemeToggle';
  */
 
 /** Desktop-sidebar order — Profile last, Preferences just above it. */
-const sidebarOrder: NavItem[] = [
-  ...APP_NAV.filter((item) => item.section !== 'profile'),
-  {section: 'preferences', messageKey: 'preferences', icon: Settings2},
-  ...APP_NAV.filter((item) => item.section === 'profile'),
-];
+const sidebarOrder: NavItem[] = APP_NAV;
 export function WebLayout({title, subtitle, overline, backHref, children}: LayoutChromeProps) {
   const locale = useLocale();
   const t = useTranslations('Nav');
@@ -207,8 +203,8 @@ function PillItem({item, active}: {item: NavItem; active: boolean}) {
       href={sectionPath(item.section, locale)}
       aria-current={active ? 'page' : undefined}
       className={[
-        // px-2.5 + gap-1 keep all four pills fully inside 390px-wide
-        // viewports (no clipped last item); py-3 + min-h-11 ≈ 44px target.
+        // py-3 + min-h-11 ≈ 44px target; five pills may overflow narrow
+        // viewports, so the nav owns horizontal scrolling (overflow-x-auto).
         'flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-3 text-[13px] font-medium leading-5 transition-colors touch-manipulation',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring',
         active

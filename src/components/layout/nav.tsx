@@ -7,6 +7,7 @@ import {
   CircleUser,
   History,
   House,
+  Settings2,
   type LucideIcon,
 } from 'lucide-react';
 import type {ReactNode} from 'react';
@@ -23,12 +24,14 @@ export interface NavItem {
 /**
  * Primary sections. The order drives the tab bar / navigation bar ordering,
  * so it is identical across all three platform layouts (consistent branding
- * + predictable native placement).
+ * + predictable native placement). Desktop shows all five; mobile navs render
+ * the same five so Preferences is reachable from the phone too.
  */
 export const APP_NAV: NavItem[] = [
   {section: 'dashboard', messageKey: 'home', icon: House},
   {section: 'history', messageKey: 'history', icon: History},
   {section: 'analytics', messageKey: 'analytics', icon: BarChart3},
+  {section: 'preferences', messageKey: 'preferences', icon: Settings2},
   {section: 'profile', messageKey: 'profile', icon: CircleUser},
 ];
 

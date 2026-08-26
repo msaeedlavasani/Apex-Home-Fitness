@@ -55,7 +55,9 @@ export default function PreferencesPage() {
   };
 
   return (
-    <AppShell title={t('pageTitle')} subtitle={t('pageSubtitle')} backHref={`/${locale}/profile`}>
+    // Preferences is a top-level tab (bottom nav / sidebar) — no Back
+    // button; the tab bar navigates everywhere.
+    <AppShell title={t('pageTitle')} subtitle={t('pageSubtitle')}>
       <div className="mx-auto w-full max-w-md px-4 sm:max-w-lg md:max-w-xl">
         {loading ? <p role="status" className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{t('loading')}</p> : null}
         {!loading && !data ? (
