@@ -197,7 +197,12 @@ test.describe('Verify screen (mock mode, seeded state)', () => {
     await seedPendingOtp(page);
     await page.goto('/en/auth/verify');
     await page.getByRole('button', {name: 'Change number'}).click();
-    await page.waitForURL('**/en/auth/login');
+    // The handler returns to login with `?force=1` — match the path, not the
+    // query (a glob ending in `/login` would never match `?force=1`).
+    await page.waitForURL((url) => url.pathname === '/en/auth/login');
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem('ahf.auth.pending')))
+      .toBeNull();
   });
 });
 
