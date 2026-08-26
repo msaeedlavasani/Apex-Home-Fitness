@@ -25,6 +25,7 @@ type ProfilePatch = {
   fitnessLevel?: unknown;
   exerciseStyles?: unknown;
   equipment?: unknown;
+  trainingDaysPerWeek?: unknown;
   /** Rest-day weekday ids (1–3) — regenerates the program in place when changed. */
   restDays?: unknown;
   /** Avatar as an image data URL, or null/'' to remove the current one. */
@@ -43,6 +44,12 @@ function cleanEmail(value: unknown): string | null {
 }
 function cleanNumber(value: unknown, min: number, max: number): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max ? value : null;
+}
+function cleanTrainingDays(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 2 && value <= 6 ? value : null;
+}
+function defaultTrainingDays(level: unknown): number {
+  return level === 'advanced' ? 5 : level === 'intermediate' ? 4 : 3;
 }
 function cleanGoals(value: unknown): string[] {
   const values = typeof value === 'string' ? [value] : Array.isArray(value) ? value : [];
@@ -102,6 +109,7 @@ export async function GET() {
       preferences: {
         exerciseStyles: cleanList(answers.exerciseStyles, EXERCISE_STYLE_IDS),
         equipment: cleanList(answers.equipment, EQUIPMENT_IDS),
+        trainingDaysPerWeek: cleanTrainingDays(answers.trainingDaysPerWeek) ?? defaultTrainingDays(answers.level),
         restDays: cleanList(answers.restDays, WEEKDAY_VALUES),
       },
       generationInput: response ? generationInputFromAnswers(answers) : null,
@@ -118,7 +126,7 @@ export async function PATCH(request: Request) {
     const body = await request.json().catch(() => null) as ProfilePatch | null;
     if (!body) return NextResponse.json({error: 'PROFILE_UPDATE_REQUIRED'}, {status: 400});
 
-    const hasPreferences = body.exerciseStyles !== undefined || body.equipment !== undefined || body.restDays !== undefined;
+    const hasPreferences = body.exerciseStyles !== undefined || body.equipment !== undefined || body.restDays !== undefined || body.trainingDaysPerWeek !== undefined;
     const hasProfileDetails = body.name !== undefined || body.heightCm !== undefined || body.weightKg !== undefined || body.email !== undefined || body.fitnessGoal !== undefined || body.fitnessLevel !== undefined || body.avatar !== undefined;
     if (!hasPreferences && !hasProfileDetails) return NextResponse.json({error: 'PROFILE_UPDATE_REQUIRED'}, {status: 400});
 
@@ -186,6 +194,8 @@ export async function PATCH(request: Request) {
 
     const exerciseStyles = cleanList(body.exerciseStyles, EXERCISE_STYLE_IDS);
     const equipment = cleanList(body.equipment, EQUIPMENT_IDS);
+    const trainingDaysPerWeek = body.trainingDaysPerWeek === undefined ? null : cleanTrainingDays(body.trainingDaysPerWeek);
+    if (body.trainingDaysPerWeek !== undefined && trainingDaysPerWeek === null) return NextResponse.json({error: 'INVALID_TRAINING_DAYS'}, {status: 422});
     let restDays: string[] | null = null;
     if (body.restDays !== undefined) {
       const parsed = REST_DAYS_SCHEMA.safeParse(body.restDays);
@@ -214,6 +224,7 @@ export async function PATCH(request: Request) {
         const answers = {
           ...answerRecord(latest.answers),
           ...(hasPreferences ? {exerciseStyles, equipment} : {}),
+          ...(trainingDaysPerWeek !== null ? {trainingDaysPerWeek} : {}),
           ...(restDays !== null ? {restDays} : {}),
           ...(body.fitnessGoal !== undefined ? {goal: cleanGoals(body.fitnessGoal)} : {}),
         };
@@ -231,7 +242,7 @@ export async function PATCH(request: Request) {
       profile: {email: updated.profileEmail ?? '', name: updated.name, heightCm: updated.heightCm, weightKg: updated.weightKg, fitnessGoal: updated.fitnessGoal, fitnessLevel: updated.fitnessLevel, phone: updated.phone, avatarUrl: await resolveAvatarUrl(updated.avatarUrl)},
       weightHistory,
       preferences: hasPreferences
-        ? {exerciseStyles, equipment, restDays: effectiveRestDays}
+        ? {exerciseStyles, equipment, trainingDaysPerWeek: trainingDaysPerWeek ?? cleanTrainingDays(answerRecord(latest?.answers).trainingDaysPerWeek) ?? defaultTrainingDays(answerRecord(latest?.answers).level), restDays: effectiveRestDays}
         : undefined,
       generationInput,
     });

@@ -16,7 +16,7 @@
     "featureOfflineBody": "Install it as an app and keep training without a connection; your sessions sync when you're back online.",
     "featureProgressTitle": "Progress you can see",
     "featureProgressBody": "History, streaks and analytics that show how far you've come — in English or Persian.",
-    "planMeta": "7 steps · personalized plan",
+    "planMeta": "8 steps · personalized plan",
     "proofPersonalized": "Personalized",
     "proofHomeFirst": "Home-first",
     "proofBilingual": "English + Persian",
@@ -136,6 +136,10 @@
       "bench": "Bench",
       "cable_machine": "Cable machine",
       "jump_rope": "Jump rope"
+    },
+    "trainingDays": {
+      "title": "Training days per week",
+      "subtitle": "This is the number of workout sessions; unavailable days stay workout-free."
     },
     "restDays": {
       "title": "Rest days",

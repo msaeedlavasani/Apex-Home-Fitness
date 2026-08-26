@@ -111,6 +111,8 @@ export type AiEquipment =
   | 'bench'
   | 'mat'
   | 'cardio_machine'
+  | 'cable_machine'
+  | 'jump_rope'
   | 'other';
 
 export type AiProgramMode = 'general' | 'injury_focused' | 'equipment_limited';
@@ -281,6 +283,8 @@ const EQUIPMENT_LABELS: Record<AiEquipment, string> = {
   bench: 'bench',
   mat: 'mat',
   cardio_machine: 'cardio machine',
+  cable_machine: 'cable machine',
+  jump_rope: 'jump rope',
   other: 'other',
 };
 

@@ -17,6 +17,8 @@ export type PreferenceLabels = {
   generationError: string;
   stylesTitle: string;
   equipmentTitle: string;
+  trainingDaysTitle: string;
+  trainingDaysSubtitle: string;
   restDaysTitle: string;
   restDaysSubtitle: string;
   styles: Record<string, string>;
@@ -26,7 +28,7 @@ export type PreferenceLabels = {
 
 type Props = {
   labels: PreferenceLabels;
-  initial: {exerciseStyles: string[]; equipment: string[]; restDays: string[]};
+  initial: {exerciseStyles: string[]; equipment: string[]; trainingDaysPerWeek: number; restDays: string[]};
 };
 
 const EQUIPMENT = ['none', 'pull_up_bar', 'bands', 'dumbbells', 'barbell', 'kettlebells', 'bench', 'cable_machine', 'jump_rope'];
@@ -35,6 +37,7 @@ export function PreferencesEditor({labels, initial}: Props) {
   const locale = useLocale();
   const [exerciseStyles, setExerciseStyles] = useState(initial.exerciseStyles);
   const [equipment, setEquipment] = useState(initial.equipment.length > 0 ? initial.equipment : ['none']);
+  const [trainingDaysPerWeek, setTrainingDaysPerWeek] = useState(initial.trainingDaysPerWeek || 3);
   const [restDays, setRestDays] = useState(initial.restDays);
   const [state, setState] = useState<'idle' | 'saving' | 'generating' | 'saved' | 'error'>('idle');
   const generationKeyRef = useRef<string | null>(null);
@@ -42,6 +45,7 @@ export function PreferencesEditor({labels, initial}: Props) {
   useEffect(() => {
     setExerciseStyles(initial.exerciseStyles);
     setEquipment(initial.equipment.length > 0 ? initial.equipment : ['none']);
+    setTrainingDaysPerWeek(initial.trainingDaysPerWeek || 3);
     setRestDays(initial.restDays);
   }, [initial]);
 
@@ -70,7 +74,7 @@ export function PreferencesEditor({labels, initial}: Props) {
       const response = await fetch('/api/profile', {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({exerciseStyles, equipment, restDays}),
+        body: JSON.stringify({exerciseStyles, equipment, trainingDaysPerWeek, restDays}),
       });
       const data = await response.json().catch(() => null) as {generationInput?: GenerateProgramInput | null} | null;
       if (!response.ok) throw new Error('preferences update failed');
@@ -98,7 +102,7 @@ export function PreferencesEditor({labels, initial}: Props) {
   }
 
   // Each category (styles / equipment / rest days) is its own card so the
-  // page reads as three distinct settings groups instead of one long list.
+  // Each preference category is isolated instead of one long list.
   return (
     <div className="space-y-4" aria-label={labels.title}>
       <PreferenceCard title={labels.stylesTitle}>
@@ -119,6 +123,16 @@ export function PreferencesEditor({labels, initial}: Props) {
               <input type="checkbox" checked={equipment.includes(id)} onChange={() => toggle(id, equipment, setEquipment)} className="h-4 w-4 shrink-0 accent-emerald-600" />
               <span className="leading-5">{labels.equipment[id] ?? id}</span>
             </label>
+          ))}
+        </div>
+      </PreferenceCard>
+
+      <PreferenceCard title={labels.trainingDaysTitle} subtitle={labels.trainingDaysSubtitle}>
+        <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label={labels.trainingDaysTitle}>
+          {[2, 3, 4, 5, 6].map((days) => (
+            <button key={days} type="button" role="radio" aria-checked={trainingDaysPerWeek === days} onClick={() => setTrainingDaysPerWeek(days)} className={`min-h-12 rounded-xl border px-2 py-3 text-sm font-bold transition-colors ${trainingDaysPerWeek === days ? 'border-emerald-500 bg-emerald-500/10 text-[color:var(--apex-text)]' : 'border-[color:var(--apex-border)] text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)]'}`}>
+              {days}
+            </button>
           ))}
         </div>
       </PreferenceCard>

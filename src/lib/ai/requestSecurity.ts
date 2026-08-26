@@ -36,6 +36,9 @@ export const GENERATE_PROGRAM_INPUT_SCHEMA = z
       .max(EXERCISE_STYLE_IDS.length)
       .refine((items) => new Set(items).size === items.length, 'Duplicate exercise styles are not allowed')
       .default([...EXERCISE_STYLE_IDS]),
+    // Desired weekly training frequency. Optional keeps older API clients
+    // valid; generators derive a conservative level-based default when absent.
+    trainingDaysPerWeek: z.number().int().min(2).max(6).optional(),
     // Weekdays the user wants to keep workout-free (1–3). Optional for
     // backward compatibility — absent → no rest-day constraint (the route
     // treats it as []); an explicit empty array is rejected (min 1).
