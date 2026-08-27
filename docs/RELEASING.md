@@ -14,7 +14,77 @@
 | پروژه Bubblewrap/TWA | ساخته نشده |
 | Play Console و App Signing | ساخته نشده |
 
-## پیش‌نیازهای production
+## وضعیت preflight فعلی (2026-08-27)
+
+`main` هدف release در `51d00320856e0bff26201fcf135909bf712b0951` است. Production فعلی با marker `27c5ec3` اجرا می‌شود؛ این SHA در تاریخچه‌ی checkout فعلی موجود نیست، بنابراین تطبیق دقیق commit باید پیش از release با artifact/marker مالکانه تأیید شود. وضعیت live قبل از mutation: کانتینر Apex و reverse proxy سالم و در حال اجرا، SQLite integrity برابر `ok`، اما Production روی 11 migration است و migration canonical Exercise در repository هنوز pending است. S03 هنوز در Production deploy نشده است.
+
+`RELEASE_DECISION: GO_WITH_PREREQUISITES` فقط پس از تکمیل backup معتبر، build/validation دقیق target، migration S02، بررسی env/AI/OTP و smokeهای مجاز. این سند برنامه‌ی release است؛ هیچ دستور این بخش بدون owner approval اجرا نشود.
+
+## Production server bootstrap / rebuild from zero
+
+این بخش مرجع canonical برای جایگزینی یا بازسازی سرور است. مقادیر secret هرگز در repository نگهداری نمی‌شوند.
+
+### فرض‌ها و دسترسی SSH
+
+- سرور Linux با دسترسی root یا کاربر deployment، Docker Engine و Compose plugin، فضای کافی، DNS خروجی و دسترسی HTTPS به registryها و providerها لازم دارد.
+- نمونه‌ی فعلی host-specific (فقط context جاری): `ssh -i /.ssh/msaeed root@85.198.16.251`. مسیر key و خود host دائمی نیستند و نباید در سرور جدید فرض شوند.
+- الگوی آینده: `ssh -i <approved-private-key> root@<production-host>`. کلید باید خارج از git و secret management باشد؛ host key، IP و مسیر کلید در replacement ممکن است تغییر کند.
+
+### پیش‌نیازهای OS و Docker
+
+1. OS پشتیبانی‌شده، دسترسی SSH، DNS و outbound HTTPS را فراهم کن.
+2. Docker Engine و `docker compose` plugin را از منبع مورد تأیید نصب و نسخه/دسترسی را ثبت کن؛ Node روی host لازم نیست چون build داخل Node 22 Alpine image انجام می‌شود.
+3. پورت داخلی app برابر 3000 است؛ reverse proxy باید فقط مسیر Apex را به app forward کند. پورت‌های 80/443 برای proxy و TLS لازم‌اند.
+4. دایرکتوری `/opt/apexhomefit/app-new/` را برای checkout/rsync ایجاد کن و `backups/` را جدا از volume live نگه دار.
+
+### همگام‌سازی، env و secret
+
+- source دقیق target را با rsync/checkout کنترل‌شده منتقل کن؛ قبل از release SHA را ثبت کن.
+- `.env` را از secret manager یا فرآیند owner-approved روی سرور provision کن؛ commit نکن و permission محدود بده.
+- متغیرهای required/conditional را از جدول پایین کامل کن؛ مقدارها در گزارش/terminal چاپ نشوند.
+- برای Supabase، Site URL/redirect و bucket خصوصی `avatars` را در پروژه‌ی درست آماده کن. برای SMS.ir template فعال و parameter هماهنگ لازم است. برای AI، provider و fallback را آگاهانه انتخاب کن. در multi-instance، Redis برای rate limit لازم است.
+
+### npm registry/mirror و Docker build
+
+در این repository تنظیم پیش‌فرض build از Compose به Dockerfile با `NPM_REGISTRY` می‌رسد. Compose فعلی default را به `https://package-mirror.liara.ir/repository/npm/` می‌گذارد؛ Dockerfile با `npm ci --registry="${NPM_REGISTRY}" --replace-registry-host=always` lockfile tarball hostها را نیز به registry انتخابی می‌برد. این mirror عمومی/بدون credential در configuration مشاهده‌شده است، اما availability آن تضمین‌شده نیست.
+
+- این setting در build stageهای `deps` و `app` اعمال می‌شود؛ runtime container registry مصرف نمی‌کند.
+- روی سرور فعلی `npm config get registry` برابر `https://mirror2.chabokan.net/npm/` بود، اما `.env` پروژه `NPM_REGISTRY` تعیین نکرده بود؛ بنابراین Compose default فعلی برای build بعدی `package-mirror.liara.ir` است، نه الزاماً registry host-level. این دو را قاطی نکن.
+- strategy فعلی: `PRIMARY_CUSTOM_MIRROR_WITH_MANUAL_FALLBACK`؛ fallback خودکار در Dockerfile/Compose وجود ندارد. اگر mirror شکست خورد، ابتدا DNS/TLS/HTTP reachability را با ابزار read-only بررسی کن؛ سپس فقط با owner approval، `NPM_REGISTRY=https://registry.npmjs.org/` یا mirror approved را در همان build command تعیین کن. registry را silently عوض نکن و lockfile را تغییر نده.
+- verification نمونه (بدون تغییر): `docker build --build-arg NPM_REGISTRY=<approved-registry> --target build .` فقط در release environment پس از approval؛ در این preflight اجرا نشد. روی host، `npm config get registry` فقط host npm را نشان می‌دهد و build arg را تعیین نمی‌کند.
+
+### Build, volume و migration
+
+- Compose `migrate` و `app` را با همان source و env اجرا می‌کند؛ هر دو `db-data` را به `/data` mount می‌کنند. `migrate` با `npx prisma migrate deploy` قبل از app completion اجرا می‌شود و app روی port 3000 بالا می‌آید.
+- Existing DB path: volume `app-new_db-data` و `/data/app.db` را از backup معتبر restore کن؛ قبل از app، SQLite integrity و `_prisma_migrations` را read-only بررسی کن؛ فقط migrationهای approved pending را اجرا کن.
+- Fresh DB path: volume خالی و persistent بساز؛ migration service همه‌ی migrationهای repository را به ترتیب اجرا کند؛ سپس schema/migration state را بررسی و app را deploy کن.
+- S02 migration nullable `slug`/`faName` و unique nullable slug index است؛ backfill ندارد. SQLite Program table rebuild دارد و lock/maintenance window لازم است. هیچ backfill تاریخی در bootstrap اجرا نمی‌شود مگر task جدا و owner-approved.
+
+### Reverse proxy, TLS و سرویس‌های خارجی
+
+- DNS را به host جدید point کن؛ Nginx/Caddy را با domain canonical، HTTP→HTTPS redirect، certificate معتبر و proxy به app:3000 provision کن. فعلی canonical domain `apexhomefit.ir` و `www.apexhomefit.ir` در Nginx مشاهده شد؛ replacement باید مستقل verify شود.
+- Supabase URL/anon/service-role را از محیط امن provision کن؛ Storage bucket خصوصی `avatars` را بساز/تأیید کن.
+- SMS.ir API key/template/parameter و consented smoke account را آماده کن؛ OTP mock در Production نباید فعال بماند.
+- `AI_PROVIDER=openai` و `AI_GENERATION_FALLBACK=rules` وضعیت فعلی مستندشده‌اند، اما OpenAI credit/provider reachability باید قبل از release verify شود؛ rules fallback باید independently test شود.
+
+### Health, smoke، backup و rollback acceptance
+
+- Health: کانتینرهای Apex، proxy، disk/memory، HTTPS/static routes، app logs و SQLite integrity را ثبت کن؛ سرویس‌های همسایه را تغییر نده.
+- Smoke: ابتدا non-mutating routes؛ سپس فقط با owner approval و test account رضایت‌دار OTP/auth، generation، workout lifecycle، hydration/persistence و S02 identity را اجرا کن.
+- Backup: پیش از اولین mutation از DB، current env/config، current deployed marker/artifact، Compose/proxy/TLS recovery material backup بگیر و checksum/readability را ثبت کن.
+- Rollback: exact prior artifact/marker و DB backup باید موجود باشد. برای این additive migration اول app rollback و حفظ schema را ترجیح بده؛ restore DB فقط در corruption/integrity loss.
+- Acceptance: target SHA marker در `/opt/apexhomefit/app-new/.deployed-commit`، migration state بدون failure، health پایدار، smoke green، و owner release record ثبت شده باشد.
+
+### Secret-safe Production environment checklist
+
+Required: `DATABASE_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OTP_AUTH_ENABLED`, `AUTH_OTP_MODE`, `PROGRAM_GENERATOR`, `AI_PROVIDER`, `AI_GENERATION_FALLBACK`, `OPENAI_API_KEY` or approved provider key, `SMS_IR_API_KEY`, `SMS_IR_TEMPLATE_ID`.
+
+Conditional: `SMS_IR_API_BASE_URL`, `SMS_IR_CODE_PARAMETER`, `SMS_IR_TIMEOUT_MS`, `OTP_CODE_LENGTH`, `OTP_CODE_TTL_MS`, `OTP_RESEND_COOLDOWN_MS`, `OTP_MAX_ATTEMPTS`, `OTP_*_WINDOW_MS`, `OTP_*_LIMIT`, `RATE_LIMIT_STORE`, `REDIS_REST_URL`, `REDIS_REST_TOKEN`, `OPENAI_MODEL`, `GROQ_MODEL`, `AI_MODEL`, `AI_FALLBACK_PROVIDER`, `GROQ_API_KEY`, `AUTH_OTP_MOCK_IN_PRODUCTION`, `AUTH_OTP_MOCK_PHONES`, `SMOKE_TEST_MODE`, `SMOKE_TEST_PHONE`.
+
+Optional: `NEXT_PUBLIC_RELEASE`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`.
+
+`AUTH_OTP_MOCK_IN_PRODUCTION=true` and any production mock allowlist are release blockers unless explicitly limited to a controlled, non-public test window and owner-approved; default public release requires mock disabled.
+
 
 1. اپ را روی دامنه HTTPS مستقر کن.
 2. در محیط production تنظیم کن:

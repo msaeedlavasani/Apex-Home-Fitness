@@ -40,6 +40,8 @@
 - **تصمیم Next.js:** ارتقای امنیتی به 15.5.23 (به‌همراه next-intl 4.13.7) روی برنچ `migration/next-15` انجام و typecheck/lint/unit (345/345) سبز شد؛ 14.x دیگر پچ امنیتی نمی‌گیرد، پس این ارتقا قبل از launch الزامی است. ارتقای نهایی به 16.x همچنان به‌عنوان migration مستقل و **بعد از launch** باقی می‌ماند.
 - **اولویت فعلی (تصمیم D-01، 2026-08-27؛ به‌روزرسانی 2026-08-27 عصر):**
 
+> **Production release context (read-only preflight, 2026-08-27):** target repository `main` is `51d0032`; Production marker is `27c5ec3` (not present in the current checkout), live Apex containers and `apexhomefit.ir` HTTPS/static routing were observed healthy, and Production remains on 11 migrations while the S02 canonical Exercise migration is pending. No deployment or migration was performed. Use `docs/RELEASING.md` as the authoritative bootstrap/release runbook.
+
   ```text
   Documentation / Governance Reconciliation   ← تکمیل شد
           ↓

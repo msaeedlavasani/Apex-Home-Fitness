@@ -39,9 +39,9 @@
 | آفلاین / همگام‌سازی | پیاده‌سازی: `src/lib/offline/`، `src/services/syncService.ts`، `supabase/migrations/0001_workout_exercise_logs.sql` | **NO CANONICAL ARCHITECTURE DOC YET** — ارجاع پیاده‌سازی؛ سند عمیق به Modularity Audit موکول شد |
 | قرارداد محیط (env) | [`../.env.example`](../.env.example) | AUTHORITATIVE؛ توسط `tests/otp-launch-readiness.test.ts` بررسی می‌شود |
 | CI و E2E | [`CI.md`](CI.md) | pipeline، retry و انتخاب تست هدفمند |
-| انتشار و rollback | [`RELEASING.md`](RELEASING.md) | Docker، reverse proxy، PWA/TWA و release |
+| انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release |
 | احراز هویت و launch | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) | env، امنیت OTP، Go/No-Go و smoke test |
-| وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی و قراردادهای حساس |
+| وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی، Production context و قراردادهای حساس |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |
 | نقشه‌ی راه قابلیت‌ها | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) | ریسرچ رقبا، گپ‌ها و فهرست قابلیت‌های آینده (PROPOSED) |
 | نقشه‌ی راه اجرا (آرشیو) | [`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md) | ARCHIVED — جانشین: `TASKS.md` و `TRANSFORMATION_ROADMAP.md` |
