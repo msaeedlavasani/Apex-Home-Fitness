@@ -230,7 +230,7 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   set→exercise→workout→state→phase on completion; hydrate emits `state` only).
   Baseline doc `S03A-SESSION-PARITY-BASELINE.md`. Validation: typecheck clean,
   eslint clean, full unit **451/451** (+17). `sessionCore.ts` NOT created;
-  `useWorkoutEngine` unchanged. S03-B (pure core) implemented in parallel and not runtime-active; S03-C complete: hook delegates session transitions to pure core; S03-D/E/F not started.
+  `useWorkoutEngine` unchanged. S03-B (pure core) implemented in parallel and not runtime-active; S03-C complete: hook delegates session transitions to pure core. S03-D complete: timer/accumulator boundary verified and hardened; S03-E/F not started.
 - **Why now**: R-02; V2 session work, Voice Coach and recovery need a
   non-React-consumable core (ADR-0002).
 - **Files/domains expected to change**: new pure core (proposed
