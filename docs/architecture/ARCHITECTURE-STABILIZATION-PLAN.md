@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A..D2, S03-A COMPLETE 2026-08-27; S02-E + S03-B..F + S-04..S-06 NOT STARTED)`
+`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A..D2, S03-A..B COMPLETE 2026-08-27; S02-E + S03-C..F + S-04..S-06 NOT STARTED)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. It is a **plan**, not an execution
@@ -230,7 +230,7 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   set→exercise→workout→state→phase on completion; hydrate emits `state` only).
   Baseline doc `S03A-SESSION-PARITY-BASELINE.md`. Validation: typecheck clean,
   eslint clean, full unit **451/451** (+17). `sessionCore.ts` NOT created;
-  `useWorkoutEngine` unchanged. S03-B (pure core) NOT started.
+  `useWorkoutEngine` unchanged. S03-B (pure core) implemented in parallel and not runtime-active; S03-C NOT started.
 - **Why now**: R-02; V2 session work, Voice Coach and recovery need a
   non-React-consumable core (ADR-0002).
 - **Files/domains expected to change**: new pure core (proposed
