@@ -1,12 +1,12 @@
 # S03-B — Pure Workout Session Core
 
-`STATUS: IMPLEMENTED IN PARALLEL — NOT YET RUNTIME-ACTIVE`
+`STATUS: IMPLEMENTED — RUNTIME-ACTIVE SINCE S03-C`
 
 ## Scope
 
-S03-B implements `src/lib/workout/sessionCore.ts` as a framework-independent,
-stateful core facade. `useWorkoutEngine` remains the runtime/reference
-implementation; S03-C is intentionally not started.
+S03-B implemented `src/lib/workout/sessionCore.ts` as a framework-independent,
+stateful core facade. S03-C subsequently made it runtime-active; `useWorkoutEngine`
+is now its React/browser adapter.
 
 ## Boundary
 
@@ -58,17 +58,14 @@ IndexedDB, persistence, or schema code changed.
 
 ## Validation and parity
 
-The original 17 S03-A reference golden tests remain green and are unchanged.
-New pure tests cover initialization, exact effect order, timed progression,
-rest, hydration, immutability, repeated canonical steps, and determinism.
-The full suite passes 456/456. The hook remains the behavioral authority until
-S03-C runs the same scenarios against both implementations through an adapter
-parity seam.
+The original 17 S03-A reference golden tests remain green and unchanged.
+Pure tests cover initialization, exact effect order, timed progression, rest,
+hydration, immutability, repeated canonical steps, and determinism. The full
+suite later reached 464/464 after S03-D/E hardening. The core is now the runtime
+authority; the hook adapter parity suite remains green.
 
-## S03-C handoff
+## S03-C result
 
-S03-C may introduce delegation in `useWorkoutEngine` only after owner review.
-It must preserve callback suppression, snapshot emission gating, wallClock
-ownership, public hook API, and all S03-A traces. The initial adapter seam
-should map hook commands to `transition`, then separately preserve React
-rendering and effect timing; no persistence or snapshot changes are authorized.
+S03-C delegated `useWorkoutEngine` to this core while preserving callback
+suppression, snapshot emission, wallClock ownership, public hook API, and all
+S03-A traces. No persistence or snapshot changes were authorized or made.

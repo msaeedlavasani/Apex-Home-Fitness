@@ -38,8 +38,9 @@ The original S03-A golden traces, S03-B pure-core tests, workout-engine tests,
 timer, persistence, offline-conflict, and plan identity tests pass together:
 **456/456**. Callback ordering and completion summary behavior remain covered.
 
-## S03-D handoff
+## S03-F closure
 
-S03-D may further formalize timer integration only after owner review. It must
-not alter wallClock, snapshot shape, effect ordering, or the public hook API.
-S03-E/F remain not started. Workout V2 remains outside scope.
+S03-D and S03-E verified the timer and effect boundaries. S03-F closes the
+extraction with no additional runtime cleanup; wallClock, snapshot shape, effect
+ordering, and the public hook API remain unchanged. Workout V2 remains outside
+scope.

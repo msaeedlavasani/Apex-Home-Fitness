@@ -56,7 +56,7 @@ suite: **460/460**.
 No `wallClock` rewrite, timer-frequency change, UX change, snapshot change,
 API/database change, or Production change occurred.
 
-## S03-E handoff
+## S03-F closure
 
 The timer boundary is closed for this phase. S03-E may formalize semantic effect
 consumption only after owner review; it must preserve the current effect order,

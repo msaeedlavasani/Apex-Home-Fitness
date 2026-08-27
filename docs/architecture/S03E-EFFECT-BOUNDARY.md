@@ -59,8 +59,8 @@ these properties.
 TypeScript and ESLint pass. Full unit suite passes **464/464**. No API, database,
 snapshot, wallClock, timer, UI, or Production changes occurred.
 
-## S03-F handoff
+## S03-F closure
 
-S03-F may perform final adapter cleanup only after owner review. Preserve the
-semantic effect contract, callback ordering, hydration suppression, callback
-freshness, and current application integration boundaries.
+S03-F closes the extraction with the semantic effect contract, callback ordering,
+hydration suppression, callback freshness, and application integration boundaries
+preserved.

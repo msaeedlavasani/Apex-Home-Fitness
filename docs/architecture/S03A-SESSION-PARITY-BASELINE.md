@@ -6,8 +6,9 @@ Phase: `S03-A — Session Contracts + Golden Trace Baseline` (Architecture
 Stabilization, S-03). GATE B APPROVED (GB-01..GB-10) — see
 [`S03-SESSION-CORE-GATE-B.md`](./S03-SESSION-CORE-GATE-B.md).
 
-**Purpose:** freeze today's `useWorkoutEngine` behavior BEFORE extraction. The
-current hook remains the runtime implementation; the artifacts here are
+**Purpose:** freeze the `useWorkoutEngine` behavior BEFORE extraction. The
+current hook was the pre-extraction reference; after S03-C the Session Core is
+runtime-active and the hook is the adapter. The artifacts here are
 `contracts + golden traces + parity tests + documentation` only.
 
 ## 1. Current public behavior (frozen reference)
@@ -145,5 +146,6 @@ GT-01..GT-12 trace (same states, same effect order) plus keep the existing
 - Golden traces: `tests/session-golden-trace.test.tsx` (17 tests)
 - This document.
 
-**Implementation status: `NOT STARTED` — the pure `sessionCore.ts` does not exist
-yet; `useWorkoutEngine` is unchanged.**
+**Implementation status: S03-A baseline complete.** The subsequent S03-B pure
+core and S03-C adapter delegation are complete; S03-F closure confirms the
+baseline remains green.
