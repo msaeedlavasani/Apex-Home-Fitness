@@ -1,5 +1,10 @@
 # Documentation Conflict Matrix
 
+> **STATUS: CURRENT REGISTER — RECONCILED THROUGH 2026-08-27**
+>
+> This register records resolved conflicts and the current-state reconciliation
+> performed after S03 closure and owner-approved branch retirement.
+
 > **STATUS: REGISTER — CONFLICT RESOLUTION RECORD**
 >
 > Every meaningful contradiction found during the repository-wide documentation
@@ -257,7 +262,14 @@
 | MEDIUM | 5 | C-02, C-03, C-09, C-10, C-11 |
 | LOW | 6 | C-04, C-05, C-06, C-07, C-08, C-12 |
 
-**Resolution status (2026-08-27):** all 12 conflicts RESOLVED by the approved
+**Resolution status (2026-08-27):** all 12 original conflicts RESOLVED by the approved
 reconciliation decisions (A-01…A-07, D-01…D-03). No conflict is left open.
+**Post-stabilization reconciliation (2026-08-27):** S03 is closed, Session Core
+is runtime-active, `useWorkoutEngine` is the React/browser adapter, and the old
+`fix/rules-engine-safety-v2` branch was deleted through the owner-approved
+functionally-superseded path. Current Production remains behind `main`; the
+additive S02 Exercise migration is still a release prerequisite. The immediate
+next step is `OWNER REVIEW → PRODUCTION RELEASE PREFLIGHT / DECISION`.
+
 Future conflicts are handled per `docs/governance/DOCUMENTATION-GOVERNANCE.md`
 §3 (hierarchy → evidence-based correction → `OWNER DECISION REQUIRED`).

@@ -4,8 +4,8 @@
 
 ## Context
 
-The workout session engine is logically headless but **physically implemented as
-a React hook**: `src/components/workout/useWorkoutEngine.ts` (~690 LOC) imports
+Before S03, the workout session engine was logically headless but **physically
+implemented as a React hook**: `src/components/workout/useWorkoutEngine.ts` (~690 LOC) imports
 only React + `src/lib/workout/wallClock.ts` and is consumed by
 `WorkoutPlayer.tsx`. Because the engine lives inside a React component hook:
 
@@ -46,7 +46,7 @@ lifecycle and the pure session core. It owns React integration:
 - subscription / render-trigger integration;
 - browser-lifecycle integration where appropriate.
 
-### Required Goal
+### Required Goal (achieved by S03)
 
 Future consumers — Workout Player, Voice Coach, persistence, tests, other UI
 surfaces — can consume a **stable Session State contract** without depending on

@@ -2,8 +2,8 @@
 
 `STATUS: ACCEPTED — 2026-08-27`
 
-`IMPLEMENTATION CLASSIFICATION: DO WHEN TOUCHED — NOT part of the immediate
-Architecture Stabilization execution.`
+`IMPLEMENTATION CLASSIFICATION: DO WHEN TOUCHED — NOT part of the completed
+S03 execution.`
 
 ## Context
 

@@ -1,10 +1,12 @@
 # Architecture Stabilization Plan
 
-`STATUS: APPROVED DIRECTION — IN PROGRESS (S-01, S02-A..D2, S03-A..F COMPLETE 2026-08-27; S02-E + S-04..S-06 NOT STARTED)`
+`STATUS: S03 COMPLETE — SESSION CORE EXTRACTION CLOSED; S02-E AND S-04..S-06 REMAIN PLANNED / NOT STARTED`
 
 This document defines the approved scope, sequence and governance for the
-controlled Architecture Stabilization phase. It is a **plan**, not an execution
-record. Nothing in it has been implemented.
+controlled Architecture Stabilization phase. Historical planning sections are
+retained for traceability; execution status is recorded explicitly below.
+S-01, S02-A..D2, and S03-A..F are complete. S02-E and S-04..S-06 remain
+planned/not started.
 
 - Input: `docs/architecture/MODULARITY-AUDIT.md` (audit record) and
   `docs/architecture/COUPLING-RISK-REGISTER.md` (risk register).
@@ -28,12 +30,16 @@ record. Nothing in it has been implemented.
 |---|---|---|---|
 | S-01 | Shared Contract Ownership | Two inverted lib→services type imports resolved with zero behavior change | FIRST (smallest) |
 | S-02 | Canonical Exercise Identity Foundation | Minimum compatible foundation: contracts + name→id resolution layer + compatibility fallback; **no schema change before GATE A** | AFTER S-01 |
-| S-03 | Pure Workout Session Core | Framework-independent session core extracted; `useWorkoutEngine` becomes adapter | AFTER S-02 (GATE B before extraction) |
-| S-04 | Stable Session State Contract | Stable read-model/event surface consumed by player, persistence, future Voice Coach | WITH/AFTER S-03 |
-| S-05 | Snapshot Versioning | Explicit version discipline for persisted workout snapshots, additive evolution only | AFTER S-04 (GATE C before structure change) |
-| S-06 | Exercise Library / Catalog Role | Decision + documentation of canonical vs sample/demo role for the current library | PARALLEL — decision-only; input to S-02 design review |
+| S-03 | Pure Workout Session Core | Framework-independent session core extracted; `useWorkoutEngine` is the runtime adapter | COMPLETE (S03-A..F closed) |
+| S-04 (planned) | Stable Session State Contract | Stable read-model/event surface consumed by player, persistence, future Voice Coach | PLANNED — OWNER CHECKPOINT REQUIRED |
+| S-05 (planned) | Snapshot Versioning | Explicit version discipline for persisted workout snapshots, additive evolution only | PLANNED — GATE C REQUIRED |
+| S-06 (planned) | Exercise Library / Catalog Role | Decision + documentation of canonical vs sample/demo role for the current library | PLANNED — OWNER CHECKPOINT REQUIRED |
 
 ## 3. Explicitly excluded from immediate stabilization
+
+S03 is closed. The immediate operational next step is `OWNER REVIEW →
+PRODUCTION RELEASE PREFLIGHT / DECISION`; no S04 or product-development phase
+starts automatically.
 
 Unless technically unavoidable, these remain future work:
 
@@ -206,7 +212,7 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
   tested; inventory of name-keyed usages recorded; behavior parity.
 - **Dependency**: S-01. **Risk**: MEDIUM (design-sensitive; keep additive).
 
-### Phase S-03 — Pure Workout Session Core
+### Phase S-03 — Pure Workout Session Core (COMPLETE — S03-A..F)
 
 - **Objective**: extract the framework-independent session/timeline core from
   `useWorkoutEngine.ts`; the hook becomes an adapter. **GATE B before

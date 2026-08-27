@@ -9,7 +9,7 @@
 - **Batch 14 & 15:** تمامی تسک‌های محصولی (OTP adapter، session، UI، route protection، readiness checklist، زبان‌سوییچر و enforce روزهای استراحت) پیاده‌سازی و وریفای شدند.
 - **زیرساخت:** اپ از **Prisma با SQLite** برای دیتابیس (برنامه تمرینی، کوییز و ...) استفاده می‌کند. Supabase فعلاً فقط به عنوان **Identity Provider (Auth)** استفاده می‌شود. برای استقرار self-hosted، دیتابیس SQLite در یک Docker Volume نگهداری می‌شود.
 - **آمادگی سرور:** Dockerfile و docker-compose آماده شده‌اند؛ تولید برنامه (build) با full env placeholders تأیید شده است.
-- تا اجرای موفق smoke test واقعی روی دامنه production، **go نهایی داده نمی‌شود**.
+- تا اجرای موفق smoke test واقعی روی دامنه production و اعمال پیش‌نیازهای release، **go نهایی داده نمی‌شود**. وضعیت فعلی: `READY_WITH_PREREQUISITES`؛ S03 هنوز روی Production deploy نشده است.
 - هر تغییری در قرارداد زیر باید در `docs/AI_API.md` (بعد از پیاده‌سازی endpointها) و همین سند همگام شود.
 
 ---
@@ -188,13 +188,13 @@
 **پیش از launch (همه باید ✅ باشند):**
 
 - [x] `.env.example` کامل است و هیچ secret واقعی در git نیست (تست `otp-launch-readiness` این را می‌سنجد).
-- [x] production env: `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، `NEXT_PUBLIC_SITE_URL`، Supabase URL/anon key ست شده‌اند (placeholders در git، مقادیر واقعی در اختیار کاربر).
+- [ ] production env: `SMS_IR_API_KEY`، `SMS_IR_TEMPLATE_ID`، `NEXT_PUBLIC_SITE_URL`، Supabase URL/anon key در Production تنظیم و مستقل تأیید شده‌اند (placeholders در git؛ مقادیر واقعی خارج از git).
 - [x] SMS.ir: adapter پیاده‌سازی شده؛ template فعال با پارامتر کد در پنل SMS.ir نیاز است.
 - [x] Supabase: Site URL و Redirect URLs دقیق نیاز است، provider فعال است، cookieها `httpOnly+secure+sameSite=lax`.
 - [ ] دامنه‌ی HTTPS فعال، redirect HTTP→HTTPS، `NEXT_PUBLIC_SITE_URL` هم‌منشأ.
-- [x] rate limitها با store مشترک (redis در production) و مقادیر §7 تنظیم شده‌اند.
+- [ ] rate limitها با store مشترک (redis در production) و مقادیر §7 در Production تنظیم و تأیید شده‌اند.
 - [x] redaction در لاگ‌ها و error tracking تأیید شده (هیچ شماره/کد کامل).
-- [x] Dockerfile و docker-compose برای استقرار تک‌فرمانی آماده است.
+- [x] Dockerfile و docker-compose برای استقرار تک‌فرمانی آماده است؛ S03 architecture stabilization هنوز deploy نشده است.
 - [ ] endpointهای §3 (request/verify/refresh/logout/quiz save/generation/dashboard) در **production** با mock و سپس real تست شده‌اند.
 - [ ] rollback (flag + revert) در staging تمرین شده است.
 - [ ] مسیرهای PWA/TWA روی دامنه‌ی production با 200 (رجوع به `docs/RELEASING.md`).

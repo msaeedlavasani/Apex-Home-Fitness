@@ -18,13 +18,13 @@
 | محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | وضعیت: PRODUCT / UX VISION — NOT YET IMPLEMENTED |
 | محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات باز محصول/معماری برای صاحب محصول |
 | معماری (اصول کلی) | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) | AUTHORITATIVE — CURRENT (extension `AGENTS.md`؛ پیشنهاد قبلی: [`ARCHITECTURE-PRINCIPLES-PROPOSAL.md`](architecture/ARCHITECTURE-PRINCIPLES-PROPOSAL.md) SUPERSEDED) |
-| معماری (برنامه تثبیت) | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) | APPROVED DIRECTION — IN PROGRESS (S-01 کامل؛ S-02 GATE A تآیید شد + S02-A و S02-B و S02-C و S02-D1 و S02-D2 و S03-A و S03-B و S03-C و S03-D و S03-E کامل؛ گیت‌های A/B/C) |
+| معماری (برنامه تثبیت) | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) | S03 COMPLETE — SESSION CORE EXTRACTION CLOSED (S-01 و S02-A..D2 و S03-A..F کامل؛ S02-E و S-04..S-06 برنامه‌ریزی‌شده؛ گیت‌های A/B/C) |
 | معماری (GATE A — هویت متعارف تمرین) | [`architecture/S02-EXERCISE-IDENTITY-GATE-A.md`](architecture/S02-EXERCISE-IDENTITY-GATE-A.md) | APPROVED (GA-01..GA-08, 2026-08-27) |
 | معماری (S02-D1 — قرارداد انتشار هویت تمرین) | [`architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md`](architecture/S02D1-EXERCISE-IDENTITY-PROPAGATION.md) | IMPLEMENTED CONTRACT FOUNDATION (S02-D1؛ adoption در S02-D2 شد) |
 | معماری (S02-D2 — پذیرش هویت در پلن workout) | [`architecture/S02D2-CLIENT-IDENTITY-ADOPTION.md`](architecture/S02D2-CLIENT-IDENTITY-ADOPTION.md) | IMPLEMENTED — LOG/SNAPSHOT ADOPTION DEFERRED (S02-D2) |
 | معماری (S-03 — GATE B هسته‌ی خالص Session) | [`architecture/S03-SESSION-CORE-GATE-B.md`](architecture/S03-SESSION-CORE-GATE-B.md) | APPROVED 2026-08-27 (GB-01..GB-10) |
 | معماری (S03-A — پایه‌ی parity Session) | [`architecture/S03A-SESSION-PARITY-BASELINE.md`](architecture/S03A-SESSION-PARITY-BASELINE.md) | IMPLEMENTED TEST BASELINE — S03 COMPLETE |
-| معماری (S03 — closure) | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) | S03 COMPLETE — SESSION CORE EXTRACTION CLOSED |
+| معماری (S03 — closure) | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) | S03 COMPLETE — SESSION CORE EXTRACTION CLOSED; next: owner review → Production Release Preflight / Decision |
 | معماری (S02-A — vocab تحلیل تمرین) | [`architecture/S02A-SOURCE-VOCABULARY.md`](architecture/S02A-SOURCE-VOCABULARY.md) | DEVELOPMENT-TIME ANALYSIS (S02-A) |
 | Exercise domain (foundation) | [`../src/lib/exercise/index.ts`](../src/lib/exercise/index.ts) | PURE domain: contracts + catalog + resolver (S02-A) |
 | معماری (ممیزی مدولاریتی) | [`architecture/MODULARITY-AUDIT.md`](architecture/MODULARITY-AUDIT.md) | AUDIT RECORD — NOT AN ARCHITECTURE DECISION |

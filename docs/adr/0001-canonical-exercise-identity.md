@@ -4,7 +4,7 @@
 
 ## Context
 
-Exercise identity is currently **name-based** across the application:
+Before S02, Exercise identity was **name-based** across the application:
 
 - `src/components/workout/workoutTokens.ts` maps exercise **names** to Lottie
   animation tokens;
@@ -65,11 +65,10 @@ Costs:
 
 ## Not Decided Yet
 
-Deliberately NOT decided in this ADR (belongs to later technical design after
-GATE A):
+At the time of this ADR, the following were deliberately NOT decided (the
+later Gate A/S02 design resolved the currently applicable identity foundation):
 
-- ID format (slug vs UUID vs other representation);
-- DB migration details and backfill mechanics;
+- historical backfill mechanics;
 - exercise taxonomy / catalog schema;
 - media technology for demonstrations;
 - the library's product role (sample vs production catalog — see

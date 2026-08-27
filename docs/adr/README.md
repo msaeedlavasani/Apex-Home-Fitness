@@ -4,7 +4,7 @@
 >
 > This directory holds Architecture Decision Records for Apex Home Fit.
 > The mechanism was created on 2026-08-27 (Documentation & Governance
-> Reconciliation). **No ADRs are accepted yet** — do not invent records for
+> Reconciliation). Accepted records are listed below; do not invent records for
 > decisions that have not been made.
 
 ## What qualifies as an ADR
