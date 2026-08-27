@@ -56,6 +56,18 @@ decision changes them.
 8. **Find → Update → Extend → Create** — apply this order to documentation
    creation, mirroring `AGENTS.md` §3 (`reuse → extend → compose → create`)
    for code.
+9. **Branch lifecycle** — normal development branches follow
+   `ACTIVE → VALIDATION → APPROVED_FOR_MERGE → MERGED → LEGACY / RETIRED →
+   DELETE_VERIFIED`. `MERGED` alone is not sufficient for deletion: verify
+   ancestry and zero unique commits, delete remote and local refs safely, prune,
+   and confirm a clean repository before opening the next normal branch.
+10. **Superseded branch retirement exception** — a branch with unique history
+    may be retired without merge only when semantic reconciliation proves its
+    substantive capabilities are present or superseded, safety-critical gaps
+    are zero, the owner explicitly approves abandonment, the final tip SHA is
+    recorded for recovery, and the deletion is documented as intentional
+    abandonment. This exception is not a shortcut around normal verification;
+    `MERGE → VERIFY → DELETE` remains preferred.
 
 ## 3. Conflict handling
 
