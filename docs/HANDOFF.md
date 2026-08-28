@@ -6,7 +6,8 @@
 
 > Manifest عملیاتی جاری: [`CURRENT_STATE.md`](CURRENT_STATE.md) — قبل از هر تسک وابسته بخوان.
 
-- **R6 — PASS** (جاری): source `aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `apex-home-fit:r6-aee28d1` (`sha256:6aabafe1…`)؛ روت‌های عمومی/auth/protected در مرورگر واقعی ۹/۹ + re-check تأخیری PASS؛ RestartCount 0.
+- **AUTH-FIX-01 — PASS** (جاری): source `ce91a4f…`، image `apex-home-fit:authfix-ce91a4f` (`sha256:f0b0785b…`)؛ ریشه: volume دیتابیس root-owned بود و اپ به‌عنوان nextjs (uid 100) نمی‌توانست بنویسد → همه‌ی writeها `attempt to write a readonly database`. volume به `100:101` بازگردانده شد و image جدید یک startup preflight (`scripts/preflight-db.mjs`) دارد که روی volume غیرقابل‌نوشتن fail-fast می‌شود. ورود واقعی + نوشتن پس از ورود (program API 200، user row سینک شد) + مرورگر واقعی ۹/۹ + re-check تأخیری PASS؛ RestartCount 0.
+- **R6 — PASS** (checkpoint رول‌بک فوری): source `aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `apex-home-fit:r6-aee28d1` (`sha256:6aabafe1…`).
 - **وضعیت Governance v2:** مستندات governance + CI برنچ در حال یکپارچه‌سازی با `main` هستند؛ برنچ فعلی `fix/s02-rsc-render` تا تکمیل ادغام فعال است و پس از آن RETIRED می‌شود.
 - **تسک بعدی مجاز (پس از تأیید Owner):** `AUTH-FIX-01` — ورود واقعی با provider واقعی؛ CI PASS کافی نیست و FEATURE_ACCEPTANCE واقعی Production الزامی است.
 - **S02 — PASS** (قبلی): source `60abb2d373983fa781665a0b6301f1ca1f46b357`، image `apex-home-fit:s02-60abb2d-r1` (`sha256:d0483ad7…`).
