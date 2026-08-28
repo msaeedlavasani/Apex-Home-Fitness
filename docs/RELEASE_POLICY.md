@@ -16,4 +16,4 @@ If deployment or post-deploy smoke fails, stop the next task and either fix only
 
 Intentionally incomplete work that cannot operate independently must be explicitly classified as `NON_DEPLOYABLE` and grouped only with the minimum inseparable work required for an atomic release.
 
-Record every successful Production checkpoint with the source SHA, immutable image ID, deployment time, database identity/hash, and mount topology. Never deploy or migrate a database without explicit approval and a verified rollback plan.
+Record every successful Production checkpoint with the source SHA, immutable image ID, deployment time, database identity/hash, and mount topology. Never deploy or migrate a database without explicit approval and a verified rollback plan. For a newly authorized empty Production database, apply the checked-in migrations explicitly before serving traffic; never copy a diagnostic fixture into Production.
