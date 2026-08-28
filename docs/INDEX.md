@@ -12,6 +12,13 @@
 | موضوع | سند مرجع | کاربرد / وضعیت |
 |---|---|---|
 | قوانین agent (رفتار و مرزها) | [`../AGENTS.md`](../AGENTS.md) | AUTHORITATIVE — اولویت منابع در §۱ همان فایل |
+| سیاست انتشار (authoritative) | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) | قوانین Task → Production، اولویت مستندات، قوانین ۱–۱۵ |
+| چرخه Feature → Production | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) | runbook اجرایی دقیق از تعریف تسک تا checkpoint تولید و CLOSED شدن |
+| سیاست برنچ | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) | چرخه‌ی عمر برنچ، closure، hotfix، مدل وضعیت تسک |
+| وضعیت فعلی (manifest) | [`CURRENT_STATE.md`](CURRENT_STATE.md) | چک‌پوینت فعلی، برنچ فعال، تسک مجاز بعدی — قبل از شروع بخوان |
+| قرارداد env | [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md) | طبقه‌بندی BUILD/RUNTIME، PUBLIC/SECRET — بدون مقدار secret |
+| چک‌پوینت‌های تولید | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) | ledger چک‌پوینت‌های تأییدشده‌ی Production |
+| درس‌های تکرارپذیر (Pitfalls) | [`PITFALLS/`](PITFALLS/) | درس‌های حوادث واقعی (build-time config، HTTP 200 و…) |
 | سیستم توسعه‌ی خودکار (فرایند) | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | فرایند/workflow توسعه — مکمل AGENTS.md، نه جایگزین آن |
 | قالب گزارش تغییر | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | AUTHORITATIVE قالب change report |
 | محصول: ویژن سطح‌بالا | [`product/PRODUCT-VISION.md`](product/PRODUCT-VISION.md) | AUTHORITATIVE — CURRENT (تمایز CURRENT / DIRECTION / PLANNED) |
@@ -39,7 +46,7 @@
 | آفلاین / همگام‌سازی | پیاده‌سازی: `src/lib/offline/`، `src/services/syncService.ts`، `supabase/migrations/0001_workout_exercise_logs.sql` | **NO CANONICAL ARCHITECTURE DOC YET** — ارجاع پیاده‌سازی؛ سند عمیق به Modularity Audit موکول شد |
 | قرارداد محیط (env) | [`../.env.example`](../.env.example) | AUTHORITATIVE؛ توسط `tests/otp-launch-readiness.test.ts` بررسی می‌شود |
 | CI و E2E | [`CI.md`](CI.md) | pipeline، retry و انتخاب تست هدفمند |
-| انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release |
+| انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release (روند release فعلی: `RELEASE_POLICY.md` + `FEATURE_TO_PRODUCTION.md`) |
 | احراز هویت و launch | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) | env، امنیت OTP، Go/No-Go و smoke test |
 | وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی، Production context و قراردادهای حساس |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |
@@ -60,6 +67,7 @@
 
 ## ۳. قانون به‌روزرسانی
 
+- **قبل از شروع هر تسک وابسته، حتماً `RELEASE_POLICY.md` و `PRODUCTION_CHECKPOINTS.md` (چک‌پوینت فعلی تولید) و `CURRENT_STATE.md` را بخوانید.**
 - تغییر رفتار API، auth، env یا deployment باید سند مرجع همان ردیف را به‌روزرسانی کند.
 - `README.md` فقط راهنمای شروع و نمای کلی است و محل ثبت جزئیات قرارداد نیست.
 - `HANDOFF.md` snapshot عملیاتی است؛ تاریخچه‌ی کامل batchها فقط در `TASKS.md` ثبت می‌شود.

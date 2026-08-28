@@ -14,6 +14,7 @@ import {detectPlatform} from '@/components/ui/platform/lib/platform';
 import PWALoader from '@/components/PWALoader';
 import MonitoringProvider from '@/components/providers/MonitoringProvider';
 import {MuiProvider} from '@/components/providers/MuiProvider';
+import {resolveSiteUrl} from '@/lib/siteUrl';
 import '../globals.css';
 
 /**
@@ -99,16 +100,15 @@ export async function generateMetadata({
 
   // Absolute URL base for canonical/OG/social URLs (set NEXT_PUBLIC_SITE_URL
   // in production; omitted locally so relative URLs are used).
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const absUrl = (path: string) =>
-    siteUrl ? new URL(path, siteUrl).toString() : path;
+  const siteUrl = resolveSiteUrl();
+  const absUrl = (path: string) => new URL(path, siteUrl).toString();
   const canonical = absUrl(`/${locale}`);
   // OG/social image — the 512×512 app icon (swap for a 1200×630 OG banner
   // once a dedicated social image asset exists).
   const ogImage = absUrl('/icons/icon-512x512.png');
 
   return {
-    metadataBase: new URL(siteUrl ?? 'https://apexfit.app'),
+    metadataBase: new URL(siteUrl),
 
     // Bilingual title & description — resolved per-locale at request time.
     // `template` appends the localized site name to child pages' titles
@@ -214,8 +214,7 @@ export default async function LocaleLayout({
   // other locale's brand name so both languages resolve to one entity.
   // The fallback origin is used only when NEXT_PUBLIC_SITE_URL is unset
   // (local development).
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const origin = siteUrl ?? 'https://apexfit.app';
+  const origin = resolveSiteUrl();
   const seoT = await getTranslations({locale, namespace: 'Metadata'});
   const seoTitle = seoT('title');
   const seoDescription = seoT('description');

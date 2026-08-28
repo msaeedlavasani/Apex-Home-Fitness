@@ -2,6 +2,15 @@
 
 این فایل مرجع واحد وضعیت کارها، بدهی فنی و تاریخچه batchهاست. روند اجرای هر batch در `docs/HANDOFF.md` و چک‌لیست انتشار در `docs/RELEASING.md` نگهداری می‌شود.
 
+## چک‌پوینت‌های تولید (S02 / R6)
+
+- **S02 — PASS** (`60abb2d373983fa781665a0b6301f1ca1f46b357`، image `s02-60abb2d-r1`): رفع site URL با fallback امن (درس: Pitfall build-time config).
+- **R6 — PASS** (`aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `r6-aee28d1`): session contracts — لایه‌ی قرارداد pure/type-only برای موتور session آینده.
+- **CURRENT VERIFIED PRODUCTION CHECKPOINT: R6** — DB بدون تغییر (۱۲ migration، integrity ok).
+- **Governance v2:** قوانین برنچ/CI یکپارچه‌سازی با `main` در حال تکمیل است؛ پس از آن `fix/s02-rsc-render` RETIRED می‌شود (بدون تغییر چک‌پوینت Production).
+- **تسک بعدی مجاز (پس از تأیید Owner):** `AUTH-FIX-01` (برنچ پیشنهادی `fix/auth-login-production`) — ورود واقعی با provider؛ FEATURE_ACCEPTANCE واقعی Production الزامی. R7 فقط پس از AUTH-FIX-01 و تأیید Owner.
+- قوانین/runbook/ledger/وضعیت: `docs/RELEASE_POLICY.md`، `docs/FEATURE_TO_PRODUCTION.md`، `docs/BRANCHING_POLICY.md`، `docs/PRODUCTION_CHECKPOINTS.md`، `docs/CURRENT_STATE.md`.
+
 ## وضعیت batchها
 
 - **Batch 8:** بهینه‌سازی بصری، Design System، پیشنهاد AI، TWA و SEO — تکمیل شد.
@@ -130,6 +139,18 @@ Owner Review → Production Release Preflight / Decision
 - [x] سیستم پیشنهاد AI-first + rules-v2 fallback بر اساس تاریخچه — `INTEGRATED`؛ موتور rules محدودیت، تجهیزات، frequency و adherence را اعمال می‌کند.
 - [x] بازبینی سیستم طراحی و توکن‌های UI (Batch 8)
 - [x] تست تولید TWA و سئو (Batch 8)
+
+## معماری و تاب‌آوری (Architecture / Resilience) 🧭
+
+### Reduce International Service Dependency / Supabase Resilience
+**وضعیت:** BACKLOG — خارج از دامنه‌ی تثبیت S02.
+
+هدف: Apex Home Fitness تا حد امکان در صورت قطع یا محدودیت اینترنت بین‌المللی عملیاتی بماند.
+
+در یک کار معماری مستقل، همه‌ی وابستگی‌های Supabase باید inventory و طبقه‌بندی شوند:
+Authentication، Database، Storage، Realtime، Edge Functions، API access، استفاده‌ی client/server از SDK؛ هرکدام به‌عنوان `SELF_HOSTABLE`، `REPLACEABLE_WITH_LOCAL_SERVICE`، `REQUIRES_EXTERNAL_ACCESS` یا `NOT_USED`.
+
+گزینه‌های آینده شامل self-hosted Supabase، PostgreSQL بومی، object storage محلی مانند MinIO، احراز هویت/session داخلی، realtime داخلی و حذف وابستگی‌های غیرضروری است. در این task هیچ migration یا تغییر زیرساختی انجام نمی‌شود.
 
 ## بدهی‌های فنی (Technical Debt) ⚠️
 1. **[x] Unified Asset Pipeline:** مسیر asset، fallback آفلاین، CSP/cache policy و audit خودکار در `docs/ASSETS.md`.
