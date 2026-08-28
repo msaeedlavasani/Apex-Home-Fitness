@@ -26,6 +26,14 @@
           STATIC (lint/typecheck)
 ```
 
+## سه لایه‌ی CI (مدل لایه‌ای)
+
+1. **TASK BRANCH CI** — روی push به برنچ‌های task (پس از Governance v2: `fix/**`, `feat/**`, `feature/**`, `refactor/**`, `recovery/**`, `hotfix/**` و `main/master`). اعتماد سریع روی هر push برنچ task: `npm ci` → Prisma generate → migration validation → lint → typecheck → unit → Production build → targeted E2E.
+2. **PR INTEGRATION CI** — روی `pull_request` به `main/master`؛ اثبات اینکه برنچ با main فعلی ادغام می‌شود.
+3. **MAIN POST-MERGE CI** — روی push به `main`؛ تأیید main معتبر پس از ادغام.
+
+**`NIGHTLY_E2E != TASK_BRANCH_CI`.** سوئیت شبانه (`ci-full-e2e.yml` — schedule 22:00 UTC + workflow_dispatch) regression مستقل است و هرگز proof اعتبارسنجی یک برنچ task خاص نیست.
+
 ## مسیر هر کامیت (push روی main) — `.github/workflows/ci.yml`
 
 | مرحله | دستور | زمان تقریبی |
@@ -38,6 +46,8 @@
 | E2E smoke (مسیر اصلی) | `npm run test:e2e:smoke` | ~۳۵ ثانیه |
 
 **E2E کامل در مسیر هر کامیت اجرا نمی‌شود.** سوئیت کامل (۱۰۰+ تست) در `.github/workflows/ci-full-e2e.yml` — شبانه (۲۲:۰۰ UTC) و دستی (`workflow_dispatch`) برای release/high-risk — اجرا می‌شود.
+
+ترتیب escalation (پرهیز از اجرای مکرر سوئیت کامل): `static → unit → integration/contract → targeted E2E → full E2E` — full فقط برای release/high-risk/manual/nightly. (هر push برنچ task فقط targeted auth-mock + smoke را اجرا می‌کند؛ نه کل سوئیت.)
 
 ## اسکریپت‌های هدفمند
 

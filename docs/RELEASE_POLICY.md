@@ -2,9 +2,30 @@
 
 This document is the **authoritative high-level release policy** for Apex Home
 Fitness. The operational execution sequence lives in
-[`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md); verified checkpoints
-are recorded in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md); and
-reusable incident lessons live in [`PITFALLS/`](PITFALLS/).
+[`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md); branch lifecycle rules
+live in [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md); verified checkpoints are
+recorded in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md); the
+current operational state is in [`CURRENT_STATE.md`](CURRENT_STATE.md); the
+environment contract is in [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md);
+and reusable incident lessons live in [`PITFALLS/`](PITFALLS/).
+
+## Documentation precedence
+
+When documents conflict, the following hierarchy applies (higher wins):
+
+1. `docs/RELEASE_POLICY.md` (this document)
+2. `docs/FEATURE_TO_PRODUCTION.md` (operational runbook)
+3. `docs/BRANCHING_POLICY.md` (branch/task lifecycle)
+4. `docs/CI.md` (validation policy)
+5. `docs/CURRENT_STATE.md` + `docs/PRODUCTION_CHECKPOINTS.md` (current state)
+6. Task-specific authorized prompt/specification (may NARROW task scope, but
+   must NOT silently override repository safety/release policy)
+7. Subsystem docs (`ENVIRONMENT_CONTRACT`, `AI_API`, `OTP_LAUNCH_READINESS`, …)
+8. `docs/HANDOFF.md`, `docs/TASKS.md`
+9. Historical/archived docs
+
+Historical documents never override active policy. Any authorized exception
+must be explicit and recorded.
 
 Every independently deployable task must pass, in order:
 
@@ -116,12 +137,27 @@ container configuration, network, aliases, ports, mounts/volumes, restart
 policy, environment shape, and executable rollback commands/script. Rollback
 must be practical, not theoretical.
 
-### RULE 11 — DATABASE INVARIANTS
+### RULE 11 — DATABASE INVARIANTS AND MIGRATION GATES
 Before/after deployment record relevant DB state: location/volume, integrity,
 migration count, latest migration, schema expectations, and DB hash where
 practical. If a task does not require DB changes, `DB_CHANGED` must remain
 NO. Unexpected migration/schema requirements are a STOP condition unless
 explicitly authorized.
+
+Every DB-changing task must pass BOTH migration gates:
+
+- **FRESH DATABASE GATE** — apply the entire checked-in migration chain from
+  an empty database (proves repository reproducibility).
+- **UPGRADE PATH GATE** — starting from the current verified checkpoint
+  schema/state, apply only the pending migration(s) (proves real deployment
+  upgrade safety).
+
+Never edit the content of an already-applied migration (Prisma tracks a
+checksum in `_prisma_migrations`); a changed checksum breaks `migrate deploy`
+against existing databases. Fix by adding a new migration instead.
+
+For tasks with `DB_CHANGED = NO`, any migration/schema change is a STOP
+condition.
 
 ### RULE 12 — STOP ON FAILURE
 If a Production checkpoint fails, do NOT start the next dependent task. Either
@@ -129,7 +165,39 @@ fix only the failure attributable to the current task or roll back to the
 previous verified Production checkpoint. Do not automatically begin broad
 historical forensics.
 
-### RULE 13 — PREVIOUS CHECKPOINT PRESERVATION
+### RULE 13 — PREVIOUS CHECKPOINT PRESERVATION / ROLLBACK RETENTION
 Do not immediately delete the previous verified image/container/rollback
-artifact after a successful release. Retain it for a defined stabilization
-period; cleanup is a separate maintenance task.
+artifact after a successful release. Retain the previous verified Production
+image/container/rollback package until ALL of:
+
+- the new release has passed Production acceptance, AND
+- the delayed re-check passed when required, AND
+- at least the next maintenance/owner stabilization decision has occurred.
+
+For high-risk releases, retain longer. Cleanup is always a separate
+maintenance action; do not automatically delete rollback artifacts during
+task closure.
+
+### RULE 14 — HOTFIX / EMERGENCY WORKFLOW
+Production incidents use the documented hotfix path
+(`docs/BRANCHING_POLICY.md`): owner authorization
+(`EMERGENCY_OVERRIDE = YES`, `OWNER_AUTHORIZED = YES`, `REASON = …`), branch
+from current authoritative main, smallest attributable fix, focused CI where
+feasible, immutable build, rollback prepared, Production deploy, real
+acceptance, checkpoint recorded, immediate merge-back to main, verify remote
+main, retire hotfix branch, incident report/Pitfall for new failure classes.
+
+### RULE 15 — ACCEPTANCE LEVELS
+Distinguish acceptance classes for every release:
+
+- **ROUTE_ACCEPTANCE** — transport only (HTTP 200). Necessary, never
+  sufficient alone.
+- **SYSTEM_ACCEPTANCE** — route/browser render without errors (fresh browser,
+  listeners before navigation, no Application/RSC errors, no 5xx).
+- **FEATURE_ACCEPTANCE** — the actual user capability works end-to-end in
+  Production (e.g. a real login journey, not merely that the login page
+  renders).
+
+Production checkpoint requirements are task-specific: user-visible business
+features MUST prove the actual capability, not just the existence of its
+page.

@@ -20,6 +20,8 @@
 - deploy production، تغییر database یا تغییر سرویس‌های همسایه
 - فعال‌کردن SMS واقعی یا خاموش‌کردن emergency mock بدون smoke test
 - merge مستقیم به `main` برای تغییرات پرریسک
+- شروع تسک وابسته‌ی بعدی قبل از `PRODUCTION_CHECKPOINT = PASS`
+- ادغام برنچ در main یا retire برنچ قبل از تأیید ancestry و CI
 - حذف فایل مگر اینکه generated، unused و بدون reference بودن آن اثبات شده باشد
 
 ## 2. مدل دانش پروژه
@@ -31,15 +33,24 @@
 | auth/OTP و Go-No-Go | `docs/OTP_LAUNCH_READINESS.md` |
 | AI generation contract | `docs/AI_API.md` و `infra/ai/prompts/` |
 | UI و accessibility | `docs/DESIGN_SYSTEM.md` |
-| release و rollback | `docs/RELEASING.md` |
+| سیاست انتشار (authoritative) | `docs/RELEASE_POLICY.md` + `docs/BRANCHING_POLICY.md` |
+| runbook اجرایی Feature → Production | `docs/FEATURE_TO_PRODUCTION.md` |
+| وضعیت فعلی و چک‌پوینت‌ها | `docs/CURRENT_STATE.md` + `docs/PRODUCTION_CHECKPOINTS.md` |
+| قرارداد env | `docs/ENVIRONMENT_CONTRACT.md` |
+| جزئیات Docker/proxy/PWA/TWA/Android | `docs/RELEASING.md` |
 | validation | `docs/CI.md` و scripts audit |
+| درس‌های تکرارپذیر | `docs/PITFALLS/` |
 
 هر agent باید ابتدا این منابع را بخواند و اگر تناقضی یافت، قبل از تغییر کد آن را در گزارش خود ثبت کند.
 
 ## 3. چرخه‌ی اجرای هر تغییر
 
+> CI سبز به‌تنهایی به معنی COMPLETE بودن تسک نیست؛ تسک فقط پس از چک‌پوینت Production، ادغام در main و retire برنچ CLOSED می‌شود (Rule 1/2 و BRANCHING_POLICY).
+
 ```text
-Discover → Classify → Plan → Implement → Validate → Review → Handoff
+Discover → Pre-Task Gate → Plan → Implement → Validate → Branch CI →
+Release Readiness → Production Checkpoint → Mainline Integration →
+Closure → Owner Authorization
 ```
 
 ### Discover

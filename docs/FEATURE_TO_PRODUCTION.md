@@ -5,11 +5,24 @@ exact execution sequence for taking an independently deployable task from
 definition to a verified Production checkpoint.
 
 Verified checkpoints are recorded in
-[`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md). Reusable incident
+[`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md). Branch lifecycle
+rules live in [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md). Reusable incident
 lessons live in [`PITFALLS/`](PITFALLS/).
 
-**Before starting any dependent development task, read `RELEASE_POLICY.md` and
-`PRODUCTION_CHECKPOINTS.md` first.**
+**Before starting any dependent development task, read `RELEASE_POLICY.md`,
+`BRANCHING_POLICY.md` and `CURRENT_STATE.md` first.**
+
+## Task status / closure model
+
+Lifecycle: `PLANNED → ACTIVE → SOURCE_VALIDATED → BRANCH_CI_PASS →
+READY_FOR_PRODUCTION → DEPLOYED → PRODUCTION_PASS → MAINLINE_INTEGRATED →
+CLOSED` (terminal/exceptional: `BLOCKED`, `ROLLED_BACK`).
+
+**`PRODUCTION_PASS != CLOSED`.** A task is CLOSED only after: Production
+checkpoint PASS + recorded + branch integrated into main + remote main
+verified + completed branch retired (or documented retention). Then the Owner
+authorizes the next task, which branches from fresh main (pre-task mainline
+gate — see BRANCHING_POLICY).
 
 ---
 
@@ -162,3 +175,69 @@ FINAL_STATUS
 
 Only after `PRODUCTION_CHECKPOINT = PASS` may dependent work begin. Then stop
 for Owner review before the next dependent task (Rule 2 / Rule 12).
+
+## O. MAINLINE INTEGRATION AND CLOSURE
+
+After the Production checkpoint passes and the Owner authorizes integration:
+
+1. Re-fetch remote `main`; re-audit divergence (Rule G — divergence gate).
+2. Integrate the completed branch into `main` (merge commit when divergent;
+   no force, no history rewrite, no squashing verified checkpoint lineage).
+3. Push `main`; require the normal main CI triggered by the push to PASS.
+4. Verify remote `main` contains the required commits (ancestry proof).
+5. Retire the completed branch (remote + local) ONLY after ancestry proof and
+   main CI PASS. Keep Production rollback artifacts (Rule 13).
+6. Update `CURRENT_STATE.md` (minimal docs-only commit on main when needed).
+7. `TASK = CLOSED` → Owner authorizes the next task from fresh main.
+
+## P. FEATURE ACCEPTANCE CONTRACTS
+
+Acceptance classes (see RELEASE_POLICY Rule 15):
+
+- **ROUTE_ACCEPTANCE** — HTTP 200 (transport only; never sufficient alone).
+- **SYSTEM_ACCEPTANCE** — real-browser render without errors (fresh context,
+  listeners before navigation, no Application/RSC errors, no 5xx).
+- **FEATURE_ACCEPTANCE** — the actual user capability works end-to-end in
+  Production.
+
+For user-visible business features the Production checkpoint MUST test the
+actual capability, not merely the page's existence.
+
+## Q. AUTH FEATURE ACCEPTANCE CONTRACT
+
+Mock-OTP CI coverage is useful but NOT sufficient to declare Production login
+working. A real Production login task must prove the authorized real journey:
+
+```
+REQUEST_OTP
+→ RECEIVE/VERIFY_OTP
+→ AUTHENTICATED_SESSION_CREATED
+→ PROTECTED_ROUTE_ACCESS
+→ REFRESH OR FRESH NAVIGATION RETAINS VALID SESSION
+→ LOGOUT
+→ PROTECTED_ROUTE BLOCKED/REDIRECTED AGAIN
+```
+
+Where provider restrictions require a trusted test identity, use only an
+explicitly authorized test account/number. Never print OTP values, auth
+tokens, cookies, secrets, or provider credentials. For AUTH-FIX-01, CI PASS
+alone is NOT sufficient; real Production feature acceptance is mandatory.
+
+## R. DATABASE MIGRATION VALIDATION
+
+DB-changing tasks must pass BOTH gates (RELEASE_POLICY Rule 11):
+
+- **FRESH DATABASE GATE** — full migration chain from empty DB.
+- **UPGRADE PATH GATE** — current verified checkpoint state + pending
+  migration(s) only.
+
+Never edit an already-applied migration (checksum drift breaks `migrate
+deploy`); add a new migration instead. Tasks with `DB_CHANGED = NO` treat any
+migration/schema change as a STOP condition.
+
+## S. HOTFIX / EMERGENCY
+
+See `docs/BRANCHING_POLICY.md` — hotfix section. `EMERGENCY_OVERRIDE = YES`,
+`OWNER_AUTHORIZED = YES`, `REASON = …`, smallest fix, focused CI, immutable
+build, rollback, deploy, real acceptance, checkpoint, immediate merge-back,
+verify remote main, retire hotfix branch, incident report.

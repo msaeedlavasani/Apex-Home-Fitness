@@ -5,8 +5,11 @@
 | موضوع | سند مرجع | کاربرد |
 |---|---|---|
 | قوانین agent | [`../AGENTS.md`](../AGENTS.md) | رفتار و مرزهای agent توسعه |
-| سیاست انتشار | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) | قوانین Task → Production و checkpoint هر تسک |
-| چرخه Feature → Production | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) | runbook اجرایی دقیق از تعریف تسک تا checkpoint تولید |
+| سیاست انتشار | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) | قوانین Task → Production، اولویت مستندات، قوانین ۱–۱۵ |
+| چرخه Feature → Production | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) | runbook اجرایی دقیق از تعریف تسک تا checkpoint تولید و CLOSED شدن |
+| سیاست برنچ | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) | چرخه‌ی عمر برنچ، closure، hotfix، مدل وضعیت تسک |
+| وضعیت فعلی (manifest) | [`CURRENT_STATE.md`](CURRENT_STATE.md) | چک‌پوینت فعلی، برنچ فعال، تسک مجاز بعدی — قبل از شروع بخوان |
+| قرارداد env | [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md) | طبقه‌بندی BUILD/RUNTIME، PUBLIC/SECRET — بدون مقدار secret |
 | چک‌پوینت‌های تولید | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) | ledger چک‌پوینت‌های تأییدشده‌ی Production |
 | درس‌های تکرارپذیر (Pitfalls) | [`PITFALLS/`](PITFALLS/) | درس‌های حوادث واقعی (build-time config، HTTP 200 و…) |
 | قرارداد APIهای AI و analytics | [`AI_API.md`](AI_API.md) | request/response، خطاها و محدودیت‌ها |

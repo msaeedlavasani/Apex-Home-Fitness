@@ -1,8 +1,21 @@
 name: CI
 
+# Task-branch CI: every ordinary push to a supported task branch (fix/feat/
+# feature/refactor/recovery/hotfix) plus main/master gets fast confidence
+# (static → unit → build → targeted E2E). PR integration CI still runs for
+# pull requests to main/master. The full 100+ E2E suite stays on the nightly
+# nightly/manual workflow (ci-full-e2e.yml) — NEVER run full E2E on every push.
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - 'fix/**'
+      - 'feat/**'
+      - 'feature/**'
+      - 'refactor/**'
+      - 'recovery/**'
+      - 'hotfix/**'
   pull_request:
     branches: [ main, master ]
 

@@ -4,11 +4,15 @@
 
 ## چک‌پوینت تولید فعلی (Verified Production Checkpoint)
 
+> Manifest عملیاتی جاری: [`CURRENT_STATE.md`](CURRENT_STATE.md) — قبل از هر تسک وابسته بخوان.
+
 - **R6 — PASS** (جاری): source `aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `apex-home-fit:r6-aee28d1` (`sha256:6aabafe1…`)؛ روت‌های عمومی/auth/protected در مرورگر واقعی ۹/۹ + re-check تأخیری PASS؛ RestartCount 0.
+- **وضعیت Governance v2:** مستندات governance + CI برنچ در حال یکپارچه‌سازی با `main` هستند؛ برنچ فعلی `fix/s02-rsc-render` تا تکمیل ادغام فعال است و پس از آن RETIRED می‌شود.
+- **تسک بعدی مجاز (پس از تأیید Owner):** `AUTH-FIX-01` — ورود واقعی با provider واقعی؛ CI PASS کافی نیست و FEATURE_ACCEPTANCE واقعی Production الزامی است.
 - **S02 — PASS** (قبلی): source `60abb2d373983fa781665a0b6301f1ca1f46b357`، image `apex-home-fit:s02-60abb2d-r1` (`sha256:d0483ad7…`).
 - **DB:** SQLite روی volume `apexhomefit_prod_db:/data`، `DATABASE_URL=file:/data/app.db`، ۱۲ migration، integrity ok؛ R6 هیچ تغییری در DB نداد.
 - قوانین: [`RELEASE_POLICY.md`](RELEASE_POLICY.md) · runbook: [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) · ledger: [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) · درس‌ها: [`PITFALLS/`](PITFALLS/)
-- **R7 هنوز شروع نشده است.** تسک وابسته‌ی بعدی (R7) فقط پس از تأیید Owner می‌تواند شروع شود.
+- **R7 هنوز شروع نشده است.** پس از AUTH-FIX-01 (طبق اولویت Owner) و فقط پس از تأیید Owner شروع می‌شود.
 
 ## وضعیت فعلی
 
