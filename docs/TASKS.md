@@ -111,6 +111,18 @@
 - [x] بازبینی سیستم طراحی و توکن‌های UI (Batch 8)
 - [x] تست تولید TWA و سئو (Batch 8)
 
+## معماری و تاب‌آوری (Architecture / Resilience) 🧭
+
+### Reduce International Service Dependency / Supabase Resilience
+**وضعیت:** BACKLOG — خارج از دامنه‌ی تثبیت S02.
+
+هدف: Apex Home Fitness تا حد امکان در صورت قطع یا محدودیت اینترنت بین‌المللی عملیاتی بماند.
+
+در یک کار معماری مستقل، همه‌ی وابستگی‌های Supabase باید inventory و طبقه‌بندی شوند:
+Authentication، Database، Storage، Realtime، Edge Functions، API access، استفاده‌ی client/server از SDK؛ هرکدام به‌عنوان `SELF_HOSTABLE`، `REPLACEABLE_WITH_LOCAL_SERVICE`، `REQUIRES_EXTERNAL_ACCESS` یا `NOT_USED`.
+
+گزینه‌های آینده شامل self-hosted Supabase، PostgreSQL بومی، object storage محلی مانند MinIO، احراز هویت/session داخلی، realtime داخلی و حذف وابستگی‌های غیرضروری است. در این task هیچ migration یا تغییر زیرساختی انجام نمی‌شود.
+
 ## بدهی‌های فنی (Technical Debt) ⚠️
 1. **[x] Unified Asset Pipeline:** مسیر asset، fallback آفلاین، CSP/cache policy و audit خودکار در `docs/ASSETS.md`.
 2. **[x] Advanced Conflict Resolution:** policy قطعی تعارض، merge، retry و idempotency برای همگام‌سازی آفلاین.
