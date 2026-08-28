@@ -30,6 +30,7 @@
  */
 import {accessSync, constants, existsSync, openSync, closeSync, unlinkSync} from 'node:fs';
 import {dirname, isAbsolute, join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 
 /** Strip the `file:` prefix from a DATABASE_URL, or null when not file-based. */
 export function resolveDbFilePath(databaseUrl = process.env.DATABASE_URL ?? '') {
@@ -94,8 +95,7 @@ export function checkDbWritable(databaseUrl = process.env.DATABASE_URL) {
 
 // CLI entry — runs when executed directly (Docker CMD wrapper).
 const isDirectRun =
-  typeof process.argv[1] === 'string' &&
-  import.meta.url === new URL(`file://${process.argv[1]}`).href.replace(/\/\//, 'file:///');
+  typeof process.argv[1] === 'string' && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isDirectRun) {
   const result = checkDbWritable();
   if (result.ok) {
