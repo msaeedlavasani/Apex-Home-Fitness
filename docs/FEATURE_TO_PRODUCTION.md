@@ -241,3 +241,32 @@ See `docs/BRANCHING_POLICY.md` — hotfix section. `EMERGENCY_OVERRIDE = YES`,
 `OWNER_AUTHORIZED = YES`, `REASON = …`, smallest fix, focused CI, immutable
 build, rollback, deploy, real acceptance, checkpoint, immediate merge-back,
 verify remote main, retire hotfix branch, incident report.
+
+## T. SOURCE-CHANGE ACCOUNTING
+
+Reports and checkpoints MUST distinguish four independent facts:
+
+```
+APPLICATION_SOURCE_CHANGED     — did the code tree change? (YES even for
+                                 compile-time/type-only changes)
+RUNTIME_BEHAVIOR_CHANGED       — is an intended runtime behavior change?
+PRODUCTION_SOURCE_CHANGED      — did the source OF THE PRODUCTION ARTIFACT
+                                 change?
+PRODUCTION_MUTATED             — was Production itself modified?
+```
+
+A compile-time/type-only source change (e.g. aligning a contract field to a
+branded identity type) is `APPLICATION_SOURCE_CHANGED = YES` even when
+`RUNTIME_BEHAVIOR_CHANGED = NO`. Never report `SOURCE_CHANGED = NO` merely
+because the intended runtime behavior is unchanged.
+
+Reference classification for the Governance v2 merge resolution:
+
+```
+APPLICATION_SOURCE_CHANGED: YES — merge-resolution/type-level canonical
+                            identity alignment (SessionExercise.exerciseId/
+                            slug → branded ExerciseId/ExerciseSlug)
+RUNTIME_BEHAVIOR_CHANGED:  NO intended runtime behavior change
+PRODUCTION_SOURCE_CHANGED: NO
+PRODUCTION_MUTATED:        NO
+```

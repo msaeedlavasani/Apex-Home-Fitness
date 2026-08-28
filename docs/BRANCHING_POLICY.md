@@ -24,11 +24,16 @@ A previous independently deployable task is **CLOSED** only when ALL hold:
 
 ## C. PRE-TASK MAINLINE GATE
 
-Before changing application source for a new task, record:
+Before changing application source for a new task, resolve the ACTUAL remote
+state dynamically (Git is authoritative for current HEAD — `CURRENT_STATE.md`
+is not) and record:
 
 ```
+git fetch <authoritative-remote> main
+ACTUAL_REMOTE_MAIN_HEAD=<resolved SHA>
 CURRENT_VERIFIED_PRODUCTION_CHECKPOINT
-REMOTE_MAIN_HEAD
+CURRENT_MAINLINE_BASELINE_COMMIT        (from CURRENT_STATE.md)
+MAINLINE_CLASSIFICATION                 (see below)
 PREVIOUS_COMPLETED_BRANCH
 PREVIOUS_BRANCH_MERGED_TO_MAIN
 REMOTE_MAIN_VERIFIED
@@ -36,6 +41,13 @@ PREVIOUS_BRANCH_RETIRED
 WORKTREE_CLEAN
 NEW_TASK_BRANCH_BASE
 ```
+
+Compare `ACTUAL_REMOTE_MAIN_HEAD` with the documented baseline:
+
+- `MATCH` — no commits since the baseline.
+- `EXPECTED_DOCS_ONLY_ADVANCE` — only `docs/**` advanced.
+- `EXPECTED_INTEGRATION_ADVANCE` — a verified, recorded task integration.
+- `UNEXPECTED_DRIFT` — **STOP**; inspect before any task.
 
 If any mandatory condition fails: `PRE_TASK_GATE = FAIL` and no application
 development begins.
@@ -83,6 +95,10 @@ Important:
 - `PRODUCTION_PASS != CLOSED`. CLOSED requires mainline integration and
   branch lifecycle completion.
 - `DEPLOYED` means the artifact is running; it is NOT a quality statement.
+- `APPLICATION_SOURCE_CHANGED` is a factual code-tree statement, not a
+  behavior statement: a compile-time/type-only source change is still
+  `APPLICATION_SOURCE_CHANGED = YES` even when `RUNTIME_BEHAVIOR_CHANGED =
+  NO` (see `FEATURE_TO_PRODUCTION.md` — source-change accounting).
 
 Every task records:
 
@@ -125,10 +141,11 @@ preparation, Production acceptance, checkpoint recording, mainline merge-back.
 
 ## Enforcement status
 
-GitHub branch protection on `main` could not be verified from the available
-tooling during the Governance v2 checkpoint (API returned
-`Requires authentication`). Treat the following as repository governance debt
-until an Owner/admin confirms or enables them:
+`BRANCH_PROTECTION_VERIFICATION = NOT_VERIFIABLE` — GitHub branch protection on
+`main` could not be verified from the available tooling during the Governance
+v2 checkpoint (API returned `Requires authentication`); do NOT claim it is
+enabled. Treat the following as repository governance debt until an
+Owner/admin confirms or enables them:
 
 - block force pushes to `main`
 - block branch deletion of `main`

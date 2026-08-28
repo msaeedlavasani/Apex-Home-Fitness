@@ -99,6 +99,12 @@ stale `.next`, `node_modules`, generated clients, temporary diagnostics,
 uncommitted source, or old Docker build contexts to contaminate release
 evidence.
 
+Source-change accounting: `APPLICATION_SOURCE_CHANGED` is a code-tree fact,
+not a behavior statement — a compile-time/type-only change is still
+`APPLICATION_SOURCE_CHANGED = YES` even when `RUNTIME_BEHAVIOR_CHANGED =
+NO`. Reports must also distinguish `PRODUCTION_SOURCE_CHANGED` from
+`PRODUCTION_MUTATED` (see `FEATURE_TO_PRODUCTION.md` §T).
+
 ### RULE 5 — BUILD-TIME CONFIG
 For frameworks such as Next.js where `NEXT_PUBLIC_*` values can be compiled
 into artifacts, runtime environment inspection is NOT sufficient. Release
