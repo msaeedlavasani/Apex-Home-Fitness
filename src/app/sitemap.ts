@@ -4,7 +4,9 @@ import type {MetadataRoute} from 'next';
  * Production origin used when `NEXT_PUBLIC_SITE_URL` is not configured.
  * Keep in sync with the value set in production env (see .env.example).
  */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://apexfit.app';
+import {resolveSiteUrl} from '@/lib/siteUrl';
+
+const SITE_URL = resolveSiteUrl();
 
 /** Locales emitted by `src/i18n/routing.ts`. */
 const LOCALES = ['en', 'fa'] as const;
