@@ -130,6 +130,14 @@ Rollback must be practical, not theoretical.
 - Transfer the exact locally validated immutable artifact
   (`docker save | gzip | ssh <host> 'gunzip | docker load'`)
 - **Verify the remote loaded image ID equals the locally validated image ID**
+- **SQLite volume ownership:** the runner image runs as `nextjs` (uid 100).
+  If the DB volume was (re)created by a root process, restore ownership so
+  the app can write — e.g. `docker run --rm -v <volume>:/data alpine chown -R
+  100:101 /data` (compose's `migrate` service does this automatically). The
+  image's startup preflight (`scripts/preflight-db.mjs`) fails fast with an
+  actionable message if the volume is not writable. A read-only volume makes
+  every DB write (OTP ledger, user sync, program save) fail while HTTP smoke
+  stays green — see `docs/PITFALLS/`.
 - Preserve topology unless changing it is explicitly part of the task
 - Preserve previous container (rename, do not delete) until stabilization
 

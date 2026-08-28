@@ -59,6 +59,10 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/prisma ./prisma
 # Prisma client engines are not traced by the standalone bundler — ship them.
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+# DB volume writability preflight — fails fast at boot when the SQLite volume
+# is not writable by the nextjs user (AUTH-FIX-01: a root-owned volume silently
+# made every DB write fail while HTTP smoke stayed green).
+COPY --from=build /app/scripts/preflight-db.mjs ./scripts/preflight-db.mjs
 
 # Ensure the database directory is writable by the nextjs user.
 USER root
@@ -71,4 +75,6 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-CMD ["node", "server.js"]
+# Preflight before serving: verifies the SQLite volume is writable, then execs
+# the real server so node stays PID 1 (signal handling preserved).
+CMD ["sh", "-c", "node scripts/preflight-db.mjs && exec node server.js"]
