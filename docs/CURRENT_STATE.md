@@ -13,14 +13,14 @@ CURRENT_PRODUCTION_BUILD_ID:           W9SvU21TmqkpMtwQ_VWUm
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data
 CURRENT_DB_MIGRATION_COUNT:            12
-CURRENT_MAIN_HEAD:                     (see PRODUCTION_CHECKPOINTS / last integration)
+CURRENT_MAIN_HEAD:                     00ced463391de5f8fdccca6c41522e5802b47a85
 ACTIVE_TASK:                           NONE
-ACTIVE_BRANCH:                         main (after Governance v2 integration)
-PREVIOUS_COMPLETED_TASK:               R6 + GOVERNANCE v1
-PREVIOUS_COMPLETED_BRANCH:             fix/s02-rsc-render (RETIRED after integration)
+ACTIVE_BRANCH:                         main
+PREVIOUS_COMPLETED_TASK:               R6 + GOVERNANCE v1/v2 + mainline integration
+PREVIOUS_COMPLETED_BRANCH:             fix/s02-rsc-render (RETIRED)
 NEXT_AUTHORIZED_TASK:                  AUTH-FIX-01
 NEXT_EXPECTED_BRANCH:                  fix/auth-login-production
-LAST_UPDATED:                          2026-08-28 (Governance v2)
+LAST_UPDATED:                          2026-08-28 (Governance v2 — mainline integrated)
 ```
 
 ## Notes
