@@ -1,5 +1,7 @@
 # راهنمای انتشار Apex Home Fitness
 
+> **SUPERSEDED (فقط برای روند Production release):** روند استقرار Production اکنون با تصویر immutable از کامیت دقیق، طبق `docs/RELEASE_POLICY.md` (قوانین) و `docs/FEATURE_TO_PRODUCTION.md` (runbook) انجام می‌شود و چک‌پوینت‌های تأییدشده در `docs/PRODUCTION_CHECKPOINTS.md` ثبت می‌شوند. بخش‌های `rsync`/`docker compose up --build` این فایل برای روند release فعلی منسوخ است؛ این فایل همچنان مرجع جزئیات Docker، reverse proxy، PWA/TWA و انتشار Android در Google Play باقی می‌ماند.
+
 این فایل تنها مرجع انتشار PWA/TWA و انتشار Android در Google Play است. جزئیات API در `docs/AI_API.md`، آمادگی launch احراز هویت OTP در `docs/OTP_LAUNCH_READINESS.md` و وضعیت تسک‌ها در `docs/TASKS.md` نگهداری می‌شود.
 
 ## وضعیت فعلی انتشار

@@ -5,6 +5,10 @@
 | موضوع | سند مرجع | کاربرد |
 |---|---|---|
 | قوانین agent | [`../AGENTS.md`](../AGENTS.md) | رفتار و مرزهای agent توسعه |
+| سیاست انتشار | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) | قوانین Task → Production و checkpoint هر تسک |
+| چرخه Feature → Production | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) | runbook اجرایی دقیق از تعریف تسک تا checkpoint تولید |
+| چک‌پوینت‌های تولید | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) | ledger چک‌پوینت‌های تأییدشده‌ی Production |
+| درس‌های تکرارپذیر (Pitfalls) | [`PITFALLS/`](PITFALLS/) | درس‌های حوادث واقعی (build-time config، HTTP 200 و…) |
 | قرارداد APIهای AI و analytics | [`AI_API.md`](AI_API.md) | request/response، خطاها و محدودیت‌ها |
 | قالب گزارش تغییر | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | قالب PR و handoff برای agentها |
 | توسعه‌ی خودکار | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | چرخه‌ی امن تغییر، validation و release |
@@ -20,6 +24,7 @@
 
 ## قانون به‌روزرسانی
 
+- **قبل از شروع هر تسک وابسته، حتماً `RELEASE_POLICY.md` و `PRODUCTION_CHECKPOINTS.md` (چک‌پوینت فعلی تولید) را بخوانید.**
 - تغییر رفتار API، auth، env یا deployment باید سند مرجع همان ردیف را به‌روزرسانی کند.
 - `README.md` فقط راهنمای شروع و نمای کلی است و محل ثبت جزئیات قرارداد نیست.
 - `HANDOFF.md` snapshot عملیاتی است؛ تاریخچه‌ی کامل batchها فقط در `TASKS.md` ثبت می‌شود.

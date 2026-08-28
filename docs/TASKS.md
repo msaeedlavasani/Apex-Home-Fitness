@@ -2,6 +2,13 @@
 
 این فایل مرجع واحد وضعیت کارها، بدهی فنی و تاریخچه batchهاست. روند اجرای هر batch در `docs/HANDOFF.md` و چک‌لیست انتشار در `docs/RELEASING.md` نگهداری می‌شود.
 
+## چک‌پوینت‌های تولید (S02 / R6)
+
+- **S02 — PASS** (`60abb2d373983fa781665a0b6301f1ca1f46b357`، image `s02-60abb2d-r1`): رفع site URL با fallback امن (درس: Pitfall build-time config).
+- **R6 — PASS** (`aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `r6-aee28d1`): session contracts — لایه‌ی قرارداد pure/type-only برای موتور session آینده.
+- **CURRENT VERIFIED PRODUCTION CHECKPOINT: R6** — DB بدون تغییر (۱۲ migration، integrity ok). R7 شروع نشده است و فقط پس از تأیید Owner شروع می‌شود.
+- قوانین/runbook/ledger: `docs/RELEASE_POLICY.md`، `docs/FEATURE_TO_PRODUCTION.md`، `docs/PRODUCTION_CHECKPOINTS.md`.
+
 ## وضعیت batchها
 
 - **Batch 8:** بهینه‌سازی بصری، Design System، پیشنهاد AI، TWA و SEO — تکمیل شد.
