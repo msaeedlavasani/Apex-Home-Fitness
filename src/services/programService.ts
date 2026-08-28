@@ -77,6 +77,7 @@ import {
 
 import { prisma } from '../lib/prisma';
 import { isRestDay } from '../lib/ai/restDays';
+import { CANONICAL_CATALOG, resolveWithAmbiguity } from '../lib/exercise';
 import {
   PERSIST_MAX_WAIT_MS,
   PERSIST_TIMEOUT_MS,
@@ -319,6 +320,7 @@ function buildInstructions(ex: AiExercise): Prisma.InputJsonValue {
 
 export interface ProgramExerciseDraft {
   exerciseName: string;
+  slug?: string;
   order: number;
   sets: number | null;
   reps: number | null;
@@ -376,7 +378,9 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
       seen.add(ex.name);
       order += 1;
 
-      exercises.push({
+      const resolution = resolveWithAmbiguity({kind: 'name', name: ex.name}, CANONICAL_CATALOG);
+      const resolvedSlug = resolution.status === 'RESOLVED' && resolution.entry ? resolution.entry.slug : undefined;
+      const createInput: Prisma.ExerciseCreateInput = {
         name: ex.name,
         description: ex.instruction_cue || `AI-generated exercise: ${ex.name}.`,
         category: methodToCategory(ex.method, ex.equipment),
@@ -388,10 +392,13 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
         restSeconds: ex.rest_seconds,
         instructions: buildInstructions(ex),
         imageUrl: null,
-      });
+      };
+      if (resolvedSlug) createInput.slug = resolvedSlug;
+      exercises.push(createInput);
 
       programExercises.push({
         exerciseName: ex.name,
+        slug: resolvedSlug,
         order,
         sets: ex.sets,
         reps: parseReps(ex.reps),
@@ -560,14 +567,25 @@ async function persistProgramTransaction(
 ): Promise<ProgramWithDetails> {
   const draft = buildProgramDraft(input);
 
-  // 1) Exercises — create-if-missing (upsert by unique name with an empty
-  //    update so curated seed rows are never overwritten).
+  // 1) Exercises — best-effort canonical identity, with legacy name fallback.
+  const exerciseIdByKey = new Map<string, string>();
   for (const exercise of draft.exercises) {
-    await tx.exercise.upsert({
-      where: {name: exercise.name},
-      update: {},
-      create: exercise,
-    });
+    if (!exercise.slug) {
+      const row = await tx.exercise.upsert({where: {name: exercise.name}, update: {}, create: exercise, select: {id: true, name: true, slug: true}});
+      exerciseIdByKey.set(row.name, row.id);
+      continue;
+    }
+    const canonical = await tx.exercise.findUnique({where: {slug: exercise.slug}, select: {id: true, name: true, slug: true}});
+    if (canonical) { exerciseIdByKey.set(canonical.name, canonical.id); exerciseIdByKey.set(canonical.slug!, canonical.id); continue; }
+    try {
+      const row = await tx.exercise.upsert({where: {name: exercise.name}, update: {slug: exercise.slug}, create: exercise, select: {id: true, name: true, slug: true}});
+      exerciseIdByKey.set(row.name, row.id); if (row.slug) exerciseIdByKey.set(row.slug, row.id);
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
+      const {slug: _slug, ...legacy} = exercise;
+      const row = await tx.exercise.upsert({where: {name: exercise.name}, update: {}, create: legacy, select: {id: true, name: true, slug: true}});
+      exerciseIdByKey.set(row.name, row.id);
+    }
   }
 
   // 2) Program — the user's current program (latest) is replaced IN PLACE;
@@ -614,17 +632,10 @@ async function persistProgramTransaction(
 
   // 3) ProgramExercise links with the AI prescription, in program order.
   if (draft.programExercises.length > 0) {
-    const names = Array.from(new Set(draft.programExercises.map((row) => row.exerciseName)));
-    const exercises = await tx.exercise.findMany({
-      where: {name: {in: names}},
-      select: {id: true, name: true},
-    });
-    const exerciseIdByName = new Map(exercises.map((e) => [e.name, e.id]));
-
     await tx.programExercise.createMany({
       data: draft.programExercises.map((row) => ({
         programId: program.id,
-        exerciseId: exerciseIdByName.get(row.exerciseName) as string,
+        exerciseId: (row.slug ? exerciseIdByKey.get(row.slug) : undefined) ?? exerciseIdByKey.get(row.exerciseName) as string,
         order: row.order,
         sets: row.sets,
         reps: row.reps,

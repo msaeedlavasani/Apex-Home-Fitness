@@ -118,6 +118,8 @@ model WeightEntry {
 // e.g. ["yoga mat"], ["resistance band", "pull-up bar"], [].
 model Exercise {
   id              String           @id @default(cuid())
+  slug            String?          @unique
+  faName          String?
   name            String           @unique
   description     String
   category        ExerciseCategory
