@@ -6,9 +6,9 @@
 
 - **S02 — PASS** (`60abb2d373983fa781665a0b6301f1ca1f46b357`، image `s02-60abb2d-r1`): رفع site URL با fallback امن (درس: Pitfall build-time config).
 - **R6 — PASS** (`aee28d12e2368206e2d9f788afc2ecd19983e5f6`، image `r6-aee28d1`): session contracts — لایه‌ی قرارداد pure/type-only برای موتور session آینده.
-- **CURRENT VERIFIED PRODUCTION CHECKPOINT: R6** — DB بدون تغییر (۱۲ migration، integrity ok).
+- **CURRENT VERIFIED PRODUCTION CHECKPOINT: AUTH-FIX-01** — PASS / CLOSED; DB بدون تغییر (۱۲ migration، integrity ok).
 - **Governance v2:** قوانین برنچ/CI یکپارچه‌سازی با `main` در حال تکمیل است؛ پس از آن `fix/s02-rsc-render` RETIRED می‌شود (بدون تغییر چک‌پوینت Production).
-- **تسک بعدی مجاز (پس از تأیید Owner):** `AUTH-FIX-01` (برنچ پیشنهادی `fix/auth-login-production`) — ورود واقعی با provider؛ FEATURE_ACCEPTANCE واقعی Production الزامی. R7 فقط پس از AUTH-FIX-01 و تأیید Owner.
+- **تسک بعدی مجاز:** `AUTH-PERF-01` (برنچ پیشنهادی `fix/auth-perf-production-degradation`) — بررسی evidence-backed افت performance، persistence و parity زبان؛ بدون فرض root cause. R7 شروع نشده و مجاز نیست.
 - قوانین/runbook/ledger/وضعیت: `docs/RELEASE_POLICY.md`، `docs/FEATURE_TO_PRODUCTION.md`، `docs/BRANCHING_POLICY.md`، `docs/PRODUCTION_CHECKPOINTS.md`، `docs/CURRENT_STATE.md`.
 
 ## وضعیت batchها
