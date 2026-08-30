@@ -48,6 +48,7 @@
 | قرارداد محیط (env) | [`../.env.example`](../.env.example) | AUTHORITATIVE؛ توسط `tests/otp-launch-readiness.test.ts` بررسی می‌شود |
 | CI و E2E | [`CI.md`](CI.md) | pipeline، retry و انتخاب تست هدفمند |
 | انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release (روند release فعلی: `RELEASE_POLICY.md` + `FEATURE_TO_PRODUCTION.md`) |
+| گاردریل اجرایی تحویل | [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) | registry قابل‌اجرا، state machine، Release Manifest، WIP control و قرارداد autonomous handoff |
 | احراز هویت و launch | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) | env، امنیت OTP، Go/No-Go و smoke test |
 | وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی، Production context و قراردادهای حساس |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |
