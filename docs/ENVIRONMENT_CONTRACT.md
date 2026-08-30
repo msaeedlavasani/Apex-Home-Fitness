@@ -15,10 +15,12 @@ Legend:
 ## Rule: build-time vs runtime
 
 `NEXT_PUBLIC_*` values are compiled into the Next.js artifact at build time.
-
-**Runtime presence does NOT prove build-time compiled configuration was
-correct.** (Lesson from the S02 site-URL incident — see
-[`PITFALLS/NEXTJS-BUILDTIME-PUBLIC-URL-RSC-FAILURE.md`](PITFALLS/NEXTJS-BUILDTIME-PUBLIC-URL-RSC-FAILURE.md).)
+Runtime container injection is **not** sufficient to repair a bundle built
+without them. The build-time public values must be supplied as non-empty Docker
+build args and independently validated in the immutable artifact; runtime
+presence does NOT prove compiled correctness. Never pass server secrets such as
+`SUPABASE_SERVICE_ROLE_KEY` or `SMS_IR_API_KEY` as public build args. See
+[`PITFALLS/NEXTJS-BUILDTIME-PUBLIC-CONFIG-DRIFT.md`](PITFALLS/NEXTJS-BUILDTIME-PUBLIC-CONFIG-DRIFT.md).
 
 Report config state only as: `PRESENT_VALID` / `PRESENT_EMPTY` / `ABSENT` /
 `INVALID`. Never print values.
@@ -28,8 +30,8 @@ Report config state only as: `PRESENT_VALID` / `PRESENT_EMPTY` / `ABSENT` /
 | NAME | Kind | Visibility | Presence | Fallback / Notes | Validation method |
 |---|---|---|---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | BUILD_TIME | PUBLIC | REQUIRED in prod | Docker build arg; empty/invalid falls back to `https://apexfit.app` via `src/lib/siteUrl.ts` | resolver unit tests: empty / malformed / valid |
-| `NEXT_PUBLIC_SUPABASE_URL` | BUILD_TIME | PUBLIC | OPTIONAL | inlined into client bundle | shape check `http(s)://` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | BUILD_TIME | PUBLIC | OPTIONAL | inlined into client bundle | presence-only (non-empty) |
+| `NEXT_PUBLIC_SUPABASE_URL` | BUILD_TIME | PUBLIC | REQUIRED in prod | Docker build arg; inlined into client bundle | non-empty + `http(s)://` shape check |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | BUILD_TIME | PUBLIC | REQUIRED in prod | Docker build arg; inlined into client bundle | presence-only (non-empty), never print value |
 | `DATABASE_URL` | RUNTIME | SECRET | REQUIRED | SQLite `file:/data/app.db` in container; `file:./ci.db` in CI | runtime shape check `file:` prefix; DB integrity/migration checks |
 | `SUPABASE_SERVICE_ROLE_KEY` | RUNTIME | SECRET | OPTIONAL | avatar storage signing; absent → data-URL fallback | presence-only |
 | `AUTH_OTP_MODE` | RUNTIME | SECRET(ish) | OPTIONAL | `mock` vs real provider routing | presence + allowed values |

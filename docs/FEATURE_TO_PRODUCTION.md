@@ -87,10 +87,18 @@ Do not repeatedly run expensive full E2E suites after every small edit.
 - Use the project lockfile and the established npm registry
   (`https://package-mirror.liara.ir/repository/npm/` for Iranian deployments)
 - Preserve the known Production `NEXT_PUBLIC_*` build configuration without
-  printing secret values
-- Record immutable identity: `IMAGE_TAG`, `IMAGE_ID`, `NEXT_BUILD_ID`
+  printing secret values. Before building, require non-empty build args for
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+  `NEXT_PUBLIC_SITE_URL` where applicable; fail/stop the release if required
+  args are empty.
+- Keep build-time public config separate from runtime server config/secrets;
+  never pass `SUPABASE_SERVICE_ROLE_KEY`, `SMS_IR_API_KEY`, or other secrets as
+  public build args.
+- Record immutable identity: `IMAGE_TAG`, `IMAGE_ID`, `NEXT_BUILD_ID`, and
+  architecture.
 - Verify build-time config (Rule 5) — runtime env inspection is NOT sufficient
-  for `NEXT_PUBLIC_*` values compiled into the artifact
+  for `NEXT_PUBLIC_*` values compiled into the artifact. Include the relevant
+  real-browser feature flow before Production acceptance.
 
 ## G. LOCAL PRODUCTION-MODE GATE
 
@@ -127,8 +135,10 @@ Rollback must be practical, not theoretical.
 
 ## J. CONTROLLED DEPLOYMENT
 
-- Transfer the exact locally validated immutable artifact
-  (`docker save | gzip | ssh <host> 'gunzip | docker load'`)
+- Transfer the exact locally validated immutable artifact using a writable
+  temporary path such as `/tmp` when SCP is required
+  (`docker save | gzip | ssh <host> 'gunzip | docker load'`). Do not broaden
+  protected deployment-directory or `.env` permissions merely for transfer.
 - **Verify the remote loaded image ID equals the locally validated image ID**
 - **SQLite volume ownership:** the runner image runs as `nextjs` (uid 100).
   If the DB volume was (re)created by a root process, restore ownership so
@@ -140,6 +150,8 @@ Rollback must be practical, not theoretical.
   stays green — see `docs/PITFALLS/`.
 - Preserve topology unless changing it is explicitly part of the task
 - Preserve previous container (rename, do not delete) until stabilization
+- Change only the application image reference for an artifact-only release;
+  recreate only the application service and preserve the DB volume.
 
 ## K. PRODUCTION ACCEPTANCE
 
@@ -147,6 +159,11 @@ Rollback must be practical, not theoretical.
   errors, `requestfailed`, >= 500 responses)
 - Test the full route matrix relevant to the release
 - HTTP-only smoke is insufficient for browser-facing releases (Rule 6)
+- Correlate browser/network outcomes with server logs; no crash does not prove
+  authentication/session establishment succeeded.
+- If the Playwright package exists but its browser executable is unavailable,
+  classify this as a test-harness/execution-environment blocker, not an
+  application failure; record it and use approved manual acceptance if needed.
 
 ## L. DELAYED ACCEPTANCE
 
