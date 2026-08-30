@@ -11,7 +11,9 @@
 
 | موضوع | سند مرجع | کاربرد / وضعیت |
 |---|---|---|
-| قوانین agent (رفتار و مرزها) | [`../AGENTS.md`](../AGENTS.md) | AUTHORITATIVE — اولویت منابع در §۱ همان فایل |
+| قوانین agent (رفتار و مرزها) | [`../AGENTS.md`](../AGENTS.md) | AUTHORITATIVE — رفتار agent؛ precedence/read order در `governance/DOCUMENTATION-GOVERNANCE.md` |
+| precedence و read order | [`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md) | مرجع واحد authority graph و ترتیب مطالعه؛ بدون تکرار policy |
+| precedence و read order | [`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md) | مرجع واحد authority graph و ترتیب مطالعه؛ بدون تکرار policy |
 | سیاست انتشار (authoritative) | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) | قوانین Task → Production، اولویت مستندات، قوانین ۱–۱۵ |
 | چرخه Feature → Production | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) | runbook اجرایی دقیق از تعریف تسک تا checkpoint تولید و CLOSED شدن |
 | سیاست برنچ | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) | چرخه‌ی عمر برنچ، closure، hotfix، مدل وضعیت تسک |
@@ -20,8 +22,8 @@
 | چک‌پوینت‌های تولید | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) | ledger چک‌پوینت‌های تأییدشده‌ی Production |
 | ledger حوادث Production | [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md) | فهرست تاریخی حادثه → outcome → Pitfall؛ بدون تکرار گزارش کامل |
 | درس‌های تکرارپذیر (Pitfalls) | [`PITFALLS/`](PITFALLS/) | درس‌های حوادث واقعی (build-time config، HTTP 200 و…) |
-| سیستم توسعه‌ی خودکار (فرایند) | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | فرایند/workflow توسعه — مکمل AGENTS.md، نه جایگزین آن |
-| قالب گزارش تغییر | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | AUTHORITATIVE قالب change report |
+| سیستم توسعه‌ی خودکار (فرایند) | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | SUPPORTING workflow؛ authority در AGENTS/governance/release docs |
+| قالب گزارش/تحویل | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | AUTHORITATIVE change + lifecycle handoff contract |
 | محصول: ویژن سطح‌بالا | [`product/PRODUCT-VISION.md`](product/PRODUCT-VISION.md) | AUTHORITATIVE — CURRENT (تمایز CURRENT / DIRECTION / PLANNED) |
 | محصول: تجربه تمرین V2 (ویژن) | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) | وضعیت: PRODUCT / UX VISION — NOT YET IMPLEMENTED |
 | محصول: سوالات باز تجربه تمرین V2 | [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) | سوالات باز محصول/معماری برای صاحب محصول |
@@ -48,7 +50,7 @@
 | قرارداد محیط (env) | [`../.env.example`](../.env.example) | AUTHORITATIVE؛ توسط `tests/otp-launch-readiness.test.ts` بررسی می‌شود |
 | CI و E2E | [`CI.md`](CI.md) | pipeline، retry و انتخاب تست هدفمند |
 | انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release (روند release فعلی: `RELEASE_POLICY.md` + `FEATURE_TO_PRODUCTION.md`) |
-| گاردریل اجرایی تحویل | [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) | registry قابل‌اجرا، state machine، Release Manifest، WIP control و قرارداد autonomous handoff |
+| گاردریل اجرایی تحویل | [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) | SUPPORTING registry تابع governance برای check/gate mapping و Release Manifest |
 | احراز هویت و launch | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) | env، امنیت OTP، Go/No-Go و smoke test |
 | وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی، Production context و قراردادهای حساس |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |

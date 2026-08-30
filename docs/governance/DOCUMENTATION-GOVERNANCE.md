@@ -89,31 +89,41 @@ Two governing rules:
 
 ## 4. Authority hierarchy
 
+This is the single precedence graph for documentation and delivery decisions.
+Verified evidence describes reality; it does not authorize unsafe changes.
+`AGENTS.md` owns agent behavior, this document owns documentation governance,
+and `RELEASE_POLICY.md` owns normative release requirements. Other documents
+must link here rather than define a competing global hierarchy.
+
 Preserves and makes explicit `AGENTS.md` §1:
 
 ```text
-1. Production / Security safety constraints + current code & configuration
-   (schema.prisma, .env.example, next.config.mjs, workflows, Docker files)
+1. Verified runtime/code/config evidence (including workflows, Docker files,
+   schema.prisma, and .env.example) — evidence of what exists, not permission
+   to violate safety or product policy
         ↓
-2. Accepted ADRs                      (docs/adr/ — mechanism; none accepted yet)
+2. Accepted ADRs                      (docs/adr/ — accepted architecture decisions)
         ↓
 3. AGENTS.md                          (agent behavior / repository development rules)
         ↓
-4. Authoritative domain contracts
+4. Authoritative governance and release policy
+   (this document, docs/RELEASE_POLICY.md, docs/BRANCHING_POLICY.md)
+        ↓
+5. Authoritative domain contracts
    (docs/AI_API.md, docs/ASSETS.md, docs/DESIGN_SYSTEM.md, prisma/schema.prisma,
     .env.example)
         ↓
-5. Product / Feature specifications
+6. Product / Feature specifications
    (docs/product/PRODUCT-VISION.md, docs/product/WORKOUT-EXPERIENCE-V2.md,
     docs/TRANSFORMATION_ROADMAP.md — each carries its own status)
         ↓
-6. Operational runbooks / current handoff
+7. Operational runbooks / current handoff
    (docs/HANDOFF.md, docs/RELEASING.md, docs/OTP_LAUNCH_READINESS.md)
         ↓
-7. Backlog / planning documents
+8. Backlog / planning documents
    (docs/TASKS.md, docs/CI.md)
         ↓
-8. Historical documentation
+9. Historical documentation
    (docs/EXECUTION_ROADMAP.md — archive only)
 ```
 
@@ -133,7 +143,7 @@ archived or superseded document is read as current instructions:
    `docs/AI_API.md` (AI/API), `docs/ASSETS.md` (media/offline),
    `docs/OTP_LAUNCH_READINESS.md` (auth/launch), `docs/RELEASING.md`
    (deployment), `prisma/schema.prisma` (data);
-5. relevant accepted ADR(s) — `docs/adr/` (none accepted yet);
+5. relevant accepted ADR(s) — `docs/adr/` (currently 0001–0003);
 6. `docs/CI.md` — validation policy before running tests;
 7. current `docs/HANDOFF.md` — operational snapshot;
 8. current `docs/TASKS.md` — backlog/status;
@@ -143,7 +153,9 @@ archived or superseded document is read as current instructions:
 10. historical material only when needed — `docs/EXECUTION_ROADMAP.md`.
 
 This list lives here (authoritative) and is pointed to from `docs/INDEX.md` and
-`AGENTS.md` §8; it is intentionally not duplicated in full elsewhere.
+`AGENTS.md` §8; it is intentionally not duplicated in full elsewhere. The
+canonical agent contract is task-delta based: prompts provide task-specific
+scope and acceptance, while stable governance is loaded from this repository.
 
 ## 6. Relationship to other governance files
 
@@ -155,12 +167,12 @@ This list lives here (authoritative) and is pointed to from `docs/INDEX.md` and
 | `docs/governance/REPOSITORY-DOCUMENTATION-AUDIT.md` | Audit evidence (historical record) |
 | `docs/governance/DOCUMENTATION-GOVERNANCE-PROPOSAL.md` | Superseded proposal (record) |
 | `docs/governance/DOCUMENTATION-SOURCE-OF-TRUTH-PROPOSAL.md` | Superseded proposal (record) |
-| `docs/adr/README.md`, `docs/adr/ADR-TEMPLATE.md` | ADR mechanism (see below) |
+| `docs/adr/README.md`, `docs/adr/ADR-TEMPLATE.md` | ADR mechanism; accepted decisions are 0001–0003 |
 
 ## 7. ADRs
 
 Architecture decisions are recorded through the ADR mechanism in
 `docs/adr/README.md`. Accepted ADRs rank above domain contracts in the
-hierarchy (§4). There are no accepted ADRs yet; the first real architecture
+hierarchy (§4). Accepted ADRs currently include 0001–0003; future architecture decisions
 decision (e.g. the Workout Experience V2 technical specification) should be
 recorded there.

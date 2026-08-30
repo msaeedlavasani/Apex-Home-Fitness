@@ -1,7 +1,8 @@
 # Task-by-Task Production Checkpoint Policy
 
 This document is the **authoritative high-level release policy** for Apex Home
-Fitness. The operational execution sequence lives in
+Fitness. Authority precedence and document read order are defined once in
+[`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md); this document owns release requirements, not global document authority. The operational execution sequence lives in
 [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md); branch lifecycle rules
 live in [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md); verified checkpoints are
 recorded in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md); the

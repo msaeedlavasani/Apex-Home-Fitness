@@ -1,7 +1,8 @@
 # Branch Lifecycle Policy
 
-Authoritative rules for how task branches are created, integrated, and
-retired. Rules live in [`RELEASE_POLICY.md`](RELEASE_POLICY.md); the execution
+Supporting rules for how task branches are created, integrated, and retired.
+The canonical authority precedence and lifecycle/report terminology are owned
+by `docs/governance/DOCUMENTATION-GOVERNANCE.md` and `docs/RELEASE_POLICY.md`. Rules live in [`RELEASE_POLICY.md`](RELEASE_POLICY.md); the execution
 sequence lives in [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md); the
 verified checkpoint ledger is in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md);
 the current operational state is in [`CURRENT_STATE.md`](CURRENT_STATE.md).
@@ -81,6 +82,10 @@ A branch may remain open across multiple subtasks only when
 documented before continuation. Do not silently bundle tasks.
 
 ## Task lifecycle / status model
+
+The lifecycle below is the canonical Production-bound vocabulary. Guardrail
+registry state names are implementation mappings only; they do not define a
+second lifecycle.
 
 Canonical vocabulary:
 

@@ -1,8 +1,17 @@
 # Executable Delivery Guardrails
 
+## Status and authority
+
+**STATUS: CURRENT — SUPPORTING GUARDRAIL REGISTRY.** Governance authority,
+precedence, lifecycle vocabulary, and report ownership live in
+`docs/governance/DOCUMENTATION-GOVERNANCE.md` and `docs/RELEASE_POLICY.md`.
+This document maps durable Pitfalls to checks/gates; it does not create a
+parallel policy hierarchy. `scripts/guardrail-check.mjs` is the executable
+manifest gate.
+
 ## Purpose
 
-Pitfalls that can be checked are connected to a repository-native check and a blocked lifecycle transition. This document is the policy layer; `scripts/guardrail-check.mjs` is the executable manifest gate.
+Pitfalls that can be checked are connected to a repository-native check and a blocked lifecycle transition.
 
 ## Pitfall → guardrail registry
 
@@ -27,29 +36,34 @@ Production-bound release manifests must be secret-free JSON and contain the fiel
 
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_SITE_URL` are build-time public inputs where applicable. `SUPABASE_SERVICE_ROLE_KEY`, `SMS_IR_API_KEY`, database credentials, tokens, and private keys are runtime/server secrets and must never become public build args or manifest content.
 
-## Canonical state machine
+## Lifecycle mapping
+
+The canonical lifecycle vocabulary is owned by `docs/RELEASE_POLICY.md` and
+`docs/governance/DOCUMENTATION-GOVERNANCE.md`. The sequence below is the
+Production-bound mapping, not a second vocabulary:
 
 ```text
-TASK_ACCEPTED
-→ PREFLIGHT_PASS
-→ IMPLEMENTED
-→ STATIC_VALIDATION_PASS
-→ TARGETED_TESTS_PASS
-→ LOCAL_PROD_BUILD_PASS
-→ LOCAL_PROD_ACCEPTANCE_PASS
-→ RELEASE_MANIFEST_PASS
-→ PRODUCTION_PREFLIGHT_PASS
-→ PRODUCTION_DEPLOYED
-→ PRODUCTION_RUNTIME_PASS
-→ PRODUCTION_BROWSER_ACCEPTANCE_PASS
-→ PRODUCTION_CHECKPOINTED
-→ MAIN_INTEGRATED
-→ MAIN_CI_PASS
-→ BRANCH_RETIRED
-→ CLOSED
+PLANNED → ACTIVE → SOURCE_VALIDATED → BRANCH_CI_PASS → READY_FOR_PRODUCTION
+→ DEPLOYED → PRODUCTION_PASS → MAINLINE_INTEGRATED → CLOSED
 ```
 
-Each deterministic transition is `AUTO`. A failed applicable check is `BLOCKED`. A material product, architecture, security, destructive-data, cost, or scope choice is `HUMAN_GATE`; it must expose `HUMAN_DECISION_REQUIRED=YES`, the precise decision, options, impacts, and recommendation. Docs-only tasks use `node scripts/guardrail-check.mjs <manifest> --docs-only` and do not require Production transitions.
+## Canonical state machine mapping
+
+The canonical lifecycle is owned by `docs/RELEASE_POLICY.md` and
+`docs/governance/DOCUMENTATION-GOVERNANCE.md`:
+
+```text
+PLANNED → ACTIVE → SOURCE_VALIDATED → BRANCH_CI_PASS → READY_FOR_PRODUCTION
+→ DEPLOYED → PRODUCTION_PASS → MAINLINE_INTEGRATED → CLOSED
+```
+
+The checks in this registry map to those transitions; they do not define a
+second lifecycle. Each deterministic transition is `AUTO`. A failed applicable
+check is `BLOCKED`. A material product, architecture, security, destructive-data,
+cost, or scope choice is a `HUMAN_GATE`; it must expose
+`HUMAN_DECISION_REQUIRED=YES`, the precise decision, options, impacts, and
+recommendation. Docs-only tasks use `node scripts/guardrail-check.mjs <manifest>
+--docs-only` and do not require Production transitions.
 
 ## WIP and deployment-debt control
 

@@ -1,10 +1,14 @@
 # Apex Autonomous Development System
 
-> نسخه ۱ — قرارداد داخلی توسعه، نه عامل خودمختار production
+> نسخه ۱ — قرارداد workflow توسعه؛ authority و lifecycle در اسناد canonical ارجاع‌شده است.
 
-این سند یک سیستم توسعه‌ی خودکارِ مختص Apex Home Fitness تعریف می‌کند: فرایند/workflow توسعه (چرخه‌ی تغییر، طبقه‌بندی، validation و انتشار).
+این سند workflow توسعه‌ی مختص Apex Home Fitness را خلاصه می‌کند؛ authority، lifecycle و reporting در اسناد canonical ارجاع‌شده تعریف می‌شوند و این فایل policy موازی ایجاد نمی‌کند.
 
 > **نقش این سند (تفکیک A-05):** `AGENTS.md` مرجع AUTHORITATIVE رفتار agent و قواعد توسعه‌ی ریپو است؛ این سند فقط فرایند/workflow را توصیف می‌کند و در تعارض، `AGENTS.md` بر آن مقدم است. قواعد governance مستندات در `docs/governance/DOCUMENTATION-GOVERNANCE.md` است.
+
+## Authority and consumption
+
+`AGENTS.md` و `docs/governance/DOCUMENTATION-GOVERNANCE.md` مالک رفتار agent و read order هستند. `docs/RELEASE_POLICY.md` مالک قواعد release، `docs/FEATURE_TO_PRODUCTION.md` مالک runbook، و `docs/PITFALL_GUARDRAILS.md` registry تابع guardrail است. این سند workflow مکمل است و نباید این قواعد را دوباره تعریف کند.
 
 ## 1. مرزهای سیستم
 
@@ -19,11 +23,8 @@
 ### غیرمجاز بدون تأیید انسانی
 
 - تغییر secret یا خواندن مقدار آن
-- deploy production، تغییر database یا تغییر سرویس‌های همسایه
+- تغییر database یا تغییر سرویس‌های همسایه خارج از scope
 - فعال‌کردن SMS واقعی یا خاموش‌کردن emergency mock بدون smoke test
-- merge مستقیم به `main` برای تغییرات پرریسک
-- شروع تسک وابسته‌ی بعدی قبل از `PRODUCTION_CHECKPOINT = PASS`
-- ادغام برنچ در main یا retire برنچ قبل از تأیید ancestry و CI
 - حذف فایل مگر اینکه generated، unused و بدون reference بودن آن اثبات شده باشد
 
 ## 2. مدل دانش پروژه
@@ -42,13 +43,17 @@
 | قرارداد env | `docs/ENVIRONMENT_CONTRACT.md` |
 | جزئیات Docker/proxy/PWA/TWA/Android | `docs/RELEASING.md` |
 | governance مستندات و ترتیب مطالعه | `docs/governance/DOCUMENTATION-GOVERNANCE.md` |
-| تصمیم‌های معماری | `docs/adr/` (مکانیزم؛ هنوز ADR پذیرفته‌شده‌ای نیست) |
+| تصمیم‌های معماری | `docs/adr/` (مکانیزم؛ ADRهای پذیرفته‌شده فعلی 0001–0003) |
 | validation | `docs/CI.md` و scripts audit |
 | درس‌های تکرارپذیر | `docs/PITFALLS/` |
 
-هر agent باید ابتدا این منابع را بخواند و اگر تناقضی یافت، قبل از تغییر کد آن را در گزارش خود ثبت کند.
+Agent باید read order canonical در `docs/governance/DOCUMENTATION-GOVERNANCE.md` را دنبال کند و در صورت تناقض، از همان hierarchy پیروی و آن را در گزارش ثبت کند.
 
 ## 3. چرخه‌ی اجرای هر تغییر
+
+این بخش workflow خلاصه‌شده است؛ lifecycle canonical و تعریف `CLOSED` در `docs/RELEASE_POLICY.md` و `docs/governance/DOCUMENTATION-GOVERNANCE.md` مالکیت دارد.
+
+Lifecycle vocabulary و تعریف `CLOSED` در `docs/RELEASE_POLICY.md` و `docs/BRANCHING_POLICY.md` canonical است؛ این بخش فقط workflow را خلاصه می‌کند.
 
 > CI سبز به‌تنهایی به معنی COMPLETE بودن تسک نیست؛ تسک فقط پس از چک‌پوینت Production، ادغام در main و retire برنچ CLOSED می‌شود (Rule 1/2 و BRANCHING_POLICY).
 
