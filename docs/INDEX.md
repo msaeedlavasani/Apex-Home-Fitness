@@ -51,6 +51,7 @@
 | CI و E2E | [`CI.md`](CI.md) | pipeline، retry و انتخاب تست هدفمند |
 | انتشار، bootstrap و rollback | [`RELEASING.md`](RELEASING.md) | AUTHORITATIVE — Docker، npm mirror، Production rebuild, reverse proxy، PWA/TWA و release (روند release فعلی: `RELEASE_POLICY.md` + `FEATURE_TO_PRODUCTION.md`) |
 | گاردریل اجرایی تحویل | [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) | SUPPORTING registry تابع governance برای check/gate mapping و Release Manifest |
+| مصرف machine-readable governance | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) | SUPPORTING runtime checks، profile resolution، context receipt و report validation |
 | احراز هویت و launch | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) | env، امنیت OTP، Go/No-Go و smoke test |
 | وضعیت عملیاتی (Handoff) | [`HANDOFF.md`](HANDOFF.md) | snapshot وضعیت فعلی، Production context و قراردادهای حساس |
 | وضعیت پروژه و backlog | [`TASKS.md`](TASKS.md) | batchها، اولویت‌ها و بدهی فنی |
