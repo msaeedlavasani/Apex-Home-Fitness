@@ -33,6 +33,12 @@ Supported profiles are `DOCS_ONLY`, `CODE_NO_DEPLOY`, `PRODUCTION_BOUND`,
 minimum authoritative documents needed for the task; they do not copy policy
 prose into prompts.
 
+`DOCS_DIRECT_MAIN` is currently a governed branch-lifecycle fast path, not a
+runtime profile accepted by `governance-runtime.mjs`. Its authoritative
+eligibility and exact-SHA Main CI contract live in `BRANCHING_POLICY.md`.
+Machine enforcement may be added only through a separately authorized tooling
+task; documentation-only work must not silently change executable tooling.
+
 ## Context receipt
 
 A session may emit a secret-free JSON receipt containing `TASK_ID`,

@@ -32,7 +32,7 @@
 | Data schema | [`../prisma/schema.prisma`](../prisma/schema.prisma) |
 | Release requirements | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) |
 | Task-to-Production procedure | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) |
-| Branch lifecycle | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) |
+| Branch lifecycle and `DOCS_DIRECT_MAIN` fast path | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) |
 | Deployment operations | [`RELEASING.md`](RELEASING.md) |
 | Validation policy | [`CI.md`](CI.md) |
 | Production checkpoints | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |

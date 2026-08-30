@@ -79,6 +79,13 @@ decision changes them.
     `DEFERRED`, `REJECTED`, or `OPEN`), implementation state, and execution
     authorization. Authorized work must also be promoted explicitly to
     `TASKS.md`; all other persisted decisions remain non-executable.
+13. **Controlled docs-direct-main path** — future strictly documentation-only,
+    low-risk tasks may use `DOCS_DIRECT_MAIN` only under the eligibility,
+    exact-SHA Main CI, reporting, and fail-closed rules in
+    `docs/BRANCHING_POLICY.md`. It is forbidden for application/config/schema/
+    dependency/CI/Production/tooling changes and for machine-consumed
+    Governance changes that alter executable behavior. Existing task branches
+    are completed normally rather than rewritten to use the fast path.
 
 ## 3. Conflict handling
 
