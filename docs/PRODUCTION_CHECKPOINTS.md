@@ -2,7 +2,7 @@
 
 Compact authoritative history of **verified** Production checkpoints. The
 operational runbook is [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md);
-the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md).
+the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-to-Pitfall traceability is indexed in [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md).
 
 > This ledger contains ONLY verified Production checkpoints. Failed or
 > candidate builds MUST NOT be promoted into this ledger.

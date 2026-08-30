@@ -18,6 +18,7 @@
 | وضعیت فعلی (manifest) | [`CURRENT_STATE.md`](CURRENT_STATE.md) | چک‌پوینت فعلی، برنچ فعال، تسک مجاز بعدی — قبل از شروع بخوان |
 | قرارداد env | [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md) | طبقه‌بندی BUILD/RUNTIME، PUBLIC/SECRET — بدون مقدار secret |
 | چک‌پوینت‌های تولید | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) | ledger چک‌پوینت‌های تأییدشده‌ی Production |
+| ledger حوادث Production | [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md) | فهرست تاریخی حادثه → outcome → Pitfall؛ بدون تکرار گزارش کامل |
 | درس‌های تکرارپذیر (Pitfalls) | [`PITFALLS/`](PITFALLS/) | درس‌های حوادث واقعی (build-time config، HTTP 200 و…) |
 | سیستم توسعه‌ی خودکار (فرایند) | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) | فرایند/workflow توسعه — مکمل AGENTS.md، نه جایگزین آن |
 | قالب گزارش تغییر | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) | AUTHORITATIVE قالب change report |
