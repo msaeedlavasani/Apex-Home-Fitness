@@ -13,14 +13,15 @@ CURRENT_PRODUCTION_BUILD_ID:           TfZRMHwm3pBWUW3bBgTZc
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            12
-CURRENT_MAINLINE_BASELINE_COMMIT:      27ef9e8384f697e8079c12efe46941b39c544b91
-ACTIVE_TASK:                           NONE
-ACTIVE_BRANCH:                         main
-PREVIOUS_COMPLETED_TASK:               AUTH-FIX-01 (CLOSED)
-PREVIOUS_COMPLETED_BRANCH:             fix/auth-login-production (RETIRED)
+CURRENT_MAINLINE_BASELINE_COMMIT:      7edfb89697e909cfb78774bf3ae268b211eac934
+ACTIVE_TASK:                           DOCUMENTATION-CONSOLIDATION-01
+ACTIVE_TASK_PROFILE:                   DOCS_ONLY
+ACTIVE_BRANCH:                         docs/documentation-consolidation-01
+PREVIOUS_COMPLETED_TASK:               GOVERNANCE-RUNTIME-01 (CLOSED)
+PREVIOUS_COMPLETED_BRANCH:             fix/governance-runtime-01 (RETIRED)
 NEXT_AUTHORIZED_TASK:                  AUTH-PERF-01
 NEXT_EXPECTED_BRANCH:                  fix/auth-perf-production-degradation
-LAST_UPDATED:                          2026-08-29 (AUTH-FIX-01 lifecycle reconciliation)
+LAST_UPDATED:                          2026-08-31 (DOCUMENTATION-CONSOLIDATION-01 active)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -50,4 +51,7 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
 - **AUTH-FIX-01 Production checkpoint = PASS and lifecycle = CLOSED** (2026-08-29). Root cause: the `apexhomefit_prod_db` volume was root-owned while the app runs as `nextjs` (uid 100), so every DB write failed (`attempt to write a readonly database`). The volume was re-owned to `100:101`, and the image now runs a startup writability preflight (`scripts/preflight-db.mjs`) that fails fast on an unwritable volume. Real login + post-login DB writes verified.
 - AUTH-FIX-01 source commits and checkpoint documentation are integrated into remote `main`; `fix/auth-login-production` is retired locally and remotely.
 - The historical S02 incident is closed; do not reopen its RSC/digest investigation.
-- After AUTH-FIX-01 closes, `NEXT_AUTHORIZED_TASK = AUTH-PERF-01`.
+- `TASKS.md` is the only executable backlog. Advisory documents cannot
+  authorize work.
+- This docs-only task does not alter the verified Production checkpoint. After
+  it closes, `NEXT_AUTHORIZED_TASK = AUTH-PERF-01`.

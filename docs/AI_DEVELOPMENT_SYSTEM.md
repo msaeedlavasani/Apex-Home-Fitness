@@ -33,7 +33,8 @@
 |---|---|
 | مسیر محصول | `README.md`، `docs/product/PRODUCT-VISION.md` و `docs/HANDOFF.md` |
 | ویژن محصول (تمرین V2) | `docs/product/WORKOUT-EXPERIENCE-V2.md` (NOT YET IMPLEMENTED) |
-| backlog و بدهی | `docs/TASKS.md` |
+| کار اجرایی approved/active/blocked/next | `docs/TASKS.md` (تنها backlog اجرایی) |
+| جهت محصول و شواهد رقبا | `docs/TRANSFORMATION_ROADMAP.md` (advisory؛ غیر اجرایی) |
 | auth/OTP و Go-No-Go | `docs/OTP_LAUNCH_READINESS.md` |
 | AI generation contract | `docs/AI_API.md` و `infra/ai/prompts/` |
 | UI و accessibility | `docs/DESIGN_SYSTEM.md` |

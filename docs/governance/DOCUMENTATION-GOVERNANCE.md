@@ -68,6 +68,17 @@ decision changes them.
     recorded for recovery, and the deletion is documented as intentional
     abandonment. This exception is not a shortcut around normal verification;
     `MERGE → VERIFY → DELETE` remains preferred.
+11. **One executable backlog** — `docs/TASKS.md` is the only document that can
+    authorize or sequence executable work. Roadmaps, visions, audits, risk
+    registers, plans, open questions, handoffs, and historical records may
+    advise or preserve decisions, but MUST NOT act as parallel task stores.
+12. **Decision Persistence** — an accepted or deferred owner decision that is
+    not implemented immediately MUST be written to its canonical topic owner
+    before workflow continuation. Chat history, a report, or agent memory alone
+    is not durable product knowledge. Record the decision, status (`ACCEPTED`,
+    `DEFERRED`, `REJECTED`, or `OPEN`), implementation state, and execution
+    authorization. Authorized work must also be promoted explicitly to
+    `TASKS.md`; all other persisted decisions remain non-executable.
 
 ## 3. Conflict handling
 
@@ -117,11 +128,12 @@ Preserves and makes explicit `AGENTS.md` §1:
    (docs/product/PRODUCT-VISION.md, docs/product/WORKOUT-EXPERIENCE-V2.md,
     docs/TRANSFORMATION_ROADMAP.md — each carries its own status)
         ↓
-7. Operational runbooks / current handoff
-   (docs/HANDOFF.md, docs/RELEASING.md, docs/OTP_LAUNCH_READINESS.md)
+7. Current state / executable backlog / operational runbooks
+   (docs/CURRENT_STATE.md, docs/TASKS.md, docs/HANDOFF.md,
+    docs/RELEASING.md, docs/OTP_LAUNCH_READINESS.md)
         ↓
-8. Backlog / planning documents
-   (docs/TASKS.md, docs/CI.md)
+8. Advisory planning / validation policy
+   (docs/TRANSFORMATION_ROADMAP.md, docs/CI.md)
         ↓
 9. Historical documentation
    (docs/EXECUTION_ROADMAP.md — archive only)
@@ -144,20 +156,34 @@ archived or superseded document is read as current instructions:
    `docs/OTP_LAUNCH_READINESS.md` (auth/launch), `docs/RELEASING.md`
    (deployment), `prisma/schema.prisma` (data);
 5. relevant accepted ADR(s) — `docs/adr/` (currently 0001–0003);
-6. `docs/CI.md` — validation policy before running tests;
-7. current `docs/HANDOFF.md` — operational snapshot;
-8. current `docs/TASKS.md` — backlog/status;
-9. relevant product/feature specification —
+6. current `docs/CURRENT_STATE.md` — current manifest;
+7. current `docs/TASKS.md` — the only executable backlog;
+8. `docs/CI.md` — validation policy before running tests;
+9. current `docs/HANDOFF.md` — supporting operational snapshot;
+10. relevant product/feature specification —
    `docs/product/PRODUCT-VISION.md`, `docs/product/WORKOUT-EXPERIENCE-V2.md`,
    `docs/TRANSFORMATION_ROADMAP.md`;
-10. historical material only when needed — `docs/EXECUTION_ROADMAP.md`.
+11. historical material only when needed — `docs/EXECUTION_ROADMAP.md`.
 
 This list lives here (authoritative) and is pointed to from `docs/INDEX.md` and
 `AGENTS.md` §8; it is intentionally not duplicated in full elsewhere. The
 canonical agent contract is task-delta based: prompts provide task-specific
 scope and acceptance, while stable governance is loaded from this repository.
 
-## 6. Relationship to other governance files
+## 6. Canonical ownership boundaries
+
+| Information | Canonical owner | Authorizes execution? |
+|---|---|---|
+| Approved/active/blocked/next task | `docs/TASKS.md` | Yes |
+| Current repository/task/Production manifest | `docs/CURRENT_STATE.md` | No |
+| Handoff context | `docs/HANDOFF.md` | No |
+| Accepted/deferred product direction | Product vision or named feature vision | No |
+| Product advisory/competitor evidence/North Star | `docs/TRANSFORMATION_ROADMAP.md` | No |
+| Accepted architecture decision | Accepted ADR; principles for cross-cutting constraints | No, unless promoted to `TASKS.md` |
+| Architecture stabilization status | Architecture stabilization plan | No |
+| Historical evidence | Explicitly historical/superseded document and Git | No |
+
+## 7. Relationship to other governance files
 
 | File | Role |
 |---|---|
@@ -169,7 +195,7 @@ scope and acceptance, while stable governance is loaded from this repository.
 | `docs/governance/DOCUMENTATION-SOURCE-OF-TRUTH-PROPOSAL.md` | Superseded proposal (record) |
 | `docs/adr/README.md`, `docs/adr/ADR-TEMPLATE.md` | ADR mechanism; accepted decisions are 0001–0003 |
 
-## 7. ADRs
+## 8. ADRs
 
 Architecture decisions are recorded through the ADR mechanism in
 `docs/adr/README.md`. Accepted ADRs rank above domain contracts in the

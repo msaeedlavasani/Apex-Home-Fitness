@@ -95,6 +95,11 @@ PLANNED → ACTIVE → SOURCE_VALIDATED → BRANCH_CI_PASS → READY_FOR_PRODUCT
 (terminal/exceptional: BLOCKED, ROLLED_BACK)
 ```
 
+For non-Production profiles such as `DOCS_ONLY`, inapplicable Production states
+are skipped. Closure requires source validation, required validation, mainline
+integration, a durable report, and branch retirement; it never requires a fake
+Production checkpoint.
+
 Important:
 
 - `PRODUCTION_PASS != CLOSED`. CLOSED requires mainline integration and

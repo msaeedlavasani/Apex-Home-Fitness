@@ -15,9 +15,9 @@ Open Questions document) followed by a technical specification.
   "Workout Logger"-style guided timer (see below); V2 is a design direction, not
   yet implemented.
 - **Relationship to the current workout experience:** V2 is a product evolution
-  of the existing workout player. The current codebase already contains a
-  headless, wall-clock-based workout engine, persistence and audio/haptic cues —
-  V2 builds on those foundations rather than replacing them from scratch.
+  of the existing workout player. S03 has since extracted a pure Session Core
+  behind the React adapter; persistence and audio/haptic presentation seams also
+  exist. V2 builds on those foundations rather than replacing them.
 - **Related document:** [WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md](./WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md)
   — the structured list of open product/architecture questions that must be
   resolved with the product owner before any implementation.
@@ -109,8 +109,9 @@ determining current exercise; determining current set; controlling work, rest
 and transition intervals; countdowns; pause/resume; skip behavior; completion;
 session progress; recovery state.
 
-This is currently a product/architecture direction. It is NOT implemented during
-this task.
+The framework-independent Session Core is now implemented (S03); the V2
+timeline semantics described here are still product direction and are NOT
+implemented or authorized by this document.
 
 ## 7. Program Generator vs Session Engine vs Workout Player
 

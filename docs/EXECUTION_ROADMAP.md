@@ -2,10 +2,10 @@
 
 > ## 🗄️ ARCHIVED — آرشیو (فقط مرجع تاریخی)
 > این سند از برنامه‌ریزی اجرایی قبلی (workstreamهای MUI/OTP/baseline) آرشیو شده است.
-> **جانشین‌ها:** نقشه‌ی قابلیت‌های آینده در
-> [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) و وضعیت batchها در
-> [`TASKS.md`](TASKS.md) نگهداری می‌شود. محتوای زیر برای تاریخچه حفظ شده و دیگر
-> مرجع برنامه‌ریزی نیست.
+> **جانشین‌ها:** advisory محصول در
+> [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) و تنها backlog اجرایی
+> در [`TASKS.md`](TASKS.md) نگهداری می‌شود؛ تاریخچهٔ کامل در Git و گزارش‌های
+> durable است. محتوای زیر فقط evidence تاریخی است و مرجع برنامه‌ریزی نیست.
 
 > وضعیت: ARCHIVED · نسخه ۱ · این سند برنامه‌ریزی است و به‌تنهایی رفتار runtime را تغییر نمی‌دهد.
 

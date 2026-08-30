@@ -10,23 +10,14 @@ current operational state is in [`CURRENT_STATE.md`](CURRENT_STATE.md); the
 environment contract is in [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md);
 and reusable incident lessons live in [`PITFALLS/`](PITFALLS/).
 
-## Documentation precedence
+## Scope and precedence
 
-When documents conflict, the following hierarchy applies (higher wins):
-
-1. `docs/RELEASE_POLICY.md` (this document)
-2. `docs/FEATURE_TO_PRODUCTION.md` (operational runbook)
-3. `docs/BRANCHING_POLICY.md` (branch/task lifecycle)
-4. `docs/CI.md` (validation policy)
-5. `docs/CURRENT_STATE.md` + `docs/PRODUCTION_CHECKPOINTS.md` (current state)
-6. Task-specific authorized prompt/specification (may NARROW task scope, but
-   must NOT silently override repository safety/release policy)
-7. Subsystem docs (`ENVIRONMENT_CONTRACT`, `AI_API`, `OTP_LAUNCH_READINESS`, …)
-8. `docs/HANDOFF.md`, `docs/TASKS.md`
-9. Historical/archived docs
-
-Historical documents never override active policy. Any authorized exception
-must be explicit and recorded.
+The repository-wide authority graph is owned only by
+[`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md).
+Within its assigned domain, this document owns release requirements;
+`FEATURE_TO_PRODUCTION.md` is the procedure, `BRANCHING_POLICY.md` owns branch
+lifecycle, and `CI.md` owns validation selection. `TASKS.md` is the only
+executable backlog. Historical documents never override active policy.
 
 Every independently deployable task must pass, in order:
 

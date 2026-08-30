@@ -6,6 +6,11 @@
 > `docs/governance/DOCUMENTATION-GOVERNANCE.md`. This document describes how
 > repository tooling consumes those contracts; it does not redefine policy.
 
+`docs/TASKS.md` is the only executable backlog. Runtime validation does not
+promote advisory/deferred items into work. Decision Persistence remains a
+documentation-governance requirement even when tooling cannot infer the
+semantic owner of a decision.
+
 ## Runtime checks
 
 Use the existing package scripts:
