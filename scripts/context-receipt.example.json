@@ -1,0 +1,11 @@
+{
+  "TASK_ID": "EXAMPLE-01",
+  "TASK_PROFILE": "CODE_NO_DEPLOY",
+  "READ_FILES": [
+    "AGENTS.md",
+    "docs/INDEX.md",
+    "docs/governance/DOCUMENTATION-GOVERNANCE.md",
+    "docs/CI.md"
+  ],
+  "GOVERNANCE_SHA": "RECORD_AT_RUNTIME"
+}

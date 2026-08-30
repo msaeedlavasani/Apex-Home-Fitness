@@ -62,6 +62,15 @@ jobs:
       env:
         DATABASE_URL: file:./ci.db
 
+    - name: Governance validation
+      run: npm run governance:check
+
+    - name: Guardrail self-tests
+      run: npm run guardrail:test
+
+    - name: Governance runtime tests
+      run: npm run governance:test
+
     - name: Lint
       run: npm run lint
 
