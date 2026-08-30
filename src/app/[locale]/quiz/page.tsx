@@ -286,7 +286,7 @@ export default function QuizPage() {
             aria-label={t('quiz.header.home')}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-apex-primary transition-colors hover:bg-apex-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-focus-ring"
           >
-            <House className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
+            <House className="h-4 w-4" aria-hidden="true" />
             {t('quiz.header.home')}
           </Link>
           <LanguageSwitcher />
