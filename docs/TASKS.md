@@ -32,6 +32,8 @@
 - **Scope:** evidence-backed investigation of reported performance, persistence,
   and EN/FA parity degradation; do not assume a root cause.
 - **Expected branch:** `fix/auth-perf-production-degradation` from current remote `main`.
+- **Auth/launch authority:** [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md);
+  this task must not duplicate or silently change that contract.
 - **Dependency:** `DOCUMENTATION-CONSOLIDATION-01 = CLOSED`.
 - **Production:** any later mutation requires the Production-bound workflow and
   separate evidence; this entry does not authorize a deploy by itself.
