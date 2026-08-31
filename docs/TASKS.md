@@ -10,14 +10,85 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `main` |
-| State | `CLOSED` |
-| Production-bound | `NO` |
+| Active task | `AUTONOMOUS-PROD-OPS-01` |
+| Profile | `RELEASE` |
+| Branch | `feat/autonomous-prod-ops-01` |
+| State | `ACTIVE` |
+| Production-bound | `YES` |
 | Next authorized task | `NONE` |
 
 ## Approved queue
+
+### AUTONOMOUS-PROD-OPS-01 — ACTIVE
+
+- **Authorization:** explicit owner sequencing correction and execution
+  authorization in the 2026-08-31 Apex Home Fit continuation task.
+- **Depends on:** `ADMIN-AUTH-PROD-01` — CLOSED / Production PASS.
+- **Profile / branch:** `RELEASE` / `feat/autonomous-prod-ops-01`, based on the
+  current authoritative `origin/main` after a passing pre-task gate.
+- **Primary acceptance:** one complete authorized Apex Home Fit Production
+  release reaches `CLOSED` without the Owner manually running SSH, sudo,
+  Docker, Compose, migration, provisioning, or deployment commands.
+- **Bounded scope:** implement and validate a narrow allowlisted Production
+  Deployment Capability/Gateway for the canonical Apex Home Fit host and
+  deployment only. It validates approved source identity, consumes protected
+  configuration internally without returning values, builds immutable images
+  deterministically with pinned tooling, preserves the external database
+  volume and ownership, captures rollback evidence before cutover, performs
+  sanitized health/acceptance orchestration, and fails closed on unexpected
+  host/source/image/compose/migration/environment state.
+- **Security constraints:** do not expose secrets or `.env` values; do not make
+  Production `.env` broadly readable; do not grant arbitrary root shell access;
+  every privileged operation must be allowlisted, attributable, bounded, and
+  return sanitized evidence only.
+- **Explicit exclusions:** no Admin Console feature code; no public Phone + OTP
+  behavior change; no unrelated application feature/schema change; no dynamic
+  `npx`/npm migration resolution; no dual-compose cleanup unless this task's
+  verified design and Governance update explicitly include it.
+- **Acceptance:** gateway threat model and operational contract; focused
+  fail-closed/security tests; governance checks; lint/typecheck/unit/build as
+  affected; task-branch CI; PR/Main CI; constrained host installation;
+  authorized no-op or release-candidate exercise proving exact-source build,
+  rollback capture, DB invariants, automated health evidence, sanitized output,
+  and zero manual Owner commands; durable report; integration and retirement.
+
+### ADMIN-CONSOLE-01 — DEFERRED / BLOCKED BY AUTONOMOUS-PROD-OPS-01
+
+- **Authorization:** explicit owner authorization in the 2026-08-31 Apex Home
+  Fit continuation task.
+- **Depends on:** `ADMIN-AUTH-01` and `ADMIN-AUTH-PROD-01` — both CLOSED;
+  current Production checkpoint PASS at source `3cf9cb6`.
+- **Sequencing:** owner-directed deferral before implementation. Discovery and
+  inventory established that the current Prisma schema can support read-only
+  Overview, Users, Workout Plans, Exercises, Operations, and Admin Sessions;
+  no feature code, merge, or deployment is retained from that discovery.
+- **Blocked by:** `AUTONOMOUS-PROD-OPS-01` reaching `CLOSED` under its zero
+  manual Owner command acceptance criterion.
+- **Execution authorization:** suspended until the blocking ops task closes and
+  `docs/TASKS.md` promotes Admin Console back to active work.
+- **Bounded scope:** replace the protected placeholder dashboard with a real,
+  read-oriented Admin Console V1 covering Overview, Users, Workout Plans,
+  Exercises, Operations, and Admin Sessions. Every surface uses only current
+  Prisma schema, source-controlled exercise catalog, runtime policy, and
+  services/routes that actually exist in the repository.
+- **Security boundary:** preserve dedicated Admin Auth and require server-side
+  authorization for every `/admin/*` console surface. Preserve public Phone +
+  OTP behavior unchanged. Do not expose password hashes, session token hashes,
+  secrets, OTP values, or other credential material.
+- **Explicit exclusions:** no destructive actions, data mutation, public admin
+  registration, general RBAC, impersonation/View-as-User, schema/migration,
+  provider, or public-auth behavior change.
+- **Data classification:** read-only application queries; `DB_CHANGED = NO`.
+- **Production classification:** independently deployable browser-facing
+  feature. Production deployment and real-browser feature acceptance follow
+  the canonical release policy; any unavailable privileged/manual deployment
+  capability is reported as an exact blocker rather than worked around.
+- **Acceptance:** focused Admin Console data/UI/security tests; existing Admin
+  Auth and public OTP regression tests; governance checks; lint; typecheck;
+  unit suite; Production build; targeted browser coverage; task-branch CI; PR
+  integration CI; exact-source Production release with rollback and fresh-
+  browser acceptance; Main CI; remote-main verification; branch retirement;
+  durable Report Watchdog handoff on every termination path.
 
 ### AUTH-PERF-01 — CLOSED / NO REPRODUCIBLE DEFECT
 
@@ -56,6 +127,8 @@ preserve them until the owner separately authorizes bounded execution:
 | Decision/direction | Status | Canonical owner |
 |---|---|---|
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
+| Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; any future implementation requires an audit log, persistent and unambiguous viewing-as banner, constrained permissions, and an immediate exit guard | [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
+| Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`; must use a constrained deployment gateway/capability that consumes protected configuration internally without exposing secrets or arbitrary root shell access | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |

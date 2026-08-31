@@ -66,3 +66,20 @@ not a web endpoint and does not alter the public registration surface.
 
 `ADMIN-AUTH-PASSKEY-01` — define and implement Passkey/WebAuthn enrollment,
 recovery, and step-up authentication after a separate owner authorization.
+
+`ADMIN-IMPERSONATION-01` — **DEFERRED / NOT AUTHORIZED**. Any future
+View-as-User capability crosses the administrator/public-user security
+boundary and therefore requires, at minimum, a durable audit log, a persistent
+and unambiguous “Viewing as…” banner, explicitly constrained operations, and
+an immediate exit guard. Admin Console V1 must not simulate or partially
+implement this capability.
+
+## Admin Console V1
+
+`ADMIN-CONSOLE-01` is **DEFERRED / BLOCKED BY `AUTONOMOUS-PROD-OPS-01`** after
+owner-directed sequencing correction and before feature implementation. Its
+completed inventory found real schema support for read-only Overview, Users,
+Workout Plans, Exercises, Operations, and Admin Sessions, but no Admin Console
+feature code, merge, or deployment is retained. A future re-promotion may use
+only real data and safe projections and must preserve this authentication
+boundary.
