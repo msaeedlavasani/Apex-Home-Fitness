@@ -1,12 +1,13 @@
 # Architecture Stabilization Plan
 
-`STATUS: S03 COMPLETE — SESSION CORE EXTRACTION CLOSED; S02-E AND S-04..S-06 REMAIN PLANNED / NOT STARTED`
+`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S02-E AND S-04..S-06 REQUIRE OWNER PROMOTION TO TASKS`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. Historical planning sections are
 retained for traceability; execution status is recorded explicitly below.
 S-01, S02-A..D2, and S03-A..F are complete. S02-E and S-04..S-06 remain
-planned/not started.
+planned/not started. This plan does not authorize execution; each remaining
+phase requires its named owner checkpoint and promotion to `docs/TASKS.md`.
 
 - Input: `docs/architecture/MODULARITY-AUDIT.md` (audit record) and
   `docs/architecture/COUPLING-RISK-REGISTER.md` (risk register).
@@ -37,9 +38,8 @@ planned/not started.
 
 ## 3. Explicitly excluded from immediate stabilization
 
-S03 is closed. The immediate operational next step is `OWNER REVIEW →
-PRODUCTION RELEASE PREFLIGHT / DECISION`; no S04 or product-development phase
-starts automatically.
+S03 is closed. This plan does not authorize a next task: S02-E and S04+ require
+an owner checkpoint and explicit promotion to `docs/TASKS.md`.
 
 Unless technically unavoidable, these remain future work:
 

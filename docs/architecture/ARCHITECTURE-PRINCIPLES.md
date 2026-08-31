@@ -105,6 +105,20 @@ changes update the authoritative documentation for the affected capability,
 record accepted decisions as ADRs when they qualify, and respect the
 governance rules in `docs/governance/DOCUMENTATION-GOVERNANCE.md`.
 
+## 12. Connectivity and External-Dependency Resilience
+
+`STATUS: ACCEPTED EVALUATION NEED / DEFERRED — NOT AN IMPLEMENTATION AUTHORIZATION`
+
+Iranian and other constrained international network paths can make external
+identity, AI, storage, monitoring, and provider dependencies unavailable or
+high-latency. The architecture must evaluate dependency criticality, graceful
+degradation, data ownership, portability, regional reachability, operational
+fallbacks, and Supabase coupling before expanding reliance on any external
+service. This records the evaluation boundary only; it does not select a new
+provider, authorize a migration, duplicate Supabase, or change Production.
+Execution requires a separately authorized task in `docs/TASKS.md` with
+evidence-based scope and rollback constraints.
+
 ## Relationship to AGENTS.md and ADRs
 
 - `AGENTS.md` remains authoritative for agent behavior and development rules.

@@ -103,28 +103,26 @@ it safely**, or **how to stay consistent**. Apex Home Fit solves this by:
   polish, body measurements, PR/volume logging (coordinated with V2),
   monthly/yearly reports, goals & reminders, real social challenges, nutrition,
   health-kit sync.
+- **Dedicated administrator authentication — ACCEPTED DIRECTION / DEFERRED.**
+  Administrative access must have a dedicated authentication path independent
+  of the public phone-OTP journey. This records the product boundary only: no
+  credential type, identity provider, authorization model, route, recovery
+  mechanism, or implementation is selected or authorized. Public OTP remains
+  the current user flow. A future owner-authorized task must define threat
+  model, roles, bootstrap/recovery, auditability, and fail-closed acceptance
+  before implementation.
 
-## 7. Current project priority (as of 2026-08-27)
+## 7. Execution boundary
 
-```text
-Documentation / Governance Reconciliation
-        ↓
-Full Codebase Modularity, Coupling & Reusability Audit
-        ↓
-Architecture Stabilization / Approved Modularization
-        ↓
-Resume Feature Development  (incl. Workout Experience V2)
-```
-
-Feature work (including V2 and Transformation-roadmap items) is deferred until
-the architecture baseline is established. Nothing in this document changes
-that sequence; it is recorded in `docs/HANDOFF.md` and `docs/TASKS.md`.
+This vision records current capability and accepted/deferred direction; it does
+not authorize implementation or sequence work. The only executable backlog is
+[`../TASKS.md`](../TASKS.md). Proposed roadmap ideas remain advisory until
+explicitly promoted there.
 
 ## 8. How this document relates to others
 
-- Feature roadmap & competitor research → `docs/TRANSFORMATION_ROADMAP.md`
-- Workout execution vision → `docs/product/WORKOUT-EXPERIENCE-V2.md`
-- Agent behavior / engineering standard → `AGENTS.md`
-- Documentation governance & read order → `docs/governance/DOCUMENTATION-GOVERNANCE.md`
-- Architecture decisions → `docs/adr/README.md` (mechanism; no ADRs yet)
-- Onboarding overview → `README.md`
+- Product advisory & competitor evidence → [`../TRANSFORMATION_ROADMAP.md`](../TRANSFORMATION_ROADMAP.md)
+- Workout execution vision → [`WORKOUT-EXPERIENCE-V2.md`](WORKOUT-EXPERIENCE-V2.md)
+- Executable backlog → [`../TASKS.md`](../TASKS.md)
+- Documentation governance → [`../governance/DOCUMENTATION-GOVERNANCE.md`](../governance/DOCUMENTATION-GOVERNANCE.md)
+- Architecture decisions → [`../adr/README.md`](../adr/README.md)

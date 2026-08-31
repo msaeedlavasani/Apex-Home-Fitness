@@ -13,7 +13,7 @@
 3. `AGENTS.md`
 4. `docs/DESIGN_SYSTEM.md` برای کارهای frontend
 5. مستندات عملیاتی و معماری مرتبط
-6. backlog و handoff
+6. manifest، backlog اجرایی و handoff
 7. فرضیات عمومی یا مستندات تاریخی
 
 وضعیت هر ادعا را با یکی از این برچسب‌ها مشخص کن: `CURRENT`، `TARGET`، `CONSTRAINT`، `DEBT` یا `UNKNOWN`.
@@ -91,7 +91,7 @@ npm run build
 - `docs/DESIGN_SYSTEM.md`: قوانین بصری
 - `README.md`: onboarding و نمای کلی
 - `docs/`: دانش پایدار، عملیات و قراردادها
-- `docs/TASKS.md`: backlog و تاریخچه batchها
+- `docs/TASKS.md`: تنها backlog اجرایی canonical؛ تاریخچه در Git/اسناد historical
 - `docs/adr/`: تصمیم‌های معماری (مکانیزم)
 
 قبل از تغییر، ترتیب مطالعه‌ی §۵ `docs/governance/DOCUMENTATION-GOVERNANCE.md` را دنبال کن و از ایجاد سند موازی خودداری کن؛ ابتدا canonical home موجود را پیدا کن و فقط اطلاعات durable را مستند کن.

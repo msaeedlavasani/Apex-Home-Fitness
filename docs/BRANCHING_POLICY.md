@@ -81,6 +81,37 @@ A branch may remain open across multiple subtasks only when
 `ATOMIC_RELEASE_REQUIRED = YES` and the minimum inseparable release unit is
 documented before continuation. Do not silently bundle tasks.
 
+## I. DOCS_DIRECT_MAIN fast path
+
+`DOCS_DIRECT_MAIN` is an accepted controlled delivery path for future strictly
+documentation-only, low-risk work. It is a lifecycle classification, not a
+bypass of validation, reporting, or exact-SHA CI.
+
+Eligibility requires all of the following before mutation:
+
+- local `main` is clean and exactly synchronized with authoritative
+  `origin/main`;
+- every intended change is human-readable documentation only;
+- no application code, runtime behavior, application configuration,
+  database/schema/migration, dependency, CI workflow, Production artifact, or
+  executable tooling changes;
+- no machine-consumed Governance change that alters executable behavior;
+- the task is atomic, independently revertible, and non-Production-bound.
+
+Lifecycle:
+
+```text
+CLEAN_SYNCHRONIZED_MAIN → DOC_EDIT → RELEVANT_VALIDATION
+→ ATOMIC_MAIN_COMMIT → PUSH → MAIN_CI_PASS_ON_EXACT_SHA
+→ DURABLE_REPORT → CLOSED
+```
+
+The final Main CI must verify the exact pushed SHA. A mandatory report remains
+required on success and every interruption path. If scope escapes eligibility,
+fail closed before the out-of-scope mutation and use the normal task-branch
+lifecycle. Never rewrite or restart an existing task branch merely to use this
+fast path; finish that branch normally.
+
 ## Task lifecycle / status model
 
 The lifecycle below is the canonical Production-bound vocabulary. Guardrail
@@ -94,6 +125,11 @@ PLANNED → ACTIVE → SOURCE_VALIDATED → BRANCH_CI_PASS → READY_FOR_PRODUCT
 → DEPLOYED → PRODUCTION_PASS → MAINLINE_INTEGRATED → CLOSED
 (terminal/exceptional: BLOCKED, ROLLED_BACK)
 ```
+
+For non-Production profiles such as `DOCS_ONLY`, inapplicable Production states
+are skipped. Closure requires source validation, required validation, mainline
+integration, a durable report, and branch retirement; it never requires a fake
+Production checkpoint.
 
 Important:
 

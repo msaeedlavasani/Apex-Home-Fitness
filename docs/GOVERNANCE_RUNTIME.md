@@ -6,6 +6,11 @@
 > `docs/governance/DOCUMENTATION-GOVERNANCE.md`. This document describes how
 > repository tooling consumes those contracts; it does not redefine policy.
 
+`docs/TASKS.md` is the only executable backlog. Runtime validation does not
+promote advisory/deferred items into work. Decision Persistence remains a
+documentation-governance requirement even when tooling cannot infer the
+semantic owner of a decision.
+
 ## Runtime checks
 
 Use the existing package scripts:
@@ -27,6 +32,12 @@ Supported profiles are `DOCS_ONLY`, `CODE_NO_DEPLOY`, `PRODUCTION_BOUND`,
 `INCIDENT`, `AUDIT`, `RELEASE`, `HOTFIX`, and `DB_CHANGE`. Profiles resolve the
 minimum authoritative documents needed for the task; they do not copy policy
 prose into prompts.
+
+`DOCS_DIRECT_MAIN` is currently a governed branch-lifecycle fast path, not a
+runtime profile accepted by `governance-runtime.mjs`. Its authoritative
+eligibility and exact-SHA Main CI contract live in `BRANCHING_POLICY.md`.
+Machine enforcement may be added only through a separately authorized tooling
+task; documentation-only work must not silently change executable tooling.
 
 ## Context receipt
 

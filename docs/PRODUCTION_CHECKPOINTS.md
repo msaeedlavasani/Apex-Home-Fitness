@@ -71,4 +71,6 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 - **Migrations:** 12, latest `20260827011500_add_exercise_canonical_identity_fields`
 - **PostgreSQL:** deferred independent infrastructure task (evaluate before
   significant real customer data accumulates)
-- **Supabase resilience:** separate backlog item — see `docs/TASKS.md`
+- **External/Supabase resilience evaluation:** accepted/deferred architecture
+  need in `docs/architecture/ARCHITECTURE-PRINCIPLES.md`; not executable unless
+  separately authorized in `docs/TASKS.md`.

@@ -1,6 +1,9 @@
 # S03-A — Session Parity Baseline
 
-`STATUS: IMPLEMENTED TEST BASELINE — CORE EXTRACTION NOT STARTED` (S03-A, 2026-08-27)
+`STATUS: HISTORICAL PHASE EVIDENCE — S03-A COMPLETE; S03 NOW CLOSED`
+
+At the S03-A checkpoint the core extraction had not started. The current S03
+status is complete; see [`S03-SESSION-CORE-CLOSURE.md`](./S03-SESSION-CORE-CLOSURE.md).
 
 Phase: `S03-A — Session Contracts + Golden Trace Baseline` (Architecture
 Stabilization, S-03). GATE B APPROVED (GB-01..GB-10) — see
