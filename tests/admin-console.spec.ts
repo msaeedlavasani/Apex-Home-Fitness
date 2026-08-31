@@ -12,7 +12,7 @@ import {expect, test} from '@playwright/test';
 // out-of-band credential; the unauthenticated boundary for every protected
 // surface is verified both here and against production server responses.
 
-const ADMIN_EMAIL = 'console.test@localhost';
+const ADMIN_EMAIL = 'console.test@example.com';
 const ADMIN_PASSWORD = 'tmp-console-test-password-2026';
 
 const repoRoot = path.join(__dirname, '..');
@@ -41,9 +41,11 @@ test.beforeAll(() => {
 });
 
 test('protected console surfaces require authentication', async ({request}) => {
+  // The API request context follows redirects; an unauthenticated visitor must
+  // end up on the admin login page (never on the protected surface itself).
   for (const p of ['/admin/dashboard', '/admin/users', '/admin/programs', '/admin/exercises', '/admin/operations', '/admin/sessions']) {
-    const response = await request.get(p, {maxRedirects: 0});
-    expect([301, 302, 303, 307, 308]).toContain(response.status(), `${p} must redirect unauthenticated`);
+    const response = await request.get(p);
+    expect(response.url().includes('/admin/login'), `${p} must redirect to login`).toBe(true);
   }
 });
 
