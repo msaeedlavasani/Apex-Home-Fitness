@@ -1,6 +1,7 @@
 'use client';
 
 import {useState} from 'react';
+import {Button} from '@/components/ui/platform';
 
 export function AdminLogoutButton() {
   const [busy, setBusy] = useState(false);
@@ -16,8 +17,8 @@ export function AdminLogoutButton() {
   }
 
   return (
-    <button type="button" onClick={logout} disabled={busy} className="min-h-11 rounded-xl border border-apex-border bg-apex-card px-4 py-2 text-sm font-semibold hover:bg-apex-primary-soft disabled:opacity-60">
-      {busy ? 'Signing out…' : 'Sign out'}
-    </button>
+    <Button type="button" variant="outlined" size="md" onClick={logout} loading={busy}>
+      Sign out
+    </Button>
   );
 }
