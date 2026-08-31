@@ -75,6 +75,20 @@ test('admin can sign in and browse every console surface', async ({page}) => {
   await expect(page.getByRole('heading', {name: 'Admin sessions'})).toBeVisible();
 });
 
+test('console surfaces expose labelled navigation and accessible tables', async ({page}) => {
+  await page.goto('/admin/login');
+  await page.fill('input[name=email]', ADMIN_EMAIL);
+  await page.fill('input[name=password]', ADMIN_PASSWORD);
+  await page.click('button[type=submit]');
+  await page.waitForURL('**/admin/dashboard');
+
+  // ADMIN-DS-03/04: nav landmark with aria-label and table with a caption/
+  // aria-label (accessible name) survive the primitives refactor + kit adoption.
+  await expect(page.getByRole('navigation', {name: 'Administration'})).toBeVisible();
+  await page.goto('/admin/users');
+  await expect(page.getByRole('table', {name: 'Registered users'})).toBeVisible();
+});
+
 test('console must not render credential material', async ({page}) => {
   await page.goto('/admin/login');
   await page.fill('input[name=email]', ADMIN_EMAIL);
