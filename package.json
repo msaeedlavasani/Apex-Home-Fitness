@@ -15,7 +15,7 @@
     "audit:lottie": "node scripts/audit-lottie-fps.mjs",
     "guardrail:check": "node scripts/guardrail-check.mjs scripts/release-manifest.example.json",
     "guardrail:test": "node --test tests/guardrail-check.test.mjs",
-    "governance:check": "node scripts/governance-runtime.mjs docs",
+    "governance:check": "node scripts/governance-runtime.mjs docs && node scripts/governance-runtime.mjs ui",
     "governance:test": "node --test tests/governance-runtime.test.mjs",
     "admin:provision": "node --import tsx scripts/provision-admin.ts",
     "typecheck": "tsc --noEmit",

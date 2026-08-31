@@ -29,6 +29,15 @@ MAIN_INTEGRATED: YES|NO|N/A
 MAIN_CI: PASS|FAIL|PENDING|N/A
 BRANCH_RETIRED: YES|NO|N/A
 TASK_STATUS: ACTIVE|BLOCKED|CLOSED
+UI_CHANGED: YES|NO
+UI_CONFORMANCE: PASS|N/A
+UI_CONFORMANCE_DECISION: REUSE|EXTEND|AUTHORIZED_PARALLEL|N/A
+UI_CONFORMANCE_EVIDENCE: <path to existing evidence file>
+REPORT_PERSISTED: YES|NO
+REPORT_VALIDATED: YES|NO
+REPORT_DELIVERED: YES|NO|N/A
+REPORT_PATH: <repo runtime path | N/A>
+OWNER_REPORT_PATH: <absolute path in the Owner report destination | N/A>
 ```
 
 - Scope:
@@ -51,3 +60,5 @@ TASK_STATUS: ACTIVE|BLOCKED|CLOSED
 - [ ] مسیرهای `en` و `fa` در صورت اثرپذیری بررسی شده‌اند
 - [ ] سند مرجع به‌روز شده است
 - [ ] production یا سرویس همسایه بدون تأیید تغییر نمی‌کند
+- [ ] `UI_CHANGED=YES` ⇒ UI Conformance Gate گذرانده شده است (کشف سیستم طراحی موجود، reuse، تصمیم REUSE/EXTEND، شواهد) — سند: `governance/UI-CONFORMANCE-GATE.md`
+- [ ] گزارش نهایی/Analysis-Gate به Owner report destination صادر شده است (`/Users/msl/Documents/ApexHFAgentReports/`) و مسیر مطلق آن در پاسخ نهایی صریحاً ذکر شده است؛ `REPORT_DELIVERED=YES` فقط با export موفق به آن مقصد مجاز است — سند: `governance/REPORT-DELIVERY-CONTRACT.md`

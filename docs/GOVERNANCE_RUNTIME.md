@@ -52,6 +52,33 @@ handoff fields defined by `docs/AI_CHANGE_TEMPLATE.md`. A report cannot claim
 `TASK_STATUS=CLOSED` unless its current state is `CLOSED` and its next state is
 `NONE`.
 
+## Report contract extensions
+
+Since 2026-09-01 (proposed, see
+[`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md) and
+[`governance/REPORT-DELIVERY-CONTRACT.md`](governance/REPORT-DELIVERY-CONTRACT.md)):
+
+- Reports must declare `UI_CHANGED`, `UI_CONFORMANCE`, `UI_CONFORMANCE_DECISION`,
+  `UI_CONFORMANCE_EVIDENCE` (UI conformance gate) and `REPORT_PERSISTED`,
+  `REPORT_VALIDATED`, `REPORT_DELIVERED`, `REPORT_PATH`, `OWNER_REPORT_PATH`
+  (report delivery contract).
+- `report` fails closed when `UI_CHANGED=YES` lacks PASS + decision + an
+  existing evidence file, when `REPORT_PERSISTED=YES` lacks an existing
+  `REPORT_PATH` or `OWNER_REPORT_PATH`, or when `REPORT_DELIVERED=YES` is
+  claimed without a persisted export in the **Owner report destination**
+  (`OWNER_REPORT_PATH` must exist). The Owner-facing destination
+  `/Users/msl/Documents/ApexHFAgentReports/` is change-protected by
+  governance decision; repo-local `reports/` is temporary/runtime-only.
+- `ui [TARGET]` (default `src`) statically enforces KIT-FIRST: no
+  `@mui/material` imports outside the registered allowlist
+  (`src/components/providers/MuiProvider.tsx`, `src/lib/ui/muiTheme.ts`) and
+  no unregistered UI kit directories under `src/components/ui` (fails
+  closed). Authorized exceptions are allowlist diffs reviewed by the Owner;
+  there is no runtime escape hatch.
+
+`npm run governance:check` now runs `docs` + `ui` scans. `governance:test`
+covers the new contract fields and guards.
+
 ## CI
 
 The normal CI build job runs governance validation, governance runtime tests,

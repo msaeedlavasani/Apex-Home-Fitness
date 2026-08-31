@@ -228,6 +228,13 @@ Acceptance classes (see RELEASE_POLICY Rule 15):
 For user-visible business features the Production checkpoint MUST test the
 actual capability, not merely the page's existence.
 
+Any task with `UI_CHANGED = YES` MUST satisfy the
+[UI Conformance Gate](governance/UI-CONFORMANCE-GATE.md) before acceptance:
+functional correctness alone is NOT sufficient for UI-changing work. The
+report must carry `UI_CONFORMANCE=PASS`, a `REUSE`/`EXTEND`/`AUTHORIZED_PARALLEL`
+decision, and an evidence file; the runtime (`governance-runtime.mjs report`
+and `ui`) enforces the machine-checkable parts.
+
 ## Q. AUTH FEATURE ACCEPTANCE CONTRACT
 
 Mock-OTP CI coverage is useful but NOT sufficient to declare Production login
