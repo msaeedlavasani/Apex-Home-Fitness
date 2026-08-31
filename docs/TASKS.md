@@ -10,11 +10,11 @@
 
 | Field | Value |
 |---|---|
-| Active task | `ADMIN-CONSOLE-01` |
-| Profile | `CODE_NO_DEPLOY` → Production-deliverable via the gateway |
-| Branch | `feat/admin-console-01` |
-| State | `ACTIVE` |
-| Production-bound | `YES` |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `N/A` |
+| State | `ADMIN-CONSOLE-01 CLOSED` |
+| Production-bound | `YES` (completed) |
 | Next authorized task | `NONE` |
 
 ## Approved queue
@@ -52,7 +52,7 @@
   rollback capture, DB invariants, automated health evidence, sanitized output,
   and zero manual Owner commands; durable report; integration and retirement.
 
-### ADMIN-CONSOLE-01 — ACTIVE
+### ADMIN-CONSOLE-01 — CLOSED
 
 - **Authorization:** explicit owner task-delta in the 2026-08-31 Apex Home
   Fit continuation task promoting `ADMIN-CONSOLE-01` to the executable
@@ -137,6 +137,7 @@ preserve them until the owner separately authorizes bounded execution:
 
 | Task/checkpoint | Outcome | Evidence owner |
 |---|---|---|
+| `ADMIN-CONSOLE-01` | CLOSED; read-oriented Admin Console V1 (Overview, Users, Workout Plans, Exercises, Operations, Admin/Sessions) delivered via the Production Deployment Gateway; exact-main release `2d131fc`; real-browser acceptance 14/14; unauthenticated boundary verified on Production; public OTP unchanged; `DB_CHANGED = NO`; Main CI PASS on `2d131fc` (run `33419999889`) and spec follow-up `e29d311` (run `33425058638`); branch retired | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md), durable AgentReport `AHF-FB-20260831-ADMIN-CONSOLE-01.md`, PR #13, PR #14 |
 | `AUTONOMOUS-PROD-OPS-01` | CLOSED; constrained Production deployment gateway proven end-to-end with zero manual Owner commands; pre- and post-hardening exact-main releases PASS; rollback verified; legacy `apexadmin` NOPASSWD sudo and Docker-group membership revoked after proof; branch retired; Main CI PASS on merge `fde82c1` (run `33411342851`) and docs `f2387cc` (run `33413935668`) | [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md), [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260831-AUTONOMOUS-PROD-OPS-01.md`, PR #12 |
 | `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
 | `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |

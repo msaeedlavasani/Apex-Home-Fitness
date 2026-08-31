@@ -6,23 +6,23 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: AUTONOMOUS-PROD-OPS-01 (CLOSED; PRODUCTION_PASS)
-CURRENT_PRODUCTION_SOURCE:             f2387cc3a5b8438e1fc0ab02d36174a151d1b504
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-f2387cc3a5b8
-CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:7227b1c5ff0f)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-CONSOLE-01 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             2d131fc604531f8327446f1f36a5acf142f11d2a
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-2d131fc60453
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:68ff5b329760)
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
-CURRENT_MAINLINE_BASELINE_COMMIT:       f2387cc3a5b8438e1fc0ab02d36174a151d1b504 (post-hardening release source)
+CURRENT_MAINLINE_BASELINE_COMMIT:       2d131fc604531f8327446f1f36a5acf142f11d2a (PR #13 integration)
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
-ACTIVE_BRANCH:                         feat/autonomous-prod-ops-01 (RETIRED)
-PREVIOUS_COMPLETED_TASK:               AUTONOMOUS-PROD-OPS-01 (CLOSED; PRODUCTION_PASS)
-PREVIOUS_COMPLETED_BRANCH:             feat/autonomous-prod-ops-01 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE (ADMIN-CONSOLE-01 deferred behind closed ops task)
+ACTIVE_BRANCH:                         feat/admin-console-01 (RETIRED)
+PREVIOUS_COMPLETED_TASK:               ADMIN-CONSOLE-01 (CLOSED; PRODUCTION_PASS)
+PREVIOUS_COMPLETED_BRANCH:             feat/admin-console-01 (RETIRED)
+NEXT_AUTHORIZED_TASK:                  NONE
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-08-31 (post-hardening release PASS; task CLOSED)
+LAST_UPDATED:                          2026-08-31 (Admin Console V1 released via gateway; task CLOSED)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,21 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **ADMIN-CONSOLE-01 = CLOSED (PRODUCTION_PASS, 2026-08-31).** Admin Console
+  V1 (read-oriented Overview, Users, Workout Plans, Exercises, Operations,
+  Admin/Sessions) is live on the preserved `apexhomefit_prod_db` volume via
+  the canonical Production Deployment Gateway. All six surfaces are server
+  components behind `requireAdmin()` with safe projections excluding password
+  hashes, session-token hashes, OTP material, and any credential or secret
+  values; the admin API boundary remains exactly `login`+`logout`; public
+  Phone + OTP behavior unchanged; `DB_CHANGED = NO` (13 migrations, integrity
+  `ok`). Exact-main release `2d131fc60453` via `/usr/local/bin/apex-deploy`
+  (no privilege elevation); rollback verified; real-browser acceptance 14/14
+  PASS (system Chrome) plus unauthenticated boundary verified on Production
+  (all six surfaces redirect to `/admin/login`). Main CI PASS on `2d131fc`
+  (run `33419999889`) and spec follow-up `e29d311` (run `33425058638`);
+  branch retired.
 
 - **AUTONOMOUS-PROD-OPS-01 = CLOSED (PRODUCTION_PASS, 2026-08-31).** The
   constrained root-owned Unix-socket deployment gateway is fully

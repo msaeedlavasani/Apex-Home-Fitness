@@ -76,10 +76,23 @@ implement this capability.
 
 ## Admin Console V1
 
-`ADMIN-CONSOLE-01` is **DEFERRED / BLOCKED BY `AUTONOMOUS-PROD-OPS-01`** after
-owner-directed sequencing correction and before feature implementation. Its
-completed inventory found real schema support for read-only Overview, Users,
-Workout Plans, Exercises, Operations, and Admin Sessions, but no Admin Console
-feature code, merge, or deployment is retained. A future re-promotion may use
-only real data and safe projections and must preserve this authentication
-boundary.
+`ADMIN-CONSOLE-01` is **CLOSED (PRODUCTION_PASS, 2026-08-31)**. Admin Console
+V1 is live on Production (exact-main image
+`apex-home-fit:release-2d131fc60453` via the Production Deployment Gateway)
+covering read-only Overview, Users, Workout Plans, Exercises, Operations, and
+Admin/Sessions.
+
+- Every console surface is a Server Component behind `requireAdmin()`; no new
+  admin API or registration endpoint was added (the admin API boundary remains
+  exactly `login` + `logout`).
+- All projections are read-only and exclude password hashes, session-token
+  hashes, OTP codes/hashes, and any credential or secret material.
+- Public Phone + OTP behavior is unchanged; no impersonation / View-as-User;
+  no schema or migration change (`DB_CHANGED = NO`).
+- Focused security/data tests (`tests/admin-console.test.ts`) plus a
+  self-provisioning real-browser acceptance spec
+  (`tests/admin-console.spec.ts`, full E2E suite).
+
+Future console capabilities must preserve this authentication boundary, use
+only real data and safe projections, and follow the canonical release policy
+(Production delivery through the gateway).

@@ -7,37 +7,36 @@
 
 ## Current handoff
 
-- **AUTONOMOUS-PROD-OPS-01 is CLOSED** (PRODUCTION_PASS). No active task.
-- `ADMIN-AUTH-PROD-01`, `ADMIN-AUTH-01`, `DOCUMENTATION-CONSOLIDATION-01`,
-  `AUTH-PERF-01` are closed; their task branches retired.
-- Gateway source integrated to `main` via **PR #12** (commit `fde82c1a8fb3…`);
-  Main CI PASS (run `33411342851`). Docs-only state commit `f2387cc3a5b8…`
-  pushed; Main CI PASS (run `33413935668`).
-- Gateway installed and fully proven on host `sabtbrooker`: bootstrap,
-  socket-only client, fail-closed, exact-main **pre-hardening** release PASS,
-  rollback verified, proof-gated **hardening** (legacy `NOPASSWD: ALL` and
-  Docker-group membership removed), then an exact-main **post-hardening**
-  release + rollback verification from a fresh unprivileged session.
-- Production now runs `apex-home-fit:release-f2387cc3a5b8` from exact source
-  `f2387cc3a5b8…`, DB unchanged (13 migrations, integrity `ok`), `.env` and
-  gateway proof files remain root-only.
-- Legacy `apexadmin` NOPASSWD sudo and Docker-group membership are **removed**;
-  `apexadmin` retains `apexdeploy` (gateway access) plus standard `sudo`/`users`
-  membership (no passwordless grant). Direct sudo/Docker/`.env` all fail for
-  `apexadmin` while `apex-deploy` succeeds.
+- **ADMIN-CONSOLE-01 is CLOSED** (PRODUCTION_PASS). No active task.
+- `AUTONOMOUS-PROD-OPS-01`, `ADMIN-AUTH-PROD-01`, `ADMIN-AUTH-01`,
+  `DOCUMENTATION-CONSOLIDATION-01`, `AUTH-PERF-01` are closed; their task
+  branches retired.
+- Admin Console V1 (read-oriented Overview, Users, Workout Plans, Exercises,
+  Operations, Admin/Sessions) integrated via **PR #13** (main `2d131fc`)
+  and browser-acceptance spec via **PR #14** (main `e29d311`); Main CI PASS
+  (runs `33419999889` and `33425058638`).
+- Production now runs `apex-home-fit:release-2d131fc60453` from exact source
+  `2d131fc60453…`, delivered through the Production Deployment Gateway with
+  zero privilege elevation; DB unchanged (13 migrations, integrity `ok`);
+  rollback verified; real-browser acceptance 14/14 PASS.
+- Gateway (`sabtbrooker`) remains the canonical deployment path: socket-only
+  client `/usr/local/bin/apex-deploy`, root-only proofs/audit; `apexadmin`
+  holds `apexdeploy` plus standard `sudo`/`users` membership (no passwordless
+  grant); direct sudo/Docker/`.env` all fail.
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
 - Machine-oriented state: [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
 ## Stable operational context
 
-- Current verified Production checkpoint: `AUTONOMOUS-PROD-OPS-01`, source
-  `f2387cc3a5b8438e1fc0ab02d36174a151d1b504`, image
-  `apex-home-fit:release-f2387cc3a5b8` (ID `sha256:7227b1c5…`), 13 Prisma
+- Current verified Production checkpoint: `ADMIN-CONSOLE-01`, source
+  `2d131fc604531f8327446f1f36a5acf142f11d2a`, image
+  `apex-home-fit:release-2d131fc60453` (ID `sha256:68ff5b32…`), 13 Prisma
   migrations, SQLite volume `apexhomefit_prod_db:/data`; authoritative
   evidence is in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md).
-- Immediate rollback checkpoint: `AUTH-FIX-01`, source `ce91a4f`; app-level
-  rollback compose evidence retained on the host
-  (`compose.yml.rollback-adminauth-3cf9cb6`).
+- Immediate rollback checkpoint: `AUTONOMOUS-PROD-OPS-01` post-hardening
+  release, source `f2387cc3a5b8…`; app-level rollback compose evidence
+  retained on the host (`compose.yml.rollback-adminconsole-01`, plus the
+  prior gateway rollback snapshots).
 - Public user identity/session: phone proof through OTP, Supabase SSR session;
   canonical launch constraints are in [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md).
 - Deployment contract: [`RELEASING.md`](RELEASING.md). Release policy:
@@ -56,15 +55,9 @@
 
 ## Next transition
 
-`AUTONOMOUS-PROD-OPS-01` reached CLOSED (2026-08-31). The constrained
-root-owned Unix-socket gateway passed bootstrap, fail-closed, exact-main
-pre-hardening release, rollback proof, proof-gated hardening (legacy
-`NOPASSWD: ALL` and Docker-group membership removed), and a post-hardening
-release + rollback verification from a fresh unprivileged session — all through
-`/usr/local/bin/apex-deploy` with zero manual Owner commands. The task branch
-`feat/autonomous-prod-ops-01` is retired.
-
-`ADMIN-CONSOLE-01` becomes the next candidate but remains DEFERRED: it may not
-resume until an explicit owner decision promotes it to active work in
-`docs/TASKS.md` and a fresh pre-task gate passes at the current `main`
-bio-baseline.
+`ADMIN-CONSOLE-01` reached CLOSED (2026-08-31). Admin Console V1 is live via
+the Production Deployment Gateway, with a self-provisioning real-browser
+acceptance spec in the full E2E suite (`tests/admin-console.spec.ts`). No
+active task; the next authorized task must be explicitly promoted in
+`docs/TASKS.md` before any implementation, with a fresh pre-task gate at the
+current `main` baseline.

@@ -10,7 +10,7 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: AUTONOMOUS-PROD-OPS-01**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-CONSOLE-01**
 
 ---
 
@@ -114,6 +114,33 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
   SHA); `.env` remains `root:root` 0600 and unreadable by `apexadmin`
 - **PRIVILEGES:** `apexadmin` NOPASSWD sudo and Docker-group membership
   PRESERVED (untouched) at this checkpoint
+
+---
+
+## ADMIN-CONSOLE-01
+
+- **Status:** PASS
+- **Purpose:** Admin Console V1 — read-oriented administration surface
+  (Overview, Users, Workout Plans, Exercises, Operations, Admin/Sessions)
+  delivered through the canonical Production Deployment Gateway
+- **Source:** `2d131fc604531f8327446f1f36a5acf142f11d2a` (authoritative GitHub
+  `main` HEAD; integration via PR #13)
+- **Image:** `apex-home-fit:release-2d131fc60453` (ID
+  `sha256:68ff5b329760574d05d5400fb18dd1d0a4463cedae953781fffa770374c953ec`)
+- **DB_STATE:** integrity `ok`; **13 migrations**; volume owned `100:101`;
+  `db_change=false`, DB hash unchanged; rollback snapshot
+  `compose.yml.rollback-adminconsole-01` (root-only 0600);
+  `verify-rollback` via client PASS, `previous_image AVAILABLE`; proof
+  root-only at `/var/lib/apex-deploy-gateway/proof-normal.json`
+- **ACCEPTANCE:** exact-main release ran through `/usr/local/bin/apex-deploy`
+  with zero privilege elevation (legacy privileges already revoked); health
+  `/en` 200, `/admin/login` 200; all six protected console surfaces redirect
+  unauthenticated visitors to `/admin/login` (server-side `requireAdmin()`
+  boundary verified against Production); real-browser (system Chrome via
+  Playwright) signed-in acceptance **14/14 PASS** (login → dashboard, all six
+  surfaces render, no credential material rendered); public Phone + OTP and
+  admin API boundary (`login`+`logout` only) unchanged; `DB_CHANGED = NO`
+- **FINAL_STATUS:** PASS / CLOSED
 
 ---
 
