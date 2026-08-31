@@ -10,7 +10,7 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: AUTH-FIX-01**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-AUTH-PROD-01**
 
 ---
 
@@ -63,12 +63,47 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 
 ---
 
+## ADMIN-AUTH-PROD-01
+
+- **Status:** PASS
+- **Purpose:** deterministic Production deployment of Admin Auth V1 (dedicated
+  administrator Email + Password boundary, manual provisioning, single ADMIN
+  role) on the preserved `apexhomefit_prod_db` volume
+- **Source:** `3cf9cb682514169154a6f278c8b6afec9cd911ba` (baseline `c09e34c` +
+  PR #11 fix `f6f90d4`)
+- **Image:** `apex-home-fit:adminauth-3cf9cb6`
+- **Image ID:** `sha256:dec85f493fde5eceab9d6b53f8980783d728b1ee995e784176de153f72b5fe0e`
+- **BUILD_ID:** `vwN2sF-2d1BwbdkDjNPIx`
+- **DEPLOY_TIME:** 2026-08-31T14:42:31Z (container `apex-home-fit-app-1`)
+- **DB_STATE:** integrity `ok`; **13 migrations**, latest
+  `20260831120000_add_admin_auth`; admin tables
+  `[AdminAccount, AdminSession]`; volume owned `100:101`; DB SHA-256
+  `bf05892dff202238cca338b1916d85a1bf5f4e916e85653ec6d96f101db39392`
+  (post-acceptance; pre-migration `241d4b15…783c`, post-migration
+  `a65fdcdf…9414`)
+- **ROLLBACK_REFERENCE:**
+  `/opt/apex-home-fit/compose.yml.rollback-adminauth-3cf9cb6` (previous image
+  `apex-home-fit:adminauth-c09e34c`, ID `d989e4300dde…`); chain continues
+  through `compose.yml.rollback-adminauth-c09e34c` (`auth-buildfix-3c89609`)
+- **BROWSER_ACCEPTANCE:** real-browser (system Chrome via Playwright) against
+  `https://apexhomefit.ir`: **22/22 PASS** — `/admin/login` render; real login
+  → dashboard (FEATURE); fresh-navigation session retention; logout + session
+  invalidation; protected route blocked after logout; wrong-credential generic
+  failure (no enumeration); public route regression `/`, `/en`, `/fa`,
+  `/en/dashboard`, `/en/auth/login`, `/manifest.json`; delayed recheck after
+  45s. Benign warnings only: `/favicon.ico` 404 on `/admin/login` (admin
+  layout metadata gap — tracked debt), expected 401 console noise from the
+  wrong-credential probe, `net::ERR_ABORTED` RSC prefetches. RestartCount 0.
+  Post-acceptance: 0 active admin sessions (all revoked); provisioned
+  `admin@apexhomefit.ir` has `lastLoginAt` set.
+- **FINAL_STATUS:** PASS
+
 ## Production persistence baseline
 
 - **Engine:** SQLite via Prisma
 - **Volume:** `apexhomefit_prod_db:/data`
 - **DATABASE_URL:** `file:/data/app.db`
-- **Migrations:** 12, latest `20260827011500_add_exercise_canonical_identity_fields`
+- **Migrations:** 13, latest `20260831120000_add_admin_auth`
 - **PostgreSQL:** deferred independent infrastructure task (evaluate before
   significant real customer data accumulates)
 - **External/Supabase resilience evaluation:** accepted/deferred architecture

@@ -6,22 +6,22 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: AUTH-FIX-01
-CURRENT_PRODUCTION_SOURCE:             ce91a4f297951142fce1394a5ac9157378e72961
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:authfix-ce91a4f
-CURRENT_PRODUCTION_BUILD_ID:           TfZRMHwm3pBWUW3bBgTZc
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-AUTH-PROD-01
+CURRENT_PRODUCTION_SOURCE:             3cf9cb682514169154a6f278c8b6afec9cd911ba
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:adminauth-3cf9cb6
+CURRENT_PRODUCTION_BUILD_ID:           vwN2sF-2d1BwbdkDjNPIx
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
-CURRENT_DB_MIGRATION_COUNT:            12
-CURRENT_MAINLINE_BASELINE_COMMIT:      c80a1bb75f093c5bc8f6b17b544c7004dceb4e30
+CURRENT_DB_MIGRATION_COUNT:            13
+CURRENT_MAINLINE_BASELINE_COMMIT:      3cf9cb682514169154a6f278c8b6afec9cd911ba
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         main
-PREVIOUS_COMPLETED_TASK:               ADMIN-AUTH-01 (CLOSED; CODE_NO_DEPLOY)
-PREVIOUS_COMPLETED_BRANCH:             feat/admin-auth-01 (RETIRED)
+PREVIOUS_COMPLETED_TASK:               ADMIN-AUTH-PROD-01 (CLOSED; PRODUCTION_PASS)
+PREVIOUS_COMPLETED_BRANCH:             fix/admin-auth-sameorigin-01 (RETIRED)
 NEXT_AUTHORIZED_TASK:                  NONE
 NEXT_EXPECTED_BRANCH:                 N/A
-LAST_UPDATED:                          2026-08-31 (ADMIN-AUTH-01 closed; Main CI PASS)
+LAST_UPDATED:                          2026-08-31 (ADMIN-AUTH-PROD-01 closed; Production PASS)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -46,19 +46,36 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   integration that was verified and recorded.
 - `UNEXPECTED_DRIFT` — anything else. **STOP** and inspect before any task.
 
+## Known operational debt
+
+- Dual compose config on the Production host: both `/opt/apex-home-fit/compose.yml`
+  (selected) and `/opt/apex-home-fit/docker-compose.yml` (root-owned) exist;
+  `docker compose` warns and uses `compose.yml`. Do not clean up during a
+  deployment; needs canonical Governance authorization.
+- Admin-route favicon 404: the admin layout (`src/app/admin/layout.tsx`) sets no
+  metadata icons, so `/favicon.ico` 404s (console-only) on `/admin/login`. The
+  main site sets icons in `src/app/[locale]/layout.tsx`.
+
 ## Notes
 
-- **AUTH-FIX-01 Production checkpoint = PASS and lifecycle = CLOSED** (2026-08-29). Root cause: the `apexhomefit_prod_db` volume was root-owned while the app runs as `nextjs` (uid 100), so every DB write failed (`attempt to write a readonly database`). The volume was re-owned to `100:101`, and the image now runs a startup writability preflight (`scripts/preflight-db.mjs`) that fails fast on an unwritable volume. Real login + post-login DB writes verified.
-- AUTH-FIX-01 source commits and checkpoint documentation are integrated into remote `main`; `fix/auth-login-production` is retired locally and remotely.
-- The historical S02 incident is closed; do not reopen its RSC/digest investigation.
+- **ADMIN-AUTH-PROD-01 Production checkpoint = PASS and lifecycle = CLOSED**
+  (2026-08-31). Admin Auth V1 is live on the preserved `apexhomefit_prod_db`
+  volume (13 migrations, latest `20260831120000_add_admin_auth`). The
+  migration was applied deterministically with the lockfile-pinned Prisma
+  6.19.3 CLI from an ops image derived from the canonical source — never via
+  dynamic `npx prisma` (see
+  `docs/PITFALLS/PRISMA-NPX-PRODUCTION-MIGRATION.md`). Two acceptance-time
+  defects were fixed via PR #11 (`f6f90d4`): the same-origin check behind the
+  reverse proxy (standalone container rebuilds `request.url` from
+  HOSTNAME/PORT — see
+  `docs/PITFALLS/NEXTJS-STANDALONE-PROXY-SAME-ORIGIN.md`) and the
+  provisioning helper's top-level await under CJS. Real-browser Production
+  acceptance 22/22 PASS; fix branch `fix/admin-auth-sameorigin-01` retired;
+  rollback evidence retained (`compose.yml.rollback-adminauth-3cf9cb6`).
+- AUTH-FIX-01 remains the immediate prior checkpoint (source `ce91a4f`, 12
+  migrations at that time); its volume-ownership lesson is preserved.
+- The historical S02 incident is closed; do not reopen its RSC/digest
+  investigation.
 - `TASKS.md` is the only executable backlog. Advisory documents cannot
   authorize work.
-- DOCUMENTATION-CONSOLIDATION-01 did not alter the verified Production
-  checkpoint. It is integrated at `c80a1bb`; its final state/report closure is
-  documentation-only. `AUTH-PERF-01` was subsequently investigated from
-  current main; focused auth/performance/persistence/EN-FA checks passed with
-  no reproducible application defect, and no Production mutation occurred.
-  `ADMIN-AUTH-01` completed as a non-Production-bound task: its dedicated
-  Email + Password boundary is integrated into `main`, Main CI passed, and
-  `feat/admin-auth-01` was retired. No next executable task is currently
-  authorized.
+- No next executable task is currently authorized.

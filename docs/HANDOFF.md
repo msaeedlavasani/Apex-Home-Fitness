@@ -8,21 +8,28 @@
 ## Current handoff
 
 - Active task: **NONE**.
-- Branch: `main` at integrated commit `9339317`.
-- `ADMIN-AUTH-01`, `DOCUMENTATION-CONSOLIDATION-01`, and `AUTH-PERF-01` are
-  closed; their task branches are retired.
-- Production mutation authorized/performed: **NO** for ADMIN-AUTH-01.
-- Application behavior/source mutation: **ADMIN-AUTH-01 only**; public OTP
-  behavior was not changed.
+- Branch: `main` at integrated commit `3cf9cb6`.
+- `ADMIN-AUTH-PROD-01`, `ADMIN-AUTH-01`, `DOCUMENTATION-CONSOLIDATION-01`, and
+  `AUTH-PERF-01` are closed; their task branches are retired
+  (`fix/admin-auth-sameorigin-01`, `feat/admin-auth-01`).
+- Production mutation authorized/performed: **YES for ADMIN-AUTH-PROD-01**
+  (Admin Auth migration applied + image-only app switch on the preserved
+  `apexhomefit_prod_db` volume; nothing else).
+- Application behavior/source mutation: **ADMIN-AUTH-01 + PR #11 fixes only**;
+  public OTP behavior was not changed.
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
 - Machine-oriented state: [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
 ## Stable operational context
 
-- Current verified Production checkpoint: `AUTH-FIX-01`, source `ce91a4f`, 12
-  Prisma migrations, SQLite volume `apexhomefit_prod_db:/data`; authoritative
-  evidence is in [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md).
-- Immediate rollback checkpoint: `R6`, source `aee28d1`.
+- Current verified Production checkpoint: `ADMIN-AUTH-PROD-01`, source
+  `3cf9cb6`, image `apex-home-fit:adminauth-3cf9cb6` (ID
+  `sha256:dec85f49…fe0e`), 13 Prisma migrations, SQLite volume
+  `apexhomefit_prod_db:/data`; authoritative evidence is in
+  [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md).
+- Immediate rollback checkpoint: `AUTH-FIX-01`, source `ce91a4f`; app-level
+  rollback compose evidence retained on the host
+  (`compose.yml.rollback-adminauth-3cf9cb6`).
 - Public user identity/session: phone proof through OTP, Supabase SSR session;
   canonical launch constraints are in [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md).
 - Deployment contract: [`RELEASING.md`](RELEASING.md). Release policy:
@@ -41,8 +48,9 @@
 
 ## Next transition
 
-`ADMIN-AUTH-01` is closed. Its accepted architecture, security boundary, and
-explicit Passkey/WebAuthn deferral remain owned by [`ADMIN_AUTH.md`](ADMIN_AUTH.md)
-and ADR-0004. No next executable task is currently authorized; a future task
-must be promoted in `TASKS.md` with explicit scope, dependencies, profile,
-acceptance, and any Production classification before execution.
+`ADMIN-AUTH-PROD-01` is closed with Production PASS. Admin Auth V1's accepted
+architecture, security boundary, and explicit Passkey/WebAuthn deferral remain
+owned by [`ADMIN_AUTH.md`](ADMIN_AUTH.md) and ADR-0004. No next executable
+task is currently authorized; a future task must be promoted in `TASKS.md`
+with explicit scope, dependencies, profile, acceptance, and any Production
+classification before execution.
