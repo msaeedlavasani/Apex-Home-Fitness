@@ -32,6 +32,11 @@ handoffs.
 - **Changing the Owner report destination requires an explicit Governance
   decision** (documented decision + contract amendment). It cannot be
   changed by a task's incidental choice.
+- **Owner inbox receives ONLY the final Markdown report.** Machine-readable
+  `.json` records are runtime/internal (repo-local `reports/` or task
+  workspace) and must NOT be exported to the Owner inbox; their validation
+  is preserved internally. HTML renderings are generated/exported only when
+  explicitly requested.
 
 ## 3. Contract fields
 
@@ -43,7 +48,7 @@ Every change report (JSON + markdown) MUST declare all fields:
 | `REPORT_VALIDATED` | `YES` / `NO` | The report passed `governance-runtime.mjs report <file>` (or equivalent). |
 | `REPORT_DELIVERED` | `YES` / `NO` / `N/A` | The actual report file was exported to the **Owner report destination** (an accessible, existing file at `OWNER_REPORT_PATH`). `YES` REQUIRES a successful Owner-path export. |
 | `REPORT_PATH` | path / `N/A` | Repo-local runtime/temporary path of the report file, when one exists inside the repo (`N/A` when none — e.g. the report was written directly to the Owner destination). |
-| `OWNER_REPORT_PATH` | absolute path / `N/A` | Absolute path of the report file exported to the Owner report destination. |
+| `OWNER_REPORT_PATH` | absolute path / `N/A` | Absolute path of the **final Markdown** report file exported to the Owner report destination. JSON records are never exported to the inbox. |
 
 **Both `REPORT_PATH` and `OWNER_REPORT_PATH` are recorded where applicable.**
 
@@ -119,8 +124,10 @@ exported rule, and the change-protected Owner destination above.
 ## 8. Delivery channels in this environment
 
 - Owner report destination: `/Users/msl/Documents/ApexHFAgentReports/`
-  (canonical export target; absolute path; outside the repo).
-- Repo-local `reports/` — temporary runtime copies only (gitignored;
-  exported to the Owner destination before closure).
-- Preview-tab HTML rendering can additionally surface a copy for review,
-  but never replaces the Owner-path export.
+  (canonical export target; **final `.md` reports only**; absolute path;
+  outside the repo).
+- Repo-local `reports/` — temporary runtime copies + internal `.json`
+  records only (gitignored; `.json` stays here, never in the inbox;
+  final `.md` exported to the Owner destination before closure).
+- Preview-tab HTML rendering may surface a copy for review only when
+  explicitly requested, and never replaces the Owner-path `.md` export.
