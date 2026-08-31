@@ -13,15 +13,15 @@ CURRENT_PRODUCTION_BUILD_ID:           TfZRMHwm3pBWUW3bBgTZc
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            12
-CURRENT_MAINLINE_BASELINE_COMMIT:      7edfb89697e909cfb78774bf3ae268b211eac934
-ACTIVE_TASK:                           DOCUMENTATION-CONSOLIDATION-01
-ACTIVE_TASK_PROFILE:                   DOCS_ONLY
-ACTIVE_BRANCH:                         docs/documentation-consolidation-01
-PREVIOUS_COMPLETED_TASK:               GOVERNANCE-RUNTIME-01 (CLOSED)
-PREVIOUS_COMPLETED_BRANCH:             fix/governance-runtime-01 (RETIRED)
+CURRENT_MAINLINE_BASELINE_COMMIT:      c80a1bb75f093c5bc8f6b17b544c7004dceb4e30
+ACTIVE_TASK:                           NONE
+ACTIVE_TASK_PROFILE:                   N/A
+ACTIVE_BRANCH:                         main
+PREVIOUS_COMPLETED_TASK:               DOCUMENTATION-CONSOLIDATION-01 (CLOSED)
+PREVIOUS_COMPLETED_BRANCH:             docs/documentation-consolidation-01 (RETIRED)
 NEXT_AUTHORIZED_TASK:                  AUTH-PERF-01
 NEXT_EXPECTED_BRANCH:                  fix/auth-perf-production-degradation
-LAST_UPDATED:                          2026-08-31 (DOCUMENTATION-CONSOLIDATION-01 active)
+LAST_UPDATED:                          2026-08-31 (DOCUMENTATION-CONSOLIDATION-01 closed)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -53,5 +53,6 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
 - The historical S02 incident is closed; do not reopen its RSC/digest investigation.
 - `TASKS.md` is the only executable backlog. Advisory documents cannot
   authorize work.
-- This docs-only task does not alter the verified Production checkpoint. After
-  it closes, `NEXT_AUTHORIZED_TASK = AUTH-PERF-01`.
+- DOCUMENTATION-CONSOLIDATION-01 did not alter the verified Production
+  checkpoint. It is integrated at `c80a1bb`; its final state/report closure is
+  documentation-only. `NEXT_AUTHORIZED_TASK = AUTH-PERF-01`.

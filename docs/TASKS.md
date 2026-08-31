@@ -10,21 +10,14 @@
 
 | Field | Value |
 |---|---|
-| Active task | `DOCUMENTATION-CONSOLIDATION-01` |
-| Profile | `DOCS_ONLY` |
-| Branch | `docs/documentation-consolidation-01` |
-| State | `ACTIVE` |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `main` |
+| State | `CLOSED` |
 | Production-bound | `NO` |
-| Next authorized task | `AUTH-PERF-01` after this task closes |
+| Next authorized task | `AUTH-PERF-01` |
 
 ## Approved queue
-
-### DOCUMENTATION-CONSOLIDATION-01 — ACTIVE
-
-- **Authorization:** owner prompt, 2026-08-31.
-- **Scope:** consolidate documentation ownership, executable backlog, decision persistence, and link graph.
-- **Production:** no mutation; no product/application behavior change.
-- **Exit:** governance/link validation, main integration, durable report, branch retirement.
 
 ### AUTH-PERF-01 — APPROVED / NOT STARTED
 
@@ -34,7 +27,7 @@
 - **Expected branch:** `fix/auth-perf-production-degradation` from current remote `main`.
 - **Auth/launch authority:** [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md);
   this task must not duplicate or silently change that contract.
-- **Dependency:** `DOCUMENTATION-CONSOLIDATION-01 = CLOSED`.
+- **Dependency:** `DOCUMENTATION-CONSOLIDATION-01 = CLOSED` (satisfied).
 - **Production:** any later mutation requires the Production-bound workflow and
   separate evidence; this entry does not authorize a deploy by itself.
 
@@ -56,6 +49,7 @@ preserve them until the owner separately authorizes bounded execution:
 
 | Task/checkpoint | Outcome | Evidence owner |
 |---|---|---|
+| `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
 | `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |
 | `AUTH-FIX-01` | CLOSED; Production PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 | S03 Session Core | CLOSED; architecture/runtime refactor complete | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) |

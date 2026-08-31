@@ -7,8 +7,9 @@
 
 ## Current handoff
 
-- Active task: `DOCUMENTATION-CONSOLIDATION-01` (`DOCS_ONLY`).
-- Branch: `docs/documentation-consolidation-01`, based on `origin/main` at `7edfb89`.
+- Active task: **NONE**.
+- Branch: `main`; `DOCUMENTATION-CONSOLIDATION-01` was integrated at
+  `c80a1bb` and its task branch is retired.
 - Production mutation authorized/performed: **NO**.
 - Application behavior/source mutation: **NO**.
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
@@ -37,6 +38,6 @@
 
 ## Next transition
 
-Complete documentation/link/governance validation, integrate this docs-only
-task into `main`, write the durable report, retire the task branch, then restore
-`ACTIVE_TASK=NONE`. The next separately authorized task remains `AUTH-PERF-01`.
+The next separately authorized task is `AUTH-PERF-01`. Start it only through
+the normal pre-task gate from current remote `main`; its expected branch is
+`fix/auth-perf-production-degradation`.
