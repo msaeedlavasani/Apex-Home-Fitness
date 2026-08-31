@@ -10,12 +10,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `N/A` |
-| State | `AUTONOMOUS-PROD-OPS-01 CLOSED` |
-| Production-bound | `YES` (completed) |
-| Next authorized task | `NONE` (ADMIN-CONSOLE-01 deferred; requires promotion) |
+| Active task | `ADMIN-CONSOLE-01` |
+| Profile | `CODE_NO_DEPLOY` → Production-deliverable via the gateway |
+| Branch | `feat/admin-console-01` |
+| State | `ACTIVE` |
+| Production-bound | `YES` |
+| Next authorized task | `NONE` |
 
 ## Approved queue
 
@@ -52,20 +52,18 @@
   rollback capture, DB invariants, automated health evidence, sanitized output,
   and zero manual Owner commands; durable report; integration and retirement.
 
-### ADMIN-CONSOLE-01 — DEFERRED / BLOCKED BY AUTONOMOUS-PROD-OPS-01
+### ADMIN-CONSOLE-01 — ACTIVE
 
-- **Authorization:** explicit owner authorization in the 2026-08-31 Apex Home
-  Fit continuation task.
+- **Authorization:** explicit owner task-delta in the 2026-08-31 Apex Home
+  Fit continuation task promoting `ADMIN-CONSOLE-01` to the executable
+  backlog and authorizing autonomous execution under repository Governance.
 - **Depends on:** `ADMIN-AUTH-01` and `ADMIN-AUTH-PROD-01` — both CLOSED;
-  current Production checkpoint PASS at source `3cf9cb6`.
-- **Sequencing:** owner-directed deferral before implementation. Discovery and
-  inventory established that the current Prisma schema can support read-only
-  Overview, Users, Workout Plans, Exercises, Operations, and Admin Sessions;
-  no feature code, merge, or deployment is retained from that discovery.
-- **Blocked by:** `AUTONOMOUS-PROD-OPS-01` reaching `CLOSED` under its zero
-  manual Owner command acceptance criterion.
-- **Execution authorization:** suspended until the blocking ops task closes and
-  `docs/TASKS.md` promotes Admin Console back to active work.
+  current Production checkpoint PASS; `AUTONOMOUS-PROD-OPS-01` CLOSED with the
+  Production Deployment Gateway operational.
+- **Sequencing:** promoted to ACTIVE after the blocking ops task closed. Prior
+  discovery/inventory (read-only Overview, Users, Workout Plans, Exercises,
+  Operations, Admin Sessions) was verified against current `main` and reused;
+  no stale feature code was retained.
 - **Bounded scope:** replace the protected placeholder dashboard with a real,
   read-oriented Admin Console V1 covering Overview, Users, Workout Plans,
   Exercises, Operations, and Admin Sessions. Every surface uses only current
@@ -80,15 +78,15 @@
   provider, or public-auth behavior change.
 - **Data classification:** read-only application queries; `DB_CHANGED = NO`.
 - **Production classification:** independently deployable browser-facing
-  feature. Production deployment and real-browser feature acceptance follow
-  the canonical release policy; any unavailable privileged/manual deployment
-  capability is reported as an exact blocker rather than worked around.
+  feature. Production delivery uses the canonical Production Deployment
+  Gateway established by `AUTONOMOUS-PROD-OPS-01` — that path must not be
+  bypassed or weakened.
 - **Acceptance:** focused Admin Console data/UI/security tests; existing Admin
   Auth and public OTP regression tests; governance checks; lint; typecheck;
   unit suite; Production build; targeted browser coverage; task-branch CI; PR
-  integration CI; exact-source Production release with rollback and fresh-
-  browser acceptance; Main CI; remote-main verification; branch retirement;
-  durable Report Watchdog handoff on every termination path.
+  integration CI; exact-source Production release (via gateway) with rollback
+  and fresh-browser acceptance; Main CI; remote-main verification; branch
+  retirement; durable Report Watchdog handoff on every termination path.
 
 ### AUTH-PERF-01 — CLOSED / NO REPRODUCIBLE DEFECT
 
