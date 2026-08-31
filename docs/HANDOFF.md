@@ -7,8 +7,8 @@
 
 ## Current handoff
 
-- Active task: **NONE**.
-- Branch: `main` at integrated commit `3cf9cb6`.
+- Active task: **AUTONOMOUS-PROD-OPS-01** (`RELEASE`).
+- Branch: `feat/autonomous-prod-ops-01`, based on `origin/main` at `2601961`.
 - `ADMIN-AUTH-PROD-01`, `ADMIN-AUTH-01`, `DOCUMENTATION-CONSOLIDATION-01`, and
   `AUTH-PERF-01` are closed; their task branches are retired
   (`fix/admin-auth-sameorigin-01`, `feat/admin-auth-01`).
@@ -48,9 +48,8 @@
 
 ## Next transition
 
-`ADMIN-AUTH-PROD-01` is closed with Production PASS. Admin Auth V1's accepted
-architecture, security boundary, and explicit Passkey/WebAuthn deferral remain
-owned by [`ADMIN_AUTH.md`](ADMIN_AUTH.md) and ADR-0004. No next executable
-task is currently authorized; a future task must be promoted in `TASKS.md`
-with explicit scope, dependencies, profile, acceptance, and any Production
-classification before execution.
+`AUTONOMOUS-PROD-OPS-01` is active. The constrained root-owned Unix-socket
+gateway must pass pre-hardening release and rollback proof before unrestricted
+sudo/Docker access is removed, then pass a second release from a freshly
+authenticated unprivileged session. `ADMIN-CONSOLE-01` remains deferred and
+must not resume until the ops task reaches CLOSED and is explicitly promoted.

@@ -36,6 +36,7 @@
 | Task-to-Production procedure | [`FEATURE_TO_PRODUCTION.md`](FEATURE_TO_PRODUCTION.md) |
 | Branch lifecycle and `DOCS_DIRECT_MAIN` fast path | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) |
 | Deployment operations | [`RELEASING.md`](RELEASING.md) |
+| Constrained Production deployment capability | [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md) |
 | Validation policy | [`CI.md`](CI.md) |
 | Production checkpoints | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 | Production incident index and reusable lessons | [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md), [`PITFALLS/`](PITFALLS/) |

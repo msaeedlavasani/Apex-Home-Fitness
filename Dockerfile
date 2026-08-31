@@ -2,7 +2,10 @@
 # Usage: `docker compose up --build` (see docs/RELEASING.md §Deployment).
 
 # --- Stage 1: dependencies ------------------------------------------------
-FROM node:22-alpine AS deps
+# Digest-pinned base keeps Production gateway builds immutable across registry
+# tag movement. Update the digest only through a separately validated source
+# change that rebuilds and accepts the complete image.
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
 WORKDIR /app
 ARG NPM_REGISTRY=https://registry.npmjs.org/
 COPY package.json package-lock.json ./
@@ -21,7 +24,7 @@ RUN npm ci \
 # Keeps the full dev toolchain (prisma CLI, typescript, playwright-free) so
 # migrations can be run from this stage (used by the `migrate` compose
 # service). Runtime dependencies are traced by Next standalone output.
-FROM node:22-alpine AS build
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -46,7 +49,7 @@ ENV DATABASE_URL="file:./build.db"
 RUN npm run build
 
 # --- Stage 3: runner -------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

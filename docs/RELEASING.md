@@ -290,3 +290,20 @@ adb shell am start -n com.apexhomefitness.app/.LauncherActivity
 - **offline shell قدیمی است:** مقدار `CACHE_NAME` در `public/service-worker.js` را افزایش بده.
 - **build در محیط محدود (Docker) شکست می‌خورد:** تمامی فونت‌ها (Inter, Roboto, Vazirmatn) برای پایداری و استقلال از اینترنت به صورت self-host در `src/app/fonts/` قرار دارند؛ اطمینان حاصل کن که هدر CSP در `next.config.mjs` اجازه `font-src 'self'` را می‌دهد.
 - **Bubblewrap doctor خطا می‌دهد:** مسیر JDK و Android SDK را با `bubblewrap updateConfig` تنظیم کن.
+
+# Autonomous Production operations target
+
+> **DECISION: ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`**
+
+`AUTONOMOUS-PROD-OPS-01` is the owner-authorized requirement to remove routine
+manual Owner commands from the Production deployment lifecycle. The active
+task must define a narrowly constrained deployment gateway or
+equivalent capability that validates approved immutable source/artifact
+identity, consumes protected environment internally without returning secret
+values, preserves rollback and database invariants, performs health evidence,
+and does not grant the agent arbitrary root shell access.
+
+The acceptance proof is a complete authorized Apex Home Fit Production release
+that reaches `CLOSED` without the Owner manually running SSH, sudo, Docker,
+Compose, migration, provisioning, or deployment commands. This ops capability
+must not be bundled with Admin Console feature implementation.
