@@ -43,23 +43,29 @@ function askHidden(question: string): Promise<string> {
   });
 }
 
-const email = normalizeAdminEmail(process.argv[2]);
-if (!email) {
-  console.error('Usage: npm run admin:provision -- admin@example.com');
-  process.exit(1);
+async function main(): Promise<void> {
+  const email = normalizeAdminEmail(process.argv[2]);
+  if (!email) {
+    console.error('Usage: npm run admin:provision -- admin@example.com');
+    process.exit(1);
+  }
+
+  try {
+    const password = await askHidden('Admin password: ');
+    const confirmation = await askHidden('Confirm admin password: ');
+    if (password.length < 12 || password !== confirmation) {
+      console.error('Password must be at least 12 characters and confirmations must match.');
+      process.exitCode = 1;
+    } else {
+      await provisionAdmin(email, password);
+      console.log(`Admin account provisioned: ${email}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : 'Provisioning failed.');
+    process.exitCode = 1;
+  }
 }
 
-try {
-  const password = await askHidden('Admin password: ');
-  const confirmation = await askHidden('Confirm admin password: ');
-  if (password.length < 12 || password !== confirmation) {
-    console.error('Password must be at least 12 characters and confirmations must match.');
-    process.exitCode = 1;
-  } else {
-    await provisionAdmin(email, password);
-    console.log(`Admin account provisioned: ${email}`);
-  }
-} catch (error) {
-  console.error(error instanceof Error ? error.message : 'Provisioning failed.');
-  process.exitCode = 1;
-}
+// Wrapped in an async main (invoked, not awaited at top level) so the helper
+// also runs under the CJS format used by `node --import tsx` in this repo.
+void main();

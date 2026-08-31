@@ -48,6 +48,68 @@ test('admin mutation requests reject cross-origin browser headers', () => {
   );
 });
 
+test('admin mutation requests accept the public site origin behind the proxy', () => {
+  // The standalone container rebuilds request.url from HOSTNAME/PORT
+  // (e.g. https://0.0.0.0:3000); the public site origin must still pass.
+  const proxied = new Request('https://0.0.0.0:3000/api/admin/login');
+  assert.equal(
+    isSameOriginRequest(proxied, 'https://apexhomefit.ir'),
+    true,
+    'non-browser requests without origin/referer remain allowed',
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {origin: 'https://apexhomefit.ir'}}),
+      'https://apexhomefit.ir',
+    ),
+    true,
+    'public site origin must be accepted when request.url is container-hosted',
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {origin: 'https://www.apexhomefit.ir'}}),
+      'https://apexhomefit.ir',
+    ),
+    true,
+    'www variant of the public site origin must be accepted',
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {origin: 'https://evil.test'}}),
+      'https://apexhomefit.ir',
+    ),
+    false,
+    'foreign origins must still be rejected',
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {referer: 'https://apexhomefit.ir/admin/login'}}),
+      'https://apexhomefit.ir',
+    ),
+    true,
+    'public site referer must be accepted',
+  );
+});
+
+test('admin mutation requests do not trust the default fallback site domain', () => {
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {origin: 'https://apexfit.app'}}),
+      undefined,
+    ),
+    false,
+    'without a configured site URL the container-hosted request origin is the only allowed origin',
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Request('https://0.0.0.0:3000/api/admin/login', {headers: {origin: 'https://malformed'}}),
+      'https://apexhomefit.ir',
+    ),
+    false,
+    'malformed browser origin is rejected',
+  );
+});
+
 test('admin route boundary has no public registration endpoint', async () => {
   const {readdirSync, existsSync} = await import('node:fs');
   assert.equal(existsSync('src/app/api/admin/register'), false);
