@@ -7,9 +7,10 @@
 
 ## Current handoff
 
-- Active task: **NONE**.
-- Branch: `main`; `DOCUMENTATION-CONSOLIDATION-01` was integrated at
-  `c80a1bb` and its task branch is retired.
+- Active task: **ADMIN-AUTH-01** (`CODE_NO_DEPLOY`).
+- Branch: `feat/admin-auth-01`, based on canonical `main` at `4f58641`.
+- `DOCUMENTATION-CONSOLIDATION-01` and `AUTH-PERF-01` are closed; their task
+  branches are retired.
 - Production mutation authorized/performed: **NO**.
 - Application behavior/source mutation: **NO**.
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
@@ -32,14 +33,15 @@
 - `TRANSFORMATION_ROADMAP.md` and product vision documents do not authorize work.
 - Accepted/deferred decisions must be written to their canonical owner before
   continuation, per Decision Persistence.
-- Do not infer an administrator auth design from the public OTP implementation;
-  the dedicated admin-auth direction is persisted but deliberately unimplemented.
+- Do not infer administrator authorization from the public OTP implementation;
+  Admin Auth V1 is a separate Email + Password boundary documented in
+  [`ADMIN_AUTH.md`](ADMIN_AUTH.md); Passkey/WebAuthn remains deferred.
 - Do not infer a provider migration from the resilience evaluation need.
 
 ## Next transition
 
-`AUTH-PERF-01` is closed after a focused evidence-backed investigation found
-no reproducible application defect; no Production mutation occurred. No next
-executable task is currently authorized. A future task must be promoted in
-`TASKS.md` with explicit scope, dependencies, profile, and acceptance before
-execution.
+`ADMIN-AUTH-01` is the currently authorized task. Its accepted architecture,
+security boundary, and explicit Passkey/WebAuthn deferral are owned by
+[`ADMIN_AUTH.md`](ADMIN_AUTH.md) and ADR-0004. The task is not authorized for
+Production deployment; after validation it must integrate into `main`, pass CI,
+and retire its branch before closure.

@@ -59,6 +59,12 @@ enum GenerationRequestStatus {
   FAILED
 }
 
+// V1 administrator authorization is intentionally one role only. This is not
+// a general multi-role RBAC model; adding roles requires a separate decision.
+enum AdminRole {
+  ADMIN
+}
+
 // ---------------------------------------------------------------
 // Models
 // ---------------------------------------------------------------
@@ -99,6 +105,37 @@ model User {
   workoutSessions WorkoutSession[]
   quizResponses   QuizResponse[]
   generationRequests ProgramGenerationRequest[]
+}
+
+// Dedicated local administrator identity. It is intentionally separate from
+// the public Supabase-backed User identity and Phone OTP journey.
+model AdminAccount {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  enabled      Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions AdminSession[]
+}
+
+// Opaque admin session tokens are hashed at rest; the raw token exists only in
+// the HttpOnly browser cookie and is never persisted or logged.
+model AdminSession {
+  id         String       @id @default(cuid())
+  adminId    String
+  tokenHash  String       @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+
+  admin AdminAccount @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, expiresAt])
+  @@index([expiresAt])
 }
 
 model WeightEntry {

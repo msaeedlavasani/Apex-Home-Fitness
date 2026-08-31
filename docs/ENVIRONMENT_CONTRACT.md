@@ -48,6 +48,16 @@ Report config state only as: `PRESENT_VALID` / `PRESENT_EMPTY` / `ABSENT` /
 | `PORT` / `HOSTNAME` | RUNTIME | PUBLIC | OPTIONAL (container defaults) | `3000` / `0.0.0.0` | defaults in Dockerfile |
 | `NODE_ENV` | RUNTIME | PUBLIC | REQUIRED | `production` in runner | set in Dockerfile |
 | `NEXT_TELEMETRY_DISABLED` | RUNTIME | PUBLIC | OPTIONAL | `1` | set in Dockerfile |
+| `ADMIN_SESSION_TTL_MS` | RUNTIME | SECRET(ish) | OPTIONAL | 12-hour bounded admin session lifetime | positive bounded integer; never print values |
+| `ADMIN_LOGIN_WINDOW_MS` | RUNTIME | SECRET(ish) | OPTIONAL | 15-minute administrator login window | positive bounded integer; never print values |
+| `ADMIN_LOGIN_IP_LIMIT` / `ADMIN_LOGIN_EMAIL_LIMIT` | RUNTIME | SECRET(ish) | OPTIONAL | administrator abuse-protection limits | positive bounded integer; never print values |
+
+## Administrator authentication boundary
+
+Admin Auth V1 uses the runtime `DATABASE_URL` and does not add public build
+arguments. Administrator passwords, session tokens, and provisioning input are
+never stored in this contract or committed configuration. See
+[`ADMIN_AUTH.md`](ADMIN_AUTH.md).
 
 ## CI / local
 

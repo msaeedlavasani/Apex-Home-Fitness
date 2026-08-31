@@ -10,12 +10,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `main` |
-| State | `CLOSED` |
+| Active task | `ADMIN-AUTH-01` |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/admin-auth-01` |
+| State | `ACTIVE` |
 | Production-bound | `NO` |
-| Next authorized task | `NONE` |
+| Next authorized task | `ADMIN-AUTH-01` |
 
 ## Approved queue
 
@@ -38,6 +38,14 @@
 - **Production:** no deployment or Production mutation was authorized or
   performed by this investigation.
 
+### ADMIN-AUTH-01 — ACTIVE / CODE_NO_DEPLOY
+
+- **Authorization:** owner decision in this task; architecture recorded in ADR-0004.
+- **Scope:** dedicated `/admin/login` Email + Password authentication, manual provisioning, one `ADMIN` role, server-side protected admin surface, secure password/session boundary.
+- **Explicit exclusions:** no public admin registration, no general RBAC, no Passkey/WebAuthn V1, no Production deployment.
+- **Acceptance:** focused auth/security tests, typecheck, lint, build, CI, main integration, and branch retirement.
+- **Canonical contract:** [`ADMIN_AUTH.md`](ADMIN_AUTH.md).
+
 ## Registered decisions — not executable
 
 These are deliberately **not backlog tasks**. Their canonical decision owners
@@ -45,7 +53,7 @@ preserve them until the owner separately authorizes bounded execution:
 
 | Decision/direction | Status | Canonical owner |
 |---|---|---|
-| Dedicated administrator authentication independent of the public OTP journey | ACCEPTED DIRECTION / DEFERRED; no implementation or auth mechanism selected | [`product/PRODUCT-VISION.md`](product/PRODUCT-VISION.md) |
+| Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
