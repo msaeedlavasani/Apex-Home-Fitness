@@ -10,7 +10,7 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-AUTH-PROD-01**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: AUTONOMOUS-PROD-OPS-01**
 
 ---
 
@@ -63,10 +63,37 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 
 ---
 
+## AUTONOMOUS-PROD-OPS-01 — post-hardening gateway release (CLOSED)
+
+- **Status:** VERIFIED post-hardening release; task **CLOSED**
+- **Purpose:** final release through the gateway from a freshly-authenticated
+  unprivileged `apexadmin` session after legacy privilege removal, proving the
+  full zero-manual-Owner release lifecycle
+- **Source:** `f2387cc3a5b8438e1fc0ab02d36174a151d1b504` (authoritative GitHub
+  `main` HEAD at release time)
+- **Image:** `apex-home-fit:release-f2387cc3a5b8` (ID
+  `sha256:7227b1c5ff0f181e9099462ef9485908b939b668196068987607e484e4866926`)
+- **DB_STATE:** integrity `ok`; **13 migrations**; volume owned `100:101`;
+  `db_change=false`, DB hash unchanged across the no-op migration gate;
+  backup `gateway-backup-prodops01-postharden.db` retained in volume
+- **ROLLBACK_REFERENCE:** `/opt/apex-home-fit/
+  compose.yml.rollback-prodops01-postharden` (root-only 0600);
+  `verify-rollback` via client PASS, `previous_image AVAILABLE`
+- **ACCEPTANCE:** release ran through `/usr/local/bin/apex-deploy` with legacy
+  NOPASSWD sudo and Docker-group membership **already removed**; fresh SSH
+  session: direct `sudo` = password required, direct `docker` = permission
+  denied, `.env` read = denied, proof file read = denied, yet `apex-deploy
+  status` READY and `release … post-hardening` PASS, loopback `/en` 200 and
+  public HTTPS `200`; proof root-only at
+  `/var/lib/apex-deploy-gateway/proof-post-hardening.json`
+- **PRIVILEGES:** `apexadmin` NOPASSWD sudo and Docker-group membership
+  REVOKED (proof-gated); `apexdeploy` group membership retained
+- **FINAL_STATUS:** PASS / CLOSED
+
 ## AUTONOMOUS-PROD-OPS-01 — pre-hardening gateway release
 
-- **Status:** VERIFIED pre-hardening release (intermediate; task still ACTIVE
-  at `HUMAN_CHECKPOINT: PRIVILEGE_REVOCATION_READY`)
+- **Status:** VERIFIED pre-hardening release (proof-before-revocation;
+  superseded by the post-hardening release above)
 - **Purpose:** prove the constrained root-owned Unix-socket gateway end-to-end
   (bootstrap, socket-only client, fail-closed, exact-source build, rollback
   capture, DB invariants, zero manual Owner commands) before legacy privilege

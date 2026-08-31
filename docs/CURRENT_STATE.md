@@ -6,23 +6,23 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: AUTONOMOUS-PROD-OPS-01 (PRE-HARDENING RELEASE)
-CURRENT_PRODUCTION_SOURCE:             fde82c1a8fb33edaa1af60e43f6a9d6eb149d0a2
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-fde82c1a8fb3
-CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:05f2c97591d5)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: AUTONOMOUS-PROD-OPS-01 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             f2387cc3a5b8438e1fc0ab02d36174a151d1b504
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-f2387cc3a5b8
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:7227b1c5ff0f)
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
-CURRENT_MAINLINE_BASELINE_COMMIT:       fde82c1a8fb33edaa1af60e43f6a9d6eb149d0a2 (PR #12 merged)
-ACTIVE_TASK:                           AUTONOMOUS-PROD-OPS-01
-ACTIVE_TASK_PROFILE:                   RELEASE
-ACTIVE_BRANCH:                         feat/autonomous-prod-ops-01 (MERGED; retention documented)
-PREVIOUS_COMPLETED_TASK:               ADMIN-AUTH-PROD-01 (CLOSED; PRODUCTION_PASS)
-PREVIOUS_COMPLETED_BRANCH:             fix/admin-auth-sameorigin-01 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE (ADMIN-CONSOLE-01 deferred behind active task)
+CURRENT_MAINLINE_BASELINE_COMMIT:       f2387cc3a5b8438e1fc0ab02d36174a151d1b504 (post-hardening release source)
+ACTIVE_TASK:                           NONE
+ACTIVE_TASK_PROFILE:                   N/A
+ACTIVE_BRANCH:                         feat/autonomous-prod-ops-01 (RETIRED)
+PREVIOUS_COMPLETED_TASK:               AUTONOMOUS-PROD-OPS-01 (CLOSED; PRODUCTION_PASS)
+PREVIOUS_COMPLETED_BRANCH:             feat/autonomous-prod-ops-01 (RETIRED)
+NEXT_AUTHORIZED_TASK:                  NONE (ADMIN-CONSOLE-01 deferred behind closed ops task)
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         HUMAN_CHECKPOINT: PRIVILEGE_REVOCATION_READY
-LAST_UPDATED:                          2026-08-31 (pre-hardening gateway release PASS; awaiting post-revocation sequence)
+CURRENT_PHASE:                         CLOSED
+LAST_UPDATED:                          2026-08-31 (post-hardening release PASS; task CLOSED)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -49,37 +49,44 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
 
 ## Known operational debt
 
-- `apexadmin` retains both unrestricted passwordless sudo and Docker group
-  membership. `AUTONOMOUS-PROD-OPS-01` preserved these during bootstrap and
-  the pre-hardening release, and **they must remain untouched** at the current
-  `HUMAN_CHECKPOINT: PRIVILEGE_REVOCATION_READY`. The replacement gateway has
-  been proven end-to-end (bootstrap, socket-only client, fail-closed tests,
-  exact-main release, rollback verification). Only after the Owner authorizes
-  the hardening step may the proof-gated removal of `NOPASSWD: ALL` and Docker
-  group membership occur, followed by a fresh-SSH post-hardening release.
+- **`apexadmin` legacy privileges revoked (2026-08-31):** NOPASSWD:ALL
+  (`/etc/sudoers.d/apexadmin`) and Docker-group membership were removed by the
+  proof-gated hardening step after the pre-hardening release and rollback
+  proof. A fresh SSH session confirmed direct `sudo`, `docker`, and `.env`
+  reads all fail while `apex-deploy` still succeeds. `apexadmin` retains only
+  its `apexdeploy` group membership (the gateway access group) plus standard
+  `sudo`/`users` membership (no passwordless grant).
 
-## Gateway (AUTONOMOUS-PROD-OPS-01) verified state
+## Gateway (AUTONOMOUS-PROD-OPS-01) verified state — CLOSED
 
 - Root-owned daemon `apex-deploy-gateway` active on host `sabtbrooker`; socket
   `/run/apex-deploy-gateway/gateway.sock` owned `root:apexdeploy` mode 0660;
   unprivileged client `/usr/local/bin/apex-deploy` uses only that Unix socket
   (no sudo/subprocess; `AF_UNIX` only).
-- Pre-hardening exact-main release through the unprivileged client:
+- Post-hardening exact-main release through the unprivileged client:
+  `release_id=prodops01-postharden`, `phase=post-hardening`,
+  `source_sha=f2387cc3a5b8…` (authoritative GitHub `main` HEAD), image
+  `apex-home-fit:release-f2387cc3a5b8` (ID `sha256:7227b1c5…`), DB-unchanged
+  (`db_changed=false`), health `PASS`, secret boundary `PROTECTED`. Proof
+  written root-only to `/var/lib/apex-deploy-gateway/proof-post-hardening.json`.
+- Pre-hardening exact-main release (proof-before-revocation):
   `release_id=prodops01-preharden`, `source_sha=fde82c1a8fb3…` (authoritative
-  GitHub `main` HEAD), image
-  `apex-home-fit:release-fde82c1a8fb3`, DB-unchanged (`db_changed=false`),
-  health `PASS`, secret boundary `PROTECTED`. Proof written root-only to
+  `main` at that time), image `apex-home-fit:release-fde82c1a8fb3`, health
+  `PASS`; proof root-only at
   `/var/lib/apex-deploy-gateway/proof-pre-hardening.json`.
-- Rollback evidence: `/opt/apex-home-fit/compose.yml.rollback-prodops01-preharden`
-  (root-only 0600); `verify-rollback` through the client returned PASS
-  (`previous_image AVAILABLE`); marker
-  `/var/lib/apex-deploy-gateway/rollback-verified` present (root-only).
+- Rollback evidence: root-only compose snapshots
+  `compose.yml.rollback-prodops01-preharden` and
+  `compose.yml.rollback-prodops01-postharden` (0600); `verify-rollback`
+  through the client returned PASS for both (`previous_image AVAILABLE`);
+  marker `/var/lib/apex-deploy-gateway/rollback-verified` present (root-only).
 - Fail-closed verified live: arbitrary `command` field rejected, `db_change`
   requests rejected, non-authoritative source SHA rejected.
 - Protected boundary: `/opt/apex-home-fit/.env` remains `root:root` 0600 and is
   unreadable by `apexadmin`; gateway returns sanitized JSON only.
-- Legacy privileges intentionally still present, awaiting Owner authorized
-  hardening.
+- Legacy privileges removed after proof; gateway operation does not depend on
+  them (`apexdeploy` group membership retained for `apexadmin`).
+- Prerequisite hardening preconditions consumed: `proof-pre-hardening.json`
+  and `rollback-verified` both existed before `harden-after-proof.sh` ran.
 
 - Dual compose config on the Production host: both `/opt/apex-home-fit/compose.yml`
   (selected) and `/opt/apex-home-fit/docker-compose.yml` (root-owned) exist;
@@ -90,6 +97,16 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **AUTONOMOUS-PROD-OPS-01 = CLOSED (PRODUCTION_PASS, 2026-08-31).** The
+  constrained root-owned Unix-socket deployment gateway is fully
+  operational on `sabtbrooker`: exact-authoritative-`main` releases,
+  digest-pinned builds, pinned Prisma, DB-invariant + rollback proof through
+  the unprivileged client. Legacy `apexadmin` NOPASSWD sudo and Docker-group
+  membership were removed by the proof-gated hardening step; a fresh SSH
+  session confirmed sudo/docker/`.env` all fail while `apex-deploy`
+  succeeds. Both a pre-hardening and a post-hardening exact-main release
+  reached PASS with zero manual Owner commands.
 
 - **ADMIN-AUTH-PROD-01 Production checkpoint = PASS and lifecycle = CLOSED**
   (2026-08-31). Admin Auth V1 is live on the preserved `apexhomefit_prod_db`

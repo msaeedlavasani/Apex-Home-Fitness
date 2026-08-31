@@ -10,16 +10,16 @@
 
 | Field | Value |
 |---|---|
-| Active task | `AUTONOMOUS-PROD-OPS-01` |
-| Profile | `RELEASE` |
-| Branch | `feat/autonomous-prod-ops-01` |
-| State | `ACTIVE` |
-| Production-bound | `YES` |
-| Next authorized task | `NONE` |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `N/A` |
+| State | `AUTONOMOUS-PROD-OPS-01 CLOSED` |
+| Production-bound | `YES` (completed) |
+| Next authorized task | `NONE` (ADMIN-CONSOLE-01 deferred; requires promotion) |
 
 ## Approved queue
 
-### AUTONOMOUS-PROD-OPS-01 — ACTIVE
+### AUTONOMOUS-PROD-OPS-01 — CLOSED
 
 - **Authorization:** explicit owner sequencing correction and execution
   authorization in the 2026-08-31 Apex Home Fit continuation task.
@@ -139,6 +139,7 @@ preserve them until the owner separately authorizes bounded execution:
 
 | Task/checkpoint | Outcome | Evidence owner |
 |---|---|---|
+| `AUTONOMOUS-PROD-OPS-01` | CLOSED; constrained Production deployment gateway proven end-to-end with zero manual Owner commands; pre- and post-hardening exact-main releases PASS; rollback verified; legacy `apexadmin` NOPASSWD sudo and Docker-group membership revoked after proof; branch retired; Main CI PASS on merge `fde82c1` (run `33411342851`) and docs `f2387cc` (run `33413935668`) | [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md), [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260831-AUTONOMOUS-PROD-OPS-01.md`, PR #12 |
 | `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
 | `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |
 | `AUTH-PERF-01` | CLOSED; no reproducible defect in focused auth/performance/persistence/EN-FA investigation; no source fix required | durable handoff report; no Production mutation |
