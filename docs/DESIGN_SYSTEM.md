@@ -71,10 +71,11 @@ The neutral ramp is purely semantic to avoid developer error in dark mode.
 ### 3.0 Foundation فعلی
 
 - **CURRENT:** Tailwind CSS و tokenهای CSS در `src/app/globals.css` منبع اصلی ظاهر موجود هستند.
-- **CURRENT:** MUI `9.3.1` با Emotion به‌عنوان foundation دوم اضافه شده و از tokenهای `--apex-*` مصرف می‌کند.
-- **CONSTRAINT:** فعلاً هیچ صفحه‌ای بازنویسی گسترده نمی‌شود؛ مهاجرت MUI باید تدریجی، component-by-component و با حفظ ظاهر فعلی باشد.
-- **RULE:** برای component جدید عمومی، ابتدا MUI موجود یا primitive مشترک را بررسی کن؛ برای componentهای legacy همان قرارداد فعلی را حفظ کن.
+- **CURRENT:** MUI `9.3.1` با Emotion نصب و `MuiProvider` آن در layout فعال است، اما **هیچ component واقعی از MUI در `src` مصرف نمی‌شود** (فقط خود provider).
+- **RULE (KIT-FIRST — مصوب 2026-09-01 پس از POST-AUDIT-RATIONALIZATION-01):** برای همه‌ی UI جدید (شامل Admin Console) ابتدا platform kit مشترک `src/components/ui/platform` و primitiveهای مشترک را reuse کن (ترتیب `reuse → extend → compose → create`). MUI نباید foundation دوم رقیب شود؛ استفاده از MUI فقط با نیاز مشخص و مستند که kit آن را پوشش نمی‌دهد و با ثبت تصمیم صریح مجاز است.
+- **CONSTRAINT:** فعلاً هیچ صفحه‌ای بازنویسی گسترده نمی‌شود؛ تغییرات تدریجی، component-by-component و با حفظ ظاهر فعلی انجام می‌شود.
 - `MuiProvider` فقط یک بار در layout locale قرار می‌گیرد. provider موازی یا نصب نسخه‌ی دوم MUI ممنوع است.
+- **NOTE:** بند KIT-FIRST مطابق `GOVERNANCE-UI-GATE-01` (مصوب 2026-09-01) به‌روزرسانی شده است؛ ثبت رسمی همراه `ADMIN-DS-06` دنبال می‌شود.
 
 ### MUI usage example
 

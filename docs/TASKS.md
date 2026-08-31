@@ -16,6 +16,7 @@
 | State | `ADMIN-CONSOLE-01 CLOSED` |
 | Production-bound | `YES` (completed) |
 | Next authorized task | `NONE` |
+| Pending owner review | `GOVERNANCE-HARDENING-PROMOTION-01` applied — governance hardening CLOSED; Batch Delivery V1 prerequisites ADOPTED; first batch (ADMIN-DS-01…04) UNBLOCKED pending explicit batch-start authorization |
 
 ## Approved queue
 
@@ -125,13 +126,61 @@ preserve them until the owner separately authorizes bounded execution:
 | Decision/direction | Status | Canonical owner |
 |---|---|---|
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
-| Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; any future implementation requires an audit log, persistent and unambiguous viewing-as banner, constrained permissions, and an immediate exit guard | [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
+| Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements (actor/target identity, durable audit trail, start/end timestamps, persistent banner, safe exit, session isolation, no credential use, restricted sensitive operations, server-side enforcement, security review gate) persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
+| Batch Delivery V1 operating model (one active session, serial isolated tasks, one consolidated integration/CI/release lifecycle) | ACCEPTED / ADOPTED 2026-09-01 (`GOVERNANCE-HARDENING-PROMOTION-01`) — model in force; each batch still requires separate execution authorization; runtime constraint basis in the orchestration investigation record | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
+| Admin Console design-system alignment (first batch `ADMIN-DS-01…04`; `ADMIN-DS-05` REQUIRED remediation sequenced after foundational work; `ADMIN-DS-06` KIT-FIRST doc reconciliation; `MOBILE-READINESS-01` audit proposal) | PROPOSED / NOT AUTHORIZED — audit complete, remediation not implemented; UI Conformance Gate + report delivery contract IN FORCE from 2026-09-01 (hardening CLOSED), so batch members can proceed once batch-start is authorized | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md) |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`; must use a constrained deployment gateway/capability that consumes protected configuration internally without exposing secrets or arbitrary root shell access | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
 | Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | S02-E and S-04..S-06 | PLANNED OR DEFERRED / OWNER CHECKPOINT REQUIRED | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+
+## Approved queue — hardening (closed in this promotion)
+
+### GOVERNANCE-UI-GATE-01 — CLOSED / CODE_NO_DEPLOY
+
+- **Authorization:** Owner DELIVERING delta `GOVERNANCE-HARDENING-PROMOTION-01`
+  (2026-09-01) explicitly authorizing the UI Conformance Gate promotion.
+- **Bounded scope:** project-wide UI Conformance Gate — every task with
+  `UI_CHANGED=YES` must discover the existing Apex Design System, reuse
+  providers/tokens/typography/primitives/shared components where applicable
+  (KIT-FIRST), preserve theme/dark-mode and localization/RTL architecture,
+  follow responsive/a11y conventions, justify new visual primitives, and
+  declare `REUSE | EXTEND | AUTHORIZED_PARALLEL` with evidence; parallel
+  visual systems fail closed; functional correctness alone is not sufficient
+  UI acceptance.
+- **Outcome:** contract adopted [`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md);
+  machine-enforced via new report fields (`UI_CHANGED`, `UI_CONFORMANCE`,
+  `UI_CONFORMANCE_DECISION`, `UI_CONFORMANCE_EVIDENCE`) in
+  `governance-runtime.mjs report`, new `governance-runtime.mjs ui` static
+  scan (MUI allowlist + UI-kit allowlist, fail-closed), `governance:check`
+  wiring (`docs` + `ui`), and 20-pass runtime test suite. Review-enforced
+  parts documented (reuse quality, dark-mode/RTL/a11y preservation,
+  justification quality).
+- **Production impact:** none — tooling/docs only; `DB_CHANGED = NO`;
+  `PRODUCTION_BOUND = NO`. No Admin UI remediation was implemented.
+- **Evidence:** commit `GOVERNANCE-HARDENING-PROMOTION-01` (SHA in the
+  durability report), the ATTACHED Owner report
+  `AHF-FB-20260901-GOVERNANCE-HARDENING-PROMOTION-01.md`.
+
+### GOVERNANCE-REPORT-DELIVERY-01 — CLOSED / CODE_NO_DEPLOY
+
+- **Authorization:** same Owner delta as above.
+- **Bounded scope:** report delivery contract — distinguish
+  `REPORT_PERSISTED` / `REPORT_VALIDATED` / `REPORT_DELIVERED` / `REPORT_PATH`
+  / `OWNER_REPORT_PATH`; every final/Analysis-Gate Owner report must be
+  exported to the established Owner report destination
+  `/Users/msl/Documents/ApexHFAgentReports/` (change-protected; repo-local
+  `reports/` is temporary/runtime-only and must never enter Git);
+  `REPORT_DELIVERED=YES` requires successful Owner-path export; both paths
+  recorded where applicable; drift root cause documented.
+- **Outcome:** contract adopted [`governance/REPORT-DELIVERY-CONTRACT.md`](governance/REPORT-DELIVERY-CONTRACT.md);
+  machine-enforced (path-existence rules, delivered⇒owner-exported rule,
+  persisted⇒path rules) in `governance-runtime.mjs report` + tests;
+  `AI_CHANGE_TEMPLATE.md` and `GOVERNANCE_RUNTIME.md` extended.
+- **Production impact:** none — tooling/docs only; `DB_CHANGED = NO`.
+- **Evidence:** same promotion report as above.
 
 ## Recently closed
 
@@ -150,6 +199,33 @@ preserve them until the owner separately authorizes bounded execution:
 
 Older batch history is preserved in Git and the explicitly archived
 [`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md). It is not duplicated here.
+
+## PROPOSED — not authorized (pending owner review)
+
+> Items here are **proposals only**. They are NOT executable backlog entries.
+> Nothing in this section authorizes work. Promotion to the approved queue
+> happens only through the Promotion rule below after explicit owner
+> authorization.
+
+| Proposal | Status | Details |
+|---|---|---|
+| `ADMIN-DS-01` — Admin foundation: dark mode, self-hosted fonts, metadata/favicon on the admin root layout | PROPOSED / NOT AUTHORIZED | `EXECUTION_CLASS=ISOLATED`; no dependencies; own worktree/branch; admin-only; `DB_CHANGED = NO`; validation: typecheck/lint/build + dark-mode/favicon browser check |
+| `ADMIN-DS-02` — Admin shared primitives (PageSection/Stat/Table/EmptyState/Badge) in `src/components/admin`; behavior-neutral refactor of the six console pages | PROPOSED / NOT AUTHORIZED | `EXECUTION_CLASS=PARALLEL_SAFE`; new files only; validation: typecheck/lint/unit/build |
+| `ADMIN-DS-03` — Platform-kit adoption for admin controls (login form, nav, logout) | PROPOSED / NOT AUTHORIZED | `EXECUTION_CLASS=PARALLEL_SAFE`; kit + files already exist; validation: typecheck/lint/build + login browser spec |
+| `ADMIN-DS-04` — Admin state boundaries + accessibility pass (`loading`/`error`/`not-found` boundaries, table captions/scope, focus rings, a11y spec coverage) | PROPOSED / NOT AUTHORIZED | `EXECUTION_CLASS=PARALLEL_SAFE`; validation: typecheck/lint/build + a11y/keyboard/admin browser specs |
+| `ADMIN-DS-05` — Admin Persian/RTL + i18n parity | REQUIRED REMEDIATION / NOT AUTHORIZED (owner decision 2026-09-01; NOT deferred; sequenced AFTER the foundational batch) | `EXECUTION_CLASS=SEQUENTIAL`; `DEPENDENCIES`: ADMIN-DS-01 (shares admin root layout/provider wiring), then ADMIN-DS-02/03 (primitives + kit adoption it should consume); own worktree/branch; admin-only; fa parity tests (next-intl messages, dir handling, RTL alignment); candidate member of the post-batch-1 batch with ADMIN-DS-06 |
+| `ADMIN-DS-06` — KIT-FIRST decision record + `DESIGN_SYSTEM.md` MUI drift reconciliation | PROPOSED / NOT AUTHORIZED | `DOCS_ONLY` candidate; records KIT-FIRST as the current Admin UI rule (reuse platform kit first; MUI only on a concrete documented unmet requirement); `DESIGN_SYSTEM.md` §3.0 already amended locally and uncommitted; candidate member of the post-batch-1 batch with ADMIN-DS-05 |
+| `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | PROPOSED / NOT AUTHORIZED | `AUDIT`/architecture task; does NOT build iOS/Android; inspects current architecture for future mobile blockers across 12 dimensions (business logic↔UI coupling, API/data-contract portability, auth/session assumptions, browser-only storage, workout-session portability, media/video, navigation, offline/resume, notifications/background, localization/RTL, tokens vs platform UI, HealthKit/Health Connect boundaries); outputs: client-agnostic-now list, stays-web-specific list, development guardrails, mobile-implementation triggers, later tech-selection spike (RN/Expo vs alternatives — no stack selected now). Spec: [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md) |
+
+| First Batch Delivery V1 batch (ADMIN-DS-01…04) | PROPOSED — awaiting explicit batch-start authorization; hardening precursor CLOSED so batch is UNBLOCKED on governance prerequisites | Membership UNCHANGED; precursor completed via `GOVERNANCE-HARDENING-PROMOTION-01`; integration order `ADMIN-DS-02 → ADMIN-DS-01 → ADMIN-DS-03 → ADMIN-DS-04`; one branch CI / PR / Main CI / one gateway release. Post-batch sequencing: `MOBILE-READINESS-01` audit → batch 2 (`ADMIN-DS-05` + `ADMIN-DS-06`). Full member matrix in [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) §8 |
+
+These proposals do not alter, delete, or supersede any existing approved,
+closed, or registered item above. Existing deferred items (e.g.
+`ADMIN-AUTH-PASSKEY-01`, `ADMIN-IMPERSONATION-01`, S02-E/S04..S06, Workout
+V2) keep their status. `ADMIN-DS-05` is **REQUIRED remediation** (owner
+decision 2026-09-01) sequenced after the foundational batch — not deferred.
+`BATCH-DELIVERY-AND-ADMIN-AUDIT-01` remains in the ANALYSIS GATE until the
+Owner reviews the interim report.
 
 ## Promotion rule
 

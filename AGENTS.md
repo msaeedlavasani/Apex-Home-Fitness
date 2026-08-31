@@ -69,6 +69,16 @@ reuse → extend → compose → create
 - reduced motion را رعایت کن.
 - هر redesign باید دامنه‌ی محدود و baseline قابل مقایسه داشته باشد.
 
+### UI Conformance Gate (الزامی برای هر تسک با `UI_CHANGED=YES`)
+
+- قبل از هر پیاده‌سازی UI، `docs/DESIGN_SYSTEM.md` و `src/components/ui/platform` و primitiveهای مشترک را کشف کن (Discover before implement).
+- KIT-FIRST: ابتدا platform kit مشترک و componentهای shared را reuse کن؛ MUI نباید foundation دوم رقیب شود و استفاده از آن فقط با نیاز مستند و ثبت تصمیم مجاز است.
+- معماری theme/dark-mode (`.dark` + `ThemeScript`/`ThemeProvider`)، معماری localization/RTL (next-intl، `dir`، Vazirmatn) و معماری platform را حفظ کن.
+- هر primitive یا الگوی بصری جدید باید توجیه شود؛ وقتی سیستم موجود کافی نیست، تصمیم صریح `REUSE` یا `EXTEND` (و فقط با اجازه‌ی Owner: `AUTHORIZED_PARALLEL`) ثبت کن.
+- صحت عملکردی به‌تنهایی پذیرش UI نیست؛ باید شواهد Conformance در گزارش ثبت شود.
+- جزئیات و اجبارهای ماشینی: `docs/governance/UI-CONFORMANCE-GATE.md`.
+- گزارش‌ها موظف‌اند مسیر گزارش canonical را صریحاً سطح کنند و فایل واقعی را (در صورت امکان محیطی) تحویل دهند — `docs/governance/REPORT-DELIVERY-CONTRACT.md`.
+
 ## 7. Validation
 
 ابتدا narrowest validation مربوط به تغییر را اجرا کن و سپس در صورت نیاز گسترده‌تر کن:

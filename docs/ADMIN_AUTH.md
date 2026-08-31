@@ -67,12 +67,14 @@ not a web endpoint and does not alter the public registration surface.
 `ADMIN-AUTH-PASSKEY-01` — define and implement Passkey/WebAuthn enrollment,
 recovery, and step-up authentication after a separate owner authorization.
 
-`ADMIN-IMPERSONATION-01` — **DEFERRED / NOT AUTHORIZED**. Any future
+`ADMIN-IMPERSONATION-01` — **DEFERRED / NOT AUTHORIZED** (full mandatory
+requirement set persisted in
+[`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md)). Any future
 View-as-User capability crosses the administrator/public-user security
 boundary and therefore requires, at minimum, a durable audit log, a persistent
-and unambiguous “Viewing as…” banner, explicitly constrained operations, and
-an immediate exit guard. Admin Console V1 must not simulate or partially
-implement this capability.
+and unambiguous “Viewing as…” banner, explicitly constrained operations, an
+immediate exit guard, and a security review gate before implementation.
+Admin Console V1 must not simulate or partially implement this capability.
 
 ## Admin Console V1
 

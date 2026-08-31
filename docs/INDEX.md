@@ -26,10 +26,17 @@
 | Admin Auth V1 architecture decision | [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Architecture stabilization status and remaining boundaries | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | UI/accessibility | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) |
+| UI Conformance Gate (mandatory for `UI_CHANGED=YES` tasks) | [`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md) |
+| Report delivery contract (persisted / validated / delivered / path) | [`governance/REPORT-DELIVERY-CONTRACT.md`](governance/REPORT-DELIVERY-CONTRACT.md) |
 | AI/API contracts | [`AI_API.md`](AI_API.md) |
 | Assets/offline/media | [`ASSETS.md`](ASSETS.md) |
 | Public user auth and OTP launch readiness | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) |
 | Administrator authentication V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
+| Admin impersonation / View-as-User capability spec (DEFERRED) | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md) |
+| Freebuff orchestration capability (one active CLI per account; no true parallel workers) | [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
+| Batch Delivery operating model (serial isolated tasks, consolidated lifecycle) | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md) |
+| Admin Console design-system posture / audit + KIT-FIRST control rule | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) |
+| Mobile readiness audit (future mobile blockers / web lock-in; PROPOSED) | [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md) |
 | Environment variables and classification | [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md), [`.env.example`](../.env.example) |
 | Data schema | [`../prisma/schema.prisma`](../prisma/schema.prisma) |
 | Release requirements | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) |
