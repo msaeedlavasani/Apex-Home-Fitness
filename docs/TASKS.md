@@ -30,6 +30,8 @@
 - **Evidence:** durable AgentReport
   `AHF-FB-20260831-NEXT-AUTHORIZED-WORK.md` under the configured AgentReports
   directory.
+- **Launch readiness:** [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md)
+  remains the canonical readiness contract for the related auth surface.
 - **Browser limitation:** local Playwright could not start its configured dev
   server on port 3000; this is test-environment evidence, not a Production or
   application failure. No Production browser claim is made.
