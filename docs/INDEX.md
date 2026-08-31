@@ -23,11 +23,13 @@
 | Product advisory, competitor evidence, North Star ideas | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout V2 advisory vision and unresolved questions | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md), [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) |
 | Architecture principles and accepted architecture decisions | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md), [`adr/README.md`](adr/README.md) |
+| Admin Auth V1 architecture decision | [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Architecture stabilization status and remaining boundaries | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | UI/accessibility | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) |
 | AI/API contracts | [`AI_API.md`](AI_API.md) |
 | Assets/offline/media | [`ASSETS.md`](ASSETS.md) |
-| Auth and public-launch readiness | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) |
+| Public user auth and OTP launch readiness | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) |
+| Administrator authentication V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Environment variables and classification | [`ENVIRONMENT_CONTRACT.md`](ENVIRONMENT_CONTRACT.md), [`.env.example`](../.env.example) |
 | Data schema | [`../prisma/schema.prisma`](../prisma/schema.prisma) |
 | Release requirements | [`RELEASE_POLICY.md`](RELEASE_POLICY.md) |

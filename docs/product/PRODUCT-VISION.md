@@ -103,14 +103,13 @@ it safely**, or **how to stay consistent**. Apex Home Fit solves this by:
   polish, body measurements, PR/volume logging (coordinated with V2),
   monthly/yearly reports, goals & reminders, real social challenges, nutrition,
   health-kit sync.
-- **Dedicated administrator authentication — ACCEPTED DIRECTION / DEFERRED.**
-  Administrative access must have a dedicated authentication path independent
-  of the public phone-OTP journey. This records the product boundary only: no
-  credential type, identity provider, authorization model, route, recovery
-  mechanism, or implementation is selected or authorized. Public OTP remains
-  the current user flow. A future owner-authorized task must define threat
-  model, roles, bootstrap/recovery, auditability, and fail-closed acceptance
-  before implementation.
+- **Dedicated administrator authentication — ACCEPTED / V1 IMPLEMENTED.**
+  Administrative access uses the dedicated `/admin/login` Email + Password path,
+  secure manual provisioning, one `ADMIN` role, and server-side authorization
+  for protected `/admin/*` surfaces. It is independent of the public phone-OTP
+  journey. Passkey/WebAuthn remains explicitly deferred; the V1 credential
+  boundary is designed to remain replaceable. See
+  [`../ADMIN_AUTH.md`](../ADMIN_AUTH.md) and ADR-0004.
 
 ## 7. Execution boundary
 

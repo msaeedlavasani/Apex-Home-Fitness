@@ -14,14 +14,14 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            12
 CURRENT_MAINLINE_BASELINE_COMMIT:      c80a1bb75f093c5bc8f6b17b544c7004dceb4e30
-ACTIVE_TASK:                           NONE
-ACTIVE_TASK_PROFILE:                   N/A
-ACTIVE_BRANCH:                         main
+ACTIVE_TASK:                           ADMIN-AUTH-01
+ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY
+ACTIVE_BRANCH:                         feat/admin-auth-01
 PREVIOUS_COMPLETED_TASK:               AUTH-PERF-01 (CLOSED; no reproducible defect)
 PREVIOUS_COMPLETED_BRANCH:             fix/auth-perf-production-degradation (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE
-NEXT_EXPECTED_BRANCH:                  N/A
-LAST_UPDATED:                          2026-08-31 (AUTH-PERF-01 investigation closed)
+NEXT_AUTHORIZED_TASK:                  ADMIN-AUTH-01
+NEXT_EXPECTED_BRANCH:                  feat/admin-auth-01
+LAST_UPDATED:                          2026-08-31 (ADMIN-AUTH-01 active)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -58,4 +58,6 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   documentation-only. `AUTH-PERF-01` was subsequently investigated from
   current main; focused auth/performance/persistence/EN-FA checks passed with
   no reproducible application defect, and no Production mutation occurred.
-  `NEXT_AUTHORIZED_TASK = NONE` until a new task is explicitly promoted.
+  `NEXT_AUTHORIZED_TASK = ADMIN-AUTH-01` is active on `feat/admin-auth-01`; this
+  task is non-Production-bound and must complete its governed integration before
+  the next task is promoted.
