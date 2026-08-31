@@ -31,14 +31,36 @@ export function hashAdminSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export function isSameOriginRequest(request: Request): boolean {
+export function isSameOriginRequest(request: Request, configuredSiteUrl?: string): boolean {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
   if (!origin && !referer) return true;
+
+  // The self-hosted standalone server rebuilds request.url from the container
+  // hostname (HOSTNAME/PORT env, e.g. https://0.0.0.0:3000), so its origin is
+  // never the public origin behind the reverse proxy. Accept the configured
+  // public site origin (and its www host) as well; every other origin is
+  // rejected. The default fallback domain is intentionally never trusted.
   const expected = new URL(request.url).origin;
+  const allowed = new Set([expected]);
+  const siteUrl = configuredSiteUrl ?? process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl?.trim()) {
+    try {
+      const site = new URL(siteUrl.trim());
+      allowed.add(site.origin);
+      if (site.hostname !== 'localhost' && !site.hostname.startsWith('www.')) {
+        const www = new URL(site.origin);
+        www.hostname = `www.${site.hostname}`;
+        allowed.add(www.origin);
+      }
+    } catch {
+      // malformed site URL: keep the request-url origin allowlist only
+    }
+  }
+
   try {
-    if (origin) return new URL(origin).origin === expected;
-    return new URL(referer as string).origin === expected;
+    if (origin) return allowed.has(new URL(origin).origin);
+    return allowed.has(new URL(referer as string).origin);
   } catch {
     return false;
   }
