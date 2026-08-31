@@ -1,6 +1,13 @@
 # Production Deployment Gateway
 
 > **STATUS: CURRENT — AUTONOMOUS-PROD-OPS-01 SECURITY CONTRACT**
+>
+> **PROGRESS: installed and proven on `sabtbrooker` through bootstrap, fail-
+> closed live tests, an exact-main pre-hardening release, and rollback
+> verification — all via the unprivileged socket client with zero manual
+> Owner commands. At `HUMAN_CHECKPOINT: PRIVILEGE_REVOCATION_READY`; legacy
+> `NOPASSWD: ALL` and Docker group membership remain intentionally preserved
+> pending Owner-authorized hardening.**
 
 The root-owned gateway service is the only target Production deployment
 capability. FreeBuff/`apexadmin` invokes `/usr/local/bin/apex-deploy` without

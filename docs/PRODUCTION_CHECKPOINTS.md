@@ -63,6 +63,33 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 
 ---
 
+## AUTONOMOUS-PROD-OPS-01 — pre-hardening gateway release
+
+- **Status:** VERIFIED pre-hardening release (intermediate; task still ACTIVE
+  at `HUMAN_CHECKPOINT: PRIVILEGE_REVOCATION_READY`)
+- **Purpose:** prove the constrained root-owned Unix-socket gateway end-to-end
+  (bootstrap, socket-only client, fail-closed, exact-source build, rollback
+  capture, DB invariants, zero manual Owner commands) before legacy privilege
+  removal
+- **Source:** `fde82c1a8fb33edaa1af60e43f6a9d6eb149d0a2` (authoritative GitHub
+  `main` HEAD at release time; integration via PR #12)
+- **Image:** `apex-home-fit:release-fde82c1a8fb3` (ID `sha256:05f2c97591d5…`)
+- **DB_STATE:** integrity `ok`; **13 migrations**; volume owned `100:101`;
+  `db_change=false`, DB hash unchanged across the no-op migration gate;
+  gateway backup `gateway-backup-prodops01-preharden.db` retained in volume
+- **ROLLBACK_REFERENCE:** `/opt/apex-home-fit/
+  compose.yml.rollback-prodops01-preharden` (root-only 0600);
+  `verify-rollback` via client PASS, `previous_image AVAILABLE`; marker
+  `/var/lib/apex-deploy-gateway/rollback-verified` (root-only)
+- **ACCEPTANCE:** pre-hardening release through `/usr/local/bin/apex-deploy`
+  (no sudo/Docker in client), health HTTP 200, secret boundary `PROTECTED`;
+  fail-closed live rejects (unknown field, `db_change`, non-authoritative
+  SHA); `.env` remains `root:root` 0600 and unreadable by `apexadmin`
+- **PRIVILEGES:** `apexadmin` NOPASSWD sudo and Docker-group membership
+  PRESERVED (untouched) at this checkpoint
+
+---
+
 ## ADMIN-AUTH-PROD-01
 
 - **Status:** PASS
