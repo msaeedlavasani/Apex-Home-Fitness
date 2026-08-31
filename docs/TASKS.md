@@ -10,12 +10,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `ADMIN-AUTH-01` |
-| Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/admin-auth-01` |
-| State | `ACTIVE` |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `main` |
+| State | `CLOSED` |
 | Production-bound | `NO` |
-| Next authorized task | `ADMIN-AUTH-01` |
+| Next authorized task | `NONE` |
 
 ## Approved queue
 
@@ -38,12 +38,14 @@
 - **Production:** no deployment or Production mutation was authorized or
   performed by this investigation.
 
-### ADMIN-AUTH-01 — ACTIVE / CODE_NO_DEPLOY
+### ADMIN-AUTH-01 — CLOSED / CODE_NO_DEPLOY
 
 - **Authorization:** owner decision in this task; architecture recorded in ADR-0004.
 - **Scope:** dedicated `/admin/login` Email + Password authentication, manual provisioning, one `ADMIN` role, server-side protected admin surface, secure password/session boundary.
-- **Explicit exclusions:** no public admin registration, no general RBAC, no Passkey/WebAuthn V1, no Production deployment.
-- **Acceptance:** focused auth/security tests, typecheck, lint, build, CI, main integration, and branch retirement.
+- **Outcome:** V1 implemented and integrated; public OTP behavior remained isolated; no Production deployment was authorized or performed.
+- **Explicit exclusions:** no public admin registration, no general RBAC, no Passkey/WebAuthn V1. Passkey/WebAuthn remains persisted as `ADMIN-AUTH-PASSKEY-01`.
+- **Acceptance:** focused auth/security tests, typecheck, lint, build, PR CI, Main CI, main integration, and branch retirement all passed.
+- **Evidence:** durable report `AHF-FB-20260831-ADMIN-AUTH-01.md` under the configured AgentReports directory; PR #10; integrated main commit `9339317`.
 - **Canonical contract:** [`ADMIN_AUTH.md`](ADMIN_AUTH.md).
 
 ## Registered decisions — not executable
@@ -67,6 +69,7 @@ preserve them until the owner separately authorizes bounded execution:
 | `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
 | `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |
 | `AUTH-PERF-01` | CLOSED; no reproducible defect in focused auth/performance/persistence/EN-FA investigation; no source fix required | durable handoff report; no Production mutation |
+| `ADMIN-AUTH-01` | CLOSED; dedicated Email + Password administrator authentication V1 integrated with no Production deployment | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), durable AgentReport, PR #10, Main CI run `33392689051` |
 | `AUTH-FIX-01` | CLOSED; Production PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 | S03 Session Core | CLOSED; architecture/runtime refactor complete | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) |
 | S02 Production recovery | PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
