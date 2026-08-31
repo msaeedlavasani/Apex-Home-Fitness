@@ -38,6 +38,8 @@
 
 ## Next transition
 
-The next separately authorized task is `AUTH-PERF-01`. Start it only through
-the normal pre-task gate from current remote `main`; its expected branch is
-`fix/auth-perf-production-degradation`.
+`AUTH-PERF-01` is closed after a focused evidence-backed investigation found
+no reproducible application defect; no Production mutation occurred. No next
+executable task is currently authorized. A future task must be promoted in
+`TASKS.md` with explicit scope, dependencies, profile, and acceptance before
+execution.

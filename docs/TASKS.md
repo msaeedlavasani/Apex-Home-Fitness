@@ -15,21 +15,26 @@
 | Branch | `main` |
 | State | `CLOSED` |
 | Production-bound | `NO` |
-| Next authorized task | `AUTH-PERF-01` |
+| Next authorized task | `NONE` |
 
 ## Approved queue
 
-### AUTH-PERF-01 — APPROVED / NOT STARTED
+### AUTH-PERF-01 — CLOSED / NO REPRODUCIBLE DEFECT
 
 - **Authorization:** preserved from the verified AUTH-FIX-01 handoff.
 - **Scope:** evidence-backed investigation of reported performance, persistence,
-  and EN/FA parity degradation; do not assume a root cause.
-- **Expected branch:** `fix/auth-perf-production-degradation` from current remote `main`.
-- **Auth/launch authority:** [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md);
-  this task must not duplicate or silently change that contract.
-- **Dependency:** `DOCUMENTATION-CONSOLIDATION-01 = CLOSED` (satisfied).
-- **Production:** any later mutation requires the Production-bound workflow and
-  separate evidence; this entry does not authorize a deploy by itself.
+  and EN/FA parity degradation; no root cause was assumed.
+- **Outcome:** focused auth/session, persistence, analytics, profile, and EN/FA
+  parity tests passed; no reproducible application defect was found and no
+  application source change was required.
+- **Evidence:** durable AgentReport
+  `AHF-FB-20260831-NEXT-AUTHORIZED-WORK.md` under the configured AgentReports
+  directory.
+- **Browser limitation:** local Playwright could not start its configured dev
+  server on port 3000; this is test-environment evidence, not a Production or
+  application failure. No Production browser claim is made.
+- **Production:** no deployment or Production mutation was authorized or
+  performed by this investigation.
 
 ## Registered decisions — not executable
 
@@ -51,6 +56,7 @@ preserve them until the owner separately authorizes bounded execution:
 |---|---|---|
 | `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
 | `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |
+| `AUTH-PERF-01` | CLOSED; no reproducible defect in focused auth/performance/persistence/EN-FA investigation; no source fix required | durable handoff report; no Production mutation |
 | `AUTH-FIX-01` | CLOSED; Production PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 | S03 Session Core | CLOSED; architecture/runtime refactor complete | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) |
 | S02 Production recovery | PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |

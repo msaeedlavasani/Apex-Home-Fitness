@@ -17,11 +17,11 @@ CURRENT_MAINLINE_BASELINE_COMMIT:      c80a1bb75f093c5bc8f6b17b544c7004dceb4e30
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         main
-PREVIOUS_COMPLETED_TASK:               DOCUMENTATION-CONSOLIDATION-01 (CLOSED)
-PREVIOUS_COMPLETED_BRANCH:             docs/documentation-consolidation-01 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  AUTH-PERF-01
-NEXT_EXPECTED_BRANCH:                  fix/auth-perf-production-degradation
-LAST_UPDATED:                          2026-08-31 (DOCUMENTATION-CONSOLIDATION-01 closed)
+PREVIOUS_COMPLETED_TASK:               AUTH-PERF-01 (CLOSED; no reproducible defect)
+PREVIOUS_COMPLETED_BRANCH:             fix/auth-perf-production-degradation (RETIRED)
+NEXT_AUTHORIZED_TASK:                  NONE
+NEXT_EXPECTED_BRANCH:                  N/A
+LAST_UPDATED:                          2026-08-31 (AUTH-PERF-01 investigation closed)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -55,4 +55,7 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   authorize work.
 - DOCUMENTATION-CONSOLIDATION-01 did not alter the verified Production
   checkpoint. It is integrated at `c80a1bb`; its final state/report closure is
-  documentation-only. `NEXT_AUTHORIZED_TASK = AUTH-PERF-01`.
+  documentation-only. `AUTH-PERF-01` was subsequently investigated from
+  current main; focused auth/performance/persistence/EN-FA checks passed with
+  no reproducible application defect, and no Production mutation occurred.
+  `NEXT_AUTHORIZED_TASK = NONE` until a new task is explicitly promoted.
