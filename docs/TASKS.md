@@ -10,8 +10,10 @@
 > persisted product strategy ([`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md))
 > and current repository state. Priority ≠ execution eligibility: a P0 task
 > may still require an architecture gate or Owner decision before it is
-> autonomous-eligible. AHF remains **execution-frozen** — nothing here
-> authorizes implementation.
+> autonomous-eligible. The Owner lifted the AHF execution freeze on
+> 2026-09-01, but **execution has NOT started** — nothing here authorizes
+> or begins implementation. Task selection requires a subsequent explicit
+> Owner instruction.
 
 ## Lifecycle now
 
@@ -20,7 +22,7 @@
 | Active task | `NONE` |
 | Profile | `N/A` |
 | Branch | `N/A` |
-| State | `TASKS-RECOMPOSITION` (docs/governance-only; AHF frozen) |
+| State | `TASKS-RECOMPOSITION` (docs/governance-only; AHF unfrozen 2026-09-01, execution not started) |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — the Mission Queue below is advisory until the Owner authorizes execution of specific items |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -928,10 +930,12 @@ preserve them until the owner separately authorizes bounded execution:
 | Batch Delivery V1 operating model | ACCEPTED / ADOPTED 2026-09-01 — model in force; each batch still requires separate execution authorization | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01` | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
-| Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
-| Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
+| Iranian competitor research gap | KNOWN ADVISORY GAP | **RETAINED** — competitive monitoring is a strategic research requirement (strategy §11); folded into the ongoing research agenda, not a discrete task |
+| Iranian competitor register (جیم‌شو، بدن‌فیت، جیم‌فا، مسترجیم، فیتامین، کرفس، ایران‌بدن، online coach/trainer alternatives) | **PRESERVED as INITIAL RESEARCH SNAPSHOT** — not exhaustive or verified; ongoing monitoring required | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
+| Public user auth and OTP launch readiness | CURRENT — the canonical readiness contract for the public auth surface; preserved across the backlog recomposition | [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md) |
+| Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED — re-scoped as CP-05 (Companion workout integration) in the Mission Queue | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md), [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) |
 | Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
-| Comprehensive product strategy + Movement Intelligence strategy | **PROPOSED / NON-EXECUTABLE 2026-09-01** — strategy persistence only; AHF remains execution-frozen | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md), [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
+| Comprehensive product strategy + Movement Intelligence strategy | **PROPOSED / NON-EXECUTABLE 2026-09-01** — strategy persistence only; AHF unfrozen 2026-09-01 but execution not started | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md), [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
 | Mobile-readiness architecture guardrails | **RATIFIED / BINDING 2026-09-01** — ADR-0005 | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
 | Shared typography contract | **RATIFIED / BINDING 2026-09-01** | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
 | Session Core Contract Adoption — `S-04` | **DELIVERED/CLOSED 2026-09-01** | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
@@ -962,10 +966,13 @@ acceptance. Decision Persistence in
 [`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md)
 applies before workflow continuation.
 
-## Execution freeze
+## Execution state
 
-**AHF REMAINS EXECUTION-FROZEN.** This recomposition does NOT begin or
-authorize any task in the Mission Queue. The queue is advisory until the
-Owner explicitly authorizes execution of specific items (individually or as
-a batch). Strategy persistence and backlog design are allowed; feature
-execution is not.
+**AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
+2026-09-01. **ACTIVE_TASK: NONE. NEXT_AUTHORIZED_TASK: NONE.**
+
+Unfrozen is not the same as started: no task in the Mission Queue has been
+begun, and backlog priority is NOT permission to start. The queue becomes
+executable only when the Owner separately instructs that a specific task
+(or batch) may begin. Strategy persistence and backlog design are allowed;
+feature implementation awaits that explicit instruction.

@@ -16,13 +16,14 @@ CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; backlog execution NOT started — task selection/start requires a subsequent explicit Owner instruction)
 ACTIVE_BRANCH:                         N/A (none)
 PREVIOUS_COMPLETED_TASK:               S02-E Exercise Identity Backfill (DELIVERED/CLOSED 2026-09-01 — governed apply via gateway v2 db-operation as 0-row no-op; ambiguous row left unmapped per Owner decision; preceded by GOVERNED-PROD-DB-CAPABILITY-01 gateway v2, PRs #20–#24 → a0a47ed)
 PREVIOUS_COMPLETED_BRANCH:             N/A (docs-only close-out committed to main 5e77298; no task branch needed)
-NEXT_AUTHORIZED_TASK:                  NONE — EXERCISE-CATALOG-DISAMBIGUATION-01 (seed alias collision) PROPOSED/deferred; ADMIN-IMPERSONATION-01 deferred/not authorized
+NEXT_AUTHORIZED_TASK:                  NONE — Mission Queue in docs/TASKS.md is advisory; execution start requires a subsequent explicit Owner instruction
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-09-01 (S02-E closed; DB hash unchanged 2e558a90…; backup on file; app release unchanged 4ada1dae2c3e)
+CURRENT_PHASE:                         BACKLOG READY (unfrozen 2026-09-01; no task started)
+LAST_UPDATED:                          2026-09-01 (AHF execution freeze lifted by Owner; backlog execution NOT started; no task ACTIVE)
 ```
 
 ## Reading this manifest (pre-task gate)
