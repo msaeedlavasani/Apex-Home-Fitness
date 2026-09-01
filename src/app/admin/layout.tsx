@@ -1,23 +1,34 @@
 import type {Metadata, Viewport} from 'next';
 import localFont from 'next/font/local';
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages, getTranslations} from 'next-intl/server';
+
 import '../globals.css';
 import {ThemeProvider, ThemeScript} from '@/components/providers/ThemeProvider';
+import {adminContentDir} from '@/lib/admin/locale';
+import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
 
 /**
- * Admin root layout (ADMIN-DS-01 foundation).
+ * Admin root layout (ADMIN-DS-01 foundation + ADMIN-DS-05 i18n/RTL).
+ *
+ * Locale: resolved from the persisted `admin-locale` cookie (admin routes
+ * are outside the public `[locale]` segment — the middleware matcher
+ * excludes `/admin`), defaulting to `en` exactly as before DS-05. The
+ * locale drives `<html lang>` + `dir`, the NextIntlClientProvider messages,
+ * and localized metadata. `dir=rtl` flips the layout through logical CSS
+ * utilities and switches the primary UI font to Vazirmatn via the shared
+ * `html[dir='rtl']` rule in globals.css (typography contract).
  *
  * Dark mode: ThemeScript applies the persisted/system theme class to <html>
  * BEFORE hydration (no FOUC) and ThemeProvider manages it afterwards,
- * mirroring the consumer app's theme architecture. All admin markup is
- * token-based, so every existing surface flips to dark automatically.
- * Default theme is light to preserve the current admin look.
+ * mirroring the consumer app's theme architecture. Default theme is light.
  *
  * Fonts: the same self-hosted Inter / Roboto / Vazirmatn variables used by
  * the consumer layout are linked here so admin typography resolves the real
  * webfonts (same-origin, CSP-compliant) instead of system fallbacks.
  *
- * Metadata/icons: admin routes get their own title template and the Apex
- * brand icons (public/icons) instead of the Next.js default favicon.
+ * Metadata/icons: localized admin titles (per locale) and the Apex brand
+ * icons (public/icons) instead of the Next.js default favicon.
  */
 const inter = localFont({
   src: '../fonts/Inter-Variable.woff2',
@@ -43,19 +54,23 @@ const vazirmatn = localFont({
   weight: '100 900',
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Administration console',
-    template: '%s | Apex Home Fit Admin',
-  },
-  icons: {
-    icon: [
-      {url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png'},
-      {url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png'},
-    ],
-    apple: [{url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png'}],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getAdminLocaleFromRequest();
+  const t = await getTranslations({locale, namespace: 'admin.metadata'});
+  return {
+    title: {
+      default: t('title'),
+      template: t('template'),
+    },
+    icons: {
+      icon: [
+        {url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png'},
+        {url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png'},
+      ],
+      apple: [{url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png'}],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -63,16 +78,26 @@ export const viewport: Viewport = {
   themeColor: '#FF4500',
 };
 
-export default function AdminRootLayout({children}: {children: React.ReactNode}) {
+export default async function AdminRootLayout({children}: {children: React.ReactNode}) {
+  const locale = await getAdminLocaleFromRequest();
+  // Admin routes never see a `[locale]` segment, so next-intl's request
+  // config always resolves to the default locale — pass the cookie locale
+  // explicitly so server components and the client provider agree.
+  const messages = await getMessages({locale});
+
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang={locale} dir={adminContentDir(locale)} suppressHydrationWarning>
       <head>
         <ThemeScript defaultTheme="light" />
       </head>
       <body
         className={`${inter.variable} ${roboto.variable} ${vazirmatn.variable} bg-apex-surface text-apex-text-primary`}
       >
-        <ThemeProvider defaultTheme="light">{children}</ThemeProvider>
+        <ThemeProvider defaultTheme="light">
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
