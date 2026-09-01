@@ -44,6 +44,7 @@
 | S02-E Exercise Identity Backfill — preflight/capability-gap record + final lifecycle (DELIVERED/CLOSED 2026-09-01: governed apply via gateway v2 as 0-row no-op; ambiguous row left unmapped; deferred alias-collision debt `EXERCISE-CATALOG-DISAMBIGUATION-01`) | [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md) |
 | Post-S-04 architecture backlog re-rank (S-06 → S-05 → S02-E; batchability) | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md) |
 | Exercise library / catalog role (S-06 decision: catalog = canonical; library page = sample/demo) | [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md) |
+| Movement Graph canonical schema / domain contract (MG-01 — DELIVERED 2026-09-01; type-level movement knowledge shape; pure, no persistence change) | [`architecture/MG-01-MOVEMENT-GRAPH-CONTRACT.md`](architecture/MG-01-MOVEMENT-GRAPH-CONTRACT.md), [`adr/0006-movement-graph-domain-contract.md`](adr/0006-movement-graph-domain-contract.md) |
 | Test debt ledger (confirmed stale E2E expectations; TD-01/TD-02) | [`TEST-DEBT.md`](TEST-DEBT.md) |
 | Session Core Contract Adoption (`S-04`) — promoted high-priority architecture debt (not started) | [`TASKS.md`](TASKS.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | Admin Light/Dark theme switch capability spec (DEFERRED) | [`architecture/ADMIN-THEME-SWITCH-01.md`](architecture/ADMIN-THEME-SWITCH-01.md) |
