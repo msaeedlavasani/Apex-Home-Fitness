@@ -1,6 +1,6 @@
-# Apex Home Fitness — Design System & UI Architecture (v2.1)
+# Apex Home Fitness — Design System & UI Architecture (v2.2)
 
-> **Version:** 2.1 · **Status:** Frontend source of truth · **Last updated:** 2026-08-25
+> **Version:** 2.2 · **Status:** Frontend source of truth · **Last updated:** 2026-09-01
 >
 > این سند منبع حقیقت بصری Apex Home Fitness است. قوانین آن برای وب Next.js، تجربه‌ی RTL/LTR، PWA و مسیرهای تمرین/کوییز نوشته شده و جایگزین طراحی‌های پراکنده‌ی صفحه‌ای است.
 
@@ -75,7 +75,7 @@ The neutral ramp is purely semantic to avoid developer error in dark mode.
 - **RULE (KIT-FIRST — مصوب 2026-09-01 پس از POST-AUDIT-RATIONALIZATION-01):** برای همه‌ی UI جدید (شامل Admin Console) ابتدا platform kit مشترک `src/components/ui/platform` و primitiveهای مشترک را reuse کن (ترتیب `reuse → extend → compose → create`). MUI نباید foundation دوم رقیب شود؛ استفاده از MUI فقط با نیاز مشخص و مستند که kit آن را پوشش نمی‌دهد و با ثبت تصمیم صریح مجاز است.
 - **CONSTRAINT:** فعلاً هیچ صفحه‌ای بازنویسی گسترده نمی‌شود؛ تغییرات تدریجی، component-by-component و با حفظ ظاهر فعلی انجام می‌شود.
 - `MuiProvider` فقط یک بار در layout locale قرار می‌گیرد. provider موازی یا نصب نسخه‌ی دوم MUI ممنوع است.
-- **NOTE:** بند KIT-FIRST مطابق `GOVERNANCE-UI-GATE-01` (مصوب 2026-09-01) به‌روزرسانی شده است؛ ثبت رسمی همراه `ADMIN-DS-06` دنبال می‌شود.
+- **NOTE:** بند KIT-FIRST مطابق `GOVERNANCE-UI-GATE-01` (مصوب 2026-09-01) به‌روزرسانی شده است؛ **ثبت رسمی همراه `ADMIN-DS-06` انجام شد (Batch 2، 2026-09-01)** — KIT-FIRST قاعده‌ی جاری و الزام‌آور Admin UI است.
 
 ### MUI usage example
 
@@ -112,12 +112,70 @@ import {Button} from '@mui/material';
 
 ## 4. RTL & Persian (fa) Support
 
-- **Typography:** `Vazirmatn` MUST be the first priority for Persian.
 - **Tracking:** Set to `0` for Persian. **Negative tracking is strictly forbidden** for RTL.
 - **Directionality:**
   - `lang="fa" dir="rtl"` on the `<html>` tag.
   - Mirror icons with directional meaning (back arrows, progress flow).
   - Navigation order: Dashboard (Right-most) → Profile (Left-most).
+  - Use **logical CSS utilities** (`ms/me/ps/pe/start/end`) so layout mirrors
+    automatically; physical `left/right` spacing is reserved for genuinely
+    directional UI.
+
+### 4.1 TYPOGRAPHY CONTRACT (RATIFIED — binding)
+
+`DECISION 2026-09-01 — Owner ratification (ADMIN DESIGN SYSTEM BATCH 2);
+implemented by ADMIN-DS-05; binding for ALL surfaces (consumer app AND
+Admin Console).`
+
+| Locale | Direction | Primary UI font | Source |
+| :--- | :--- | :--- | :--- |
+| **fa** (Persian) | RTL | **Vazirmatn** | Official project — <https://github.com/rastikerdar/vazirmatn>; self-hosted web font assets |
+| **en** (English) | LTR | **Inter** | Self-hosted web font assets |
+
+Rules:
+
+1. **Typography is shared across the consumer app and Admin.** There is
+   NO separate Admin font stack — the Admin console links the SAME
+   self-hosted next/font variables (`--font-inter`, `--font-roboto`,
+   `--font-vazirmatn`) as the public app (`src/app/fonts/`).
+2. **Locale determines the primary UI font:** `fa → Vazirmatn`,
+   `en → Inter`. Mechanism: `<html dir>` per locale + the shared
+   `globals.css` rule `html[dir='rtl'] body { font-family: var(--font-vazirmatn), … }`;
+   LTR keeps the sans stack led by Inter (SF Pro system-first on Apple).
+3. **Preserve sensible system sans-serif fallbacks** (SF Pro on Apple,
+   Roboto/Segoe on Android/Windows, etc.) — never a bare `font-family: Vazirmatn`.
+4. **Reuse the existing shared typography/theme architecture** —
+   `next/font/local` woff2 files in `src/app/fonts/` (same-origin,
+   CSP `font-src 'self'`-compliant, offline through the service worker),
+   the `globals.css` token/family rules, and the per-locale `<html lang/dir>`
+   wiring. Do not create a parallel font-loading mechanism.
+5. **Avoid unnecessary font weights/assets** — Vazirmatn is a single
+   variable woff2 (weight 100–900); Inter is a single variable woff2.
+   Only add weights/assets when a concrete design requirement exists.
+
+Implementation record: `src/lib/admin/locale.ts` (locale contract),
+`src/app/admin/layout.tsx` (lang/dir + provider), Vazirmatn applied via the
+shared `html[dir='rtl']` rule — verified in real-browser E2E
+(`tests/admin-i18n.spec.ts`: computed `font-family` leads with `inter` in
+LTR and `vazirmatn` in RTL).
+
+### 4.2 Admin Console i18n & RTL architecture (ADMIN-DS-05)
+
+- **Locale source:** the `admin-locale` cookie (values `en` | `fa`, default
+  `en`). Admin routes live OUTSIDE the public `[locale]` segment (the
+  middleware matcher excludes `/admin`), so locale is resolved and persisted
+  server-side via the cookie — SSR-correct, no client-only storage.
+- **Switching:** `AdminLocaleSwitcher` (radio group, EN ⇄ FA) writes the
+  cookie and refreshes the server tree; `<html lang/dir>`, metadata, and all
+  translations re-render. Mirrors the public `LanguageSwitcher` a11y pattern.
+- **Shared next-intl architecture:** the `admin.*` namespace lives in the
+  SAME catalogs as the public app (`src/messages/{en,fa}.json`); the root
+  admin layout provides `NextIntlClientProvider` with the cookie locale, and
+  server components resolve via `getTranslations({locale, namespace})`.
+- **Dates:** `formatAdminDate(value, locale)` follows the consumer app
+  convention — `fa-IR` (Persian calendar + Persian digits) vs `en-GB`.
+- **RTL layout:** admin tables/cells use logical utilities (`pe-4`, `text-end`,
+  `text-start`) so numeric columns and padding mirror correctly.
 
 ---
 

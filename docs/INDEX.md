@@ -36,6 +36,7 @@
 | Freebuff orchestration capability (one active CLI per account; no true parallel workers) | [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
 | Batch Delivery operating model (serial isolated tasks, consolidated lifecycle) | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md) |
 | Admin Console design-system posture / audit + KIT-FIRST control rule | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) |
+| Shared typography contract (fa → Vazirmatn, en → Inter; RATIFIED) + Admin Console i18n/RTL architecture | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
 | Mobile readiness — audit (EXECUTED + RATIFIED 2026-09-01), binding guardrails, deferred triggers/spike/health scope | [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md), [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md), [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
 | Session Core Contract Adoption (`S-04`) — promoted high-priority architecture debt (not started) | [`TASKS.md`](TASKS.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | Admin Light/Dark theme switch capability spec (DEFERRED) | [`architecture/ADMIN-THEME-SWITCH-01.md`](architecture/ADMIN-THEME-SWITCH-01.md) |
