@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-02` — Movement taxonomy design |
-| Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-02-movement-taxonomy` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-02); builds on MG-01 (DELIVERED/CLOSED) |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `N/A` |
+| State | `CLOSED` — MG-02 DELIVERED/CLOSED 2026-09-01 (PR #26 → `36e68ce`); AHF_EXECUTION_STATE remains ACTIVE |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-03 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -149,7 +149,7 @@ existing `Exercise` model, STOP and escalate to the Owner.
 
 ---
 
-### MG-02 — Movement taxonomy design
+### MG-02 — Movement taxonomy design — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -160,6 +160,7 @@ existing `Exercise` model, STOP and escalate to the Owner.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #26 merged `36e68ce`; Main CI PASS on exact SHA; branch `feat/mg-02-movement-taxonomy` retired. No Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Authorization (2026-09-01):** Owner explicit instruction — EXECUTE MG-02
 (TASK DELTA). `TASK_PROFILE=CODE_NO_DEPLOY`; `BRANCH=feat/mg-02-movement-taxonomy`.
