@@ -27,8 +27,11 @@ const exId = (s: string) => s as ExerciseId;
 const exSlug = (s: string) => s as ExerciseSlug;
 
 // ---------------------------------------------------------------------------
-// Structural parity with the current engine (R6 mirrors useWorkoutEngine
-// exactly — compile-time proof in both directions).
+// S-04: the hook's public domain types ARE the canonical contract — the
+// adapter re-exports SessionState/SessionExercise/SessionSummary/
+// SessionHydrateInput/SessionPhase under its legacy Workout* names, so the
+// bidirectional assignments below are compile-time proof of identity (and
+// of backward compatibility for existing hook consumers).
 // ---------------------------------------------------------------------------
 
 function engineStateToSession(state: WorkoutEngineState): SessionState {

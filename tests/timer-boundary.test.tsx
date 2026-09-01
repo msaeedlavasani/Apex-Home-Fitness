@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import test, {mock} from 'node:test';
 import React from 'react';
 import TestRenderer, {act} from 'react-test-renderer';
-import {useWorkoutEngine, type WorkoutExercise, type UseWorkoutEngineResult} from '../src/components/workout/useWorkoutEngine';
+import {useWorkoutEngine, type UseWorkoutEngineResult} from '../src/components/workout/useWorkoutEngine';
+import type {SessionExercise} from '../src/lib/workout/sessionContracts';
 
-const OPEN: WorkoutExercise[] = [{id: 'open', name: 'Open', sets: 1, durationSeconds: null, restSeconds: null}];
-const TIMED: WorkoutExercise[] = [
+const OPEN: SessionExercise[] = [{id: 'open', name: 'Open', sets: 1, durationSeconds: null, restSeconds: null}];
+const TIMED: SessionExercise[] = [
   {id: 'a', name: 'A', sets: 1, durationSeconds: 10, restSeconds: 5},
   {id: 'b', name: 'B', sets: 1, durationSeconds: 10, restSeconds: null},
 ];
 
-function mount(plan: WorkoutExercise[], now: () => number) {
+function mount(plan: SessionExercise[], now: () => number) {
   const holder: {engine?: UseWorkoutEngineResult} = {};
   let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => { renderer = TestRenderer.create(<Harness plan={plan} now={now} capture={(engine) => { holder.engine = engine; }} />); });
@@ -18,7 +19,7 @@ function mount(plan: WorkoutExercise[], now: () => number) {
   return {holder: holder as {engine: UseWorkoutEngineResult}, renderer};
 }
 
-function Harness({plan, now, capture}: {plan: WorkoutExercise[]; now: () => number; capture: (engine: UseWorkoutEngineResult) => void}) {
+function Harness({plan, now, capture}: {plan: SessionExercise[]; now: () => number; capture: (engine: UseWorkoutEngineResult) => void}) {
   const engine = useWorkoutEngine(plan, {now});
   capture(engine);
   return null;

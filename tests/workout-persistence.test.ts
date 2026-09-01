@@ -6,16 +6,16 @@ import {
   matchesPlan,
   toOfflineExercises,
 } from '../src/lib/offline/workoutPersistence';
-import type { WorkoutEngineState, WorkoutExercise } from '../src/components/workout/useWorkoutEngine';
+import type { SessionExercise, SessionState } from '../src/lib/workout/sessionContracts';
 import type { WorkoutStateRecord } from '../src/lib/offline/db';
 
-const PLAN: WorkoutExercise[] = [
+const PLAN: SessionExercise[] = [
   { id: 'ex-1', name: 'Squats', sets: 3, reps: 12, durationSeconds: 30, restSeconds: 45 },
   { id: 'ex-2', name: 'Plank', sets: 2, reps: null, durationSeconds: 60, restSeconds: 30 },
   { id: 'ex-3', name: 'Burpees', sets: 1, reps: 10, durationSeconds: 20, restSeconds: null },
 ];
 
-function state(overrides: Partial<WorkoutEngineState> = {}): WorkoutEngineState {
+function state(overrides: Partial<SessionState> = {}): SessionState {
   return {
     phase: 'EXERCISING',
     currentExerciseIndex: 1,
@@ -116,7 +116,7 @@ test('matchesPlan accepts the same plan and rejects any change', () => {
 
 test('hydrateFromRecord returns null for never-started or mismatched plans', () => {
   assert.equal(hydrateFromRecord(record({ phase: 'READY', startedAt: null }), PLAN), null);
-  const otherPlan: WorkoutExercise[] = [{ id: 'x', name: 'X', sets: 1 }];
+  const otherPlan: SessionExercise[] = [{ id: 'x', name: 'X', sets: 1 }];
   assert.equal(
     hydrateFromRecord(record({ exercises: toOfflineExercises(otherPlan, state()) }), PLAN),
     null

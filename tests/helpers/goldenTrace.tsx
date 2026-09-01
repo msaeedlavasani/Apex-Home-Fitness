@@ -23,11 +23,11 @@ import {
   useWorkoutEngine,
   type UseWorkoutEngineResult,
   type WorkoutEngineOptions,
-  type WorkoutExercise,
 } from '../../src/components/workout/useWorkoutEngine';
 import type {
   SessionCommand,
   SessionEffect,
+  SessionExercise,
   SessionState,
   SessionSummary,
 } from '../../src/lib/workout/sessionContracts';
@@ -59,7 +59,7 @@ export interface GoldenTraceResult {
 }
 
 interface HarnessProps {
-  exercises: WorkoutExercise[];
+  exercises: SessionExercise[];
   options: WorkoutEngineOptions;
   probe: (engine: UseWorkoutEngineResult) => void;
 }
@@ -154,7 +154,7 @@ function dispatchCommand(engine: UseWorkoutEngineResult, command: SessionCommand
  * per-step observations, then unmounts and restores globals.
  */
 export function runGoldenTrace(
-  plan: WorkoutExercise[],
+  plan: SessionExercise[],
   steps: GoldenTraceStep[],
 ): GoldenTraceResult {
   mock.timers.enable({apis: ['setInterval']});
@@ -243,7 +243,7 @@ export function runGoldenTrace(
 }
 
 /** Convenience: run a trace and return just the final observation's state. */
-export function lastState(plan: WorkoutExercise[], steps: GoldenTraceStep[]): SessionState {
+export function lastState(plan: SessionExercise[], steps: GoldenTraceStep[]): SessionState {
   const result = runGoldenTrace(plan, steps);
   const last = result.observations[result.observations.length - 1];
   assert.ok(last, 'trace must have at least one observation');

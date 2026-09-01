@@ -20,7 +20,7 @@ import {
   type RelationalExercise,
 } from '../src/lib/programSchedule';
 import { toOfflineExercises } from '../src/lib/offline/workoutPersistence';
-import type { WorkoutExercise } from '../src/components/workout/useWorkoutEngine';
+import type { SessionExercise } from '../src/lib/workout/sessionContracts';
 
 // Relational payload as returned by GET /api/program/current (S02-C resolves
 // slugs; S02-D2 propagates the persisted Exercise.id).
@@ -33,7 +33,7 @@ const RELATIONAL: RelationalExercise[] = [
 function planFromSchedule(
   scheduleExercises: PersistedScheduleExercise[],
   relational: RelationalExercise[],
-): WorkoutExercise[] {
+): SessionExercise[] {
   const identityIndex = exerciseIdentityIndex(relational);
   const enriched = enrichScheduleExercises(scheduleExercises, identityIndex);
   return scheduleExercises.map((raw, index) => {

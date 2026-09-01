@@ -1,4 +1,4 @@
-import type {WorkoutExercise} from '@/components/workout/useWorkoutEngine';
+import type {SessionExercise} from '@/lib/workout/sessionContracts';
 
 /**
  * Sample weekly workout plan for the `/workout` player route.
@@ -10,8 +10,9 @@ import type {WorkoutExercise} from '@/components/workout/useWorkoutEngine';
  * the dashboard is showing, and the route never 404s in either locale.
  */
 
-/** Exercise template: same shape as `WorkoutExercise`, but `name` is stored
- * as a translation key into `Library.exercises.*` and localized by the page. */
+/** Exercise template: same shape as the canonical `SessionExercise`, but
+ * `name` is stored as a translation key into `Library.exercises.*` and
+ * localized by the page. */
 export interface SampleExercise {
   id: string;
   nameKey: string;
@@ -104,11 +105,11 @@ export function resolveWorkoutKeyForDate(date: Date): string {
   return 'fullBodyHiit'; // unreachable — the plan always has workout days
 }
 
-/** Localize `SampleExercise[]` into `WorkoutExercise[]` ready for the player. */
+/** Localize `SampleExercise[]` into `SessionExercise[]` ready for the player. */
 export function toWorkoutExercises(
   templates: ReadonlyArray<SampleExercise>,
   nameFor: (nameKey: string) => string,
-): WorkoutExercise[] {
+): SessionExercise[] {
   return templates.map((exercise) => ({
     id: exercise.id,
     name: nameFor(exercise.nameKey),

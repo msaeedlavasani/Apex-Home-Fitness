@@ -5,7 +5,7 @@ import {useSearchParams} from 'next/navigation';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {AppShell} from '@/components/layout/AppShell';
 import {WorkoutPlayer} from '@/components/workout/WorkoutPlayer';
-import type {WorkoutExercise, WorkoutSummary} from '@/components/workout/useWorkoutEngine';
+import type {SessionExercise, SessionSummary} from '@/lib/workout/sessionContracts';
 import {
   enrichScheduleExercises,
   exerciseIdentityIndex,
@@ -44,7 +44,7 @@ function validWeekday(value: string | null): (typeof WEEKDAYS)[number] | null {
 function generatedExercisesForPlayer(
   exercises: PersistedScheduleExercise[],
   identityIndex: ExerciseIdentityIndex,
-): WorkoutExercise[] {
+): SessionExercise[] {
   // S02-D2: enrich the step plan with canonical movement identity where the
   // relational ProgramExercise→Exercise payload can resolve it. The step's
   // `id` (generated/session-local) is always preserved — canonical identity
@@ -94,7 +94,7 @@ export default function WorkoutPage() {
   }, []);
 
   const fallbackKey = useMemo(() => resolveWorkoutKeyForDate(new Date()), []);
-  const fallbackExercises = useMemo<WorkoutExercise[]>(
+  const fallbackExercises = useMemo<SessionExercise[]>(
     () => toWorkoutExercises(
       SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? [],
       (nameKey) => tLibrary(`exercises.${nameKey}`),
@@ -143,7 +143,7 @@ export default function WorkoutPage() {
     return startPromise;
   }
 
-  async function completePersistedSession(summary: WorkoutSummary) {
+  async function completePersistedSession(summary: SessionSummary) {
     await sessionStartRef.current;
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;

@@ -47,9 +47,9 @@ import { mergeWorkoutStates } from './conflictPolicy';
 
 /**
  * Exercise as stored inside an offline workout snapshot. Mirrors the
- * `WorkoutExercise` shape consumed by `useWorkoutEngine` (see
- * `src/components/workout/useWorkoutEngine.ts`), extended with completion
- * tracking so "today's workout" can be resumed exactly where it stopped.
+ * canonical `SessionExercise` plan-item contract
+ * (`src/lib/workout/sessionContracts.ts`), extended with completion tracking
+ * so "today's workout" can be resumed exactly where it stopped.
  */
 export interface OfflineExercise {
   id: string;
@@ -84,7 +84,7 @@ export interface ActiveProgramRecord {
   savedAt: number;
 }
 
-/** Mirrors the phase union of `useWorkoutEngine`. */
+/** Mirrors the canonical `SessionPhase` union (`sessionContracts`). */
 export type WorkoutPhaseKey = 'READY' | 'EXERCISING' | 'RESTING' | 'COMPLETED';
 
 /**

@@ -2,92 +2,82 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WallClockAccumulator } from '../../lib/workout/wallClock';
-import { createSessionCore, type SessionExercise } from '../../lib/workout/sessionCore';
-import type { ExerciseId, ExerciseSlug } from '../../lib/exercise';
-import type { SessionCommand, SessionEffect, SessionState } from '../../lib/workout/sessionContracts';
+import { createSessionCore, type SessionExercise as CoreSessionExercise } from '../../lib/workout/sessionCore';
+import { clampSets } from '../../lib/workout/plan';
+import type {
+  SessionCommand,
+  SessionEffect,
+  SessionExercise,
+  SessionHydrateInput,
+  SessionPhase,
+  SessionState,
+  SessionSummary,
+} from '../../lib/workout/sessionContracts';
 
-export type WorkoutPhase = 'READY' | 'EXERCISING' | 'RESTING' | 'COMPLETED';
+/**
+ * S-04: the hook's public domain types ARE the canonical Session State
+ * contract (`src/lib/workout/sessionContracts.ts`) — re-exported under the
+ * legacy `Workout*` names so existing consumers keep compiling unchanged.
+ * New consumers should import the canonical types from the contract module
+ * directly; the hook stays a React adapter around the pure session core.
+ */
+export type {
+  SessionExercise as WorkoutExercise,
+  SessionHydrateInput as WorkoutEngineHydrateInput,
+  SessionPhase as WorkoutPhase,
+  SessionState as WorkoutEngineState,
+  SessionSummary as WorkoutSummary,
+} from '../../lib/workout/sessionContracts';
 
-export interface WorkoutExercise {
-  id: string;
-  exerciseId?: ExerciseId;
-  slug?: ExerciseSlug;
-  name: string;
-  sets: number;
-  reps?: number | null;
-  durationSeconds?: number | null;
-  restSeconds?: number | null;
-}
+/** @deprecated import from `@/lib/workout/plan` — kept for compatibility. */
+export {clampSets} from '../../lib/workout/plan';
 
 export interface WorkoutSetInfo { exerciseIndex: number; set: number; }
-export interface WorkoutSummary { totalExercises: number; totalSets: number; completedSets: number; durationSeconds: number; }
-export interface WorkoutEngineState {
-  phase: WorkoutPhase;
-  currentExerciseIndex: number;
-  currentSet: number;
-  completedSets: number;
-  totalSets: number;
-  phaseElapsedSeconds: number;
-  totalElapsedSeconds: number;
-  isRunning: boolean;
-  startedAt: number | null;
-  completedAt: number | null;
-}
-export interface WorkoutEngineHydrateInput {
-  phase?: WorkoutPhase;
-  currentExerciseIndex?: number;
-  currentSet?: number;
-  phaseElapsedSeconds?: number;
-  totalElapsedSeconds?: number;
-  startedAt?: number | null;
-  completedAt?: number | null;
-  isComplete?: boolean;
-}
 export interface WorkoutEngineOptions {
   autoAdvance?: boolean;
   now?: () => number;
-  onPhaseChange?: (phase: WorkoutPhase) => void;
+  onPhaseChange?: (phase: SessionPhase) => void;
   onSetComplete?: (info: WorkoutSetInfo) => void;
   onExerciseComplete?: (exerciseIndex: number) => void;
-  onWorkoutComplete?: (summary: WorkoutSummary) => void;
-  onStateChange?: (state: WorkoutEngineState) => void;
+  onWorkoutComplete?: (summary: SessionSummary) => void;
+  onStateChange?: (state: SessionState) => void;
 }
 export interface UseWorkoutEngineResult {
-  phase: WorkoutPhase; exercises: WorkoutExercise[]; currentExerciseIndex: number;
-  currentExercise: WorkoutExercise | undefined; totalExercises: number; currentSet: number;
+  phase: SessionPhase; exercises: SessionExercise[]; currentExerciseIndex: number;
+  currentExercise: SessionExercise | undefined; totalExercises: number; currentSet: number;
   totalSets: number; completedSets: number; progress: number; isRunning: boolean;
   phaseDurationSeconds: number | null; phaseElapsedSeconds: number; secondsLeft: number | null;
-  totalElapsedSeconds: number; state: WorkoutEngineState;
-  hydrate: (input: WorkoutEngineHydrateInput) => void; start: () => void; pause: () => void;
+  totalElapsedSeconds: number; state: SessionState;
+  hydrate: (input: SessionHydrateInput) => void; start: () => void; pause: () => void;
   resume: () => void; completeSet: () => void; skipRest: () => void; nextExercise: () => void;
   previousExercise: () => void; jumpTo: (index: number) => void; reset: () => void; restart: () => void;
 }
 
-export function clampSets(sets: number | null | undefined): number { return Math.max(1, Math.floor(sets ?? 1)); }
+// Canonical-contract types throughout: the legacy `Workout*` names above are
+// re-exported for external consumers, but this adapter's implementation uses
+// the canonical `Session*` types directly (they are the same types).
+function toCorePlan(exercises: SessionExercise[]): CoreSessionExercise[] { return exercises.map((exercise) => ({...exercise})); }
+function toEngineState(state: SessionState): SessionState { return {...state}; }
+function toCoreInput(input: SessionHydrateInput) { return {...input}; }
 
-function toCorePlan(exercises: WorkoutExercise[]): SessionExercise[] { return exercises.map((exercise) => ({...exercise})); }
-function toCoreState(state: WorkoutEngineState): SessionState { return {...state}; }
-function toEngineState(state: SessionState): WorkoutEngineState { return {...state}; }
-function toCoreInput(input: WorkoutEngineHydrateInput) { return {...input}; }
-
-export function useWorkoutEngine(exercises: WorkoutExercise[], options: WorkoutEngineOptions = {}): UseWorkoutEngineResult {
+export function useWorkoutEngine(exercises: SessionExercise[], options: WorkoutEngineOptions = {}): UseWorkoutEngineResult {
   const {autoAdvance = true, onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete, onStateChange} = options;
   const callbacksRef = useRef({onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete, onStateChange});
-  const transitionStateRef = useRef<WorkoutEngineState | null>(null);
+  const transitionStateRef = useRef<SessionState | null>(null);
   useEffect(() => { callbacksRef.current = {onPhaseChange, onSetComplete, onExerciseComplete, onWorkoutComplete, onStateChange}; });
   const nowRef = useRef<() => number>(options.now ?? (() => Date.now()));
   useEffect(() => { if (options.now) nowRef.current = options.now; });
 
   const coreRef = useRef<ReturnType<typeof createSessionCore> | null>(null);
-  const planRef = useRef<WorkoutExercise[] | null>(null);
-  const coreStateRef = useRef<WorkoutEngineState | null>(null);
+  const planRef = useRef<SessionExercise[] | null>(null);
+  const coreStateRef = useRef<SessionState | null>(null);
   if (coreRef.current == null || planRef.current !== exercises) {
     coreRef.current = createSessionCore(toCorePlan(exercises));
     planRef.current = exercises;
     coreStateRef.current = toEngineState(coreRef.current.state);
   }
   const core = coreRef.current;
-  const [state, setState] = useState<WorkoutEngineState>(() => coreStateRef.current ?? toEngineState(core.state));
+  const [state, setState] = useState<SessionState>(() => coreStateRef.current ?? toEngineState(core.state));
   const stateRef = useRef(state);
   stateRef.current = state;
 
