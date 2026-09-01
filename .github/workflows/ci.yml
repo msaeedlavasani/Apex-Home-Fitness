@@ -71,6 +71,9 @@ jobs:
     - name: Governance runtime tests
       run: npm run governance:test
 
+    - name: Gateway daemon + db-operation tests
+      run: npm run test:gateway
+
     - name: Lint
       run: npm run lint
 
