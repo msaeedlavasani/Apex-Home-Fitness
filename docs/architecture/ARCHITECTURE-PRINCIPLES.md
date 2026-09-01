@@ -119,6 +119,37 @@ provider, authorize a migration, duplicate Supabase, or change Production.
 Execution requires a separately authorized task in `docs/TASKS.md` with
 evidence-based scope and rollback constraints.
 
+## 13. Mobile Readiness (RATIFIED — binding)
+
+`STATUS: RATIFIED / ACCEPTED — BINDING from 2026-09-01 (owner ratification
+in POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as ADR-0005).
+Originally added as PROPOSED by MOBILE-READINESS-01 (audit only; no mobile
+app, no stack selection). These rules are binding for all future
+development unless changed by an accepted decision.`
+
+Evidence and full analysis: `docs/architecture/MOBILE-READINESS-01-REPORT.md`;
+decision record: `docs/adr/0005-mobile-readiness-guardrails.md`.
+
+1. **Domain logic lives in `src/services` / pure `src/lib` modules and stays
+   UI-framework-free** — no new business rules inside components or hooks.
+2. **New persistence must define a portable contract** — plain-JSON payloads
+   and a documented native equivalent (SQLite/queue) for any new browser
+   storage; no new `localStorage`/IndexedDB usage without a KV contract.
+3. **New features must declare their mobile posture** — every task with
+   client-side state, storage, or session work records whether the design is
+   `CLIENT-AGNOSTIC` or `WEB-SPECIFIC` (with reasoning) in its governance
+   evidence.
+4. **Session-engine changes stay inside the S03 session-core boundary** — no
+   new engine behavior in the React adapter (`useWorkoutEngine`); new state
+   transitions go through the pure session core (`src/lib/workout/sessionCore.ts`).
+5. **Health data (when it arrives) writes through a platform-neutral server
+   contract** — never a device SDK directly into client state.
+6. **No mobile stack selection without the technology spike** — per the
+   trigger criteria in `MOBILE-READINESS-01-REPORT.md` §6; mobile
+   implementation triggers, HealthKit/Health Connect scope, and the
+   technology-selection spike are DEFERRED until their documented triggers
+   are met (ADR-0005).
+
 ## Relationship to AGENTS.md and ADRs
 
 - `AGENTS.md` remains authoritative for agent behavior and development rules.

@@ -13,10 +13,10 @@
 | Active task | `NONE` |
 | Profile | `N/A` |
 | Branch | `N/A` |
-| State | `ADMIN-CONSOLE-01 CLOSED` |
+| State | `ADMIN-DS-BATCH-1 CLOSED` (2026-09-01; Production PASS via gateway release `4de75ae`) |
 | Production-bound | `YES` (completed) |
-| Next authorized task | `NONE` |
-| Pending owner review | Batch `admin-ds-01-04` EXECUTED LOCALLY on `batch/admin-ds-01-04` (4 member commits) — integration validation complete; consolidated push/PR/Main CI/Production lifecycle NOT started (awaiting owner) |
+| Next authorized task | `NONE` (S-04 promoted to the approved queue; implementation still requires batch-start authorization) |
+| Pending owner review | Next-batch authorization: Batch 2 proposal = `ADMIN-DS-05` + `ADMIN-DS-06`; S-04 (Session Core Contract Adoption) promoted but NOT started; MOBILE-READINESS guardrails RATIFIED 2026-09-01 (ADR-0005) |
 
 ## Approved queue
 
@@ -128,13 +128,15 @@ preserve them until the owner separately authorizes bounded execution:
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements (actor/target identity, durable audit trail, start/end timestamps, persistent banner, safe exit, session isolation, no credential use, restricted sensitive operations, server-side enforcement, security review gate) persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
 | Batch Delivery V1 operating model (one active session, serial isolated tasks, one consolidated integration/CI/release lifecycle) | ACCEPTED / ADOPTED 2026-09-01 (`GOVERNANCE-HARDENING-PROMOTION-01`) — model in force; each batch still requires separate execution authorization; runtime constraint basis in the orchestration investigation record | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
-| Admin Console design-system alignment (first batch `ADMIN-DS-01…04`; `ADMIN-DS-05` REQUIRED remediation sequenced after foundational work; `ADMIN-DS-06` KIT-FIRST doc reconciliation; `MOBILE-READINESS-01` audit proposal) | PROPOSED / NOT AUTHORIZED — audit complete; UI Conformance Gate + report delivery contract IN FORCE from 2026-09-01 (hardening CLOSED); first batch (`ADMIN-DS-01…04`) DELIVERED/CLOSED 2026-09-01 via PR #15 + gateway release `4de75ae`; `ADMIN-DS-05/06` and `MOBILE-READINESS-01` remain PROPOSED (NOT authorized) | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md) |
+| Admin Console design-system alignment (first batch `ADMIN-DS-01…04` DELIVERED/CLOSED; `ADMIN-DS-05` REQUIRED remediation; `ADMIN-DS-06` KIT-FIRST decision record; `ADMIN-THEME-SWITCH-01` deferred debt; `MOBILE-READINESS-01` audit EXECUTED + guardrails RATIFIED; `S-04` Session Core Contract Adoption PROMOTED) | PROPOSED / NOT AUTHORIZED for the next batch — UI Conformance Gate + report delivery contract IN FORCE (hardening CLOSED); Batch 1 DELIVERED/CLOSED 2026-09-01 via PR #15 + gateway release `4de75ae`; `MOBILE-READINESS-01` guardrails RATIFIED (ADR-0005); `S-04` promoted to the approved queue (NOT started); `ADMIN-DS-05/06` await batch-start authorization; `ADMIN-THEME-SWITCH-01` stays DEFERRED | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md), [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md), [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`; must use a constrained deployment gateway/capability that consumes protected configuration internally without exposing secrets or arbitrary root shell access | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
 | Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
-| S02-E and S-04..S-06 | PLANNED OR DEFERRED / OWNER CHECKPOINT REQUIRED | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+| Mobile-readiness architecture guardrails (6 rules: UI-framework-free domain logic, portable persistence contracts, mobile-posture declaration, S03 session-core boundary, platform-neutral health contract, no-stack-without-spike) | **RATIFIED / BINDING 2026-09-01** — owner ratification via POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as `ADR-0005`; mobile implementation triggers, HealthKit/Health Connect scope, and the technology-selection spike DEFERRED until documented triggers; NO mobile stack selected | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
+| Session Core Contract Adoption — `S-04` Stable Session State Contract | **PROMOTED to the executable backlog 2026-09-01** as the high-priority mobile-readiness architecture debt; implementation NOT started (requires batch-start authorization); reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction is closed (pure core exists, hook delegates); residual debt = consumers still importing hook internals (`workoutPersistence.ts` → `useWorkoutEngine`) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--promoted-not-started), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+| S02-E and S-05..S-06 | PLANNED OR DEFERRED / OWNER CHECKPOINT REQUIRED | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 
 ## Approved queue — hardening (closed in this promotion)
 
@@ -182,6 +184,51 @@ preserve them until the owner separately authorizes bounded execution:
 - **Production impact:** none — tooling/docs only; `DB_CHANGED = NO`.
 - **Evidence:** same promotion report as above.
 
+## Approved queue — promoted 2026-09-01 (not started)
+
+### S-04 — Stable Session State Contract (Session Core Contract Adoption) — PROMOTED / NOT STARTED
+
+- **Authorization:** owner direction in `POST-MOBILE-READINESS-RATIONALIZATION-01`
+  (2026-09-01): promote the identified Session Core Extraction requirement into
+  the canonical executable backlog as the high-priority mobile-readiness
+  architecture debt, preserving/reconciling the S03/S04 lineage; recorded in
+  ADR-0005. **This entry authorizes the backlog record only — implementation
+  requires the ordinary batch-start authorization and is explicitly NOT
+  performed by the promoting task.**
+- **Reconciliation of the "session-core extraction" finding:** on-disk
+  verification shows S03 extraction is CLOSED — `src/lib/workout/sessionCore.ts`
+  exists and `src/components/workout/useWorkoutEngine.ts` delegates to it
+  (`createSessionCore`, `core.transition(command, now)`, `core.derive(state)`).
+  The residual high-priority debt is the S-04 contract-adoption edge:
+  `src/lib/offline/workoutPersistence.ts` imports `WorkoutEngineState` /
+  `WorkoutExercise` / `WorkoutEngineHydrateInput` from the hook component
+  (`src/components/workout/useWorkoutEngine`), and `sessionContracts.ts`
+  carries a stale "do not import until the extraction wiring exists" note.
+  No duplicate task is created.
+- **DEPENDENCIES:** S-03 (CLOSED — pure core + React adapter);
+  MOBILE-READINESS-01 guardrails (RATIFIED). No dependency on Admin work.
+- **EXECUTION_CLASS:** SEQUENTIAL (public-app engine domain; behavior-
+  preserving refactor with its own parity gate).
+- **ISOLATION_REQUIREMENT:** own branch; one reviewable change (contract
+  module + consumer migration).
+- **Bounded scope:** formalize the stable Session State read-model/event
+  surface (proposed `src/lib/workout/sessionState.ts`); migrate WorkoutPlayer
+  and persistence import points to the canonical contract; consumer contract
+  tests; no new engine semantics, no V2 features.
+- **VALIDATION_REQUIREMENT:** parity baseline preserved (S03A golden traces
+  GT-01..GT-12, `tests/session-golden-trace.test.tsx`), pure-core unit tests,
+  existing workout/persistence/timer suites, typecheck, lint, production
+  build; consumer contract tests (player integration + persistence
+  compatibility); targeted E2E per `docs/CI.md`; governance checks.
+- **PRODUCTION_IMPACT:** public-app workout engine refactor — behavior
+  preserved, `UI_CHANGED = NO` (no visual change), `DB_CHANGED = NO`
+  (IndexedDB snapshot shapes unchanged until S-05); rollback = plain git
+  revert; Production delivery via the canonical gateway when authorized.
+- **RISK:** LOW-MEDIUM (behavior-preserving, parity-gated).
+- **Acceptance (exit criteria):** player/persistence consume only the stable
+  contract; no consumer imports hook internals; full suite green; mobile-
+  readiness posture recorded as CLIENT-AGNOSTIC.
+
 ## Recently closed
 
 | Task/checkpoint | Outcome | Evidence owner |
@@ -213,19 +260,23 @@ Older batch history is preserved in Git and the explicitly archived
 | `ADMIN-DS-02` — Admin shared primitives (PageSection/Stat/Table/EmptyState/Badge) in `src/components/admin`; behavior-neutral refactor of the six console pages | EXECUTED (commit `c87d0a8`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (EXTEND); validation: typecheck/lint/unit (7 tests) PASS; Production: all six surfaces redirect unauthenticated visitors, no credential material rendered |
 | `ADMIN-DS-03` — Platform-kit adoption for admin controls (login form, nav, logout) | EXECUTED (commit `bf116eb`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (REUSE); validation: typecheck/lint/design-audit PASS; Production signed-in acceptance PENDING (operator-held credential see Batch 1 note) |
 | `ADMIN-DS-04` — Admin state boundaries + accessibility pass (`loading`/`error`/`not-found` boundaries, table captions/scope, focus rings, a11y spec coverage) | EXECUTED (commit `61e62ef`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (REUSE + bounded EXTEND); validation: typecheck/lint/design-audit/unit PASS; Production: labelled nav + accessible table structure verified live |
-| `ADMIN-DS-05` — Admin Persian/RTL + i18n parity | REQUIRED REMEDIATION / NOT AUTHORIZED (owner decision 2026-09-01; NOT deferred; sequenced AFTER the foundational batch) | `EXECUTION_CLASS=SEQUENTIAL`; `DEPENDENCIES`: ADMIN-DS-01 (shares admin root layout/provider wiring), then ADMIN-DS-02/03 (primitives + kit adoption it should consume); own worktree/branch; admin-only; fa parity tests (next-intl messages, dir handling, RTL alignment); candidate member of the post-batch-1 batch with ADMIN-DS-06 |
+| `ADMIN-DS-05` — Admin Persian/RTL + i18n parity | REQUIRED REMEDIATION / NOT AUTHORIZED (owner decision 2026-09-01; NOT deferred; sequenced AFTER the foundational batch). Owner confirmed 2026-09-01: Admin is currently **English-only**; acceptance MUST include Persian, RTL, English↔Persian switching, locale persistence, and REUSE of the existing localization architecture | `EXECUTION_CLASS=SEQUENTIAL`; `DEPENDENCIES`: ADMIN-DS-01 (shares admin root layout/provider wiring), then ADMIN-DS-02/03 (primitives + kit adoption it should consume); own worktree/branch; admin-only; acceptance = fa parity tests (next-intl messages, dir handling, RTL alignment, locale switching + persistence); candidate member of the post-batch-1 batch with ADMIN-DS-06 |
 | `ADMIN-DS-06` — KIT-FIRST decision record + `DESIGN_SYSTEM.md` MUI drift reconciliation | PROPOSED / NOT AUTHORIZED | `DOCS_ONLY` candidate; records KIT-FIRST as the current Admin UI rule (reuse platform kit first; MUI only on a concrete documented unmet requirement); `DESIGN_SYSTEM.md` §3.0 already amended locally and uncommitted; candidate member of the post-batch-1 batch with ADMIN-DS-05 |
-| `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | PROPOSED / NOT AUTHORIZED | `AUDIT`/architecture task; does NOT build iOS/Android; inspects current architecture for future mobile blockers across 12 dimensions (business logic↔UI coupling, API/data-contract portability, auth/session assumptions, browser-only storage, workout-session portability, media/video, navigation, offline/resume, notifications/background, localization/RTL, tokens vs platform UI, HealthKit/Health Connect boundaries); outputs: client-agnostic-now list, stays-web-specific list, development guardrails, mobile-implementation triggers, later tech-selection spike (RN/Expo vs alternatives — no stack selected now). Spec: [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md) |
+| `ADMIN-THEME-SWITCH-01` — Admin Light/Dark theme switch (currently Dark-only, no visible switch) | DEFERRED / NOT AUTHORIZED (observed 2026-09-01) | Future implementation MUST reuse the shared theme architecture (`ThemeProvider`/tokens), support persistent Light/Dark selection, preserve ADMIN-DS-01 dark-mode default, follow the UI Conformance Gate; spec: [`architecture/ADMIN-THEME-SWITCH-01.md`](architecture/ADMIN-THEME-SWITCH-01.md) |
+| `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | **EXECUTED 2026-09-01** (docs-only; no app/DB change; no mobile build; no stack selection). Guardrails **RATIFIED / BINDING** via ADR-0005 (2026-09-01); decision items RESOLVED: triggers/health/spike DEFERRED until documented triggers; the high-severity finding was reconciled onto `S-04` (Session Core Contract Adoption) and PROMOTED to the approved queue | `AUDIT`/architecture task — complete. Report: [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md); guardrails RATIFIED in [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13; decision record [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md). Findings: 12 dimensions classified; high-priority debt = S-04 contract adoption (S03 extraction itself verified CLOSED — pure core exists; `workoutPersistence.ts` still imports hook internals); notifications/background = net-new capability gap; key-value + outbox + auth + health-contract items low-effort; owner decisions remaining: next-batch authorization only |
 
-| First Batch Delivery V1 batch (ADMIN-DS-01…04) | **DELIVERED / CLOSED (2026-09-01)** — PR #15 merged `4de75ae`; Main CI PASS (run `33454929053`); Production gateway release `batch1-admin-ds-01-04` → image `apex-home-fit:release-4de75ae969c8` health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 4/4 PASS (boundaries, dark-mode wiring, metadata/favicon, public regression, console errors). Signed-in Production recheck PENDING — operator-held credential required (see report `AHF-FB-20260901-ADMIN-DS-BATCH-1`). Branch `batch/admin-ds-01-04` retired. Post-batch sequencing: `MOBILE-READINESS-01` audit → batch 2 (`ADMIN-DS-05` + `ADMIN-DS-06`). Full member matrix in [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) §8 |
+| First Batch Delivery V1 batch (ADMIN-DS-01…04) | **DELIVERED / CLOSED (2026-09-01)** — PR #15 merged `4de75ae`; Main CI PASS (run `33454929053`); Production gateway release `batch1-admin-ds-01-04` → image `apex-home-fit:release-4de75ae969c8` health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 4/4 PASS (boundaries, dark-mode wiring, metadata/favicon, public regression, console errors). Signed-in Production recheck PENDING — operator-held credential required (see report `AHF-FB-20260901-ADMIN-DS-BATCH-1`). Branch `batch/admin-ds-01-04` retired. **Next-batch rationalization (2026-09-01):** Batch 2 = `ADMIN-DS-05` + `ADMIN-DS-06` (admin design-system completion; DS-05 dependencies satisfied by closed DS-01..03; separate risk domain from S-04). **S-04** (Session Core Contract Adoption) is PROMOTED as high-priority architecture debt and recommended as its OWN lifecycle (public workout-engine domain; parity-gated; must not ride the admin batch). Full member matrix in [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) §8 |
 
 These proposals do not alter, delete, or supersede any existing approved,
 closed, or registered item above. Existing deferred items (e.g.
-`ADMIN-AUTH-PASSKEY-01`, `ADMIN-IMPERSONATION-01`, S02-E/S04..S06, Workout
-V2) keep their status. `ADMIN-DS-05` is **REQUIRED remediation** (owner
-decision 2026-09-01) sequenced after the foundational batch — not deferred.
-`BATCH-DELIVERY-AND-ADMIN-AUDIT-01` remains in the ANALYSIS GATE until the
-Owner reviews the interim report.
+`ADMIN-AUTH-PASSKEY-01`, `ADMIN-IMPERSONATION-01`, `ADMIN-THEME-SWITCH-01`,
+S02-E/S-05/S-06, Workout V2) keep their status. `ADMIN-DS-05` is
+**REQUIRED remediation** (owner decision 2026-09-01) sequenced after the
+foundational batch — not deferred. `ADMIN-DS-06` supports it as a `DOCS_ONLY`
+member of the proposed Batch 2. `S-04` is promoted in the approved queue
+above (NOT started). Mobile-readiness guardrails are RATIFIED (ADR-0005).
+The ANALYSIS GATE was lifted with Batch 1; current state = awaiting
+batch-start authorization for the next batch.
 
 ## Promotion rule
 
