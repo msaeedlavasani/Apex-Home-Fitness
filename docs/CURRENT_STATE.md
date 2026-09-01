@@ -6,18 +6,18 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: S-04-SESSION-CORE-CONTRACT (CLOSED; PRODUCTION_PASS)
-CURRENT_PRODUCTION_SOURCE:             8e06d70bc75f9b02e585c091c96272e043149246
-CURRENT_PRODUCTION_IMAGE:               apex-home-fit:release-8e06d70bc75f
-CURRENT_PRODUCTION_BUILD_ID:            (gateway exact-SHA build; image sha256:02ffdcb4…)
-CURRENT_DB_TYPE:                        SQLite (Prisma)
-CURRENT_DB_VOLUME:                      apexhomefit_prod_db:/data (owned 100:101)
-CURRENT_DB_MIGRATION_COUNT:             13
-CURRENT_MAINLINE_BASELINE_COMMIT:        8e06d70bc75f9b02e585c091c96272e043149246 (PR #17 integration)
-ACTIVE_TASK:                            NONE
-ACTIVE_TASK_PROFILE:                    N/A
-ACTIVE_BRANCH:                          N/A (none)
-PREVIOUS_COMPLETED_TASK:                S-04 Session Core Contract Adoption (DELIVERED/CLOSED 2026-09-01; PR #17 + gateway release 8e06d70)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-THEME-SWITCH-01 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             9ac8ec69c686fb3beafa89968cbf48ed79e6985a
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-9ac8ec69c686
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:1ce7346f…)
+CURRENT_DB_TYPE:                       SQLite (Prisma)
+CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
+CURRENT_DB_MIGRATION_COUNT:            13
+CURRENT_MAINLINE_BASELINE_COMMIT:       9ac8ec69c686fb3beafa89968cbf48ed79e6985a (PR #18 integration)
+ACTIVE_TASK:                           NONE
+ACTIVE_TASK_PROFILE:                   N/A
+ACTIVE_BRANCH:                         N/A (none)
+PREVIOUS_COMPLETED_TASK:               ADMIN-THEME-SWITCH-01 (DELIVERED/CLOSED 2026-09-01; PR #18 + gateway release 9ac8ec69c686)
 PREVIOUS_COMPLETED_BRANCH:             batch/admin-ds-05-06 (RETIRED)
 NEXT_AUTHORIZED_TASK:                  NONE (S-04 promoted but not started; batch authorization pending)
 NEXT_EXPECTED_BRANCH:                 N/A

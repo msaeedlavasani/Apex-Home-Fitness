@@ -10,7 +10,21 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: S-04-SESSION-CORE-CONTRACT**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-THEME-SWITCH-01**
+
+---
+
+## ADMIN-THEME-SWITCH-01
+
+- **Status:** PASS (deployment + verified acceptance; signed-in Production recheck PENDING — standing credential-holder item, wording reconciled from the pre-feature "dark-mode toggle" phrasing)
+- **Purpose:** Admin Console explicit Light/Dark theme switching — accessible radiogroup control on the admin login page AND the signed-in admin header; persistent selection across reload/navigation (localStorage `theme` + `admin-theme` cookie SSR mirror); SSRe-correct no-flash hydration via the SHARED ThemeProvider/ThemeScript + apex design tokens (no parallel admin theme system). EN/FA + RTL/LTR + Vazirmatn/Inter preserved.
+- **Source:** `9ac8ec69c686fb3beafa89968cbf48ed79e6985a` (authoritative GitHub `main` HEAD; integration via PR #18; branch `batch/admin-theme-switch-01` retired)
+- **Image:** `apex-home-fit:release-9ac8ec69c686` (ID `sha256:1ce7346f7de0fb1525b0989c1dea6c686da0232fc48b038972774ae88874cd67`)
+- **DB_STATE:** `db_changed=false` (gateway-verified); no schema change; rollback snapshot captured (root-only)
+- **ACCEPTANCE:** Main CI PASS on merge; branch CI PASS (build + e2e); gateway release phase `normal` health PASS, secret boundary `PROTECTED`; local validation on the exact release code — typecheck PASS, eslint 0 errors, unit 524/524, production build PASS, real-browser admin suite 9/9 PASS (admin-console 4/4 + admin-i18n 2/2 + admin-theme 3/3: Light default, Dark switch, persistence across reload AND navigation, FA/RTL + theme, signed-in header control); Production real-browser acceptance PASS — Light + Dark × English + Persian incl. persistence on the live login surface, public regression, zero fatal console errors
+- **UI_CONFORMANCE:** PASS (REUSE — shared ThemeProvider/ThemeScript/tokens; bounded cookieKey opt-in on the shared provider; evidence `reports/admin-theme-switch-01-conformance-evidence.md`)
+- **OPEN ITEM:** signed-in Production acceptance recheck (Light/Dark switch journey + session retention) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (standing item; the pre-feature "dark-mode toggle" wording is reconciled/superseded)
+- **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
 
@@ -40,7 +54,7 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
   `compose.yml.rollback-batch2-admin-ds-05-06` (root-only)
 - **ACCEPTANCE:** Main CI PASS on `c6a4e59` (run `33482982507`); branch CI PASS (build + e2e, run `33482319310`); gateway release `batch2-admin-ds-05-06` phase `normal` health PASS, secret boundary `PROTECTED`; local real-browser admin suite 6/6 PASS on the exact release code (admin-console 4/4 EN regression + admin-i18n 2/2: switching, RTL, typography, persistence, Persian surfaces); Production real-browser (system Chrome) 4/4 PASS — public `/en` `/fa` `/en/auth/login` `/manifest.json` unchanged, signed-out `/en/dashboard` redirects, all six protected admin surfaces redirect to `/admin/login`, admin login EN default + fa/RTL switch (computed font leads `inter`/`vazirmatn`) + persistence across reload, zero fatal console errors
 - **MEMBER-LEVEL:** ADMIN-DS-05 (`fd8650f`) + ADMIN-DS-06 (`b92e3a8`) individually committed with per-member validation + UI Conformance evidence (REUSE + bounded EXTEND / DOCS_ONLY); carried governance docs commit `1d1966e` (ADR-0005 ratification, S-04 promotion)
-- **OPEN ITEM:** signed-in Production acceptance recheck (dashboard dark-mode toggle, session retention, fa signed-in surfaces) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (batch 1 open item, unchanged)
+- **OPEN ITEM:** signed-in Production acceptance recheck (admin Light/Dark switch — since DELIVERED by ADMIN-THEME-SWITCH-01 — session retention, fa signed-in surfaces) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (batch 1 open item; the earlier "dark-mode toggle" wording predates ADMIN-THEME-SWITCH-01 and is reconciled here)
 - **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
@@ -56,7 +70,7 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
   `compose.yml.rollback-batch1-admin-ds-01-04` (root-only 0600)
 - **ACCEPTANCE:** Main CI PASS on `4de75ae` (run `33454929053`); gateway release `batch1-admin-ds-01-04` phase `normal` health PASS, secret boundary `PROTECTED`; local real-browser admin-console spec 4/4 PASS on the exact release code (sign-in → all six surfaces, labelled nav/accessible tables, no credential material, unauth boundary); Production real-browser (system Chrome) 4/4 PASS — all six protected surfaces redirect to `/admin/login`, admin login renders with title metadata + theme script + admin icons (favicon 404 resolved), public `/en` `/fa` `/en/dashboard` `/en/auth/login` `/manifest.json` unchanged, zero fatal console errors
 - **MEMBER-LEVEL:** ADMIN-DS-01..04 individually committed (`c87d0a8`, `1442574`, `bf116eb`, `61e62ef`), each with per-member validation + UI Conformance evidence (REUSE/EXTEND declared)
-- **OPEN ITEM:** signed-in Production acceptance recheck (dashboard dark-mode toggle, fresh-navigation session behavior) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (reports/`AHF-FB-20260901-ADMIN-DS-BATCH-1.md`)
+- **OPEN ITEM:** signed-in Production acceptance recheck (admin Light/Dark switch — since DELIVERED by ADMIN-THEME-SWITCH-01 — fresh-navigation session behavior) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (reports/`AHF-FB-20260901-ADMIN-DS-BATCH-1.md`; the earlier "dark-mode toggle" wording predates ADMIN-THEME-SWITCH-01 and is reconciled here)
 - **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---

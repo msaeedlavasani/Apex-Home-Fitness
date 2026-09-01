@@ -1,11 +1,12 @@
 # ADMIN-THEME-SWITCH-01 — Admin Light/Dark Theme Switch
 
-> **STATUS: DEFERRED / NOT AUTHORIZED FOR IMPLEMENTATION** (observed and
-> persisted 2026-09-01 during MOBILE-READINESS-01 — Admin follow-up debt;
-> recorded here only, NOT implemented).
+> **STATUS: EXECUTED / DELIVERED / CLOSED 2026-09-01** (own lifecycle via
+> PR #18 + the Production Deployment Gateway; originally observed and
+> persisted 2026-09-01 during MOBILE-READINESS-01 as Admin follow-up debt).
 >
-> Profile: UI remediation (future). `DB_CHANGED = NO`. No Production impact
-> while deferred.
+> Profile: UI remediation. `DB_CHANGED = NO`. Full implementation record
+> below supersedes the original "future" requirements with the executed
+> design.
 
 ## 1. Observation
 
