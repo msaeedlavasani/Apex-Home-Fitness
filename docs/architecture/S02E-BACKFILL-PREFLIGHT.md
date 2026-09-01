@@ -168,3 +168,32 @@ again the next authorized isolated lifecycle: run the now-supported
 `dry-run` → review the UNRESOLVED/AMBIGUOUS/BLOCKED_COLLISION report →
 (re)authorize the apply with the exact `dry_run_evidence_sha`.
 
+## 7. Final lifecycle — DELIVERED / CLOSED (2026-09-01)
+
+Owner delta `S02-E FINAL LIFECYCLE` authorized the final isolated lifecycle:
+
+1. **Dry-run evidence reconciled** — gateway v2 `db-operation`
+   `s02e-exercise-identity-backfill` dry-run on the real Production DB
+   returned `dry_run_evidence_sha 8cf8a5358dbb…`, byte-identical across
+   `a0a47ed` and `5e77298` source SHAs (deterministic report).
+2. **Ambiguous row surfaced** — `Side-Lying Leg Lift` (id
+   `cmtdmzmw80008k101j3a2gd2z`, slug NULL); candidates
+   `side-kick-side-leg-lifts` (`Side Kick (Side Leg Lifts)`, alias) and
+   `side-lying-leg-lift` (`Side-Lying Leg Lift`, exact name). Owner decision
+   (2026-09-01): **leave unmapped / close** (fail-closed; alias collision
+   deferred as `EXERCISE-CATALOG-DISAMBIGUATION-01`, PROPOSED).
+3. **Governed apply** — bound to evidence `8cf8a535…`; backup
+   `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`;
+   `applied_count 0`; DB hash unchanged `2e558a90…` (before == after);
+   verification PASS; 8 already-backfilled rows untouched; `faName` untouched
+   (GA-05).
+4. **Post-state/idempotency** — post-apply dry-run returns the same evidence
+   sha; app healthy `/en` `/fa` 200.
+5. **Production acceptance** — real-browser 6/6 PASS on `apexhomefit.ir`
+   (public EN/FA, auth boundary, exercise library catalog/resolver path,
+   workout-route EN+FA RTL boundaries, manifest, zero fatal console errors).
+6. **Closure** — S02-E CLOSED; no subsequent task started.
+
+**FINAL_STATUS: CLOSED / PRODUCTION_ACCEPTED** (DB_CHANGED=YES lifecycle with
+0-row mutation; real DB hash unchanged; backup on file).
+

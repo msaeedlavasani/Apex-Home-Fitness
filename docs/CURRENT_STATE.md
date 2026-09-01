@@ -17,12 +17,12 @@ CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         N/A (none)
-PREVIOUS_COMPLETED_TASK:               GOVERNED-PROD-DB-CAPABILITY-01 (gateway v2 db-operation; DELIVERED/CLOSED 2026-09-01; PRs #20–#24 → a0a47ed; proven on Production WITHOUT any DB mutation)
-PREVIOUS_COMPLETED_BRANCH:             infra/gateway-db-operation + fix/gateway-dbop-* (RETIRED; also STABILIZATION BATCH S06+S05 via PR #19 before it)
-NEXT_AUTHORIZED_TASK:                  S02-E Exercise Identity Backfill — next isolated Production-DB lifecycle; gateway v2 dry-run evidence already on file; apply requires explicit re-authorization with dry_run_evidence_sha
+PREVIOUS_COMPLETED_TASK:               S02-E Exercise Identity Backfill (DELIVERED/CLOSED 2026-09-01 — governed apply via gateway v2 db-operation as 0-row no-op; ambiguous row left unmapped per Owner decision; preceded by GOVERNED-PROD-DB-CAPABILITY-01 gateway v2, PRs #20–#24 → a0a47ed)
+PREVIOUS_COMPLETED_BRANCH:             N/A (docs-only close-out committed to main 5e77298; no task branch needed)
+NEXT_AUTHORIZED_TASK:                  NONE — EXERCISE-CATALOG-DISAMBIGUATION-01 (seed alias collision) PROPOSED/deferred; ADMIN-IMPERSONATION-01 deferred/not authorized
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-09-01 (gateway v2 db-operation capability delivered; app release unchanged 4ada1dae2c3e)
+LAST_UPDATED:                          2026-09-01 (S02-E closed; DB hash unchanged 2e558a90…; backup on file; app release unchanged 4ada1dae2c3e)
 ```
 
 ## Reading this manifest (pre-task gate)

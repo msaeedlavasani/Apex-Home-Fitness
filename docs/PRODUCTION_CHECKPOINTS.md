@@ -11,8 +11,49 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > and this ledger first.**
 >
 > **CURRENT VERIFIED PRODUCTION CHECKPOINT: STABILIZATION-S06-S05**
-> (app release unchanged — the gateway-v2 capability below is Production
-> infrastructure, not an application release)
+> (app release unchanged — the gateway-v2 capability and the S02-E backfill
+> below are Production infrastructure / DB-lifecycle checkpoints, not
+> application releases)
+
+---
+
+## S02-E-EXERCISE-IDENTITY-BACKFILL (CLOSED / PRODUCTION_ACCEPTED)
+
+- **Status:** PASS (2026-09-01); task **CLOSED** — DB_CHANGED=YES lifecycle
+  executed through Gateway v2 `db-operation` as a **0-row mutation** (real DB
+  hash unchanged); no app release
+- **Purpose:** S02-E Exercise Identity Backfill (GATE A GA-07) final lifecycle
+  — canonical dry-run evidence reconciled, single AMBIGUOUS row surfaced for
+  Owner decision (leave unmapped/close), governed apply executed, post-state/
+  idempotency + Production acceptance verified
+- **Dry-run evidence:** `dry_run_evidence_sha 8cf8a5358dbb…` — byte-identical
+  across source SHAs `a0a47ed` / `5e77298` (deterministic report); evidence
+  root-only `db-op-dryrun-s02e-exercise-identity-backfill-5e7729863abc.json`
+  + `-a0a47edc8d03.json`
+- **Corpus:** `ALREADY_BACKFILLED=8` (Ankle Rock, Bodyweight Calf Raise,
+  Bodyweight Squat, Cat Cow, Low-Impact Step Jack, March in Place, Standing
+  Calf Raise, Wall Sit — slugs live via runtime generation); `AMBIGUOUS=1`
+  (`Side-Lying Leg Lift` id `cmtdmzmw80008k101j3a2gd2z`, slug NULL —
+  candidates `side-kick-side-leg-lifts` | `side-lying-leg-lift`);
+  `AUTO/ALIAS/UNRESOLVED=0`; collisions 0
+- **Apply:** backup `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`
+  (root-only); `applied_count 0`; `db_before_hash == db_after_hash ==
+  2e558a90…`; verification PASS; 8 backfilled rows untouched; `faName`
+  untouched (GA-05)
+- **ACCEPTANCE:** post-apply dry-run evidence sha unchanged (idempotent);
+  app loopback `/en` `/fa` 200; gateway READY, secret boundary `PROTECTED`;
+  real-browser Production acceptance 6/6 PASS on `apexhomefit.ir` — public
+  EN/FA, signed-out auth boundary redirects, exercise library
+  (catalog/resolver path over backfilled slugs), workout-route EN+FA RTL
+  auth boundaries, manifest 200, zero fatal console errors
+- **SOURCE:** authoritative GitHub `main` `5e7729863abc…` (no app code
+  change; docs-only close-out on main); image unchanged
+  `apex-home-fit:release-4ada1dae2c3e`
+- **OPEN ITEM (deferred debt):** seed alias collision
+  `Side Kick (Side Leg Lifts)` / `Side-Lying Leg Lift` →
+  `EXERCISE-CATALOG-DISAMBIGUATION-01` PROPOSED / NOT AUTHORIZED (may later
+  map the unmapped row via a NEW gateway dry-run + re-authorization)
+- **FINAL_STATUS:** PASS / CLOSED / PRODUCTION_ACCEPTED
 
 ---
 

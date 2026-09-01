@@ -13,10 +13,10 @@
 | Active task | `NONE` |
 | Profile | `N/A` |
 | Branch | `N/A` |
-| State | `GOVERNED-PROD-DB-CAPABILITY-01 DELIVERED/CLOSED` (2026-09-01; gateway v2 `db-operation` proven in Production without mutation) |
-| Production-bound | `YES` (completed) |
-| Next authorized task | `S02-E` — capability gap RESOLVED by `GOVERNED-PROD-DB-CAPABILITY-01` (gateway v2 `db-operation`: read-only dry-run evidence + dry-run-gated apply/rehearsal, proven in Production WITHOUT mutation). S02-E dry-run evidence against the real Production DB is already on file; the apply remains NOT executed and requires explicit re-authorization with its `dry_run_evidence_sha` |
-| Pending owner review | Authorize the S02-E apply lifecycle (dry-run evidence already captured); ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
+| State | `S02-E DELIVERED/CLOSED` (2026-09-01; governed apply executed via gateway v2 `db-operation` as a 0-row no-op; ambiguous row `Side-Lying Leg Lift` left unmapped per Owner decision) |
+| Production-bound | `YES` (completed; `DB_CHANGED=YES` lifecycle, 0-row mutation, DB hash unchanged, backup on file) |
+| Next authorized task | `NONE` — `EXERCISE-CATALOG-DISAMBIGUATION-01` (seed alias collision) recorded PROPOSED/deferred; ADMIN-IMPERSONATION-01 deferred/not authorized |
+| Pending owner review | None blocking — S02-E apply executed (0-row no-op) and accepted; catalog alias-collision reconciliation requires separate authorization when scheduled; ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
 
 ## Approved queue
 
@@ -137,7 +137,7 @@ preserve them until the owner separately authorizes bounded execution:
 | Mobile-readiness architecture guardrails (6 rules: UI-framework-free domain logic, portable persistence contracts, mobile-posture declaration, S03 session-core boundary, platform-neutral health contract, no-stack-without-spike) | **RATIFIED / BINDING 2026-09-01** — owner ratification via POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as `ADR-0005`; mobile implementation triggers, HealthKit/Health Connect scope, and the technology-selection spike DEFERRED until documented triggers; NO mobile stack selected | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
 | Shared typography contract (fa → Vazirmatn from the official project, en → Inter; both self-hosted; shared across consumer app and Admin — NO separate Admin font stack; locale determines the primary font; system sans-serif fallbacks preserved) | **RATIFIED / BINDING 2026-09-01** — Owner decision in ADMIN DESIGN SYSTEM BATCH 2; implemented by `ADMIN-DS-05`; recorded in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1 (contract) + §4.2 (Admin i18n/RTL architecture) | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
 | Session Core Contract Adoption — `S-04` Stable Session State Contract | **DELIVERED/CLOSED 2026-09-01** via PR #17 + gateway release `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); promoted 2026-09-01 as the high-priority mobile-readiness architecture debt; reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction stays closed (pure core exists, hook delegates); execution removed residual consumer coupling (`workoutPersistence.ts`/`samplePlan`/route/player → canonical contracts; new pure `plan.ts`; boundary consumer tests) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--delivered-closed), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
-| S02-E and S-05..S-06 | **RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01)** — S-06 first, S-05 second (GATE C), S02-E last; S-06+S-05 batchable, S02-E NOT batchable. **S-06 DECIDED + S-05 DELIVERED/CLOSED (PR #19 → `4ada1da`). S02-E: capability gap RESOLVED 2026-09-01 by `GOVERNED-PROD-DB-CAPABILITY-01` (gateway v2 `db-operation`; real-DB dry-run evidence captured; apply proven via rehearsal, NOT executed); next authorized isolated lifecycle** | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md), [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md), [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md), [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+| S02-E and S-05..S-06 | **RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01)** — S-06 first, S-05 second (GATE C), S02-E last; S-06+S-05 batchable, S02-E NOT batchable. **S-06 DECIDED + S-05 DELIVERED/CLOSED (PR #19 → `4ada1da`). S02-E DELIVERED/CLOSED 2026-09-01** — gateway v2 `db-operation` dry-run evidence reconciled (report_sha `8cf8a535…`, deterministic across SHAs); governed apply executed as 0-row no-op (8 rows already backfilled by runtime generation; 1 AMBIGUOUS `Side-Lying Leg Lift` left unmapped per Owner decision; backup `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`; DB hash unchanged); Production acceptance 6/6 PASS; alias-collision debt recorded as `EXERCISE-CATALOG-DISAMBIGUATION-01` (PROPOSED/deferred) | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md), [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md), [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md), [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | `rtl-layout.spec.ts` stale expectations (TD-01 nav-order five-item `APP_NAV`; TD-02 quiz radiogroup scope) | **CONFIRMED TEST DEBT 2026-09-01** — reproduced identically on clean `main`; not app regressions; not in CI's e2e gate; **FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01, PR #19 → `4ada1da`)** — full local E2E suite green (35/35 incl. both specs) | [`TEST-DEBT.md`](TEST-DEBT.md) |
 
 ## Approved queue — hardening (closed in this promotion)
@@ -226,6 +226,47 @@ preserve them until the owner separately authorizes bounded execution:
   gateway contract `docs/PRODUCTION_DEPLOYMENT_GATEWAY.md` §db-operation;
   `test:gateway` (11 pure tests + py_compile + daemon `--self-test`) wired into
   CI; `ops/deploy-gateway/install-gateway.sh` idempotent root install.
+
+### S02-E — Exercise Identity Backfill — DELIVERED / CLOSED 2026-09-01
+
+- **Authorization:** Owner delta `S02-E EXERCISE IDENTITY BACKFILL` (own
+  isolated Production-DB lifecycle; dry-run first; fail closed; gateway-
+  bounded) + GATE A GA-07 APPROVED; the mandatory HUMAN_DECISION_REQUIRED
+  gate for the single AMBIGUOUS row was resolved by the Owner on 2026-09-01:
+  **leave unmapped / close** (fail-closed; catalog alias collision deferred).
+- **Canonical dry-run evidence reconciled:** gateway v2 `db-operation`
+  `s02e-exercise-identity-backfill` dry-run against the real Production DB
+  returned `dry_run_evidence_sha 8cf8a5358dbb…` — byte-identical across
+  `a0a47ed` and `5e77298` source SHAs (deterministic report). Production
+  corpus: `ALREADY_BACKFILLED=8` (slugs live via runtime generation),
+  `AMBIGUOUS=1`, `AUTO/ALIAS/UNRESOLVED=0`.
+- **Ambiguous row surfaced (never guessed):** `Side-Lying Leg Lift` (id
+  `cmtdmzmw80008k101j3a2gd2z`, slug NULL) — candidates `side-kick-side-leg-lifts`
+  (`Side Kick (Side Leg Lifts)`, alias match) and `side-lying-leg-lift`
+  (`Side-Lying Leg Lift`, exact-name match). Root cause: seed-catalog alias
+  collision (`side-lying leg lift` declared by both entries).
+- **Governed apply (DB_CHANGED=YES lifecycle):** `mode=apply` bound to
+  evidence `8cf8a535…` — backup
+  `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`;
+  `applied_count 0`; `db_before_hash == db_after_hash == 2e558a90…`;
+  verification PASS; 8 already-backfilled rows untouched; `faName` untouched
+  (GA-05 — no Persian corpus invented).
+- **Post-state/idempotency:** post-apply dry-run returns the SAME evidence
+  sha `8cf8a535…` (state unchanged); app healthy `/en` `/fa` 200.
+- **Production acceptance:** real-browser 6/6 PASS on `apexhomefit.ir`
+  (public EN/FA, signed-out auth boundary, exercise library catalog/resolver
+  path, workout-route EN+FA RTL boundaries, manifest, zero fatal console
+  errors). No app release (no app code change); gateway READY, secret
+  boundary PROTECTED.
+- **Deferred debt recorded:** `EXERCISE-CATALOG-DISAMBIGUATION-01`
+  (PROPOSED, not authorized) — reconcile the `Side Kick (Side Leg Lifts)` /
+  `Side-Lying Leg Lift` alias collision and decide whether/how to map the
+  unmapped Production row.
+- **Evidence:** preflight + capability record
+  [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md),
+  [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md);
+  report `reports/AHF-FB-20260901-S02E-BACKFILL.md` (preflight) and
+  `reports/AHF-FB-20260901-S02E-FINAL-LIFECYCLE.md` (this lifecycle).
 
 ### S-04 — Stable Session State Contract (Session Core Contract Adoption) — DELIVERED / CLOSED 2026-09-01
 
@@ -325,6 +366,7 @@ Older batch history is preserved in Git and the explicitly archived
 | `ADMIN-DS-05` — Admin Persian/RTL + i18n parity | **DELIVERED / CLOSED (2026-09-01)** via Batch 2 PR #16 / merged `c6a4e59`; commit `fd8650f`; Production gateway release `batch2-admin-ds-05-06` | `EXECUTION_CLASS=SEQUENTIAL`; `UI_CONFORMANCE=PASS` (REUSE + bounded EXTEND); shared next-intl catalogs (`admin.*` namespace), `admin-locale` cookie persistence, `html lang/dir`, localized pages/nav/login/boundaries, fa-IR dates, logical utilities; validation: typecheck/lint/unit 519/519/build PASS; local real-browser 6/6 PASS (admin-console + admin-i18n: switching, RTL, typography, persistence); Production 4/4 PASS; signed-in Production recheck PENDING (credential, standing batch-1 item) |
 | `ADMIN-DS-06` — KIT-FIRST decision record + `DESIGN_SYSTEM.md` reconciliation | **DELIVERED / CLOSED (2026-09-01)** via Batch 2 PR #16 / merged `c6a4e59`; commit `b92e3a8` | `DOCS_ONLY`; recorded the ratified shared typography contract (`DESIGN_SYSTEM.md` §4.1 — fa → Vazirmatn, en → Inter, self-hosted, shared consumer+Admin, no separate Admin stack) + Admin i18n/RTL architecture (§4.2); KIT-FIRST formalized; INDEX route + TASKS registered-decision row added |
 | `ADMIN-THEME-SWITCH-01` — Admin Light/Dark theme switch | **DELIVERED / CLOSED (2026-09-01)** — PR #18 merged `9ac8ec69c686`; branch CI PASS (run `33495411711`); Main CI PASS (run `33496083422`); Production gateway release `admin-theme-switch-01` → image `apex-home-fit:release-9ac8ec69c686` (ID `sha256:1ce7346f…`) health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 12/12 PASS incl. Light + Dark × EN + FA with persistence on the live login surface; signed-in surfaces validated locally on the exact release code (9/9 admin suite) — standing credential item covers the signed-in Production recheck. Reused the SHARED theme architecture (ThemeProvider/ThemeScript + apex tokens; NO parallel admin theme system); opt-in `cookieKey` SSR mirror (`admin-theme` cookie) so the server renders the same theme state the client hydrates (no mismatch, no FOUC); accessible radiogroup control on login + signed-in header; EN/FA + RTL + Vazirmatn/Inter preserved; UI Conformance REUSE + evidence; spec: [`architecture/ADMIN-THEME-SWITCH-01.md`](architecture/ADMIN-THEME-SWITCH-01.md) |
+| `EXERCISE-CATALOG-DISAMBIGUATION-01` — resolve the seed-catalog alias collision between `Side Kick (Side Leg Lifts)` (alias `side-lying leg lift`) and `Side-Lying Leg Lift` (name + same alias) | **PROPOSED / NOT AUTHORIZED — deferred debt from S02-E (2026-09-01)** | During S02-E, the Production row `Side-Lying Leg Lift` (id `cmtdmzmw80008k101j3a2gd2z`, slug NULL) was flagged AMBIGUOUS against `side-kick-side-leg-lifts` and `side-lying-leg-lift`; Owner decided leave-unmapped/close. This task: decide the canonical identity/alias intent, adjust the catalog (and resolver behavior for `Side-Lying Leg Lift`), re-validate, and THEN decide whether to map the unmapped Production row through the gateway `db-operation` apply (new dry-run evidence + re-authorization required). `EXECUTION_CLASS=ISOLATED`; docs + optional governed DB mutation; must NOT guess identities |
 | `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | **EXECUTED 2026-09-01** (docs-only; no app/DB change; no mobile build; no stack selection). Guardrails **RATIFIED / BINDING** via ADR-0005 (2026-09-01); decision items RESOLVED: triggers/health/spike DEFERRED until documented triggers; the high-severity finding was reconciled onto `S-04` (Session Core Contract Adoption) and PROMOTED to the approved queue | `AUDIT`/architecture task — complete. Report: [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md); guardrails RATIFIED in [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13; decision record [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md). Findings: 12 dimensions classified; high-priority debt = S-04 contract adoption (S03 extraction itself verified CLOSED — pure core exists; `workoutPersistence.ts` still imports hook internals); notifications/background = net-new capability gap; key-value + outbox + auth + health-contract items low-effort; owner decisions remaining: next-batch authorization only |
 
 | First Batch Delivery V1 batch (ADMIN-DS-01…04) | **DELIVERED / CLOSED (2026-09-01)** — PR #15 merged `4de75ae`; Main CI PASS (run `33454929053`); Production gateway release `batch1-admin-ds-01-04` → image `apex-home-fit:release-4de75ae969c8` health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 4/4 PASS (boundaries, dark-mode wiring, metadata/favicon, public regression, console errors). Signed-in Production recheck PENDING — operator-held credential required (see report `AHF-FB-20260901-ADMIN-DS-BATCH-1`). Branch `batch/admin-ds-01-04` retired. Full member matrix in [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) §8 |
