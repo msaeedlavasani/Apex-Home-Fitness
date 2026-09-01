@@ -10,7 +10,23 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-CONSOLE-01**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-DS-BATCH-1**
+
+---
+
+## ADMIN-DS-BATCH-1
+
+- **Status:** PASS (deployment + verified acceptance; signed-in Production recheck PENDING — see note)
+- **Purpose:** Batch Delivery V1 first batch — Admin design-system conformance (ADMIN-DS-01 foundation: dark mode/fonts/metadata+favicon; ADMIN-DS-02 shared admin primitives + six-page refactor; ADMIN-DS-03 platform-kit adoption for login/logout; ADMIN-DS-04 state boundaries + accessibility pass)
+- **Source:** `4de75ae969c8d1f260e6c660b5c7fac5008f3541` (authoritative GitHub `main` HEAD; integration via PR #15; branch `batch/admin-ds-01-04` retired)
+- **Image:** `apex-home-fit:release-4de75ae969c8` (ID
+  `sha256:1908710b640ab39e969add232e2a27d423c892f631dfa341138ad6c216333e55`)
+- **DB_STATE:** `db_changed=false` (gateway-verified, DB hash unchanged across no-op migration gate); no schema change; rollback snapshot
+  `compose.yml.rollback-batch1-admin-ds-01-04` (root-only 0600)
+- **ACCEPTANCE:** Main CI PASS on `4de75ae` (run `33454929053`); gateway release `batch1-admin-ds-01-04` phase `normal` health PASS, secret boundary `PROTECTED`; local real-browser admin-console spec 4/4 PASS on the exact release code (sign-in → all six surfaces, labelled nav/accessible tables, no credential material, unauth boundary); Production real-browser (system Chrome) 4/4 PASS — all six protected surfaces redirect to `/admin/login`, admin login renders with title metadata + theme script + admin icons (favicon 404 resolved), public `/en` `/fa` `/en/dashboard` `/en/auth/login` `/manifest.json` unchanged, zero fatal console errors
+- **MEMBER-LEVEL:** ADMIN-DS-01..04 individually committed (`c87d0a8`, `1442574`, `bf116eb`, `61e62ef`), each with per-member validation + UI Conformance evidence (REUSE/EXTEND declared)
+- **OPEN ITEM:** signed-in Production acceptance recheck (dashboard dark-mode toggle, fresh-navigation session behavior) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (reports/`AHF-FB-20260901-ADMIN-DS-BATCH-1.md`)
+- **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
 
