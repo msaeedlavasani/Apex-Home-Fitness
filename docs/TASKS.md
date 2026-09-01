@@ -15,8 +15,8 @@
 | Branch | `N/A` |
 | State | `ADMIN-DS-BATCH-2 CLOSED` (2026-09-01; Production PASS via gateway release `c6a4e59`) |
 | Production-bound | `YES` (completed) |
-| Next authorized task | `NONE` (S-04 promoted to the approved queue; implementation still requires batch-start authorization) |
-| Pending owner review | Next-batch authorization: S-04 (Session Core Contract Adoption) as its own lifecycle; ADMIN-THEME-SWITCH-01 stays deferred; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
+| Next authorized task | `NONE` (S-04 DELIVERED/CLOSED 2026-09-01; next candidates: ADMIN-THEME-SWITCH-01 batch or new owner-assigned work) |
+| Pending owner review | Next-batch authorization; ADMIN-THEME-SWITCH-01 stays deferred; ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
 
 ## Approved queue
 
@@ -128,7 +128,7 @@ preserve them until the owner separately authorizes bounded execution:
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements (actor/target identity, durable audit trail, start/end timestamps, persistent banner, safe exit, session isolation, no credential use, restricted sensitive operations, server-side enforcement, security review gate) persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
 | Batch Delivery V1 operating model (one active session, serial isolated tasks, one consolidated integration/CI/release lifecycle) | ACCEPTED / ADOPTED 2026-09-01 (`GOVERNANCE-HARDENING-PROMOTION-01`) — model in force; each batch still requires separate execution authorization; runtime constraint basis in the orchestration investigation record | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
-| Admin Console design-system alignment (Batch 1 `ADMIN-DS-01…04` DELIVERED/CLOSED; Batch 2 `ADMIN-DS-05` + `ADMIN-DS-06` DELIVERED/CLOSED 2026-09-01 via PR #16 + gateway release `c6a4e59`; `ADMIN-THEME-SWITCH-01` deferred debt; `MOBILE-READINESS-01` audit EXECUTED + guardrails RATIFIED; `S-04` Session Core Contract Adoption PROMOTED) | **PROPOSED phase COMPLETE for Admin DS** — UI Conformance Gate + report delivery contract IN FORCE; Batch 1 DELIVERED/CLOSED via PR #15 + `4de75ae`; Batch 2 DELIVERED/CLOSED via PR #16 + `c6a4e59`; typography contract RATIFIED (DESIGN_SYSTEM.md §4.1); `MOBILE-READINESS-01` guardrails RATIFIED (ADR-0005); `S-04` promoted to the approved queue (NOT started); `ADMIN-THEME-SWITCH-01` stays DEFERRED; `ADMIN-IMPERSONATION-01` DEFERRED/NOT AUTHORIZED | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md), [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md), [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
+| Admin Console design-system alignment (Batch 1 `ADMIN-DS-01…04` DELIVERED/CLOSED; Batch 2 `ADMIN-DS-05` + `ADMIN-DS-06` DELIVERED/CLOSED 2026-09-01 via PR #16 + gateway release `c6a4e59`; `ADMIN-THEME-SWITCH-01` deferred debt; `MOBILE-READINESS-01` audit EXECUTED + guardrails RATIFIED; `S-04` Session Core Contract Adoption DELIVERED/CLOSED 2026-09-01 via PR #17 + gateway release `8e06d70`) | **PROPOSED phase COMPLETE for Admin DS** — UI Conformance Gate + report delivery contract IN FORCE; Batch 1 DELIVERED/CLOSED via PR #15 + `4de75ae`; Batch 2 DELIVERED/CLOSED via PR #16 + `c6a4e59`; typography contract RATIFIED (DESIGN_SYSTEM.md §4.1); `MOBILE-READINESS-01` guardrails RATIFIED (ADR-0005); `S-04` DELIVERED/CLOSED via PR #17 + `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); `ADMIN-THEME-SWITCH-01` stays DEFERRED; `ADMIN-IMPERSONATION-01` DEFERRED/NOT AUTHORIZED | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md), [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md), [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`; must use a constrained deployment gateway/capability that consumes protected configuration internally without exposing secrets or arbitrary root shell access | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
@@ -136,7 +136,7 @@ preserve them until the owner separately authorizes bounded execution:
 | Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Mobile-readiness architecture guardrails (6 rules: UI-framework-free domain logic, portable persistence contracts, mobile-posture declaration, S03 session-core boundary, platform-neutral health contract, no-stack-without-spike) | **RATIFIED / BINDING 2026-09-01** — owner ratification via POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as `ADR-0005`; mobile implementation triggers, HealthKit/Health Connect scope, and the technology-selection spike DEFERRED until documented triggers; NO mobile stack selected | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
 | Shared typography contract (fa → Vazirmatn from the official project, en → Inter; both self-hosted; shared across consumer app and Admin — NO separate Admin font stack; locale determines the primary font; system sans-serif fallbacks preserved) | **RATIFIED / BINDING 2026-09-01** — Owner decision in ADMIN DESIGN SYSTEM BATCH 2; implemented by `ADMIN-DS-05`; recorded in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1 (contract) + §4.2 (Admin i18n/RTL architecture) | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
-| Session Core Contract Adoption — `S-04` Stable Session State Contract | **PROMOTED to the executable backlog 2026-09-01** as the high-priority mobile-readiness architecture debt; implementation NOT started (requires batch-start authorization); reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction is closed (pure core exists, hook delegates); residual debt = consumers still importing hook internals (`workoutPersistence.ts` → `useWorkoutEngine`) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--promoted-not-started), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+| Session Core Contract Adoption — `S-04` Stable Session State Contract | **DELIVERED/CLOSED 2026-09-01** via PR #17 + gateway release `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); promoted 2026-09-01 as the high-priority mobile-readiness architecture debt; reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction stays closed (pure core exists, hook delegates); execution removed residual consumer coupling (`workoutPersistence.ts`/`samplePlan`/route/player → canonical contracts; new pure `plan.ts`; boundary consumer tests) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--delivered-closed), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | S02-E and S-05..S-06 | PLANNED OR DEFERRED / OWNER CHECKPOINT REQUIRED | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 
 ## Approved queue — hardening (closed in this promotion)
@@ -187,7 +187,7 @@ preserve them until the owner separately authorizes bounded execution:
 
 ## Approved queue — promoted 2026-09-01 (not started)
 
-### S-04 — Stable Session State Contract (Session Core Contract Adoption) — PROMOTED / NOT STARTED
+### S-04 — Stable Session State Contract (Session Core Contract Adoption) — DELIVERED / CLOSED 2026-09-01
 
 - **Authorization:** owner direction in `POST-MOBILE-READINESS-RATIONALIZATION-01`
   (2026-09-01): promote the identified Session Core Extraction requirement into
@@ -229,6 +229,26 @@ preserve them until the owner separately authorizes bounded execution:
 - **Acceptance (exit criteria):** player/persistence consume only the stable
   contract; no consumer imports hook internals; full suite green; mobile-
   readiness posture recorded as CLIENT-AGNOSTIC.
+- **EXECUTION (2026-09-01, DELIVERED/CLOSED):** implemented as its own
+  lifecycle via PR #17 → merged `8e06d70bc75f9b02e585c091c96272e043149246` →
+  gateway release `apex-home-fit:release-8e06d70bc75f` (health PASS,
+  `db_changed=false`, secret boundary PROTECTED, rollback
+  `compose.yml.rollback-s04-session-core-contract`). New pure
+  `src/lib/workout/plan.ts` (`clampSets` — contracts module stays types-only by
+  test contract); `sessionContracts.ts` canonical boundary docstring; the hook
+  re-exports canonical types (no local duplicates); consumers migrated:
+  `workoutPersistence`, `samplePlan`, workout route, `WorkoutPlayer` adapter;
+  `tests/session-contract-consumers.test.ts` enforces the boundary. Branch
+  CI PASS (build + e2e, run `33486695026`); Main CI PASS (merge run
+  `33487427362`); local validation typecheck PASS, eslint 0 errors, unit
+  524/524 (golden traces GT-01..GT-12 parity preserved), production build
+  PASS, real-browser workout-route E2E 5/5 (incl. live player session);
+  Production real-browser acceptance 8/8 (public regression, workout route
+  auth boundary + locale preservation, zero fatal console errors). Pre-existing
+  `rtl-layout.spec.ts` drift (2 specs — public nav-order + quiz radiogroup
+  scope) reproduced identically on clean main; not part of CI's e2e gate;
+  flagged for separate spec-reconciliation, not addressed by S-04
+  (UI_CHANGED=NO).
 
 ## Recently closed
 
@@ -242,6 +262,7 @@ preserve them until the owner separately authorizes bounded execution:
 | `ADMIN-AUTH-PROD-01` | CLOSED; Admin Auth V1 Production PASS (deterministic migration via pinned Prisma 6.19.3; same-origin/provisioning fixes via PR #11; real-browser acceptance 22/22) | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260831-ADMIN-AUTH-PROD-01.md`, PR #11, Main CI run `33401625615` |
 | `ADMIN-AUTH-01` | CLOSED; dedicated Email + Password administrator authentication V1 integrated with no Production deployment | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), durable AgentReport, PR #10, Main CI run `33392689051` |
 | `AUTH-FIX-01` | CLOSED; Production PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
+| `S-04` Session Core Contract Adoption | CLOSED; stable session-state contract adopted as the canonical consumer boundary; PR #17 → merged `8e06d70`; gateway release `release-8e06d70bc75f`; branch retired; Main CI PASS on `8e06d70` (run `33487427362`) | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260901-S04-SESSION-CORE-CONTRACT.md` |
 | S03 Session Core | CLOSED; architecture/runtime refactor complete | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) |
 | S02 Production recovery | PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 

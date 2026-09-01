@@ -10,7 +10,22 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-DS-BATCH-2**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: S-04-SESSION-CORE-CONTRACT**
+
+---
+
+## S-04-SESSION-CORE-CONTRACT
+
+- **Status:** PASS (deployment + verified acceptance; signed-in Production recheck PENDING — standing credential-holder item)
+- **Purpose:** S-04 — Stable Session State Contract / Session Core Contract Adoption. Removed residual consumer/type coupling to the `useWorkoutEngine` hook; the canonical `sessionContracts`/`sessionCore` boundary now owns the stable session-state contract. S03 extraction stayed CLOSED (no re-extraction/redesign). Runtime behavior unchanged (`UI_CHANGED = NO`, `DB_CHANGED = NO`).
+- **Source:** `8e06d70bc75f9b02e585c091c96272e043149246` (authoritative GitHub `main` HEAD; integration via PR #17; branch `batch/s04-session-core-contract` retired)
+- **Image:** `apex-home-fit:release-8e06d70bc75f` (ID `sha256:02ffdcb4fef1c7b5b2a976e5045b79fb995171370b711612c5555219615951da`)
+- **DB_STATE:** `db_changed=false` (gateway-verified); no schema change; rollback snapshot `compose.yml.rollback-s04-session-core-contract` (root-only)
+- **ACCEPTANCE:** Main CI PASS on `8e06d70` (run `33487427362`); branch CI PASS (build + e2e, run `33486695026`); gateway release `s04-session-core-contract` phase `normal` health PASS, secret boundary `PROTECTED`; local validation on the exact release code — typecheck PASS, eslint 0 errors, unit 524/524 (golden-trace parity GT-01..GT-12 preserved), production build PASS, real-browser workout-route E2E 5/5 (incl. live player session); Production real-browser (system Chrome) 8/8 PASS — public `/en` `/fa` `/en/auth/login` `/manifest.json` unchanged, signed-out `/en/dashboard` redirects, workout route auth boundary + locale preservation (`/en/workout`→`/en/auth/login` lang=en dir=ltr; `/fa/workout`→`/fa/auth/login` lang=fa dir=rtl), zero fatal console errors
+- **MEMBER-LEVEL:** single reviewable commit (`8e06d70`); consumer boundary test `tests/session-contract-consumers.test.ts` enforces no hook-internal imports from `src/lib` and no runtime exports from the contracts module
+- **PRE-EXISTING (not regressions):** `rtl-layout.spec.ts` 2 specs fail identically on clean main — public sidebar nav-order drift ("Training preferences" at index 3 vs expected "Profile") and quiz-page `radiogroup` strict-mode scope (language switcher adds a second radiogroup); neither spec runs in CI's e2e gate (`test:e2e:auth`/`test:e2e:smoke` only); flagged for separate spec-reconciliation
+- **OPEN ITEM:** signed-in Production acceptance recheck (workout session journey + session retention) requires the operator-held credential — standing item from batch 1, unchanged; local signed-in journey on identical release code PASS
+- **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
 
