@@ -1,6 +1,7 @@
 'use client';
 
 import {FormEvent, useState} from 'react';
+import {Button, TextField} from '@/components/ui/platform';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -39,18 +40,31 @@ export default function AdminLoginPage() {
         <h1 className="mt-3 text-3xl font-bold">Administrator sign in</h1>
         <p className="mt-2 text-sm text-apex-text-secondary">This is a private administrator access path.</p>
         <form className="mt-8 space-y-5" onSubmit={submit}>
-          <label className="block text-sm font-semibold" htmlFor="admin-email">
-            Email
-            <input id="admin-email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className="input-apple mt-2" />
-          </label>
-          <label className="block text-sm font-semibold" htmlFor="admin-password">
-            Password
-            <input id="admin-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="input-apple mt-2" />
-          </label>
+          <TextField
+            label="Email"
+            id="admin-email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <TextField
+            label="Password"
+            id="admin-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            error={error ?? undefined}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
           {error ? <p role="alert" className="text-sm font-medium text-apex-state-alert-text">{error}</p> : null}
-          <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl px-5 py-3 font-semibold text-apex-on-primary disabled:cursor-wait disabled:opacity-70" style={{background: 'var(--apex-gradient-brand)'}}>
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
+          <Button type="submit" size="lg" fullWidth loading={busy}>
+            Sign in
+          </Button>
         </form>
       </section>
     </main>

@@ -23,7 +23,7 @@ export function AdminNav() {
             key={item.href}
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-xl px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--apex-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--app-background)] ${
               active
                 ? 'bg-apex-primary-soft text-apex-primary-text'
                 : 'text-apex-text-secondary hover:bg-apex-card hover:text-apex-text-primary'
