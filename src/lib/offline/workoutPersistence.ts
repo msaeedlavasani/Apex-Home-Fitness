@@ -21,6 +21,7 @@
 import {clampSets} from '../workout/plan';
 import type {SessionExercise, SessionHydrateInput, SessionState} from '../workout/sessionContracts';
 import type { OfflineExercise, WorkoutStateRecord } from './db';
+import {SNAPSHOT_VERSION} from './snapshotVersion';
 
 /**
  * Maps a plan to the `OfflineExercise` array stored in a workout snapshot.
@@ -70,6 +71,9 @@ export function buildWorkoutStateRecord(
     startedAt: state.startedAt,
     completedAt: state.completedAt,
     isComplete: state.phase === 'COMPLETED',
+    // S-05: stamp the snapshot FORMAT version (distinct from the db layer's
+    // `version` write counter). Legacy rows without it read as 0.
+    snapshotVersion: SNAPSHOT_VERSION,
   };
 }
 
