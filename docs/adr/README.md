@@ -72,6 +72,8 @@ Sequential zero-padded numbers (`0001`, `0002`, …). Never renumber.
 | [`0002-pure-workout-session-core.md`](./0002-pure-workout-session-core.md) | ACCEPTED (2026-08-27) | Framework-independent session core + React adapter (AD-2) |
 | [`0003-quiz-onboarding-migration.md`](./0003-quiz-onboarding-migration.md) | ACCEPTED (2026-08-27) — DO WHEN TOUCHED | Quiz JS island → TS + canonical contracts; excluded from immediate stabilization (AD-3) |
 | [`0004-dedicated-admin-authentication.md`](./0004-dedicated-admin-authentication.md) | ACCEPTED (2026-08-31) | Dedicated Email + Password administrator boundary; one ADMIN role; Passkey deferred (ADMIN-AUTH-01) |
+| [`0005-mobile-readiness-guardrails.md`](./0005-mobile-readiness-guardrails.md) | ACCEPTED (2026-09-01) | Six mobile-readiness architecture guardrails ratified as binding principles (MOBILE-READINESS-01) |
+| [`0006-movement-graph-domain-contract.md`](./0006-movement-graph-domain-contract.md) | ACCEPTED (2026-09-01) | Movement Graph domain contract = canonical type-level movement schema; pure, fail-closed identity; shapes-not-vocabularies (MG-01) |
 
 Full decision summaries live in the records; do not duplicate ADR text here.
 The Architecture Stabilization Plan (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`)

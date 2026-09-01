@@ -14,16 +14,16 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE
-ACTIVE_TASK_PROFILE:                   N/A
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; backlog execution NOT started — task selection/start requires a subsequent explicit Owner instruction)
-ACTIVE_BRANCH:                         N/A (none)
+ACTIVE_TASK:                           MG-01 — Movement Graph canonical schema / domain contract (Owner-authorized 2026-09-01)
+ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-01 is the first explicitly authorized backlog task)
+ACTIVE_BRANCH:                         feat/mg-01-movement-graph-contract
 PREVIOUS_COMPLETED_TASK:               S02-E Exercise Identity Backfill (DELIVERED/CLOSED 2026-09-01 — governed apply via gateway v2 db-operation as 0-row no-op; ambiguous row left unmapped per Owner decision; preceded by GOVERNED-PROD-DB-CAPABILITY-01 gateway v2, PRs #20–#24 → a0a47ed)
 PREVIOUS_COMPLETED_BRANCH:             N/A (docs-only close-out committed to main 5e77298; no task branch needed)
-NEXT_AUTHORIZED_TASK:                  NONE — Mission Queue in docs/TASKS.md is advisory; execution start requires a subsequent explicit Owner instruction
+NEXT_AUTHORIZED_TASK:                  NONE — MG-02 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         BACKLOG READY (unfrozen 2026-09-01; no task started)
-LAST_UPDATED:                          2026-09-01 (AHF execution freeze lifted by Owner; backlog execution NOT started; no task ACTIVE)
+CURRENT_PHASE:                         ACTIVE — MG-01 in progress (branch, local validation, PR/CI, merge, Main CI)
+LAST_UPDATED:                          2026-09-01 (MG-01 authorized and ACTIVE; AHF_EXECUTION_STATE ACTIVE; no Production/DB/UI change; no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)

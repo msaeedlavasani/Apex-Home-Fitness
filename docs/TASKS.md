@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `N/A` |
-| State | `TASKS-RECOMPOSITION` (docs/governance-only; AHF unfrozen 2026-09-01, execution not started) |
+| Active task | `MG-01` — Movement Graph canonical schema / domain contract |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/mg-01-movement-graph-contract` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: START MG-01); AHF_EXECUTION_STATE remains ACTIVE |
 | Production-bound | `NO` |
-| Next authorized task | `NONE` — the Mission Queue below is advisory until the Owner authorizes execution of specific items |
+| Next authorized task | `NONE` — MG-02 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
@@ -121,6 +121,10 @@ P4: Supporting
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `SCHEMA` (new tables; additive migration) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+
+**Authorization (2026-09-01):** Owner explicit instruction — START MG-01
+(TASK DELTA). `TASK_PROFILE=CODE_NO_DEPLOY`; `BRANCH=feat/mg-01-movement-graph-contract`.
+MG-02+ NOT authorized; this task's scope is the domain contract only.
 
 **Objective:** define the canonical Movement Graph domain contract — the
 type-level schema for a movement knowledge object (identity, taxonomy
