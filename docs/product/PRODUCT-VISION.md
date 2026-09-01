@@ -121,6 +121,8 @@ explicitly promoted there.
 ## 8. How this document relates to others
 
 - Product advisory & competitor evidence → [`../TRANSFORMATION_ROADMAP.md`](../TRANSFORMATION_ROADMAP.md)
+- Comprehensive product strategy (PROPOSED / NON-EXECUTABLE) → [`PRODUCT-STRATEGY.md`](PRODUCT-STRATEGY.md)
+- Movement Intelligence strategy (PROPOSED / NON-EXECUTABLE) → [`MOVEMENT-INTELLIGENCE-STRATEGY.md`](MOVEMENT-INTELLIGENCE-STRATEGY.md)
 - Workout execution vision → [`WORKOUT-EXPERIENCE-V2.md`](WORKOUT-EXPERIENCE-V2.md)
 - Executable backlog → [`../TASKS.md`](../TASKS.md)
 - Documentation governance → [`../governance/DOCUMENTATION-GOVERNANCE.md`](../governance/DOCUMENTATION-GOVERNANCE.md)
