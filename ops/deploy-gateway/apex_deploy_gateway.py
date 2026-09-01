@@ -50,13 +50,18 @@ class GateError(RuntimeError):
 
 
 def run(args, *, cwd=None, quiet=True):
-    # Always capture so failures carry a diagnosable tail (streamed output is
-    # not required for the short bounded commands the gateway runs).
+    # Always capture so failures carry a diagnosable head+tail (streamed output
+    # is not required for the short bounded commands the gateway runs). The
+    # full captured output is also printed to the daemon stderr (systemd
+    # journal) for root forensics.
     result = subprocess.run(args, cwd=cwd, text=True, capture_output=True, check=False)
     if result.returncode:
         output = ((result.stderr or "") + (result.stdout or "")).strip()
-        tail = [line for line in output.splitlines() if line.strip()][-3:]
-        detail = ("; " + " | ".join(tail)[:400]) if tail else ""
+        lines = [line for line in output.splitlines() if line.strip()]
+        head = " | ".join(lines[:20])[:1500]
+        tail = " | ".join(lines[-20:])[:1500]
+        detail = ("; HEAD: " + head + " ; TAIL: " + tail) if lines else ""
+        print(f"[gateway] command failed: {' '.join(args)}\n{output}", flush=True)
         raise GateError(f"allowlisted command failed: {Path(args[0]).name}{detail}")
     return result.stdout.strip() if quiet else ""
 
@@ -358,7 +363,9 @@ def db_operation(req):
                 try:
                     op_report = json.loads(raw)
                 except json.JSONDecodeError:
-                    raise GateError("operation produced no JSON report")
+                    # Allowlisted CLI operations (e.g. `prisma migrate deploy`)
+                    # legitimately emit text — wrap it as the report.
+                    op_report = {"operation_id": opid, "mode": mode, "report": raw}
 
                 if mode == "apply":
                     after = _db_sha(op_image)
@@ -577,6 +584,14 @@ def self_test():
     check("apply mounts volume read-write", lambda: (_ for _ in ()).throw(AssertionError()) if f"{VOLUME}:/data" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") or f"{VOLUME}:/data:ro" in _op_command("s02e-exercise-identity-backfill", "apply", "img") else None)
     check("rehearsal targets the clone", lambda: (_ for _ in ()).throw(AssertionError()) if "file:/data/app.db.rehearsal-" not in " ".join(_op_command("s02e-exercise-identity-backfill", "apply", "img", "tok123")) else None)
     check("operations run with no network", lambda: (_ for _ in ()).throw(AssertionError()) if "--network" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") or "none" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") else None)
+
+    def run_error_detail():
+        try:
+            run(["sh", "-c", "echo boom >&2; exit 1"])
+        except GateError as error:
+            return str(error)
+        return ""
+    check("run() error carries output head+tail", lambda: (_ for _ in ()).throw(AssertionError()) if "boom" not in run_error_detail() else None)
 
     if failures:
         print(f"SELF_TEST_FAIL ({len(failures)}): {', '.join(failures)}")
