@@ -241,12 +241,17 @@ def _op_command(opid, mode, op_image, rehearsal_token=None):
     op = OPERATION_ALLOWLIST[opid]
     db_url = f"file:/data/app.db{'.rehearsal-' + rehearsal_token if rehearsal_token else ''}"
     mount = f"{VOLUME}:/data:ro" if mode == "dry-run" else f"{VOLUME}:/data"
-    base = ["/usr/bin/docker", "run", "--rm", "--network", "none",
-            "-e", f"DATABASE_URL={db_url}", "-v", mount, op_image]
+    # ALL docker options must precede the image name: anything after the image
+    # is the container COMMAND, not a docker option (a trailing `-e` would be
+    # passed into the container and mis-evaluated by the node entrypoint).
+    env_args = ["-e", f"DATABASE_URL={db_url}"]
+    if op["kind"] != "migrate":
+        env_args += ["-e", f"DB_OPERATION_MODE={mode}"]
+    base = ["/usr/bin/docker", "run", "--rm", "--network", "none", *env_args, "-v", mount, op_image]
     if op["kind"] == "migrate":
         command = "./node_modules/.bin/prisma migrate status" if mode == "dry-run" else "./node_modules/.bin/prisma migrate deploy"
         return base + ["sh", "-c", command]
-    return base + ["-e", f"DB_OPERATION_MODE={mode}", "sh", "-c", f"node --import tsx {op['path']}"]
+    return base + ["sh", "-c", f"node --import tsx {op['path']}"]
 
 
 def _run_op(opid, mode, op_image, rehearsal_token=None):
@@ -592,6 +597,18 @@ def self_test():
             return str(error)
         return ""
     check("run() error carries output head+tail", lambda: (_ for _ in ()).throw(AssertionError()) if "boom" not in run_error_detail() else None)
+
+    # All docker options (-e/-v/--network/--rm) must precede the image name;
+    # only the container command (sh -c ...) may follow it.
+    def assert_no_docker_opts_after_image(cmd, image):
+        if image not in cmd:
+            raise AssertionError("image missing from command")
+        for token in cmd[cmd.index(image) + 1:]:
+            if token in ("-e", "-v", "--network", "--rm"):
+                raise AssertionError(f"docker option after image: {token}")
+    check("docker options precede image (script dry-run)", lambda: assert_no_docker_opts_after_image(_op_command("s02e-exercise-identity-backfill", "dry-run", "img"), "img"))
+    check("docker options precede image (script apply)", lambda: assert_no_docker_opts_after_image(_op_command("s02e-exercise-identity-backfill", "apply", "img", "tok"), "img"))
+    check("docker options precede image (migrate apply)", lambda: assert_no_docker_opts_after_image(_op_command("prisma-migrate-deploy", "apply", "img"), "img"))
 
     if failures:
         print(f"SELF_TEST_FAIL ({len(failures)}): {', '.join(failures)}")
