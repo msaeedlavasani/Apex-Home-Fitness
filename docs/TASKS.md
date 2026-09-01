@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `N/A` |
-| State | `CLOSED` — MG-01 DELIVERED/CLOSED 2026-09-01 (PR #25 → `b5cf1a9`); AHF_EXECUTION_STATE remains ACTIVE |
+| Active task | `MG-02` — Movement taxonomy design |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/mg-02-movement-taxonomy` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-02); builds on MG-01 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
-| Next authorized task | `NONE` — MG-02 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
+| Next authorized task | `NONE` — MG-03 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
@@ -160,6 +160,10 @@ existing `Exercise` model, STOP and escalate to the Owner.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+
+**Authorization (2026-09-01):** Owner explicit instruction — EXECUTE MG-02
+(TASK DELTA). `TASK_PROFILE=CODE_NO_DEPLOY`; `BRANCH=feat/mg-02-movement-taxonomy`.
+MG-03+ NOT authorized; builds on the MG-01 domain contract (unchanged).
 
 **Objective:** define the canonical taxonomy vocabulary — movement patterns,
 muscle groups (primary/secondary), equipment types, difficulty tiers, impact

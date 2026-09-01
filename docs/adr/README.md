@@ -74,6 +74,7 @@ Sequential zero-padded numbers (`0001`, `0002`, …). Never renumber.
 | [`0004-dedicated-admin-authentication.md`](./0004-dedicated-admin-authentication.md) | ACCEPTED (2026-08-31) | Dedicated Email + Password administrator boundary; one ADMIN role; Passkey deferred (ADMIN-AUTH-01) |
 | [`0005-mobile-readiness-guardrails.md`](./0005-mobile-readiness-guardrails.md) | ACCEPTED (2026-09-01) | Six mobile-readiness architecture guardrails ratified as binding principles (MOBILE-READINESS-01) |
 | [`0006-movement-graph-domain-contract.md`](./0006-movement-graph-domain-contract.md) | ACCEPTED (2026-09-01) | Movement Graph domain contract = canonical type-level movement schema; pure, fail-closed identity; shapes-not-vocabularies (MG-01) |
+| [`0007-movement-taxonomy-vocabulary.md`](./0007-movement-taxonomy-vocabulary.md) | ACCEPTED (2026-09-01) | Closed Movement Graph taxonomy vocabulary (patterns/muscles/equipment/difficulty/impact/symmetry/home-suitability/constraints) with FA/EN maps; governance-gated extension (MG-02) |
 
 Full decision summaries live in the records; do not duplicate ADR text here.
 The Architecture Stabilization Plan (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`)

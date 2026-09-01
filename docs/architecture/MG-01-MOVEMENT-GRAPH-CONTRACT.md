@@ -120,7 +120,7 @@ Acceptance: *the existing exercise catalog can be expressed in terms of the
 new types.* Proven by the pure bridge `src/lib/movement/expressibility.ts`
 and `tests/movement-domain.test.ts`:
 
-- **Every** `CANONICAL_CATALOG` entry (seed 40 + rules 36) maps to a
+- **Every** `CANONICAL_CATALOG` entry (74: 40 seed + 34 rules) maps to a
   `MovementObject` draft with unique deterministic ids and preserved slug
   tokens.
 - Drafts carry only **known** knowledge: identity, name, provenance
