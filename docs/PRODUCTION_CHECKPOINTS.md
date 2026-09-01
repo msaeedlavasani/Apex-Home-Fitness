@@ -10,7 +10,23 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-DS-BATCH-1**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-DS-BATCH-2**
+
+---
+
+## ADMIN-DS-BATCH-2
+
+- **Status:** PASS (deployment + verified acceptance; signed-in Production recheck PENDING — see note)
+- **Purpose:** Batch Delivery V1 batch 2 — Admin Persian/RTL + i18n parity (ADMIN-DS-05: `admin-locale` cookie persistence, `html lang/dir`, shared next-intl catalogs `admin.*` namespace, localized pages/nav/login/boundaries, fa-IR dates, logical utilities, shared typography contract) and DESIGN_SYSTEM reconciliation (ADMIN-DS-06: ratified typography contract §4.1 + Admin i18n/RTL architecture §4.2; KIT-FIRST formalized)
+- **Source:** `c6a4e591c1e3fce89c6a8d4121c5bf81d3772342` (authoritative GitHub `main` HEAD; integration via PR #16; branch `batch/admin-ds-05-06` retired)
+- **Image:** `apex-home-fit:release-c6a4e591c1e3` (ID
+  `sha256:623afd424b41cc9d365ac77566123c96bc3a123ee64324d84c622bba5b42218f`)
+- **DB_STATE:** `db_changed=false` (gateway-verified); no schema change; rollback snapshot
+  `compose.yml.rollback-batch2-admin-ds-05-06` (root-only)
+- **ACCEPTANCE:** Main CI PASS on `c6a4e59` (run `33482982507`); branch CI PASS (build + e2e, run `33482319310`); gateway release `batch2-admin-ds-05-06` phase `normal` health PASS, secret boundary `PROTECTED`; local real-browser admin suite 6/6 PASS on the exact release code (admin-console 4/4 EN regression + admin-i18n 2/2: switching, RTL, typography, persistence, Persian surfaces); Production real-browser (system Chrome) 4/4 PASS — public `/en` `/fa` `/en/auth/login` `/manifest.json` unchanged, signed-out `/en/dashboard` redirects, all six protected admin surfaces redirect to `/admin/login`, admin login EN default + fa/RTL switch (computed font leads `inter`/`vazirmatn`) + persistence across reload, zero fatal console errors
+- **MEMBER-LEVEL:** ADMIN-DS-05 (`fd8650f`) + ADMIN-DS-06 (`b92e3a8`) individually committed with per-member validation + UI Conformance evidence (REUSE + bounded EXTEND / DOCS_ONLY); carried governance docs commit `1d1966e` (ADR-0005 ratification, S-04 promotion)
+- **OPEN ITEM:** signed-in Production acceptance recheck (dashboard dark-mode toggle, session retention, fa signed-in surfaces) requires the operator-held admin credential — local signed-in journey on identical release code PASS; Production signed-in recheck PENDING (batch 1 open item, unchanged)
+- **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
 

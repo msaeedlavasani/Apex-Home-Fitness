@@ -6,23 +6,23 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-DS-BATCH-1 (CLOSED; PRODUCTION_PASS)
-CURRENT_PRODUCTION_SOURCE:             4de75ae969c8d1f260e6c660b5c7fac5008f3541
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-4de75ae969c8
-CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:1908710b…)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-DS-BATCH-2 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             c6a4e591c1e3fce89c6a8d4121c5bf81d3772342
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-c6a4e591c1e3
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:623afd42…)
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
-CURRENT_MAINLINE_BASELINE_COMMIT:       4de75ae969c8d1f260e6c660b5c7fac5008f3541 (PR #15 integration)
+CURRENT_MAINLINE_BASELINE_COMMIT:       c6a4e591c1e3fce89c6a8d4121c5bf81d3772342 (PR #16 integration)
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         N/A (none)
-PREVIOUS_COMPLETED_TASK:               MOBILE-READINESS-01 (EXECUTED 2026-09-01; docs-only AUDIT)
-PREVIOUS_COMPLETED_BRANCH:             batch/admin-ds-01-04 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE
+PREVIOUS_COMPLETED_TASK:               ADMIN-DS-BATCH-2 (DELIVERED/CLOSED 2026-09-01; PR #16 + gateway release c6a4e59)
+PREVIOUS_COMPLETED_BRANCH:             batch/admin-ds-05-06 (RETIRED)
+NEXT_AUTHORIZED_TASK:                  NONE (S-04 promoted but not started; batch authorization pending)
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-09-01 (MOBILE-READINESS-01 audit EXECUTED; findings + guardrails persisted)
+LAST_UPDATED:                          2026-09-01 (ADMIN-DS-BATCH-2 delivered via gateway; typography contract ratified)
 ```
 
 ## Reading this manifest (pre-task gate)
