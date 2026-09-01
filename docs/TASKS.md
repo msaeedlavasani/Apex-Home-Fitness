@@ -5,6 +5,13 @@
 > A task appears here only after explicit owner authorization. Product visions,
 > roadmaps, audits, risk registers, open questions, and architecture plans are
 > advisory or decision records; they cannot authorize execution.
+>
+> **Recomposed 2026-09-01** (`AHF-FB-20260901-TASKS-RECOMPOSITION`) from the
+> persisted product strategy ([`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md))
+> and current repository state. Priority ≠ execution eligibility: a P0 task
+> may still require an architecture gate or Owner decision before it is
+> autonomous-eligible. AHF remains **execution-frozen** — nothing here
+> authorizes implementation.
 
 ## Lifecycle now
 
@@ -13,110 +20,901 @@
 | Active task | `NONE` |
 | Profile | `N/A` |
 | Branch | `N/A` |
-| State | `S02-E DELIVERED/CLOSED` (2026-09-01; governed apply executed via gateway v2 `db-operation` as a 0-row no-op; ambiguous row `Side-Lying Leg Lift` left unmapped per Owner decision) |
-| Production-bound | `YES` (completed; `DB_CHANGED=YES` lifecycle, 0-row mutation, DB hash unchanged, backup on file) |
-| Next authorized task | `NONE` — `EXERCISE-CATALOG-DISAMBIGUATION-01` (seed alias collision) recorded PROPOSED/deferred; ADMIN-IMPERSONATION-01 deferred/not authorized |
-| Pending owner review | None blocking — S02-E apply executed (0-row no-op) and accepted; catalog alias-collision reconciliation requires separate authorization when scheduled; ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
+| State | `TASKS-RECOMPOSITION` (docs/governance-only; AHF frozen) |
+| Production-bound | `NO` |
+| Next authorized task | `NONE` — the Mission Queue below is advisory until the Owner authorizes execution of specific items |
+| Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
-## Approved queue
+## Strategic basis
 
-### AUTONOMOUS-PROD-OPS-01 — CLOSED
+The recomposition uses the proposed product promise as the prioritization
+lens: **«تو ورزش کن؛ ما حواسمون بهت هست.»** The candidate moat is the
+accumulated closed-loop knowledge across
+**User ↔ Movement ↔ Workout ↔ Observation ↔ Outcome ↔ Adaptation**.
 
-- **Authorization:** explicit owner sequencing correction and execution
-  authorization in the 2026-08-31 Apex Home Fit continuation task.
-- **Depends on:** `ADMIN-AUTH-PROD-01` — CLOSED / Production PASS.
-- **Profile / branch:** `RELEASE` / `feat/autonomous-prod-ops-01`, based on the
-  current authoritative `origin/main` after a passing pre-task gate.
-- **Primary acceptance:** one complete authorized Apex Home Fit Production
-  release reaches `CLOSED` without the Owner manually running SSH, sudo,
-  Docker, Compose, migration, provisioning, or deployment commands.
-- **Bounded scope:** implement and validate a narrow allowlisted Production
-  Deployment Capability/Gateway for the canonical Apex Home Fit host and
-  deployment only. It validates approved source identity, consumes protected
-  configuration internally without returning values, builds immutable images
-  deterministically with pinned tooling, preserves the external database
-  volume and ownership, captures rollback evidence before cutover, performs
-  sanitized health/acceptance orchestration, and fails closed on unexpected
-  host/source/image/compose/migration/environment state.
-- **Security constraints:** do not expose secrets or `.env` values; do not make
-  Production `.env` broadly readable; do not grant arbitrary root shell access;
-  every privileged operation must be allowlisted, attributable, bounded, and
-  return sanitized evidence only.
-- **Explicit exclusions:** no Admin Console feature code; no public Phone + OTP
-  behavior change; no unrelated application feature/schema change; no dynamic
-  `npx`/npm migration resolution; no dual-compose cleanup unless this task's
-  verified design and Governance update explicitly include it.
-- **Acceptance:** gateway threat model and operational contract; focused
-  fail-closed/security tests; governance checks; lint/typecheck/unit/build as
-  affected; task-branch CI; PR/Main CI; constrained host installation;
-  authorized no-op or release-candidate exercise proving exact-source build,
-  rollback capture, DB invariants, automated health evidence, sanitized output,
-  and zero manual Owner commands; durable report; integration and retirement.
+Five strategic pillars drive the priority model:
 
-### ADMIN-CONSOLE-01 — CLOSED
+1. **Apex Movement Graph / Exercise Intelligence** (P0 — moat foundation)
+2. **Personal Movement Profile** (P1 — closes the adaptive loop)
+3. **Apex Adaptive Training Graph** (P1 — decision layer)
+4. **Apex Companion** (P2 — the tangible experience)
+5. **Trust, Safety & Knowledge Surface** (P3 — public/trust layer)
 
-- **Authorization:** explicit owner task-delta in the 2026-08-31 Apex Home
-  Fit continuation task promoting `ADMIN-CONSOLE-01` to the executable
-  backlog and authorizing autonomous execution under repository Governance.
-- **Depends on:** `ADMIN-AUTH-01` and `ADMIN-AUTH-PROD-01` — both CLOSED;
-  current Production checkpoint PASS; `AUTONOMOUS-PROD-OPS-01` CLOSED with the
-  Production Deployment Gateway operational.
-- **Sequencing:** promoted to ACTIVE after the blocking ops task closed. Prior
-  discovery/inventory (read-only Overview, Users, Workout Plans, Exercises,
-  Operations, Admin Sessions) was verified against current `main` and reused;
-  no stale feature code was retained.
-- **Bounded scope:** replace the protected placeholder dashboard with a real,
-  read-oriented Admin Console V1 covering Overview, Users, Workout Plans,
-  Exercises, Operations, and Admin Sessions. Every surface uses only current
-  Prisma schema, source-controlled exercise catalog, runtime policy, and
-  services/routes that actually exist in the repository.
-- **Security boundary:** preserve dedicated Admin Auth and require server-side
-  authorization for every `/admin/*` console surface. Preserve public Phone +
-  OTP behavior unchanged. Do not expose password hashes, session token hashes,
-  secrets, OTP values, or other credential material.
-- **Explicit exclusions:** no destructive actions, data mutation, public admin
-  registration, general RBAC, impersonation/View-as-User, schema/migration,
-  provider, or public-auth behavior change.
-- **Data classification:** read-only application queries; `DB_CHANGED = NO`.
-- **Production classification:** independently deployable browser-facing
-  feature. Production delivery uses the canonical Production Deployment
-  Gateway established by `AUTONOMOUS-PROD-OPS-01` — that path must not be
-  bypassed or weakened.
-- **Acceptance:** focused Admin Console data/UI/security tests; existing Admin
-  Auth and public OTP regression tests; governance checks; lint; typecheck;
-  unit suite; Production build; targeted browser coverage; task-branch CI; PR
-  integration CI; exact-source Production release (via gateway) with rollback
-  and fresh-browser acceptance; Main CI; remote-main verification; branch
-  retirement; durable Report Watchdog handoff on every termination path.
+Full rationale: [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md),
+[`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md).
 
-### AUTH-PERF-01 — CLOSED / NO REPRODUCIBLE DEFECT
+## Priority model
 
-- **Authorization:** preserved from the verified AUTH-FIX-01 handoff.
-- **Scope:** evidence-backed investigation of reported performance, persistence,
-  and EN/FA parity degradation; no root cause was assumed.
-- **Outcome:** focused auth/session, persistence, analytics, profile, and EN/FA
-  parity tests passed; no reproducible application defect was found and no
-  application source change was required.
-- **Evidence:** durable AgentReport
-  `AHF-FB-20260831-NEXT-AUTHORIZED-WORK.md` under the configured AgentReports
-  directory.
-- **Launch readiness:** [`OTP_LAUNCH_READINESS.md`](OTP_LAUNCH_READINESS.md)
-  remains the canonical readiness contract for the related auth surface.
-- **Browser limitation:** local Playwright could not start its configured dev
-  server on port 3000; this is test-environment evidence, not a Production or
-  application failure. No Production browser claim is made.
-- **Production:** no deployment or Production mutation was authorized or
-  performed by this investigation.
+| Priority | Meaning | Strategic focus |
+|---|---|---|
+| **P0** | MOAT / CORE FOUNDATION | Movement knowledge, canonical identity, taxonomy, self-hosting/resilience |
+| **P1** | CLOSE THE ADAPTIVE LOOP | Personal profile, workout outcomes, adaptation inputs, decision logic |
+| **P2** | DELIVER THE COMPANION EXPERIENCE | Guidance, observation signals, pose/form capability, Workout V2 |
+| **P3** | TRUST, SAFETY & KNOWLEDGE | Privacy architecture, safety framework, public surfaces, knowledge/blog |
+| **P4** | SUPPORTING / LOWER-MOAT | Useful work that does not materially strengthen the moat |
 
-### ADMIN-AUTH-01 — CLOSED / CODE_NO_DEPLOY
+**Priority ≠ autonomous execution eligibility.** Metadata per task:
 
-- **Authorization:** owner decision in this task; architecture recorded in ADR-0004.
-- **Scope:** dedicated `/admin/login` Email + Password authentication, manual provisioning, one `ADMIN` role, server-side protected admin surface, secure password/session boundary.
-- **Outcome:** V1 implemented and integrated; public OTP behavior remained isolated; no Production deployment was authorized or performed.
-- **Explicit exclusions:** no public admin registration, no general RBAC, no Passkey/WebAuthn V1. Passkey/WebAuthn remains persisted as `ADMIN-AUTH-PASSKEY-01`.
-- **Acceptance:** focused auth/security tests, typecheck, lint, build, PR CI, Main CI, main integration, and branch retirement all passed.
-- **Evidence:** durable report `AHF-FB-20260831-ADMIN-AUTH-01.md` under the configured AgentReports directory; PR #10; integrated main commit `9339317`.
-- **Canonical contract:** [`ADMIN_AUTH.md`](ADMIN_AUTH.md).
+| Field | Values |
+|---|---|
+| `PRIORITY` | P0–P4 |
+| `DEPENDENCIES` | task IDs or `NONE` |
+| `AUTONOMOUS_ELIGIBILITY` | `READY` / `NOT_YET` / `HUMAN_GATE` / `RESEARCH_ONLY` |
+| `PARALLEL_SAFETY` | `SAFE` / `CLAIM_REQUIRED` / `SERIAL_ONLY` |
+| `PRODUCTION_SENSITIVITY` | `NONE` / `RELEASE_ONLY` / `PROD_SENSITIVE` |
+| `DB_SENSITIVITY` | `NONE` / `SCHEMA` / `DATA` / `SCHEMA_AND_DATA` |
+| `ARCHITECTURE_GATE` | `NONE` / `REQUIRED` |
+| `OWNER_DECISION_GATE` | present where applicable |
+
+## Dependency graph
+
+```
+P0: Movement Graph foundations
+  MG-01 canonical schema/domain contract
+    → MG-02 taxonomy design
+      → MG-03 provenance/source contract
+        → MG-04 ingestion architecture
+          → MG-05 normalization/dedup + identity resolution
+            → MG-06 relationship model (progression/regression/substitution)
+              → MG-07 localization + media architecture
+                → MG-08 catalog validation + legacy seed reconciliation
+                  → MG-09 Production migration/adoption (governed)
+
+P1: Adaptive loop (depends on MG-06+)
+  AL-01 workout outcome/feedback model
+    → AL-02 Personal Movement Profile data contract
+      → AL-03 adaptation input pipeline
+        → AL-04 Adaptive Training Graph decision layer
+
+P2: Companion (depends on AL-01+, privacy/safety prerequisites)
+  CP-01 Companion architecture + UX behavior spec
+    → CP-02 observation signal model (rep/phase tracking)
+    → CP-03 pose/form technical feasibility spike (RESEARCH_ONLY)
+    → CP-04 privacy-preserving camera architecture
+      → CP-05 Workout Experience V2 integration
+
+P3: Trust/Safety/Knowledge
+  TS-01 privacy/safety architecture (prerequisite for CP-04)
+  TS-02 safety/liability framework + legal surface requirements
+  TS-03 account/data deletion
+  TS-04 Knowledge/Journal architecture (connected to MG)
+  TS-05 public trust pages (About/Contact/Support/FAQ)
+
+P4: Supporting
+  SU-01 remaining lower-moat feature breadth (deferred, not deleted)
+```
+
+---
+
+## Mission Queue — P0: MOAT / CORE FOUNDATION
+
+### MG-01 — Movement Graph canonical schema / domain contract
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | NONE |
+| AUTONOMOUS_ELIGIBILITY | `READY` (architecture-gated) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `SCHEMA` (new tables; additive migration) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the canonical Movement Graph domain contract — the
+type-level schema for a movement knowledge object (identity, taxonomy
+fields, relationship edges, provenance, versioning, localization keys).
+
+**Inputs:** the strategy's Movement Graph field list (see
+[`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) §1);
+the existing `src/lib/exercise/catalog.ts` contracts (S-06 decision: catalog
+= canonical); the current Prisma schema.
+
+**Output:** a pure TypeScript domain module (`src/lib/movement/types.ts` or
+equivalent) + a written contract doc; NO database migration in this task.
+
+**Acceptance:** the domain module compiles; the contract doc lists every
+field with its type and provenance requirement; the existing exercise
+catalog can be expressed in terms of the new types (mapping documented);
+typecheck + lint pass; no runtime behavior change.
+
+**Stop conditions:** if the schema requires destructive changes to the
+existing `Exercise` model, STOP and escalate to the Owner.
+
+---
+
+### MG-02 — Movement taxonomy design
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-01 |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the canonical taxonomy vocabulary — movement patterns,
+muscle groups (primary/secondary), equipment types, difficulty tiers, impact
+levels, unilateral/bilateral, home-suitability ratings — as closed enums with
+FA/EN display mappings.
+
+**Inputs:** MG-01 domain contract; the existing catalog's implicit taxonomy;
+standard exercise-science references.
+
+**Output:** a taxonomy module (`src/lib/movement/taxonomy.ts`) with typed
+enums + display-name maps; a doc listing each term with its FA/EN rendering.
+
+**Acceptance:** all enums are exhaustive for the current catalog's needs;
+FA/EN mappings present for every term; no `any` types; typecheck + lint pass.
+
+---
+
+### MG-03 — Source/provenance contract
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-01 |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the provenance metadata contract — every movement
+knowledge object carries its source (URL/license), ingestion timestamp,
+hash, and confidence level. This is the audit trail for the self-hosting
+requirement: the canonical catalog must be traceable to its upstream sources.
+
+**Inputs:** MG-01 domain contract; the self-hosting/resilience principle
+([`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md) §6).
+
+**Output:** a provenance module (`src/lib/movement/provenance.ts`) + a doc
+defining the required fields and the license-compatibility rules for
+upstream sources.
+
+**Acceptance:** the provenance type covers source identity, license, hash,
+and confidence; the doc states which upstream licenses are acceptable for
+import (permissive/attribution) and which are not; typecheck passes.
+
+---
+
+### MG-04 — Ingestion architecture (governed pipeline)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-02, MG-03 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (requires source selection + licensing assessment) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `DATA` (writes new catalog records) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+| OWNER_DECISION_GATE | Source selection + license approval |
+
+**Objective:** implement the governed ingestion pipeline: external permitted
+sources → ingest → normalize → deduplicate → identity resolution → Apex
+canonical taxonomy → relationship enrichment → localization → media
+validation → versioned Movement Graph. This is the pipeline from the
+strategy §5, implemented as code (scripts + modules), NOT executed against
+Production in this task.
+
+**Inputs:** MG-02 taxonomy, MG-03 provenance contract; a selected upstream
+source (requires Owner decision on which source(s) to use and their licenses).
+
+**Output:** the ingestion pipeline as a runnable script/module with dry-run
+mode; normalized intermediate format; dedup/identity-resolution logic.
+
+**Acceptance:** the pipeline runs in dry-run mode against a sample source;
+the output conforms to the MG-01 domain contract; identity resolution is
+fail-closed (ambiguity surfaces, never guesses — the S02-E lesson); no
+Production writes.
+
+**Stop conditions:** if source licensing is unclear, STOP and escalate.
+
+---
+
+### MG-05 — Normalization / deduplication / identity resolution
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-04 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (depends on MG-04 source selection) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `DATA` |
+| ARCHITECTURE_GATE | `NONE` |
+| OWNER_DECISION_GATE | Where ambiguous identities require Owner resolution |
+
+**Objective:** implement the normalization and identity-resolution stages:
+name normalization (FA/EN), alias handling, fuzzy matching with a
+deterministic classifier, and fail-closed ambiguity surfacing.
+
+**Inputs:** MG-04 pipeline; the S02-E classifier
+(`scripts/gateway-db-ops/lib/classify.mjs`) as the proven pattern.
+
+**Output:** the normalization + identity-resolution stages integrated into
+the pipeline; an ambiguity report format matching the S02-E evidence model.
+
+**Acceptance:** the classifier is deterministic (same input → same output);
+ambiguous identities produce a report entry (never auto-resolve); the
+`Side-Lying Leg Lift` case from S02-E would be flagged AMBIGUOUS by the new
+classifier (regression test); unit tests pass.
+
+---
+
+### MG-06 — Relationship model (progression / regression / substitution)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-05 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `DATA` (relationship edges) |
+| ARCHITECTURE_GATE | `NONE` |
+
+**Objective:** implement the relationship model: typed edges between
+movement knowledge objects for progression (harder variants), regression
+(easier variants), and substitution/alternative (functionally similar,
+equipment/impact/constraint driven). These edges enable the Adaptive
+Training Graph and Companion to make contextual decisions later.
+
+**Inputs:** MG-05 normalized catalog; the strategy's relationship model
+([`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) §2).
+
+**Output:** the relationship module (`src/lib/movement/relationships.ts`)
+with typed edges + validation (no cycles, no dangling references).
+
+**Acceptance:** all three relationship types are modeled; validation rejects
+cycles and dangling refs; the existing catalog can express at least one
+example of each relationship type; unit tests pass.
+
+---
+
+### MG-07 — Localization + media architecture
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-06 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` (media delivery) |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the FA/EN localization model for movement knowledge
+objects and the self-hosted media architecture (required exercise media
+served from AHF-controlled infrastructure, not third-party CDNs).
+
+**Inputs:** MG-06 catalog with relationships; the self-hosting/resilience
+principle; the existing `ASSETS.md` media contract.
+
+**Output:** localization key structure integrated into the domain module;
+a media manifest format (asset ID, hash, self-hosted URL, fallback);
+documentation of the media delivery architecture.
+
+**Acceptance:** every user-facing field has a localization key; the media
+manifest format supports content-hash verification; the architecture doc
+states the resilience requirement (loss of upstream connectivity must not
+break core workout execution); no third-party CDN dependencies.
+
+---
+
+### MG-08 — Catalog validation + legacy seed reconciliation
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-07 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `PROD_SENSITIVE` (reads Production seed data) |
+| DB_SENSITIVITY | `DATA` (reads; writes only via governed migration) |
+| ARCHITECTURE_GATE | `NONE` |
+| OWNER_DECISION_GATE | Reconciliation mapping decisions |
+
+**Objective:** validate the versioned Movement Graph against the current
+Production seed exercises. Every seed record passes through catalog
+reconciliation: existing slugs are NOT assumed permanently canonical. This
+includes the `Side-Lying Leg Lift` ambiguity (preserved from S02-E) and the
+`EXERCISE-CATALOG-DISAMBIGUATION-01` deferred debt.
+
+**Inputs:** MG-07 versioned catalog; the Production exercise corpus
+(read-only via the gateway dry-run); the S02-E ambiguity report.
+
+**Output:** a reconciliation report mapping each Production seed record to
+its Movement Graph identity (or flagging it for Owner resolution); the
+`EXERCISE-CATALOG-DISAMBIGUATION-01` debt resolved or re-scoped.
+
+**Acceptance:** every Production exercise record has a reconciliation status
+(MAPPED / AMBIGUOUS / UNRESOLVED); the `Side-Lying Leg Lift` ambiguity is
+surfaced with candidates (never guessed); the report is deterministic;
+a governed DB migration plan exists for adopting the reconciled catalog.
+
+**Re-evaluation of `EXERCISE-CATALOG-DISAMBIGUATION-01`:** this task
+**absorbs** the deferred disambiguation work. The alias collision is a
+symptom of the seed catalog's lack of canonical identity — the rebuilt
+Movement Graph resolves it structurally. The deferred task is superseded by
+MG-08 (traceability preserved: the original proposal remains in the
+PROPOSED section below with an "absorbed into MG-08" note).
+
+---
+
+### MG-09 — Production migration / adoption (governed)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P0 |
+| DEPENDENCIES | MG-08 |
+| AUTONOMOUS_ELIGIBILITY | `HUMAN_GATE` (requires Owner authorization for DB mutation) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `PROD_SENSITIVE` |
+| DB_SENSITIVITY | `SCHEMA_AND_DATA` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+| OWNER_DECISION_GATE | Required (dry-run evidence + explicit apply authorization) |
+
+**Objective:** adopt the versioned Movement Graph in Production through a
+governed migration: additive Prisma migration for the new tables, data
+migration from the reconciled catalog, and runtime switchover from the seed
+catalog to the Movement Graph. Uses the established gateway `db-operation`
+contract (dry-run → evidence → apply).
+
+**Inputs:** MG-08 reconciliation report; the gateway `db-operation`
+capability; the additive-migration discipline.
+
+**Output:** the Production database with the Movement Graph tables populated
+from the reconciled catalog; the runtime reading from the Movement Graph.
+
+**Acceptance:** the additive migration applies cleanly (no destructive
+changes); the data migration preserves every existing exercise reference;
+the runtime serves workout content from the Movement Graph; Production
+acceptance passes (real-browser); rollback path proven; DB hash before/after
+recorded.
+
+---
+
+## Mission Queue — P1: CLOSE THE ADAPTIVE LOOP
+
+### AL-01 — Workout outcome / feedback model
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 |
+| DEPENDENCIES | MG-06 (relationship model for contextual outcomes) |
+| AUTONOMOUS_ELIGIBILITY | `READY` (contract-level; no DB migration) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `SCHEMA` (new outcome tables; additive) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the workout outcome/feedback data model — what the
+system records after each workout session (completion, per-exercise
+performance, difficulty rating, user feedback, equipment constraints
+encountered). This is the "Observation / Outcome" segment of the learning
+loop.
+
+**Inputs:** the existing workout session model (`WorkoutStateRecord`);
+the strategy's closed-loop model; the S-04 session contract.
+
+**Output:** an outcome data contract (pure TypeScript types + a doc); the
+recording pipeline design (when/where outcomes are captured).
+
+**Acceptance:** the outcome model covers completion, per-exercise
+performance, subjective feedback, and context; the contract is additive
+(no changes to existing session records); typecheck passes.
+
+---
+
+### AL-02 — Personal Movement Profile data contract
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 |
+| DEPENDENCIES | AL-01 |
+| AUTONOMOUS_ELIGIBILITY | `READY` (contract-level) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `SCHEMA` (new profile tables; additive) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the Personal Movement Profile data contract — the
+accumulated per-user training signals: capability, training history,
+movement performance, progression, recurring difficulties, asymmetries
+(where reliably observable), form degradation, exercise tolerance, adherence,
+available equipment, preferences, session constraints, and user feedback.
+NOT a medical diagnosis system.
+
+**Inputs:** AL-01 outcome model; the strategy's profile signal list
+([`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md) §2B).
+
+**Output:** a profile data contract (pure TypeScript types + a doc); the
+profile update pipeline design (how outcomes feed into the profile).
+
+**Acceptance:** every signal from the strategy is modeled; the contract
+distinguishes observed data from inferred state; privacy-by-design
+principles documented (data minimization, user control); typecheck passes.
+
+---
+
+### AL-03 — Adaptation input pipeline
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 |
+| DEPENDENCIES | AL-02 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `DATA` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** implement the pipeline that feeds profile data + movement
+knowledge + workout history into the adaptation decision layer. This is the
+"Adaptation" segment of the loop — the input side of "what is the appropriate
+training decision for this person now?"
+
+**Inputs:** AL-02 profile contract; MG-06 relationship model; MG-07
+localization/media.
+
+**Output:** the adaptation input pipeline as a pure module (deterministic,
+testable); the input schema for the decision layer.
+
+**Acceptance:** the pipeline produces a well-typed adaptation input from
+(profile, movement knowledge, workout history); the module is pure (no side
+effects); unit tests cover the happy path and edge cases (empty history,
+missing profile).
+
+---
+
+### AL-04 — Adaptive Training Graph decision layer
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 |
+| DEPENDENCIES | AL-03 |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+| OWNER_DECISION_GATE | Decision algorithm sign-off |
+
+**Objective:** implement the decision layer that answers "what is the
+appropriate training decision for this person now?" — exercise selection,
+progression/regression, substitutions, volume, intensity, sequencing,
+session duration, equipment constraints, recovery/context signals.
+
+**Inputs:** AL-03 adaptation inputs; MG-06 relationships.
+
+**Output:** the decision module (pure, deterministic); the decision output
+schema (recommended exercises + adjustments + rationale).
+
+**Acceptance:** the module produces a valid workout plan from any valid
+input; the rationale is human-readable; the decisions respect equipment
+constraints and recovery signals; unit tests cover the main decision paths.
+
+---
+
+## Mission Queue — P2: DELIVER THE COMPANION EXPERIENCE
+
+### CP-01 — Companion architecture + UX behavior spec
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | AL-04 (adaptation decisions feed Companion guidance) |
+| AUTONOMOUS_ELIGIBILITY | `READY` (spec/docs only) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** write the Companion architecture spec — the experience
+promise «تو ورزش کن؛ ما حواسمون بهت هست.» made tangible: workout guidance,
+rep/phase awareness, form feedback, useful correction, encouragement,
+contextual substitutions/regressions, and workout observation feeding future
+adaptation. UX principle: **watching over the user, not policing the user.**
+
+**Inputs:** the strategy §2D; the AL-04 decision output schema.
+
+**Output:** the Companion architecture doc (component boundaries, data flow,
+intervention model, feedback cadence); UX behavior rules (when to intervene,
+when to stay silent).
+
+**Acceptance:** the spec covers all Companion capabilities from the strategy;
+the intervention model is documented with concrete examples; the "not
+policing" principle is operationalized (intervention thresholds, tone rules).
+
+---
+
+### CP-02 — Observation signal model (rep/phase tracking)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-01 |
+| AUTONOMOUS_ELIGIBILITY | `READY` (contract-level) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the observation signal model — what the Companion
+observes during a workout (rep counts, phase timing, tempo, form proxies)
+and how those signals feed back into the outcome model (AL-01).
+
+**Inputs:** CP-01 architecture; the existing workout engine's timer/phase
+model.
+
+**Output:** the observation signal contract (pure types); the signal-to-
+outcome mapping design.
+
+**Acceptance:** every observable signal is typed; the mapping from signals
+to outcome fields is documented; the contract is additive (no changes to
+existing session records).
+
+---
+
+### CP-03 — Pose/form technical feasibility spike
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-01, TS-01 (privacy architecture must exist first) |
+| AUTONOMOUS_ELIGIBILITY | `RESEARCH_ONLY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+| OWNER_DECISION_GATE | Spike findings review before any implementation |
+
+**Objective:** research spike — evaluate on-device pose inference options
+(MediaPipe, TensorFlow Lite, native APIs) for the target platforms; measure
+latency, accuracy, and battery cost; determine the supported movement scope
+(which exercises can be tracked); assess on-device feasibility vs the privacy
+requirement (raw video must not leave the device).
+
+**Inputs:** TS-01 privacy architecture; the supported movement scope from
+MG-02 taxonomy.
+
+**Output:** a feasibility report with measured benchmarks; a recommended
+approach; a scope statement (which movements are trackable); identified
+limitations.
+
+**Acceptance:** the report includes real measurements (not estimates); the
+privacy requirement is validated (no video leaves the device in the
+recommended approach); the scope is honest about limitations; no production
+code written.
+
+---
+
+### CP-04 — Privacy-preserving camera architecture
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-03 (feasibility), TS-01 (privacy architecture) |
+| AUTONOMOUS_ELIGIBILITY | `HUMAN_GATE` (camera integration requires explicit Owner authorization) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `PROD_SENSITIVE` |
+| DB_SENSITIVITY | `DATA` (if landmarks/metrics are stored) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+| OWNER_DECISION_GATE | Required — camera/pose consent + data retention decisions |
+
+**Objective:** design the privacy-preserving camera integration: on-device
+pose/landmark inference → movement metrics → Companion feedback. If
+landmarks/metrics are stored/transmitted, define purpose, consent, retention,
+deletion, security, user control, and data minimization.
+
+**Inputs:** CP-03 feasibility report; TS-01 privacy architecture.
+
+**Output:** the camera architecture doc; the consent flow; the data
+retention/deletion policy; the on-device inference pipeline design.
+
+**Acceptance:** raw video never leaves the device; the consent flow is
+explicit and revocable; the data retention policy defines purpose, retention
+period, and deletion mechanism; the architecture supports the "no camera"
+fallback (Companion works without pose tracking).
+
+---
+
+### CP-05 — Workout Experience V2 integration
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-02, AL-04, [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `CLAIM_REQUIRED` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** integrate the Companion's observation and adaptation signals
+into the Workout Experience V2 runtime — real-time guidance during the
+workout, adaptive adjustments mid-session, and post-session outcome capture.
+
+**Inputs:** CP-02 signals; AL-04 decisions; the V2 vision doc.
+
+**Output:** the integrated workout runtime with Companion guidance; the
+V2 UI changes (guided by the UI Conformance Gate).
+
+**Acceptance:** the Companion provides real-time guidance during workout
+playback; adaptive adjustments respect the AL-04 decision output; the
+UI Conformance Gate passes; Production acceptance covers the workout route.
+
+---
+
+## Mission Queue — P3: TRUST, SAFETY & KNOWLEDGE
+
+### TS-01 — Privacy / safety architecture
+
+| Field | Value |
+|---|---|
+| PRIORITY | P3 (prerequisite for CP-03/CP-04 — dependency-prioritized) |
+| DEPENDENCIES | NONE |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** define the privacy/safety architecture for future camera/pose
+functionality and sensitive data handling: the data classification model,
+the consent framework, the data minimization principles, and the boundary
+between fitness guidance and medical diagnosis/treatment.
+
+**Inputs:** the strategy §8 (privacy principle); §9 (trust/safety surface).
+
+**Output:** the privacy architecture doc (data classes, consent model,
+retention principles, user control rights); the safety boundary statement.
+
+**Acceptance:** the doc classifies all data types (movement landmarks,
+derived metrics, health signals); the consent model covers collection,
+purpose, and revocation; the medical boundary is explicit ("Apex provides
+fitness guidance, not medical diagnosis"); the architecture satisfies the
+on-device inference preference.
+
+---
+
+### TS-02 — Safety / liability framework + legal surface requirements
+
+| Field | Value |
+|---|---|
+| PRIORITY | P3 |
+| DEPENDENCIES | TS-01 |
+| AUTONOMOUS_ELIGIBILITY | `HUMAN_GATE` (legal review required) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `NONE` |
+| OWNER_DECISION_GATE | Legal counsel review |
+
+**Objective:** define the fitness/health safety disclaimer, the
+liability/safety framework, and the requirements for Terms of Service,
+Privacy Policy, and camera/pose-tracking consent. NOT final legal wording —
+the requirements that legal wording must satisfy.
+
+**Inputs:** TS-01 privacy architecture; the strategy §9 legal surface list.
+
+**Output:** a requirements doc listing every legal surface with its
+mandatory content; the safety disclaimer text requirements; the
+jurisdictional considerations.
+
+**Acceptance:** every legal surface from the strategy is listed with its
+requirements; the fitness/medical boundary is stated; the doc explicitly
+notes that final legal wording requires counsel review; no legal text is
+published.
+
+---
+
+### TS-03 — Account / data deletion
+
+| Field | Value |
+|---|---|
+| PRIORITY | P3 |
+| DEPENDENCIES | TS-01 |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `PROD_SENSITIVE` |
+| DB_SENSITIVITY | `DATA` (deletes user data) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** implement account deletion and data deletion — the user can
+delete their account and all associated data (workout history, profile,
+preferences, analytics events). This is a trust surface and a legal
+requirement in many jurisdictions.
+
+**Inputs:** TS-01 privacy architecture; the existing auth/user model.
+
+**Output:** the deletion flow (UI + API); the cascade deletion logic; the
+deletion confirmation.
+
+**Acceptance:** deleting an account removes all user data across all tables;
+the deletion is irreversible and confirmed; the UI provides a clear
+deletion path; Production acceptance covers the deletion flow; the deletion
+respects any legal retention requirements.
+
+---
+
+### TS-04 — Knowledge / Journal architecture
+
+| Field | Value |
+|---|---|
+| PRIORITY | P3 |
+| DEPENDENCIES | MG-07 (movement knowledge feeds educational content) |
+| AUTONOMOUS_ELIGIBILITY | `READY` (architecture only) |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `SCHEMA` (content tables; additive) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** design the Knowledge/Journal architecture as part of the
+product knowledge system (not an isolated SEO blog): Movement Graph ↔
+Exercise Pages ↔ Educational Content ↔ Workout Programs ↔ Companion.
+
+**Inputs:** MG-07 movement knowledge; the strategy §10 (knowledge surface).
+
+**Output:** the knowledge architecture doc (content model, relationship to
+the Movement Graph, rendering pipeline); the content authoring workflow.
+
+**Acceptance:** the architecture connects educational content to movement
+knowledge objects (not standalone articles); the content model supports
+exercise technique, movement education, common mistakes, progressions/
+regressions, mobility, recovery, and home fitness topics; SEO/discovery is
+supported but not the sole purpose; no CMS implementation in this task.
+
+---
+
+### TS-05 — Public trust pages (About / Contact / Support / FAQ)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P3 |
+| DEPENDENCIES | TS-02 (legal framework), TS-04 (knowledge architecture) |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `NONE` |
+
+**Objective:** implement the public trust pages — About, Contact, Support,
+FAQ, How Apex Home Fit works, Accessibility statement, and Service/status
+information — as static/locale-aware pages following the existing design
+system.
+
+**Inputs:** TS-02 legal requirements; the existing FAQ page pattern; the
+design system.
+
+**Output:** the public pages (SSR/locale-aware); navigation integration;
+the accessibility statement.
+
+**Acceptance:** all pages render in FA and EN; the pages follow the design
+system (UI Conformance Gate applies); the FAQ integrates with the existing
+FAQ page; navigation is discoverable; Production acceptance covers the new
+routes.
+
+---
+
+## Mission Queue — P4: SUPPORTING / LOWER-MOAT
+
+### SU-01 — Deferred lower-moat feature breadth
+
+| Field | Value |
+|---|---|
+| PRIORITY | P4 |
+| DEPENDENCIES | Contextual |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| PARALLEL_SAFETY | `SAFE` |
+| PRODUCTION_SENSITIVITY | contextual |
+| DB_SENSITIVITY | contextual |
+| ARCHITECTURE_GATE | `NONE` |
+
+**Objective:** a holding priority for useful work that does not materially
+strengthen the moat or its prerequisites. Examples: additional UI polish,
+non-critical feature breadth, nice-to-have integrations. These are NOT
+deleted — they are deferred until P0–P3 foundations are established.
+
+**Disposition of legacy unfinished items:**
+
+| Legacy item | Disposition |
+|---|---|
+| `EXERCISE-CATALOG-DISAMBIGUATION-01` | **ABSORBED into MG-08** — the alias collision is a symptom of the seed catalog's lack of canonical identity; the rebuilt Movement Graph resolves it structurally. Traceability preserved in the PROPOSED section. |
+| `ADMIN-IMPERSONATION-01` | **RETAINED / DEFERRED** — remains DEFERRED / NOT AUTHORIZED; not strategy-aligned (admin tooling, not product moat); revisit when P0–P1 are established |
+| `ADMIN-AUTH-PASSKEY-01` | **RETAINED / DEFERRED** — security enhancement, not strategy-aligned; P4 |
+| Workout Experience V2 | **PROMOTED to CP-05** — the V2 vision is the Companion's workout integration surface; the advisory doc feeds CP-05 |
+| Iranian competitor research gap | **RETAINED** — competitive monitoring is a strategic research requirement (strategy §11); folded into the ongoing research agenda, not a discrete task |
+| Iranian competitor register | **PRESERVED as INITIAL RESEARCH SNAPSHOT** — not exhaustive or verified; ongoing monitoring required |
+| Transformation roadmap capabilities | **RECONCILED** — individual capabilities are re-ranked into the Mission Queue by strategy alignment; the roadmap remains as advisory evidence |
+| `rtl-layout.spec.ts` test debt | **RESOLVED** — FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01) |
+| Signed-in Production recheck (standing) | **RETAINED** — operator-held credential required; not a backlog task |
+
+---
+
+## Autonomous batch readiness
+
+The recomposed backlog supports future batches of up to five tasks. The
+orchestrator selects compatible tasks based on: dependencies, file/resource
+overlap, architecture gates, DB sensitivity, Production sensitivity,
+parallel safety, task size, and independent reviewability.
+
+### AUTONOMOUS_BATCH_CANDIDATES — proposed FIRST autonomous test
+
+| # | Task | Rationale |
+|---|---|---|
+| 1 | **MG-01** (schema/domain contract) | Strategically meaningful (Movement Graph foundation); bounded scope (pure types + doc); no DB migration; clear acceptance criteria; exercises the full autonomous workflow (design → implement → test → document) |
+| 2 | **MG-02** (taxonomy design) | Depends only on MG-01's output shape (can run in parallel with MG-01 if the contract interface is agreed first); bounded (enums + maps); no runtime change |
+| 3 | **MG-03** (provenance contract) | Independent of MG-01/MG-02 (only needs the domain module interface); bounded (types + doc); exercises the self-hosting principle |
+| 4 | **AL-01** (outcome/feedback model) | Different domain (adaptive loop) — exercises cross-phase parallel safety; bounded (types + doc); no DB migration |
+| 5 | **TS-01** (privacy/safety architecture) | Docs-only; independent; a prerequisite for CP-03/CP-04; tests whether the autonomous system can produce architecture documents |
+
+**Selection rationale:** these five tasks (a) are strategically meaningful —
+they start the Movement Graph and the adaptive loop, not trivial docs;
+(b) have bounded scope with clear acceptance criteria; (c) are independently
+reviewable; (d) avoid Production risk (no DB mutations, no deployments);
+(e) minimize file overlap (MG-01/02/03 share the `src/lib/movement/`
+directory but touch different files; AL-01 and TS-01 are in different
+domains); (f) provide meaningful evidence about whether the autonomous
+development system works (design + code + tests + docs).
+
+**Not selected:** MG-04+ (require source selection / Owner decisions);
+MG-09 (requires DB mutation authorization); CP-03+ (require TS-01 first);
+CP-04 (requires camera authorization); TS-02 (requires legal review).
+
+**Batch constraint:** maximum five tasks per batch. If only three are safely
+executable together, that is preferable to an artificial five-task batch.
+
+---
+
+## Disposition summary — legacy unfinished tasks
+
+Every existing unfinished/deferred/proposed task was audited. Dispositions:
+
+| Legacy item | Status | Disposition |
+|---|---|---|
+| `EXERCISE-CATALOG-DISAMBIGUATION-01` | PROPOSED / NOT AUTHORIZED | **ABSORBED into MG-08** — structural resolution via the rebuilt Movement Graph |
+| `ADMIN-IMPERSONATION-01` | DEFERRED / NOT AUTHORIZED | **RETAINED / DEFERRED** — P4; revisit after P0–P1 |
+| `ADMIN-AUTH-PASSKEY-01` | DEFERRED | **RETAINED / DEFERRED** — P4 |
+| Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | **PROMOTED to CP-05** (Companion integration surface) |
+| Iranian competitor research gap | KNOWN ADVISORY GAP | **RETAINED** — ongoing monitoring requirement (strategy §11) |
+| Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | **RECONCILED** — re-ranked into the Mission Queue by strategy alignment |
+| `rtl-layout.spec.ts` test debt | FIXED + VERIFIED | **RESOLVED** — no action needed |
+| Signed-in Production recheck | PENDING (standing) | **RETAINED** — operator credential item, not a backlog task |
+| `ADMIN-DS-01…06` | DELIVERED / CLOSED | Completed — historical record preserved |
+| `ADMIN-THEME-SWITCH-01` | DELIVERED / CLOSED | Completed — historical record preserved |
+| `S-04` Session Core Contract | DELIVERED / CLOSED | Completed — historical record preserved |
+| `S02-E` Exercise Identity Backfill | DELIVERED / CLOSED | Completed — historical record preserved; the ambiguity feeds MG-08 |
+| `GOVERNED-PROD-DB-CAPABILITY-01` | DELIVERED / CLOSED | Completed — the gateway `db-operation` capability is the migration path for MG-09 |
+
+No legacy task was silently deleted. Completed lifecycle records are
+preserved unchanged.
+
+---
 
 ## Registered decisions — not executable
 
@@ -126,264 +924,34 @@ preserve them until the owner separately authorizes bounded execution:
 | Decision/direction | Status | Canonical owner |
 |---|---|---|
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
-| Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements (actor/target identity, durable audit trail, start/end timestamps, persistent banner, safe exit, session isolation, no credential use, restricted sensitive operations, server-side enforcement, security review gate) persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
-| Batch Delivery V1 operating model (one active session, serial isolated tasks, one consolidated integration/CI/release lifecycle) | ACCEPTED / ADOPTED 2026-09-01 (`GOVERNANCE-HARDENING-PROMOTION-01`) — model in force; each batch still requires separate execution authorization; runtime constraint basis in the orchestration investigation record | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
-| Admin Console design-system alignment (Batch 1 `ADMIN-DS-01…04` DELIVERED/CLOSED; Batch 2 `ADMIN-DS-05` + `ADMIN-DS-06` DELIVERED/CLOSED 2026-09-01 via PR #16 + gateway release `c6a4e59`; `ADMIN-THEME-SWITCH-01` DELIVERED/CLOSED 2026-09-01 via PR #18 + gateway release `9ac8ec69c686`; `MOBILE-READINESS-01` audit EXECUTED + guardrails RATIFIED; `S-04` Session Core Contract Adoption DELIVERED/CLOSED 2026-09-01 via PR #17 + gateway release `8e06d70`) | **PROPOSED phase COMPLETE for Admin DS** — UI Conformance Gate + report delivery contract IN FORCE; Batch 1 DELIVERED/CLOSED via PR #15 + `4de75ae`; Batch 2 DELIVERED/CLOSED via PR #16 + `c6a4e59`; typography contract RATIFIED (DESIGN_SYSTEM.md §4.1); `MOBILE-READINESS-01` guardrails RATIFIED (ADR-0005); `S-04` DELIVERED/CLOSED via PR #17 + `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); `ADMIN-THEME-SWITCH-01` DELIVERED/CLOSED via PR #18 + `9ac8ec69c686` (UI_CHANGED=YES, REUSE — shared ThemeProvider/ThemeScript/apex tokens + `admin-theme` cookie SSR; Light+Dark × EN+FA production acceptance incl. persistence); `ADMIN-IMPERSONATION-01` DEFERRED/NOT AUTHORIZED | [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md), [`architecture/MOBILE-READINESS-01.md`](architecture/MOBILE-READINESS-01.md), [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md), [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
-| Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01`; must use a constrained deployment gateway/capability that consumes protected configuration internally without exposing secrets or arbitrary root shell access | [`RELEASING.md`](RELEASING.md) |
+| Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
+| Batch Delivery V1 operating model | ACCEPTED / ADOPTED 2026-09-01 — model in force; each batch still requires separate execution authorization | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
+| Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01` | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP / RESEARCH NOT PERFORMED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Workout Experience V2 | PRODUCT VISION / NOT AUTHORIZED | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
 | Transformation roadmap capabilities | PROPOSED / NOT AUTHORIZED | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
-| Comprehensive product strategy + Movement Intelligence strategy (North Star, closed-loop model, Movement Graph / Personal Movement Profile / Adaptive Training / Companion, self-hosting & privacy principles, Trust/Safety/Knowledge surface, prioritization principle) | **PROPOSED / NON-EXECUTABLE 2026-09-01** — strategy persistence only; AHF remains execution-frozen; no implementation authorized; promotion to this backlog requires explicit owner authorization | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md), [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
-| Mobile-readiness architecture guardrails (6 rules: UI-framework-free domain logic, portable persistence contracts, mobile-posture declaration, S03 session-core boundary, platform-neutral health contract, no-stack-without-spike) | **RATIFIED / BINDING 2026-09-01** — owner ratification via POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as `ADR-0005`; mobile implementation triggers, HealthKit/Health Connect scope, and the technology-selection spike DEFERRED until documented triggers; NO mobile stack selected | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
-| Shared typography contract (fa → Vazirmatn from the official project, en → Inter; both self-hosted; shared across consumer app and Admin — NO separate Admin font stack; locale determines the primary font; system sans-serif fallbacks preserved) | **RATIFIED / BINDING 2026-09-01** — Owner decision in ADMIN DESIGN SYSTEM BATCH 2; implemented by `ADMIN-DS-05`; recorded in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1 (contract) + §4.2 (Admin i18n/RTL architecture) | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
-| Session Core Contract Adoption — `S-04` Stable Session State Contract | **DELIVERED/CLOSED 2026-09-01** via PR #17 + gateway release `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); promoted 2026-09-01 as the high-priority mobile-readiness architecture debt; reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction stays closed (pure core exists, hook delegates); execution removed residual consumer coupling (`workoutPersistence.ts`/`samplePlan`/route/player → canonical contracts; new pure `plan.ts`; boundary consumer tests) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--delivered-closed), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
-| S02-E and S-05..S-06 | **RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01)** — S-06 first, S-05 second (GATE C), S02-E last; S-06+S-05 batchable, S02-E NOT batchable. **S-06 DECIDED + S-05 DELIVERED/CLOSED (PR #19 → `4ada1da`). S02-E DELIVERED/CLOSED 2026-09-01** — gateway v2 `db-operation` dry-run evidence reconciled (report_sha `8cf8a535…`, deterministic across SHAs); governed apply executed as 0-row no-op (8 rows already backfilled by runtime generation; 1 AMBIGUOUS `Side-Lying Leg Lift` left unmapped per Owner decision; backup `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`; DB hash unchanged); Production acceptance 6/6 PASS; alias-collision debt recorded as `EXERCISE-CATALOG-DISAMBIGUATION-01` (PROPOSED/deferred) | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md), [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md), [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md), [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
-| `rtl-layout.spec.ts` stale expectations (TD-01 nav-order five-item `APP_NAV`; TD-02 quiz radiogroup scope) | **CONFIRMED TEST DEBT 2026-09-01** — reproduced identically on clean `main`; not app regressions; not in CI's e2e gate; **FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01, PR #19 → `4ada1da`)** — full local E2E suite green (35/35 incl. both specs) | [`TEST-DEBT.md`](TEST-DEBT.md) |
-
-## Approved queue — hardening (closed in this promotion)
-
-### GOVERNANCE-UI-GATE-01 — CLOSED / CODE_NO_DEPLOY
-
-- **Authorization:** Owner DELIVERING delta `GOVERNANCE-HARDENING-PROMOTION-01`
-  (2026-09-01) explicitly authorizing the UI Conformance Gate promotion.
-- **Bounded scope:** project-wide UI Conformance Gate — every task with
-  `UI_CHANGED=YES` must discover the existing Apex Design System, reuse
-  providers/tokens/typography/primitives/shared components where applicable
-  (KIT-FIRST), preserve theme/dark-mode and localization/RTL architecture,
-  follow responsive/a11y conventions, justify new visual primitives, and
-  declare `REUSE | EXTEND | AUTHORIZED_PARALLEL` with evidence; parallel
-  visual systems fail closed; functional correctness alone is not sufficient
-  UI acceptance.
-- **Outcome:** contract adopted [`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md);
-  machine-enforced via new report fields (`UI_CHANGED`, `UI_CONFORMANCE`,
-  `UI_CONFORMANCE_DECISION`, `UI_CONFORMANCE_EVIDENCE`) in
-  `governance-runtime.mjs report`, new `governance-runtime.mjs ui` static
-  scan (MUI allowlist + UI-kit allowlist, fail-closed), `governance:check`
-  wiring (`docs` + `ui`), and 20-pass runtime test suite. Review-enforced
-  parts documented (reuse quality, dark-mode/RTL/a11y preservation,
-  justification quality).
-- **Production impact:** none — tooling/docs only; `DB_CHANGED = NO`;
-  `PRODUCTION_BOUND = NO`. No Admin UI remediation was implemented.
-- **Evidence:** commit `GOVERNANCE-HARDENING-PROMOTION-01` (SHA in the
-  durability report), the ATTACHED Owner report
-  `AHF-FB-20260901-GOVERNANCE-HARDENING-PROMOTION-01.md`.
-
-### GOVERNANCE-REPORT-DELIVERY-01 — CLOSED / CODE_NO_DEPLOY
-
-- **Authorization:** same Owner delta as above.
-- **Bounded scope:** report delivery contract — distinguish
-  `REPORT_PERSISTED` / `REPORT_VALIDATED` / `REPORT_DELIVERED` / `REPORT_PATH`
-  / `OWNER_REPORT_PATH`; every final/Analysis-Gate Owner report must be
-  exported to the established Owner report destination
-  `/Users/msl/Documents/ApexHFAgentReports/` (change-protected; repo-local
-  `reports/` is temporary/runtime-only and must never enter Git);
-  `REPORT_DELIVERED=YES` requires successful Owner-path export; both paths
-  recorded where applicable; drift root cause documented.
-- **Outcome:** contract adopted [`governance/REPORT-DELIVERY-CONTRACT.md`](governance/REPORT-DELIVERY-CONTRACT.md);
-  machine-enforced (path-existence rules, delivered⇒owner-exported rule,
-  persisted⇒path rules) in `governance-runtime.mjs report` + tests;
-  `AI_CHANGE_TEMPLATE.md` and `GOVERNANCE_RUNTIME.md` extended.
-- **Production impact:** none — tooling/docs only; `DB_CHANGED = NO`.
-- **Evidence:** same promotion report as above.
-
-## Approved queue — promoted 2026-09-01 (not started)
-
-### GOVERNED-PROD-DB-CAPABILITY-01 — DELIVERED / CLOSED 2026-09-01
-
-- **Authorization:** Owner delta `GOVERNED PRODUCTION DB MUTATION CAPABILITY`
-  (2026-09-01) approving Option 1 of the S02-E preflight: extend the existing
-  constrained Production Deployment Gateway with the minimum reusable governed
-  capability for read-only Production DB inspection/dry-run evidence AND
-  explicitly authorized, dry-run-gated DB_CHANGED=YES backfill/migration
-  execution, preserving the security boundary (no arbitrary SQL/shell/Docker/
-  Compose, no secrets, bounded allowlist, fail closed, exclusive DB operation,
-  mandatory pre-mutation backup, dry-run evidence before apply, exact
-  operation identity, idempotency, post-mutation verification, rollback /
-  forward-recovery evidence). S02-E was NOT executed; the S02-E preflight
-  changes were carried into this lifecycle.
-- **Bounded scope:** gateway daemon v2 (`ops/deploy-gateway/apex_deploy_gateway.py`,
-  `GATEWAY_VERSION=2`) adds the single `db-operation` action with a strict
-  allowlist: `s02e-exercise-identity-backfill` (script runner) and
-  `prisma-migrate-deploy` (pinned Prisma migrate status/deploy); modes
-  `dry-run | apply | rehearsal`; `source_sha` must equal authoritative GitHub
-  `main` HEAD; `apply` requires the stored dry-run evidence SHA; crash- resilient
-  exclusive `db-op-active` lock shared with `release`; mandatory pre-mutation
-  backup + before/after hashes + restore-on-failure; rehearsal proves the apply
-  pipeline against a clone with the real DB hash unchanged. No generic DB-admin
-  API; no self-update surface; `release` contract unchanged (DB_CHANGED=false).
-- **Reconciled S02-E preflight changes (preserved):** `scripts/backfill-dry-run.mjs`
-  (local read-only dry-run CLI) refactored onto the shared pure classifier
-  `scripts/gateway-db-ops/lib/classify.mjs`; the gateway operation runner is
-  `scripts/gateway-db-ops/s02e-exercise-identity-backfill.mjs`;
-  `docs/architecture/S02E-BACKFILL-PREFLIGHT.md` amended with the capability
-  status.
-- **Production impact:** gateway infra only — `UI_CHANGED = NO`;
-  `DB_CHANGED = NO` (no app/DB data mutation; S02-E apply NOT executed);
-  Production capability proven WITHOUT any real Production DB mutation
-  (real-DB dry-run evidence + rehearsal + zero-pending migrate apply).
-- **Evidence:** decision record
-  [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md);
-  gateway contract `docs/PRODUCTION_DEPLOYMENT_GATEWAY.md` §db-operation;
-  `test:gateway` (11 pure tests + py_compile + daemon `--self-test`) wired into
-  CI; `ops/deploy-gateway/install-gateway.sh` idempotent root install.
-
-### S02-E — Exercise Identity Backfill — DELIVERED / CLOSED 2026-09-01
-
-- **Authorization:** Owner delta `S02-E EXERCISE IDENTITY BACKFILL` (own
-  isolated Production-DB lifecycle; dry-run first; fail closed; gateway-
-  bounded) + GATE A GA-07 APPROVED; the mandatory HUMAN_DECISION_REQUIRED
-  gate for the single AMBIGUOUS row was resolved by the Owner on 2026-09-01:
-  **leave unmapped / close** (fail-closed; catalog alias collision deferred).
-- **Canonical dry-run evidence reconciled:** gateway v2 `db-operation`
-  `s02e-exercise-identity-backfill` dry-run against the real Production DB
-  returned `dry_run_evidence_sha 8cf8a5358dbb…` — byte-identical across
-  `a0a47ed` and `5e77298` source SHAs (deterministic report). Production
-  corpus: `ALREADY_BACKFILLED=8` (slugs live via runtime generation),
-  `AMBIGUOUS=1`, `AUTO/ALIAS/UNRESOLVED=0`.
-- **Ambiguous row surfaced (never guessed):** `Side-Lying Leg Lift` (id
-  `cmtdmzmw80008k101j3a2gd2z`, slug NULL) — candidates `side-kick-side-leg-lifts`
-  (`Side Kick (Side Leg Lifts)`, alias match) and `side-lying-leg-lift`
-  (`Side-Lying Leg Lift`, exact-name match). Root cause: seed-catalog alias
-  collision (`side-lying leg lift` declared by both entries).
-- **Governed apply (DB_CHANGED=YES lifecycle):** `mode=apply` bound to
-  evidence `8cf8a535…` — backup
-  `gateway-backup-s02e-exercise-identity-backfill-5e7729863abc.db`;
-  `applied_count 0`; `db_before_hash == db_after_hash == 2e558a90…`;
-  verification PASS; 8 already-backfilled rows untouched; `faName` untouched
-  (GA-05 — no Persian corpus invented).
-- **Post-state/idempotency:** post-apply dry-run returns the SAME evidence
-  sha `8cf8a535…` (state unchanged); app healthy `/en` `/fa` 200.
-- **Production acceptance:** real-browser 6/6 PASS on `apexhomefit.ir`
-  (public EN/FA, signed-out auth boundary, exercise library catalog/resolver
-  path, workout-route EN+FA RTL boundaries, manifest, zero fatal console
-  errors). No app release (no app code change); gateway READY, secret
-  boundary PROTECTED.
-- **Deferred debt recorded:** `EXERCISE-CATALOG-DISAMBIGUATION-01`
-  (PROPOSED, not authorized) — reconcile the `Side Kick (Side Leg Lifts)` /
-  `Side-Lying Leg Lift` alias collision and decide whether/how to map the
-  unmapped Production row.
-- **Evidence:** preflight + capability record
-  [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md),
-  [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md);
-  report `reports/AHF-FB-20260901-S02E-BACKFILL.md` (preflight) and
-  `reports/AHF-FB-20260901-S02E-FINAL-LIFECYCLE.md` (this lifecycle).
-
-### S-04 — Stable Session State Contract (Session Core Contract Adoption) — DELIVERED / CLOSED 2026-09-01
-
-- **Authorization:** owner direction in `POST-MOBILE-READINESS-RATIONALIZATION-01`
-  (2026-09-01): promote the identified Session Core Extraction requirement into
-  the canonical executable backlog as the high-priority mobile-readiness
-  architecture debt, preserving/reconciling the S03/S04 lineage; recorded in
-  ADR-0005. **This entry authorizes the backlog record only — implementation
-  requires the ordinary batch-start authorization and is explicitly NOT
-  performed by the promoting task.**
-- **Reconciliation of the "session-core extraction" finding:** on-disk
-  verification shows S03 extraction is CLOSED — `src/lib/workout/sessionCore.ts`
-  exists and `src/components/workout/useWorkoutEngine.ts` delegates to it
-  (`createSessionCore`, `core.transition(command, now)`, `core.derive(state)`).
-  The residual high-priority debt is the S-04 contract-adoption edge:
-  `src/lib/offline/workoutPersistence.ts` imports `WorkoutEngineState` /
-  `WorkoutExercise` / `WorkoutEngineHydrateInput` from the hook component
-  (`src/components/workout/useWorkoutEngine`), and `sessionContracts.ts`
-  carries a stale "do not import until the extraction wiring exists" note.
-  No duplicate task is created.
-- **DEPENDENCIES:** S-03 (CLOSED — pure core + React adapter);
-  MOBILE-READINESS-01 guardrails (RATIFIED). No dependency on Admin work.
-- **EXECUTION_CLASS:** SEQUENTIAL (public-app engine domain; behavior-
-  preserving refactor with its own parity gate).
-- **ISOLATION_REQUIREMENT:** own branch; one reviewable change (contract
-  module + consumer migration).
-- **Bounded scope:** formalize the stable Session State read-model/event
-  surface (proposed `src/lib/workout/sessionState.ts`); migrate WorkoutPlayer
-  and persistence import points to the canonical contract; consumer contract
-  tests; no new engine semantics, no V2 features.
-- **VALIDATION_REQUIREMENT:** parity baseline preserved (S03A golden traces
-  GT-01..GT-12, `tests/session-golden-trace.test.tsx`), pure-core unit tests,
-  existing workout/persistence/timer suites, typecheck, lint, production
-  build; consumer contract tests (player integration + persistence
-  compatibility); targeted E2E per `docs/CI.md`; governance checks.
-- **PRODUCTION_IMPACT:** public-app workout engine refactor — behavior
-  preserved, `UI_CHANGED = NO` (no visual change), `DB_CHANGED = NO`
-  (IndexedDB snapshot shapes unchanged until S-05); rollback = plain git
-  revert; Production delivery via the canonical gateway when authorized.
-- **RISK:** LOW-MEDIUM (behavior-preserving, parity-gated).
-- **Acceptance (exit criteria):** player/persistence consume only the stable
-  contract; no consumer imports hook internals; full suite green; mobile-
-  readiness posture recorded as CLIENT-AGNOSTIC.
-- **EXECUTION (2026-09-01, DELIVERED/CLOSED):** implemented as its own
-  lifecycle via PR #17 → merged `8e06d70bc75f9b02e585c091c96272e043149246` →
-  gateway release `apex-home-fit:release-8e06d70bc75f` (health PASS,
-  `db_changed=false`, secret boundary PROTECTED, rollback
-  `compose.yml.rollback-s04-session-core-contract`). New pure
-  `src/lib/workout/plan.ts` (`clampSets` — contracts module stays types-only by
-  test contract); `sessionContracts.ts` canonical boundary docstring; the hook
-  re-exports canonical types (no local duplicates); consumers migrated:
-  `workoutPersistence`, `samplePlan`, workout route, `WorkoutPlayer` adapter;
-  `tests/session-contract-consumers.test.ts` enforces the boundary. Branch
-  CI PASS (build + e2e, run `33486695026`); Main CI PASS (merge run
-  `33487427362`); local validation typecheck PASS, eslint 0 errors, unit
-  524/524 (golden traces GT-01..GT-12 parity preserved), production build
-  PASS, real-browser workout-route E2E 5/5 (incl. live player session);
-  Production real-browser acceptance 8/8 (public regression, workout route
-  auth boundary + locale preservation, zero fatal console errors). Pre-existing
-  `rtl-layout.spec.ts` drift (2 specs — public nav-order + quiz radiogroup
-  scope) reproduced identically on clean main; not part of CI's e2e gate;
-  flagged for separate spec-reconciliation, not addressed by S-04
-  (UI_CHANGED=NO).
-
-## Recently closed
-
-| Task/checkpoint | Outcome | Evidence owner |
-|---|---|---|
-| `ADMIN-CONSOLE-01` | CLOSED; read-oriented Admin Console V1 (Overview, Users, Workout Plans, Exercises, Operations, Admin/Sessions) delivered via the Production Deployment Gateway; exact-main release `2d131fc`; real-browser acceptance 14/14; unauthenticated boundary verified on Production; public OTP unchanged; `DB_CHANGED = NO`; Main CI PASS on `2d131fc` (run `33419999889`) and spec follow-up `e29d311` (run `33425058638`); branch retired | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md), durable AgentReport `AHF-FB-20260831-ADMIN-CONSOLE-01.md`, PR #13, PR #14 |
-| `AUTONOMOUS-PROD-OPS-01` | CLOSED; constrained Production deployment gateway proven end-to-end with zero manual Owner commands; pre- and post-hardening exact-main releases PASS; rollback verified; legacy `apexadmin` NOPASSWD sudo and Docker-group membership revoked after proof; branch retired; Main CI PASS on merge `fde82c1` (run `33411342851`) and docs `f2387cc` (run `33413935668`) | [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md), [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260831-AUTONOMOUS-PROD-OPS-01.md`, PR #12 |
-| `DOCUMENTATION-CONSOLIDATION-01` | CLOSED; canonical ownership, decision persistence, link routing, and docs-only lifecycle consolidated | Git history through `c80a1bb` and durable task report |
-| `GOVERNANCE-RUNTIME-01` | CLOSED; repository governance runtime enforced | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md) and Git history through `7edfb89` |
-| `AUTH-PERF-01` | CLOSED; no reproducible defect in focused auth/performance/persistence/EN-FA investigation; no source fix required | durable handoff report; no Production mutation |
-| `ADMIN-AUTH-PROD-01` | CLOSED; Admin Auth V1 Production PASS (deterministic migration via pinned Prisma 6.19.3; same-origin/provisioning fixes via PR #11; real-browser acceptance 22/22) | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260831-ADMIN-AUTH-PROD-01.md`, PR #11, Main CI run `33401625615` |
-| `ADMIN-AUTH-01` | CLOSED; dedicated Email + Password administrator authentication V1 integrated with no Production deployment | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), durable AgentReport, PR #10, Main CI run `33392689051` |
-| `AUTH-FIX-01` | CLOSED; Production PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
-| `S-04` Session Core Contract Adoption | CLOSED; stable session-state contract adopted as the canonical consumer boundary; PR #17 → merged `8e06d70`; gateway release `release-8e06d70bc75f`; branch retired; Main CI PASS on `8e06d70` (run `33487427362`) | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md), durable AgentReport `AHF-FB-20260901-S04-SESSION-CORE-CONTRACT.md` |
-| S03 Session Core | CLOSED; architecture/runtime refactor complete | [`architecture/S03-SESSION-CORE-CLOSURE.md`](architecture/S03-SESSION-CORE-CLOSURE.md) |
-| S02 Production recovery | PASS | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
-
-Older batch history is preserved in Git and the explicitly archived
-[`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md). It is not duplicated here.
+| Comprehensive product strategy + Movement Intelligence strategy | **PROPOSED / NON-EXECUTABLE 2026-09-01** — strategy persistence only; AHF remains execution-frozen | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md), [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
+| Mobile-readiness architecture guardrails | **RATIFIED / BINDING 2026-09-01** — ADR-0005 | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
+| Shared typography contract | **RATIFIED / BINDING 2026-09-01** | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
+| Session Core Contract Adoption — `S-04` | **DELIVERED/CLOSED 2026-09-01** | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 
 ## PROPOSED — not authorized (pending owner review)
 
 > Items here are **proposals only**. They are NOT executable backlog entries.
-> Nothing in this section authorizes work. Promotion to the approved queue
-> happens only through the Promotion rule below after explicit owner
-> authorization.
+> Nothing in this section authorizes work. Promotion happens only through the
+> Promotion rule below after explicit owner authorization.
 
 | Proposal | Status | Details |
 |---|---|---|
-| `ADMIN-DS-01` — Admin foundation: dark mode, self-hosted fonts, metadata/favicon on the admin root layout | EXECUTED (commit `1442574`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=ISOLATED`; `UI_CONFORMANCE=PASS` (REUSE); validation: typecheck/lint/build PASS; Production: admin login renders with title metadata, theme script, no favicon 404 |
-| `ADMIN-DS-02` — Admin shared primitives (PageSection/Stat/Table/EmptyState/Badge) in `src/components/admin`; behavior-neutral refactor of the six console pages | EXECUTED (commit `c87d0a8`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (EXTEND); validation: typecheck/lint/unit (7 tests) PASS; Production: all six surfaces redirect unauthenticated visitors, no credential material rendered |
-| `ADMIN-DS-03` — Platform-kit adoption for admin controls (login form, nav, logout) | EXECUTED (commit `bf116eb`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (REUSE); validation: typecheck/lint/design-audit PASS; Production signed-in acceptance PENDING (operator-held credential see Batch 1 note) |
-| `ADMIN-DS-04` — Admin state boundaries + accessibility pass (`loading`/`error`/`not-found` boundaries, table captions/scope, focus rings, a11y spec coverage) | EXECUTED (commit `61e62ef`) and DELIVERED via Batch 1 PR #15 / merged `4de75ae`; **CLOSED** 2026-09-01 | `EXECUTION_CLASS=PARALLEL_SAFE`; `UI_CONFORMANCE=PASS` (REUSE + bounded EXTEND); validation: typecheck/lint/design-audit/unit PASS; Production: labelled nav + accessible table structure verified live |
-| `ADMIN-DS-05` — Admin Persian/RTL + i18n parity | **DELIVERED / CLOSED (2026-09-01)** via Batch 2 PR #16 / merged `c6a4e59`; commit `fd8650f`; Production gateway release `batch2-admin-ds-05-06` | `EXECUTION_CLASS=SEQUENTIAL`; `UI_CONFORMANCE=PASS` (REUSE + bounded EXTEND); shared next-intl catalogs (`admin.*` namespace), `admin-locale` cookie persistence, `html lang/dir`, localized pages/nav/login/boundaries, fa-IR dates, logical utilities; validation: typecheck/lint/unit 519/519/build PASS; local real-browser 6/6 PASS (admin-console + admin-i18n: switching, RTL, typography, persistence); Production 4/4 PASS; signed-in Production recheck PENDING (credential, standing batch-1 item) |
-| `ADMIN-DS-06` — KIT-FIRST decision record + `DESIGN_SYSTEM.md` reconciliation | **DELIVERED / CLOSED (2026-09-01)** via Batch 2 PR #16 / merged `c6a4e59`; commit `b92e3a8` | `DOCS_ONLY`; recorded the ratified shared typography contract (`DESIGN_SYSTEM.md` §4.1 — fa → Vazirmatn, en → Inter, self-hosted, shared consumer+Admin, no separate Admin stack) + Admin i18n/RTL architecture (§4.2); KIT-FIRST formalized; INDEX route + TASKS registered-decision row added |
-| `ADMIN-THEME-SWITCH-01` — Admin Light/Dark theme switch | **DELIVERED / CLOSED (2026-09-01)** — PR #18 merged `9ac8ec69c686`; branch CI PASS (run `33495411711`); Main CI PASS (run `33496083422`); Production gateway release `admin-theme-switch-01` → image `apex-home-fit:release-9ac8ec69c686` (ID `sha256:1ce7346f…`) health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 12/12 PASS incl. Light + Dark × EN + FA with persistence on the live login surface; signed-in surfaces validated locally on the exact release code (9/9 admin suite) — standing credential item covers the signed-in Production recheck. Reused the SHARED theme architecture (ThemeProvider/ThemeScript + apex tokens; NO parallel admin theme system); opt-in `cookieKey` SSR mirror (`admin-theme` cookie) so the server renders the same theme state the client hydrates (no mismatch, no FOUC); accessible radiogroup control on login + signed-in header; EN/FA + RTL + Vazirmatn/Inter preserved; UI Conformance REUSE + evidence; spec: [`architecture/ADMIN-THEME-SWITCH-01.md`](architecture/ADMIN-THEME-SWITCH-01.md) |
-| `EXERCISE-CATALOG-DISAMBIGUATION-01` — resolve the seed-catalog alias collision between `Side Kick (Side Leg Lifts)` (alias `side-lying leg lift`) and `Side-Lying Leg Lift` (name + same alias) | **PROPOSED / NOT AUTHORIZED — deferred debt from S02-E (2026-09-01)** | During S02-E, the Production row `Side-Lying Leg Lift` (id `cmtdmzmw80008k101j3a2gd2z`, slug NULL) was flagged AMBIGUOUS against `side-kick-side-leg-lifts` and `side-lying-leg-lift`; Owner decided leave-unmapped/close. This task: decide the canonical identity/alias intent, adjust the catalog (and resolver behavior for `Side-Lying Leg Lift`), re-validate, and THEN decide whether to map the unmapped Production row through the gateway `db-operation` apply (new dry-run evidence + re-authorization required). `EXECUTION_CLASS=ISOLATED`; docs + optional governed DB mutation; must NOT guess identities |
-| `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | **EXECUTED 2026-09-01** (docs-only; no app/DB change; no mobile build; no stack selection). Guardrails **RATIFIED / BINDING** via ADR-0005 (2026-09-01); decision items RESOLVED: triggers/health/spike DEFERRED until documented triggers; the high-severity finding was reconciled onto `S-04` (Session Core Contract Adoption) and PROMOTED to the approved queue | `AUDIT`/architecture task — complete. Report: [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md); guardrails RATIFIED in [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13; decision record [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md). Findings: 12 dimensions classified; high-priority debt = S-04 contract adoption (S03 extraction itself verified CLOSED — pure core exists; `workoutPersistence.ts` still imports hook internals); notifications/background = net-new capability gap; key-value + outbox + auth + health-contract items low-effort; owner decisions remaining: next-batch authorization only |
-
-| First Batch Delivery V1 batch (ADMIN-DS-01…04) | **DELIVERED / CLOSED (2026-09-01)** — PR #15 merged `4de75ae`; Main CI PASS (run `33454929053`); Production gateway release `batch1-admin-ds-01-04` → image `apex-home-fit:release-4de75ae969c8` health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 4/4 PASS (boundaries, dark-mode wiring, metadata/favicon, public regression, console errors). Signed-in Production recheck PENDING — operator-held credential required (see report `AHF-FB-20260901-ADMIN-DS-BATCH-1`). Branch `batch/admin-ds-01-04` retired. Full member matrix in [`architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md`](architecture/ADMIN-DESIGN-SYSTEM-AUDIT-01.md) §8 |
-| Second Batch Delivery V1 batch (ADMIN-DS-05 + ADMIN-DS-06) | **DELIVERED / CLOSED (2026-09-01)** — PR #16 merged `c6a4e59`; branch CI PASS (run `33482319310`); Main CI PASS (run `33482982507`); Production gateway release `batch2-admin-ds-05-06` → image `apex-home-fit:release-c6a4e591c1e3` health PASS, `db_changed=false`, rollback captured; Production real-browser acceptance 4/4 PASS (public regression, protected-boundary redirects, admin login EN/fa switching + RTL + typography + persistence, zero console errors). Typography contract RATIFIED (DESIGN_SYSTEM.md §4.1). Signed-in Production recheck PENDING — operator-held credential (standing item). Branch `batch/admin-ds-05-06` retired. **Post-batch standing:** `S-04` (Session Core Contract Adoption) promoted but NOT started — recommended as its own lifecycle; `ADMIN-THEME-SWITCH-01` DEFERRED; `ADMIN-IMPERSONATION-01` DEFERRED/NOT AUTHORIZED |
+| `EXERCISE-CATALOG-DISAMBIGUATION-01` — resolve the seed-catalog alias collision | **PROPOSED / NOT AUTHORIZED — ABSORBED into MG-08 (2026-09-01)** | The alias collision is a symptom of the seed catalog's lack of canonical identity. The rebuilt Movement Graph (MG-08: catalog validation + legacy seed reconciliation) resolves it structurally. The original proposal is preserved here for traceability. The `Side-Lying Leg Lift` ambiguity remains unresolved until MG-08 provides sufficient canonical context. |
+| `MOBILE-READINESS-01` — mobile-lock-in / web-coupling architecture audit | **EXECUTED 2026-09-01** — guardrails RATIFIED / BINDING via ADR-0005 | Complete. Report: [`architecture/MOBILE-READINESS-01-REPORT.md`](architecture/MOBILE-READINESS-01-REPORT.md); guardrails: [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md) |
+| Batch 1 (ADMIN-DS-01…04) | **DELIVERED / CLOSED (2026-09-01)** — PR #15 merged `4de75ae` | Complete. Branch retired. |
+| Batch 2 (ADMIN-DS-05 + ADMIN-DS-06) | **DELIVERED / CLOSED (2026-09-01)** — PR #16 merged `c6a4e59` | Complete. Typography contract RATIFIED. Branch retired. |
+| `ADMIN-THEME-SWITCH-01` | **DELIVERED / CLOSED (2026-09-01)** — PR #18 merged `9ac8ec69c686` | Complete. Light+Dark × EN+FA production acceptance. Branch retired. |
 
 These proposals do not alter, delete, or supersede any existing approved,
-closed, or registered item above. Existing deferred items (e.g.
-`ADMIN-AUTH-PASSKEY-01`, `ADMIN-IMPERSONATION-01`,
-S02-E/S-05/S-06, Workout V2) keep their status. `ADMIN-THEME-SWITCH-01` in
-particular was DELIVERED / CLOSED by its own lifecycle (PR #18). `ADMIN-DS-05` (REQUIRED
-remediation) and `ADMIN-DS-06` were **DELIVERED / CLOSED** in Batch 2
-(2026-09-01, PR #16). `S-04` is promoted in the approved queue above (NOT
-started). Mobile-readiness guardrails are RATIFIED (ADR-0005); the shared
-typography contract is RATIFIED (DESIGN_SYSTEM.md §4.1). Current state =
-awaiting batch-start authorization for the next lifecycle (S-04 is the
-standing high-priority candidate).
+closed, or registered item above.
 
 ## Promotion rule
 
@@ -393,3 +961,11 @@ scope, dependencies, task profile, branch, Production classification, and
 acceptance. Decision Persistence in
 [`governance/DOCUMENTATION-GOVERNANCE.md`](governance/DOCUMENTATION-GOVERNANCE.md)
 applies before workflow continuation.
+
+## Execution freeze
+
+**AHF REMAINS EXECUTION-FROZEN.** This recomposition does NOT begin or
+authorize any task in the Mission Queue. The queue is advisory until the
+Owner explicitly authorizes execution of specific items (individually or as
+a batch). Strategy persistence and backlog design are allowed; feature
+execution is not.
