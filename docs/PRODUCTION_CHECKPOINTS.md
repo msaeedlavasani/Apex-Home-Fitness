@@ -10,7 +10,21 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > **Before starting a dependent development task, read `RELEASE_POLICY.md`
 > and this ledger first.**
 >
-> **CURRENT VERIFIED PRODUCTION CHECKPOINT: ADMIN-THEME-SWITCH-01**
+> **CURRENT VERIFIED PRODUCTION CHECKPOINT: STABILIZATION-S06-S05**
+
+---
+
+## STABILIZATION-S06-S05
+
+- **Status:** PASS (deployment + verified acceptance; signed-in Production recheck PENDING — standing credential-holder item)
+- **Purpose:** STABILIZATION BATCH S06+S05 — S-06 Exercise Library / Catalog Role (docs-only decision: canonical = `src/lib/exercise/catalog.ts` + contracts, DB owns persisted ids; library page = sample/demo presentation layer) + S-05 Snapshot Versioning (additive `snapshotVersion` format field on `WorkoutStateRecord`, distinct from the `version` write counter; new records stamped v1; legacy rows read as 0; unknown-newer = additive-read + refuse-overwrite; merge preserves max format version) + TD-01/TD-02 rtl-layout spec reconciliation. `UI_CHANGED=NO`, `DB_CHANGED=NO`.
+- **Source:** `4ada1dae2c3ee11ac208f6908cb3fab438842eb1` (authoritative GitHub `main` HEAD; integration via PR #19; branch `batch/stabilization-s06-s05` retired)
+- **Image:** `apex-home-fit:release-4ada1dae2c3e` (ID `sha256:00c4807321a631d76daa20d67fed00ca623e9b3270c723f6404ca236336c1f85`)
+- **DB_STATE:** `db_changed=false` (gateway-verified); no schema change; rollback snapshot `compose.yml.rollback-stabilization-s06-s05` (root-only)
+- **ACCEPTANCE:** Main CI PASS on `4ada1da` (run `33501999153`); branch CI PASS (build + e2e, run `33501323054`); gateway release `stabilization-s06-s05` phase `normal` health PASS, secret boundary `PROTECTED`; local validation on the exact release code — typecheck PASS, eslint 0 errors, unit 534/534 (incl. 10 new snapshot-versioning tests), production build PASS, real-browser E2E 35/35 (rtl-layout incl. TD-01/TD-02, workout-route 5/5, main-flows, admin regression); Production real-browser acceptance 12/12 PASS (public regression, workout route auth boundary + locale, admin theme Light+Dark × EN+FA persistence, zero fatal console errors)
+- **MEMBER-LEVEL:** S-06 docs commit `70f5ea6` (decision + GATE C approval + carried POST-S04 docs); S-05 code commit `f37006c`; tests commit `150f000`
+- **OPEN ITEM:** signed-in Production acceptance recheck requires the operator-held admin credential (standing item; unchanged)
+- **FINAL_STATUS:** PASS / CLOSED (signed-in Production recheck outstanding; credential-holder action)
 
 ---
 

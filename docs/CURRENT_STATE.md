@@ -6,23 +6,23 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-THEME-SWITCH-01 (CLOSED; PRODUCTION_PASS)
-CURRENT_PRODUCTION_SOURCE:             9ac8ec69c686fb3beafa89968cbf48ed79e6985a
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-9ac8ec69c686
-CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:1ce7346f…)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: STABILIZATION-S06-S05 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             4ada1dae2c3ee11ac208f6908cb3fab438842eb1
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-4ada1dae2c3e
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:00c48073…)
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
-CURRENT_MAINLINE_BASELINE_COMMIT:       9ac8ec69c686fb3beafa89968cbf48ed79e6985a (PR #18 integration)
+CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         N/A (none)
-PREVIOUS_COMPLETED_TASK:               ADMIN-THEME-SWITCH-01 (DELIVERED/CLOSED 2026-09-01; PR #18 + gateway release 9ac8ec69c686)
-PREVIOUS_COMPLETED_BRANCH:             batch/admin-ds-05-06 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE (S-04 promoted but not started; batch authorization pending)
+PREVIOUS_COMPLETED_TASK:               STABILIZATION BATCH S06+S05 (DELIVERED/CLOSED 2026-09-01; PR #19 + gateway release 4ada1dae2c3e)
+PREVIOUS_COMPLETED_BRANCH:             batch/stabilization-s06-s05 (RETIRED)
+NEXT_AUTHORIZED_TASK:                  NONE (S02-E Exercise Identity Backfill = next isolated Production-DB lifecycle; authorization pending)
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-09-01 (ADMIN-DS-BATCH-2 delivered via gateway; typography contract ratified)
+LAST_UPDATED:                          2026-09-01 (STABILIZATION BATCH S06+S05 delivered via gateway)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,25 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **STABILIZATION BATCH S06+S05 = DELIVERED/CLOSED (2026-09-01).** Second
+  post-S-04 architecture lifecycle completed: PR #19 → merged `4ada1da`
+  (Main CI run `33501999153` PASS) → Production gateway release
+  `stabilization-s06-s05` → image `apex-home-fit:release-4ada1dae2c3e` (ID
+  `sha256:00c48073…`), `db_changed=false`, rollback
+  `compose.yml.rollback-stabilization-s06-s05`, secret boundary `PROTECTED`.
+  S-06 Exercise Library / Catalog Role DECIDED (docs-only: canonical =
+  `src/lib/exercise/catalog.ts` + contracts; library page = demo/sample
+  presentation) — decision record `architecture/S06-CATALOG-ROLE.md`. S-05
+  Snapshot Versioning shipped (additive `snapshotVersion` format field on
+  `WorkoutStateRecord` distinct from the `version` write counter; new records
+  stamped v1; legacy rows read as 0; unknown-newer = additive-read +
+  refuse-overwrite; merge preserves max format version; GATE C APPROVED).
+  TD-01/TD-02 `rtl-layout.spec.ts` stale expectations FIXED. Local validation
+  on the exact release code: typecheck PASS, eslint 0 errors, unit 534/534,
+  build PASS, real-browser E2E 35/35; Production real-browser acceptance
+  12/12 PASS. Signed-in Production recheck PENDING (operator-held credential;
+  standing item). Branch `batch/stabilization-s06-s05` retired.
 
 - **POST-MOBILE-READINESS-RATIONALIZATION-01 (docs-only, 2026-09-01).**
   The six mobile-readiness guardrails were **RATIFIED / BINDING**
