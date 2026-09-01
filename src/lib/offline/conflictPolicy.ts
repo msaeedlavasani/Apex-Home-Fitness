@@ -43,13 +43,16 @@
  * ----------------------
  * Every new field used here (`version` on the record, missing `isRunning` /
  * `phaseElapsedSeconds` on pre-v2 rows) is optional and treated as a safe
- * default, so legacy records merge without special-casing.
+ * default, so legacy records merge without special-casing. The snapshot
+ * FORMAT version (`snapshotVersion`, S-05) is additive: merges preserve the
+ * highest format version and never downgrade a record.
  *
  * All functions are pure and framework-agnostic — unit-testable in Node
  * without React, IndexedDB or a DOM.
  */
 
 import type { OfflineExercise, WorkoutStateRecord } from './db';
+import { snapshotVersionOf } from './snapshotVersion';
 
 // ---------------------------------------------------------------------------
 // Policy constants (documented contract — see header)
@@ -204,10 +207,21 @@ export function mergeWorkoutStates(
   const version = Math.max(versionOf(a), versionOf(b));
 
   const canFieldMerge = sameExercisePlan(a.exercises, b.exercises) && sameWorkoutSession(a, b);
+  // The snapshot FORMAT version (S-05) is additive and never downgraded: the
+  // merged record keeps the highest format version of the two inputs. When
+  // NEITHER input carries the field (legacy×legacy), the key is omitted
+  // entirely — the merged record stays byte-identical to the pre-S-05 merge,
+  // so the canonical-payload tie-break is unchanged for v0 rows.
+  const snapshotVersion =
+    a.snapshotVersion == null && b.snapshotVersion == null
+      ? undefined
+      : Math.max(a.snapshotVersion ?? 0, b.snapshotVersion ?? 0);
+  const snapshotVersionField =
+    snapshotVersion === undefined ? {} : {snapshotVersion};
   if (!canFieldMerge) {
     // Distinct sessions or structurally different plans: the newer record
     // supersedes the older one wholesale — no progress union.
-    return { ...winner, updatedAt, version };
+    return {...winner, updatedAt, version, ...snapshotVersionField};
   }
 
   return {
@@ -221,6 +235,7 @@ export function mergeWorkoutStates(
         : null,
     updatedAt,
     version,
+    ...snapshotVersionField,
   };
 }
 

@@ -71,7 +71,10 @@ test.describe('RTL — Persian pages', () => {
     await expect(
       page.getByRole('heading', {name: 'برنامه تمرینی خودت رو بساز'}),
     ).toBeVisible();
-    await expect(page.getByRole('radiogroup')).toBeVisible();
+    // TD-02: the page legitimately contains TWO radiogroups (the language
+    // switcher + the quiz step options), so scope to the quiz step's own
+    // options container instead of an unscoped role lookup.
+    await expect(page.locator('.quiz-step__options')).toBeVisible();
     await expect(page.getByRole('button', {name: 'بعدی', exact: true})).toBeVisible();
   });
 });
@@ -121,8 +124,9 @@ test.describe('RTL — chrome markup contract', () => {
       .getByRole('complementary')
       .getByRole('navigation', {name: 'Main navigation'});
 
-    // Same order in LTR: Home, History, Analytics, Profile.
-    const enLabels = ['Home', 'History', 'Analytics', 'Profile'];
+    // Same order in LTR: Home, History, Analytics, Training preferences,
+    // Profile (TD-01: APP_NAV has five items; `preferences` sits at index 3).
+    const enLabels = ['Home', 'History', 'Analytics', 'Training preferences', 'Profile'];
     for (let i = 0; i < enLabels.length; i++) {
       await expect(nav.getByRole('link').nth(i)).toHaveText(enLabels[i]);
     }
@@ -135,7 +139,7 @@ test.describe('RTL — chrome markup contract', () => {
     const faNav = page
       .getByRole('complementary')
       .getByRole('navigation', {name: 'ناوبری اصلی'});
-    const faLabels = ['خانه', 'تاریخچه', 'آمار', 'پروفایل'];
+    const faLabels = ['خانه', 'تاریخچه', 'آمار', 'تنظیمات تمرین', 'پروفایل'];
     for (let i = 0; i < faLabels.length; i++) {
       await expect(faNav.getByRole('link').nth(i)).toHaveText(faLabels[i]);
     }

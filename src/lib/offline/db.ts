@@ -40,6 +40,7 @@
 
 import Dexie, { type EntityTable } from 'dexie';
 import { mergeWorkoutStates } from './conflictPolicy';
+import { isUnknownNewerSnapshot } from './snapshotVersion';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,6 +126,15 @@ export interface WorkoutStateRecord {
    * before this field existed read as 0.
    */
   version?: number;
+  /**
+   * SNAPSHOT FORMAT version (S-05) — additive evolution only; DISTINCT from
+   * the `version` write counter above. Legacy rows without the field read
+   * as 0; current writers stamp `SNAPSHOT_VERSION`. Unknown-newer records
+   * (> SNAPSHOT_VERSION) are readable for known fields but are never
+   * overwritten by this client (never destructively rewritten). See
+   * `src/lib/offline/snapshotVersion.ts`.
+   */
+  snapshotVersion?: number;
 }
 
 /**
@@ -272,6 +282,12 @@ export async function saveWorkoutState(
   let saved: WorkoutStateRecord | undefined;
   await offlineDb.transaction('rw', offlineDb.workoutStates, async () => {
     const existing = await offlineDb.workoutStates.get(key);
+    if (existing && isUnknownNewerSnapshot(existing)) {
+      // S-05 fail-closed: a snapshot written by a NEWER client must never be
+      // overwritten/downgraded by this one (additive-read, refuse-overwrite).
+      saved = existing;
+      return;
+    }
     const updatedAt = Date.now();
     const incoming: WorkoutStateRecord = {
       ...state,
