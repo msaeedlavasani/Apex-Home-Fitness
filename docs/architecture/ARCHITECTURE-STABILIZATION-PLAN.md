@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S-04 PROMOTED TO TASKS (2026-09-01); S02-E AND S-05..S-06 REQUIRE OWNER PROMOTION TO TASKS`
+`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S-04 DELIVERED/CLOSED (2026-09-01, PR #17 → 8e06d70); REMAINING BACKLOG RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01: S-06 → S-05 (GATE C) → S02-E; S-06+S-05 batchable, S02-E own lifecycle); S02-E, S-05, S-06 STILL REQUIRE OWNER PROMOTION TO TASKS`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. Historical planning sections are
@@ -10,8 +10,12 @@ canonical executable backlog on 2026-09-01 (owner checkpoint satisfied via
 POST-MOBILE-READINESS-RATIONALIZATION-01, recorded in `docs/TASKS.md` and
 ADR-0005) as the high-priority mobile-readiness architecture debt** — its
 scope is refined below (contract adoption; the S03 extraction itself is
-closed). S02-E and S-05..S-06 remain planned/not started. This plan does not
-authorize execution; each remaining phase requires its named owner
+closed). **S-04 was DELIVERED/CLOSED 2026-09-01 (PR #17 → `8e06d70`)**. S02-E
+and S-05..S-06 remain planned/not started, **re-ranked 2026-09-01 by
+`POST-S04-PRIORITY-01`** (execution order S-06 → S-05 (GATE C) → S02-E;
+S-06+S-05 batchable in one lifecycle; S02-E requires its own lifecycle —
+see [`POST-S04-PRIORITY-01.md`](./POST-S04-PRIORITY-01.md)). This plan does
+not authorize execution; each remaining phase requires its named owner
 checkpoint and promotion to `docs/TASKS.md`.
 
 - Input: `docs/architecture/MODULARITY-AUDIT.md` (audit record) and
@@ -306,6 +310,10 @@ batch-start authorization is still required before execution.`
 - **Objective**: introduce explicit version discipline for persisted workout
   snapshots (`workoutStates` in `src/lib/offline/db.ts`) so future engine
   changes evolve safely. **GATE C before modifying the snapshot structure.**
+- **GATE C: APPROVED 2026-09-01** — owner authorization via the
+  STABILIZATION BATCH S06+S05 delta (executed in that batch; additive
+  `snapshotVersion` format field, write-counter `version` semantics
+  preserved, unknown-newer = additive-read + refuse-overwrite).
 - **Why now**: the session serialization contract (S-03/S-04) will evolve for
   V2; pre-stabilization snapshots must keep hydrating (R-10).
 - **Files/domains expected to change**: snapshot record contract + hydration
@@ -330,6 +338,11 @@ batch-start authorization is still required before execution.`
 - **Objective**: clarify the architectural role of the current sample
   library/catalog (`ExerciseLibraryPage.tsx` hardcoded demo streams); decide
   what becomes canonical vs remains sample/demo.
+- **DECIDED 2026-09-01** (docs-only, in STABILIZATION BATCH S06+S05):
+  canonical = `src/lib/exercise/catalog.ts` (+ contracts; DB owns persisted
+  ids per GATE A GA-03); library page = SAMPLE/demo presentation layer
+  (demo media per `ASSETS.md`); no new content/media enters via the page's
+  hardcoded array — record: [`S06-CATALOG-ROLE.md`](./S06-CATALOG-ROLE.md).
 - **Why now**: R-09; the answer feeds the S-02 design and prevents building the
   media library on the wrong foundation.
 - **Files/domains expected to change**: documentation only (decision record);
