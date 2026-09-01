@@ -11,28 +11,28 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {runGoldenTrace, lastState, type GoldenTraceStep} from './helpers/goldenTrace';
-import type {WorkoutExercise} from '../src/components/workout/useWorkoutEngine';
+import type {SessionExercise} from '../src/lib/workout/sessionContracts';
 import type {ExerciseId, ExerciseSlug} from '../src/lib/exercise';
 
-const PLAN: WorkoutExercise[] = [
+const PLAN: SessionExercise[] = [
   {id: 'ex-1', name: 'Squats', sets: 3, reps: 12, durationSeconds: 30, restSeconds: 45},
   {id: 'ex-2', name: 'Plank', sets: 2, reps: null, durationSeconds: 60, restSeconds: 30},
   {id: 'ex-3', name: 'Burpees', sets: 1, reps: 10, durationSeconds: 20, restSeconds: null},
 ];
 
 // Two 1-set exercises so a completed set enters RESTING instead of finishing.
-const REST_PLAN: WorkoutExercise[] = [
+const REST_PLAN: SessionExercise[] = [
   {id: 'a', name: 'A', sets: 1, reps: null, durationSeconds: 30, restSeconds: 5},
   {id: 'b', name: 'B', sets: 1, reps: null, durationSeconds: 30, restSeconds: null},
 ];
 
 // Open-ended set (no duration): counts up, no auto-advance.
-const OPEN_PLAN: WorkoutExercise[] = [
+const OPEN_PLAN: SessionExercise[] = [
   {id: 'o', name: 'Open', sets: 1, reps: null, durationSeconds: null, restSeconds: null},
 ];
 
 // Two DISTINCT workout steps sharing the same canonical exerciseId (S02-D2).
-const IDENTITY_PLAN: WorkoutExercise[] = [
+const IDENTITY_PLAN: SessionExercise[] = [
   {id: 'step-A', name: 'Dead Bug', sets: 1, reps: null, durationSeconds: 30, restSeconds: null, exerciseId: 'clx_deadbug_1' as ExerciseId, slug: 'dead-bug' as ExerciseSlug},
   {id: 'step-B', name: 'Dead Bug', sets: 1, reps: null, durationSeconds: 30, restSeconds: null, exerciseId: 'clx_deadbug_1' as ExerciseId, slug: 'dead-bug' as ExerciseSlug},
 ];

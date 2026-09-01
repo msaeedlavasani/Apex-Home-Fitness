@@ -16,14 +16,14 @@ import {
 } from '../src/lib/offline/db';
 import { classifySyncError, toSupabaseRow } from '../src/services/syncService';
 import { hydrateFromRecord, matchesPlan } from '../src/lib/offline/workoutPersistence';
-import type { WorkoutExercise } from '../src/components/workout/useWorkoutEngine';
+import type { SessionExercise } from '../src/lib/workout/sessionContracts';
 import type { ExerciseLogRecord } from '../src/lib/offline/db';
 
 // ---------------------------------------------------------------------------
 // Factories
 // ---------------------------------------------------------------------------
 
-const PLAN: WorkoutExercise[] = [
+const PLAN: SessionExercise[] = [
   { id: 'ex-1', name: 'Squats', sets: 3, reps: 12, durationSeconds: 30, restSeconds: 45 },
   { id: 'ex-2', name: 'Plank', sets: 2, reps: null, durationSeconds: 60, restSeconds: 30 },
 ];

@@ -1,12 +1,20 @@
 /**
- * Session contracts (R6 — Session Contracts, reconstructed from the S03-A
- * freeze in 871bcfa).
+ * Session contracts — THE canonical, stable Session State contract (S-04).
  *
  * Framework-independent contracts describing the CURRENT Workout Session
- * Engine semantics (`useWorkoutEngine`). They mirror the engine's existing
- * public types exactly — READY/EXERCISING/RESTING/COMPLETED phases, the
- * 10-field session state, the current commands and the current
- * callbacks-as-effects. No new extensibility abstractions, no V2 semantics.
+ * Engine semantics: READY/EXERCISING/RESTING/COMPLETED phases, the 10-field
+ * session state, the current commands and the current callbacks-as-effects.
+ * No new extensibility abstractions, no V2 semantics.
+ *
+ * S-04 STATUS (2026-09-01): this module is the SINGLE canonical boundary for
+ * session plan/state/summary/hydrate/phase types. Consumers — the React
+ * adapter (`useWorkoutEngine` re-exports these types under its legacy
+ * `Workout*` names for compatibility), the persistence bridge
+ * (`src/lib/offline/workoutPersistence.ts`), the workout page, and tests —
+ * import from here. No consumer imports session types from the hook module.
+ * `src/lib/workout/sessionCore.ts` (the pure state machine) consumes these
+ * same state/command/effect types; its own plan-input port accepts a
+ * structurally compatible wider shape (un-branded identity strings).
  *
  * CANONICAL EXERCISE IDENTITY: the plan-item contract carries the canonical
  * identity established by S02/R4/R5 — `exerciseId` (Prisma `Exercise.id`) and
@@ -16,10 +24,9 @@
  * exercise identity.
  *
  * PURE: no React, no Prisma client, no browser APIs, no services, no side
- * effects — types only (type-only imports are erased at compile time). The
- * engine keeps its own runtime types for now; the session core (R7) and later
- * adapter/persistence layers will adopt these canonical types. Do not import
- * this module from React components until the extraction wiring exists.
+ * effects — types only (type-only imports are erased at compile time).
+ * Runtime plan helpers live in `./plan` (`clampSets`) — kept out of this
+ * module so the contract itself stays types-only.
  */
 
 import type {ExerciseId, ExerciseSlug} from '../exercise';

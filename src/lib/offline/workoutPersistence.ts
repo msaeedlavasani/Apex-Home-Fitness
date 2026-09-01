@@ -1,19 +1,25 @@
 /**
  * Workout snapshot persistence mapping.
  *
- * Bridges `useWorkoutEngine`'s resumable `WorkoutEngineState` and the
- * IndexedDB `workoutStates` records in `./db`:
+ * Bridges the canonical Session State contract and the IndexedDB
+ * `workoutStates` records in `./db`:
  *
- *   - `buildWorkoutStateRecord()`  — engine state → record (persist on
+ *   - `buildWorkoutStateRecord()`  — session state → record (persist on
  *     `onStateChange`),
  *   - `matchesPlan()` / `hydrateFromRecord()` — validate a saved record
  *     against the currently loaded plan and produce the `hydrate()` input.
+ *
+ * S-04: types come from the canonical `sessionContracts` module (the hook's
+ * `Workout*` aliases ARE these types — structurally identical), and the pure
+ * plan helper from `../workout/plan`. This module never imports from the
+ * React hook, keeping the persistence layer UI-framework-free.
  *
  * All functions are pure and framework-agnostic so they can be unit-tested
  * in Node without React, IndexedDB or a DOM.
  */
 
-import { clampSets, type WorkoutEngineHydrateInput, type WorkoutEngineState, type WorkoutExercise } from '../../components/workout/useWorkoutEngine';
+import {clampSets} from '../workout/plan';
+import type {SessionExercise, SessionHydrateInput, SessionState} from '../workout/sessionContracts';
 import type { OfflineExercise, WorkoutStateRecord } from './db';
 
 /**
@@ -23,8 +29,8 @@ import type { OfflineExercise, WorkoutStateRecord } from './db';
  * COMPLETED (RESTING-after-last-set nuance is cosmetic and skipped here).
  */
 export function toOfflineExercises(
-  exercises: WorkoutExercise[],
-  position: Pick<WorkoutEngineState, 'currentExerciseIndex' | 'phase'>
+  exercises: SessionExercise[],
+  position: Pick<SessionState, 'currentExerciseIndex' | 'phase'>
 ): OfflineExercise[] {
   return exercises.map((ex, i) => ({
     id: ex.id,
@@ -47,8 +53,8 @@ export function toOfflineExercises(
  * db layer.
  */
 export function buildWorkoutStateRecord(
-  exercises: WorkoutExercise[],
-  state: WorkoutEngineState
+  exercises: SessionExercise[],
+  state: SessionState
 ): Omit<WorkoutStateRecord, 'workoutKey' | 'userId' | 'dateKey' | 'updatedAt'> {
   return {
     programId: null,
@@ -73,7 +79,7 @@ export function buildWorkoutStateRecord(
  * snapshot for a different/changed plan would corrupt the session, so the
  * player refuses to hydrate it.
  */
-export function matchesPlan(record: WorkoutStateRecord, exercises: WorkoutExercise[]): boolean {
+export function matchesPlan(record: WorkoutStateRecord, exercises: SessionExercise[]): boolean {
   if (record.exercises.length !== exercises.length) return false;
   for (let i = 0; i < exercises.length; i++) {
     const saved = record.exercises[i];
@@ -85,7 +91,8 @@ export function matchesPlan(record: WorkoutStateRecord, exercises: WorkoutExerci
 
 /**
  * Validates a saved workout snapshot against the currently loaded plan and
- * produces the input for `useWorkoutEngine.hydrate()`.
+ * produces the input for the session core's HYDRATE command (consumed by
+ * `useWorkoutEngine.hydrate()`).
  *
  * Returns `null` (caller should start fresh) when:
  *   - the record was never started (`phase === 'READY'`), or
@@ -97,8 +104,8 @@ export function matchesPlan(record: WorkoutStateRecord, exercises: WorkoutExerci
  */
 export function hydrateFromRecord(
   record: WorkoutStateRecord,
-  exercises: WorkoutExercise[]
-): WorkoutEngineHydrateInput | null {
+  exercises: SessionExercise[]
+): SessionHydrateInput | null {
   if (record.phase === 'READY') return null;
   if (!matchesPlan(record, exercises)) return null;
   return {

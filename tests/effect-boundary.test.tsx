@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
-import TestRenderer, {act} from 'react-test-renderer';
-import {useWorkoutEngine, type UseWorkoutEngineResult, type WorkoutExercise} from '../src/components/workout/useWorkoutEngine';
-
-const PLAN: WorkoutExercise[] = [{id: 'one', name: 'One', sets: 1, durationSeconds: null, restSeconds: null}];
-
-function Harness({plan, onPhaseChange, onStateChange, capture}: {plan: WorkoutExercise[]; onPhaseChange?: (phase: string) => void; onStateChange?: () => void; capture: (engine: UseWorkoutEngineResult) => void}) {
+import TestRenderer, {act} from 'react-test-renderer';import {useWorkoutEngine, type UseWorkoutEngineResult} from '../src/components/workout/useWorkoutEngine';
+import type {SessionExercise} from '../src/lib/workout/sessionContracts';
+const PLAN: SessionExercise[] = [{id: 'one', name: 'One', sets: 1, durationSeconds: null, restSeconds: null}];
+function Harness({plan, onPhaseChange, onStateChange, capture}: {plan: SessionExercise[]; onPhaseChange?: (phase: string) => void; onStateChange?: () => void; capture: (engine: UseWorkoutEngineResult) => void}) {
   const engine = useWorkoutEngine(plan, {onPhaseChange, onStateChange});
   capture(engine);
   return null;

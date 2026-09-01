@@ -3,13 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucide-react';
-import {
-  useWorkoutEngine,
-  type WorkoutEngineState,
-  type WorkoutExercise,
-  type WorkoutPhase,
-  type WorkoutSummary,
-} from './useWorkoutEngine';
+import {useWorkoutEngine} from './useWorkoutEngine';
+import type {SessionExercise, SessionPhase, SessionState, SessionSummary} from '@/lib/workout/sessionContracts';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -71,7 +66,7 @@ const BUTTON_GHOST =
   'text-[color:var(--apex-text-secondary)] hover:bg-[color:var(--apex-fill)] hover:text-[color:var(--apex-text)]';
 
 /** Phase → Apex workout-state tone (DESIGN_SYSTEM.md §5). */
-const PHASE_TONE: Record<WorkoutPhase, keyof typeof WORKOUT_TONES> = {
+const PHASE_TONE: Record<SessionPhase, keyof typeof WORKOUT_TONES> = {
   READY: 'neutral',
   EXERCISING: 'work',
   RESTING: 'rest',
@@ -80,7 +75,7 @@ const PHASE_TONE: Record<WorkoutPhase, keyof typeof WORKOUT_TONES> = {
 
 export interface WorkoutPlayerProps {
   /** The workout plan to play. */
-  exercises: WorkoutExercise[];
+  exercises: SessionExercise[];
   /**
    * When provided, the player persists and restores "today's workout"
    * snapshots to IndexedDB for this user (pause/resume/skip/complete and
@@ -100,7 +95,7 @@ export interface WorkoutPlayerProps {
   /** Fired once when the user starts the workout. */
   onWorkoutStart?: () => void;
   /** Fired once with a summary when the whole workout is finished. */
-  onWorkoutComplete?: (summary: WorkoutSummary) => void;
+  onWorkoutComplete?: (summary: SessionSummary) => void;
   /** Extra classes applied to the root element. */
   className?: string;
 }
@@ -129,7 +124,7 @@ export function WorkoutPlayer({
   // ---- Audio + haptics callbacks -----------------------------------------
 
   const handlePhaseChange = useCallback(
-    (next: WorkoutPhase) => {
+    (next: SessionPhase) => {
       if (next === 'EXERCISING') {
         // READY→EXERCISING (start), RESTING→EXERCISING (next set/rest end),
         // COMPLETED→EXERCISING (restart) — work begins.
@@ -163,7 +158,7 @@ export function WorkoutPlayer({
   });
 
   /** Persist every engine transition as today's workout snapshot. */
-  const handleStateChange = useCallback((engineState: WorkoutEngineState) => {
+  const handleStateChange = useCallback((engineState: SessionState) => {
     const uid = userIdRef.current;
     if (!uid) return;
     const record = buildWorkoutStateRecord(exercisesRef.current, engineState);
