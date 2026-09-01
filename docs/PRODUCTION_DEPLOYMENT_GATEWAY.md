@@ -32,6 +32,11 @@ owned by `root:apexdeploy`. It never invokes Docker or reads protected files.
 - migrations: checked-in `./node_modules/.bin/prisma`, verified as lockfile-
   pinned Prisma `6.19.3`; dynamic `npx`/npm resolution is forbidden;
 - V1 requests require `DB_CHANGED=false`; unknown fields and actions fail.
+- **v2 (GOVERNED-PROD-DB-CAPABILITY-01, 2026-09-01):** one additional bounded
+action `db-operation` (read-only dry-run evidence + dry-run-gated
+`DB_CHANGED=YES` backfill/migration execution). The `release` contract is
+unchanged (`DB_CHANGED=false` still required). See
+`docs/architecture/GOVERNED-DB-MUTATION-01.md`.
 
 The root service reads the mode-`0600`, root-owned `.env` internally. It
 returns only status/identity/invariant evidence, never values. `apexadmin`
@@ -70,3 +75,45 @@ remain until separate cleanup authorization.
 
 Final acceptance is not met until both deployments pass, rollback is verified,
 and no Owner command occurs anywhere in the release lifecycle.
+
+## db-operation (v2) — governed Production DB backfill/migration
+
+Request shape (schema_version 1):
+
+```json
+{
+  "action": "db-operation",
+  "schema_version": 1,
+  "operation_id": "s02e-exercise-identity-backfill | prisma-migrate-deploy",
+  "mode": "dry-run | apply | rehearsal",
+  "source_sha": "<40-hex authoritative GitHub main SHA>",
+  "dry_run_evidence_sha": "<64-hex, REQUIRED for mode=apply>"
+}
+```
+
+Contract (bounded, fail-closed, mirrors the release security model):
+
+- `operation_id` must be in the daemon allowlist; the daemon downloads the
+  authoritative archive at `source_sha` (must equal GitHub `main` HEAD) and
+  executes ONLY the checked-in allowlisted runner — no arbitrary SQL, shell,
+  Docker, Compose, or migration commands are accepted.
+- `mode=dry-run` mounts the Production volume **read-only** and stores the
+  report as root-only dry-run evidence (`/var/lib/apex-deploy-gateway/
+  db-op-dryrun-<opid>-<sha12>.json`), returning `dry_run_evidence_sha`.
+- `mode=apply` is refused without a matching `dry_run_evidence_sha`;
+  before mutating it quiesces `app`, copies the DB
+  (`gateway-backup-<opid>-<sha12>.db`, chown 100:101), records before/after
+  SHA-256, restores the backup on failure, restarts `app`, and returns the
+  operation's verification report. Operations are idempotent.
+- `mode=rehearsal` runs the FULL apply pipeline against a byte-identical
+  clone of `app.db` inside the volume; the real DB hash must be unchanged;
+  the clone is mutated, verified, then deleted. Used to prove the apply path
+  without a real mutation.
+- Exclusive: `db-operation` and `release` share a crash-resilient
+  `db-op-active` lock; both refuse to start while it is held by a live
+  process.
+- No secrets are ever returned (sanitized JSON only; `.env` stays root-only).
+
+Upgrade/install: `ops/deploy-gateway/install-gateway.sh` (root, host-guarded,
+idempotent; runs `py_compile` + `--self-test`, restarts the service, verifies
+`version: 2`).

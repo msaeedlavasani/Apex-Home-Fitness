@@ -13,10 +13,10 @@
 | Active task | `NONE` |
 | Profile | `N/A` |
 | Branch | `N/A` |
-| State | `ADMIN-DS-BATCH-2 CLOSED` (2026-09-01; Production PASS via gateway release `c6a4e59`) |
+| State | `GOVERNED-PROD-DB-CAPABILITY-01 DELIVERED/CLOSED` (2026-09-01; gateway v2 `db-operation` proven in Production without mutation) |
 | Production-bound | `YES` (completed) |
-| Next authorized task | `NONE` (STABILIZATION BATCH S06+S05 DELIVERED/CLOSED 2026-09-01 — S-06 decided, S-05 shipped, TD-01/TD-02 fixed; next candidate: S02-E Exercise Identity Backfill as its own isolated Production-DB lifecycle) |
-| Pending owner review | Authorize S02-E (backfill) lifecycle; ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
+| Next authorized task | `S02-E` — capability gap RESOLVED by `GOVERNED-PROD-DB-CAPABILITY-01` (gateway v2 `db-operation`: read-only dry-run evidence + dry-run-gated apply/rehearsal, proven in Production WITHOUT mutation). S02-E dry-run evidence against the real Production DB is already on file; the apply remains NOT executed and requires explicit re-authorization with its `dry_run_evidence_sha` |
+| Pending owner review | Authorize the S02-E apply lifecycle (dry-run evidence already captured); ADMIN-IMPERSONATION-01 deferred/not authorized; MOBILE-READINESS guardrails + typography contract RATIFIED (ADR-0005 / DESIGN_SYSTEM.md §4.1) |
 
 ## Approved queue
 
@@ -137,7 +137,7 @@ preserve them until the owner separately authorizes bounded execution:
 | Mobile-readiness architecture guardrails (6 rules: UI-framework-free domain logic, portable persistence contracts, mobile-posture declaration, S03 session-core boundary, platform-neutral health contract, no-stack-without-spike) | **RATIFIED / BINDING 2026-09-01** — owner ratification via POST-MOBILE-READINESS-RATIONALIZATION-01; recorded as `ADR-0005`; mobile implementation triggers, HealthKit/Health Connect scope, and the technology-selection spike DEFERRED until documented triggers; NO mobile stack selected | [`adr/0005-mobile-readiness-guardrails.md`](adr/0005-mobile-readiness-guardrails.md), [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) §13 |
 | Shared typography contract (fa → Vazirmatn from the official project, en → Inter; both self-hosted; shared across consumer app and Admin — NO separate Admin font stack; locale determines the primary font; system sans-serif fallbacks preserved) | **RATIFIED / BINDING 2026-09-01** — Owner decision in ADMIN DESIGN SYSTEM BATCH 2; implemented by `ADMIN-DS-05`; recorded in [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1 (contract) + §4.2 (Admin i18n/RTL architecture) | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) §4.1–4.2 |
 | Session Core Contract Adoption — `S-04` Stable Session State Contract | **DELIVERED/CLOSED 2026-09-01** via PR #17 + gateway release `8e06d70` (UI_CHANGED=NO, DB_CHANGED=NO); promoted 2026-09-01 as the high-priority mobile-readiness architecture debt; reconciles the MOBILE-READINESS-01 "session-core extraction" finding onto the S03/S04 lineage — S03 extraction stays closed (pure core exists, hook delegates); execution removed residual consumer coupling (`workoutPersistence.ts`/`samplePlan`/route/player → canonical contracts; new pure `plan.ts`; boundary consumer tests) | [`TASKS.md` `S-04` entry](#s-04--stable-session-state-contract-session-core-contract-adoption--delivered-closed), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
-| S02-E and S-05..S-06 | **RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01)** — S-06 first, S-05 second (GATE C), S02-E last; S-06+S-05 batchable, S02-E NOT batchable. **S-06 DECIDED (docs) + S-05 DELIVERED/CLOSED in STABILIZATION BATCH S06+S05 (2026-09-01, PR #19 → `4ada1da`; GATE C APPROVED); S02-E remains the next isolated Production-DB lifecycle** | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md), [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
+| S02-E and S-05..S-06 | **RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01)** — S-06 first, S-05 second (GATE C), S02-E last; S-06+S-05 batchable, S02-E NOT batchable. **S-06 DECIDED + S-05 DELIVERED/CLOSED (PR #19 → `4ada1da`). S02-E: capability gap RESOLVED 2026-09-01 by `GOVERNED-PROD-DB-CAPABILITY-01` (gateway v2 `db-operation`; real-DB dry-run evidence captured; apply proven via rehearsal, NOT executed); next authorized isolated lifecycle** | [`architecture/POST-S04-PRIORITY-01.md`](architecture/POST-S04-PRIORITY-01.md), [`architecture/S06-CATALOG-ROLE.md`](architecture/S06-CATALOG-ROLE.md), [`architecture/S02E-BACKFILL-PREFLIGHT.md`](architecture/S02E-BACKFILL-PREFLIGHT.md), [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md), [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
 | `rtl-layout.spec.ts` stale expectations (TD-01 nav-order five-item `APP_NAV`; TD-02 quiz radiogroup scope) | **CONFIRMED TEST DEBT 2026-09-01** — reproduced identically on clean `main`; not app regressions; not in CI's e2e gate; **FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01, PR #19 → `4ada1da`)** — full local E2E suite green (35/35 incl. both specs) | [`TEST-DEBT.md`](TEST-DEBT.md) |
 
 ## Approved queue — hardening (closed in this promotion)
@@ -187,6 +187,45 @@ preserve them until the owner separately authorizes bounded execution:
 - **Evidence:** same promotion report as above.
 
 ## Approved queue — promoted 2026-09-01 (not started)
+
+### GOVERNED-PROD-DB-CAPABILITY-01 — DELIVERED / CLOSED 2026-09-01
+
+- **Authorization:** Owner delta `GOVERNED PRODUCTION DB MUTATION CAPABILITY`
+  (2026-09-01) approving Option 1 of the S02-E preflight: extend the existing
+  constrained Production Deployment Gateway with the minimum reusable governed
+  capability for read-only Production DB inspection/dry-run evidence AND
+  explicitly authorized, dry-run-gated DB_CHANGED=YES backfill/migration
+  execution, preserving the security boundary (no arbitrary SQL/shell/Docker/
+  Compose, no secrets, bounded allowlist, fail closed, exclusive DB operation,
+  mandatory pre-mutation backup, dry-run evidence before apply, exact
+  operation identity, idempotency, post-mutation verification, rollback /
+  forward-recovery evidence). S02-E was NOT executed; the S02-E preflight
+  changes were carried into this lifecycle.
+- **Bounded scope:** gateway daemon v2 (`ops/deploy-gateway/apex_deploy_gateway.py`,
+  `GATEWAY_VERSION=2`) adds the single `db-operation` action with a strict
+  allowlist: `s02e-exercise-identity-backfill` (script runner) and
+  `prisma-migrate-deploy` (pinned Prisma migrate status/deploy); modes
+  `dry-run | apply | rehearsal`; `source_sha` must equal authoritative GitHub
+  `main` HEAD; `apply` requires the stored dry-run evidence SHA; crash- resilient
+  exclusive `db-op-active` lock shared with `release`; mandatory pre-mutation
+  backup + before/after hashes + restore-on-failure; rehearsal proves the apply
+  pipeline against a clone with the real DB hash unchanged. No generic DB-admin
+  API; no self-update surface; `release` contract unchanged (DB_CHANGED=false).
+- **Reconciled S02-E preflight changes (preserved):** `scripts/backfill-dry-run.mjs`
+  (local read-only dry-run CLI) refactored onto the shared pure classifier
+  `scripts/gateway-db-ops/lib/classify.mjs`; the gateway operation runner is
+  `scripts/gateway-db-ops/s02e-exercise-identity-backfill.mjs`;
+  `docs/architecture/S02E-BACKFILL-PREFLIGHT.md` amended with the capability
+  status.
+- **Production impact:** gateway infra only — `UI_CHANGED = NO`;
+  `DB_CHANGED = NO` (no app/DB data mutation; S02-E apply NOT executed);
+  Production capability proven WITHOUT any real Production DB mutation
+  (real-DB dry-run evidence + rehearsal + zero-pending migrate apply).
+- **Evidence:** decision record
+  [`architecture/GOVERNED-DB-MUTATION-01.md`](architecture/GOVERNED-DB-MUTATION-01.md);
+  gateway contract `docs/PRODUCTION_DEPLOYMENT_GATEWAY.md` §db-operation;
+  `test:gateway` (11 pure tests + py_compile + daemon `--self-test`) wired into
+  CI; `ops/deploy-gateway/install-gateway.sh` idempotent root install.
 
 ### S-04 — Stable Session State Contract (Session Core Contract Adoption) — DELIVERED / CLOSED 2026-09-01
 

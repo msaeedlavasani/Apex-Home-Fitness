@@ -1,6 +1,6 @@
 # Architecture Stabilization Plan
 
-`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S-04 DELIVERED/CLOSED (2026-09-01, PR #17 → 8e06d70); REMAINING BACKLOG RE-RANKED 2026-09-01 (POST-S04-PRIORITY-01: S-06 → S-05 (GATE C) → S02-E; S-06+S-05 batchable, S02-E own lifecycle); S02-E, S-05, S-06 STILL REQUIRE OWNER PROMOTION TO TASKS`
+`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S-04 DELIVERED/CLOSED (2026-09-01, PR #17 → 8e06d70); S-06 DECIDED + S-05 DELIVERED/CLOSED (2026-09-01, PR #19 → 4ada1da); S02-E AUTHORIZED 2026-09-01 BUT BLOCKED/HUMAN_GATE PRE-MUTATION (gateway lacks read-only Production row access + governed DB_CHANGED=YES execution — see S02E-BACKFILL-PREFLIGHT.md)`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. Historical planning sections are
