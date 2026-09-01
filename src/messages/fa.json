@@ -606,7 +606,14 @@
       "enName": "انگلیسی",
       "faName": "فارسی",
       "switchToEn": "تغییر به انگلیسی",
-      "switchToFa": "تغییر به فارسی"
+      "switchToFa": "تغییر به فارسی",
+      "theme": "پوسته",
+      "themeLight": "روشن",
+      "themeDark": "تیره",
+      "themeSystem": "سیستمی",
+      "switchToLight": "تغییر به پوسته روشن",
+      "switchToDark": "تغییر به پوسته تیره",
+      "switchToSystem": "تغییر به پوسته سیستمی"
     },
     "nav": {
       "overview": "نمای کلی",

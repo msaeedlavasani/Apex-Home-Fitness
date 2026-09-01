@@ -23,6 +23,14 @@ interface ThemeProviderProps {
   defaultTheme?: Theme;
   /** localStorage key used to persist the selection. Defaults to 'theme'. */
   storageKey?: string;
+  /**
+   * Optional cookie name mirrored on every change (path=/, samesite=lax,
+   * 1-year max-age). Lets a server component render the SAME theme state
+   * the client will hydrate — eliminating hydration mismatches and theme
+   * flash on SSR surfaces (used by the admin console; the consumer app
+   * does not opt in).
+   */
+  cookieKey?: string;
 }
 
 interface ThemeContextValue {
@@ -104,6 +112,7 @@ export function ThemeProvider({
   children,
   defaultTheme = 'system',
   storageKey = DEFAULT_STORAGE_KEY,
+  cookieKey,
 }: ThemeProviderProps) {
   // Match the pre-hydration ThemeScript so React does not briefly render the
   // default light state over a persisted dark page and then flip it back.
@@ -156,7 +165,15 @@ export function ThemeProvider({
     } catch {
       // Ignore persistence failures; theme still applies for this session.
     }
-  }, [theme, systemTheme, storageKey]);
+
+    if (cookieKey) {
+      try {
+        document.cookie = `${cookieKey}=${theme}; path=/; max-age=31536000; samesite=lax`;
+      } catch {
+        // Cookie unavailable — SSR-consistency degrades to localStorage only.
+      }
+    }
+  }, [theme, systemTheme, storageKey, cookieKey]);
 
   // Follow OS-level changes when in 'system' mode.
   useEffect(() => {
