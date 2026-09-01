@@ -6,23 +6,23 @@ BEFORE starting any implementation. Rules: `docs/RELEASE_POLICY.md`; runbook:
 checkpoints: `docs/PRODUCTION_CHECKPOINTS.md`. No secrets are stored here.
 
 ```
-CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-CONSOLE-01 (CLOSED; PRODUCTION_PASS)
-CURRENT_PRODUCTION_SOURCE:             2d131fc604531f8327446f1f36a5acf142f11d2a
-CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-2d131fc60453
-CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:68ff5b329760)
+CURRENT_VERIFIED_PRODUCTION_CHECKPOINT: ADMIN-DS-BATCH-1 (CLOSED; PRODUCTION_PASS)
+CURRENT_PRODUCTION_SOURCE:             4de75ae969c8d1f260e6c660b5c7fac5008f3541
+CURRENT_PRODUCTION_IMAGE:              apex-home-fit:release-4de75ae969c8
+CURRENT_PRODUCTION_BUILD_ID:           (gateway exact-SHA build; image sha256:1908710b…)
 CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
-CURRENT_MAINLINE_BASELINE_COMMIT:       2d131fc604531f8327446f1f36a5acf142f11d2a (PR #13 integration)
+CURRENT_MAINLINE_BASELINE_COMMIT:       4de75ae969c8d1f260e6c660b5c7fac5008f3541 (PR #15 integration)
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
-ACTIVE_BRANCH:                         feat/admin-console-01 (RETIRED)
-PREVIOUS_COMPLETED_TASK:               ADMIN-CONSOLE-01 (CLOSED; PRODUCTION_PASS)
-PREVIOUS_COMPLETED_BRANCH:             feat/admin-console-01 (RETIRED)
+ACTIVE_BRANCH:                         N/A (none)
+PREVIOUS_COMPLETED_TASK:               MOBILE-READINESS-01 (EXECUTED 2026-09-01; docs-only AUDIT)
+PREVIOUS_COMPLETED_BRANCH:             batch/admin-ds-01-04 (RETIRED)
 NEXT_AUTHORIZED_TASK:                  NONE
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-08-31 (Admin Console V1 released via gateway; task CLOSED)
+LAST_UPDATED:                          2026-09-01 (MOBILE-READINESS-01 audit EXECUTED; findings + guardrails persisted)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,22 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **POST-MOBILE-READINESS-RATIONALIZATION-01 (docs-only, 2026-09-01).**
+  The six mobile-readiness guardrails were **RATIFIED / BINDING**
+  (ADR-0005; `ARCHITECTURE-PRINCIPLES.md` §13). Mobile triggers, HealthKit/
+  Health Connect scope, and the technology-selection spike are DEFERRED until
+  documented triggers; no mobile stack selected. The audit's "session-core
+  extraction" finding was reconciled onto **S-04 — Session Core Contract
+  Adoption** (verified: S03 extraction is CLOSED — `sessionCore.ts` exists and
+  the hook delegates; residual debt = consumers such as `workoutPersistence.ts`
+  still importing hook types) and PROMOTED in `docs/TASKS.md` (approved queue,
+  NOT started; implementation still needs batch-start authorization).
+  Next-batch proposal: Batch 2 = `ADMIN-DS-05` + `ADMIN-DS-06`; S-04 as its
+  own lifecycle. `ADMIN-THEME-SWITCH-01` DEFERRED, `ADMIN-DS-05` REQUIRED,
+  `ADMIN-IMPERSONATION-01` DEFERRED/NOT AUTHORIZED — all unchanged.
+
+- **MOBILE-READINESS-01 = EXECUTED (2026-09-01, docs-only).** Mobile-lock-in / web-coupling architecture audit complete — no mobile app, no stack selection, no app/DB change, no deployment. Findings report: `docs/architecture/MOBILE-READINESS-01-REPORT.md`; proposed mobile-readiness guardrails in `ARCHITECTURE-PRINCIPLES.md` §13 (PROPOSED — awaiting owner ratification). Highest-severity finding: session engine still lives in the React hook (`useWorkoutEngine.ts`); S03 session-core extraction is the designed exit. Notifications/background work is a net-new capability gap (no web push exists). Admin follow-up debts persisted (NOT implemented): `ADMIN-THEME-SWITCH-01` (Admin is Dark-only, no Light/Dark switch) and ADMIN-DS-05 confirmation (Admin currently English-only; acceptance must include Persian/RTL/switching/locale persistence/reuse of localization architecture).
 
 - **ADMIN-DS-BATCH-1 = DELIVERED (2026-09-01).** First Batch Delivery V1 lifecycle completed: PR #15 → merged `4de75ae` (Main CI run `33454929053` PASS) → Production gateway release `batch1-admin-ds-01-04` → image `apex-home-fit:release-4de75ae969c8` (ID `sha256:1908710b…`), `db_changed=false`, rollback `compose.yml.rollback-batch1-admin-ds-01-04`, secret boundary `PROTECTED`. Admin console now has dark-mode foundation (ThemeScript/ThemeProvider), self-hosted fonts, metadata + admin icons (favicon 404 resolved), shared primitives across all six pages, kit-based login/logout, loading/error/not-found boundaries and a11y pass. Production real-browser 4/4 PASS (boundaries, design-system wiring, public regression). Signed-in Production recheck PENDING (operator-held credential). Branch `batch/admin-ds-01-04` retired.
 

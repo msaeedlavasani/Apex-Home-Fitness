@@ -582,5 +582,135 @@
       "sessionUnavailable": "Your code was correct, but sign-in isn't available yet (the Supabase service isn't configured). Please try again later.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Administration console",
+      "template": "%s | Apex Home Fit Admin"
+    },
+    "common": {
+      "appName": "Apex Home Fit Admin",
+      "adminLabel": "Administration",
+      "consoleTitle": "Administration console",
+      "signedInAs": "Signed in as {email}",
+      "signOut": "Sign out",
+      "loadingLabel": "Loading administration console",
+      "errorTitle": "Something went wrong",
+      "errorBody": "This console surface could not be loaded. Try again, or sign out and back in.",
+      "retry": "Try again",
+      "notFoundTitle": "Page not found",
+      "notFoundBody": "This address does not exist inside the administration console.",
+      "backToOverview": "Back to overview",
+      "language": "Language",
+      "en": "EN",
+      "fa": "فا",
+      "enName": "English",
+      "faName": "Persian",
+      "switchToEn": "Switch to English",
+      "switchToFa": "Switch to Persian"
+    },
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "programs": "Workout Plans",
+      "exercises": "Exercises",
+      "operations": "Operations",
+      "sessions": "Admin / Sessions"
+    },
+    "login": {
+      "eyebrow": "Apex Home Fit",
+      "title": "Administrator sign in",
+      "description": "This is a private administrator access path.",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign in",
+      "error": "Unable to sign in. Check your credentials and try again."
+    },
+    "dashboard": {
+      "users": "Users",
+      "programs": "Programs",
+      "exercises": "Exercises",
+      "workouts": "Workouts",
+      "completed": "Completed",
+      "quiz": "Quiz responses",
+      "adminAccounts": "Admin accounts",
+      "sessions": "Active sessions",
+      "recentUsers": "Recent users",
+      "recentPrograms": "Recent programs",
+      "noUsers": "No users yet.",
+      "noPrograms": "No programs yet."
+    },
+    "users": {
+      "title": "Users",
+      "description": "Read-only roster. Credentials are never exposed.",
+      "caption": "Registered users",
+      "email": "Email",
+      "phone": "Phone",
+      "level": "Level",
+      "xp": "XP",
+      "workouts": "Workouts",
+      "joined": "Joined",
+      "empty": "No users yet."
+    },
+    "programs": {
+      "title": "Workout plans / programs",
+      "description": "Generated and persisted training plans. Read-only.",
+      "caption": "Workout plans and programs",
+      "name": "Name",
+      "owner": "Owner",
+      "level": "Level",
+      "weeks": "Weeks",
+      "perWeek": "/week",
+      "exercises": "Exercises",
+      "workouts": "Workouts",
+      "created": "Created",
+      "empty": "No programs yet."
+    },
+    "exercises": {
+      "title": "Exercises",
+      "description": "Exercise catalog (source-controlled + generated). Read-only.",
+      "caption": "Exercise catalog",
+      "name": "Name",
+      "slug": "Slug",
+      "category": "Category",
+      "difficulty": "Difficulty",
+      "programs": "Programs",
+      "sessions": "Sessions",
+      "empty": "No exercises yet."
+    },
+    "operations": {
+      "title": "Operations",
+      "description": "Program-generation idempotency ledger. Read-only; payloads and hashes are not exposed.",
+      "caption": "Program-generation operations",
+      "user": "User",
+      "key": "Key",
+      "status": "Status",
+      "program": "Program",
+      "yes": "yes",
+      "created": "Created",
+      "updated": "Updated",
+      "empty": "No operations yet."
+    },
+    "sessions": {
+      "accountsTitle": "Admin accounts",
+      "accountsDescription": "Administrator identities. Password hashes are never exposed.",
+      "accountsCaption": "Administrator accounts",
+      "email": "Email",
+      "role": "Role",
+      "enabled": "Enabled",
+      "lastLogin": "Last login",
+      "created": "Created",
+      "yes": "yes",
+      "no": "no",
+      "sessionsTitle": "Admin sessions",
+      "sessionsDescription": "Session lifecycle. Session tokens are stored only as digests and are never exposed.",
+      "sessionsCaption": "Administrator sessions",
+      "admin": "Admin",
+      "status": "Status",
+      "expires": "Expires",
+      "active": "active",
+      "expired": "expired",
+      "revoked": "revoked"
+    }
   }
 }

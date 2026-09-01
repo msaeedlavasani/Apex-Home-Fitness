@@ -92,7 +92,7 @@ export function AdminTable({
 }) {
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="mt-4 w-full text-left text-sm" style={{minWidth}} aria-label={caption}>
+      <table className="mt-4 w-full text-start text-sm" style={{minWidth}} aria-label={caption}>
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-apex-border text-xs uppercase tracking-wide text-apex-text-secondary">
@@ -100,7 +100,7 @@ export function AdminTable({
               <th
                 key={column.label}
                 scope="col"
-                className={cn('py-2 pr-4', column.align === 'right' && 'text-right', column.className)}
+                className={cn('py-2 pe-4', column.align === 'right' && 'text-end', column.className)}
               >
                 {column.label}
               </th>

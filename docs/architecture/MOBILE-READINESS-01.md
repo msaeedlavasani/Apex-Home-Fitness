@@ -1,13 +1,21 @@
 # MOBILE-READINESS-01 — Mobile Lock-in / Web-Coupling Architecture Audit
 
-> **STATUS: PROPOSED — NOT AUTHORIZED** (added 2026-09-01 during
-> POST-AUDIT-RATIONALIZATION-01; ANALYSIS GATE remains in force)
+> **STATUS: EXECUTED AND RATIFIED 2026-09-01.** (added 2026-09-01 during
+> POST-AUDIT-RATIONALIZATION-01; executed as a docs-only `AUDIT` task with
+> no app/DB change and no deployment; findings and guardrails ratified via
+> POST-MOBILE-READINESS-RATIONALIZATION-01 / ADR-0005.)
 >
 > Profile: `AUDIT` / architecture task. **Does NOT build iOS or Android.**
 > No app code, schema, or dependency changes result from this task; its
-> output is a durable audit report that informs future guardrails. Promotion
-> to the executable backlog requires explicit Owner authorization in
-> `docs/TASKS.md`.
+> output is a durable audit report that informs future guardrails. Findings:
+> [`MOBILE-READINESS-01-REPORT.md`](MOBILE-READINESS-01-REPORT.md);
+> guardrails **RATIFIED / BINDING** in `ARCHITECTURE-PRINCIPLES.md` §13 and
+> recorded as [`../adr/0005-mobile-readiness-guardrails.md`](../adr/0005-mobile-readiness-guardrails.md).
+> Mobile triggers, Health scope, and the technology spike are DEFERRED;
+> the high-severity finding was reconciled onto `S-04` (Session Core
+> Contract Adoption) and promoted in `docs/TASKS.md` (not started).
+> Implementation of any promoted recommendation requires the ordinary
+> batch-start authorization in `docs/TASKS.md`.
 
 ## 1. Purpose
 

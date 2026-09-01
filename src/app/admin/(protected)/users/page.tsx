@@ -1,5 +1,8 @@
+import {getTranslations} from 'next-intl/server';
+
 import {listUsers} from '@/lib/admin/console';
 import {requireAdmin} from '@/lib/admin/auth';
+import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
 import {
   AdminPageSection,
   AdminSectionHeader,
@@ -12,43 +15,45 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminUsersPage() {
   await requireAdmin();
+  const locale = await getAdminLocaleFromRequest();
+  const t = await getTranslations({locale, namespace: 'admin.users'});
   const users = await listUsers(100);
 
   return (
     <AdminPageSection>
       <AdminSectionHeader
-        title="Users"
-        description="Read-only roster. Credentials are never exposed."
+        title={t('title')}
+        description={t('description')}
         count={users.length}
       />
 
       <AdminTable
-        caption="Registered users"
+        caption={t('caption')}
         minWidth={760}
         columns={[
-          {label: 'Email'},
-          {label: 'Phone'},
-          {label: 'Level'},
-          {label: 'XP', align: 'right'},
-          {label: 'Level', align: 'right'},
-          {label: 'Workouts', align: 'right'},
-          {label: 'Joined'},
+          {label: t('email')},
+          {label: t('phone')},
+          {label: t('level')},
+          {label: t('xp'), align: 'right'},
+          {label: t('level'), align: 'right'},
+          {label: t('workouts'), align: 'right'},
+          {label: t('joined')},
         ]}
       >
         {users.map((user) => (
           <tr key={user.id}>
-            <td className="py-3 pr-4 text-apex-text-primary">{user.email}</td>
-            <td className="py-3 pr-4 text-apex-text-secondary">{user.phone ?? '—'}</td>
-            <td className="py-3 pr-4 text-apex-text-secondary">{user.fitnessLevel ?? '—'}</td>
-            <td className="py-3 pr-4 text-right text-apex-text-secondary">{user.xp}</td>
-            <td className="py-3 pr-4 text-right text-apex-text-secondary">{user.level}</td>
-            <td className="py-3 pr-4 text-right text-apex-text-secondary">{user.workoutSessions}</td>
-            <td className="py-3 pr-4 text-apex-text-secondary">{formatAdminDate(user.createdAt)}</td>
+            <td className="py-3 pe-4 text-apex-text-primary">{user.email}</td>
+            <td className="py-3 pe-4 text-apex-text-secondary">{user.phone ?? '—'}</td>
+            <td className="py-3 pe-4 text-apex-text-secondary">{user.fitnessLevel ?? '—'}</td>
+            <td className="py-3 pe-4 text-end text-apex-text-secondary">{user.xp}</td>
+            <td className="py-3 pe-4 text-end text-apex-text-secondary">{user.level}</td>
+            <td className="py-3 pe-4 text-end text-apex-text-secondary">{user.workoutSessions}</td>
+            <td className="py-3 pe-4 text-apex-text-secondary">{formatAdminDate(user.createdAt, locale)}</td>
           </tr>
         ))}
       </AdminTable>
 
-      {users.length === 0 ? <AdminEmptyState message="No users yet." className="mt-4" /> : null}
+      {users.length === 0 ? <AdminEmptyState message={t('empty')} className="mt-4" /> : null}
     </AdminPageSection>
   );
 }

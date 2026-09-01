@@ -1,10 +1,12 @@
+import {getTranslations} from 'next-intl/server';
+
 import {listAdminAccounts, listAdminSessions} from '@/lib/admin/console';
 import {requireAdmin} from '@/lib/admin/auth';
+import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
 import {
   AdminPageSection,
   AdminSectionHeader,
   AdminTable,
-  AdminEmptyState,
 } from '@/components/admin/AdminPrimitives';
 import {formatAdminDate} from '@/lib/admin/format';
 
@@ -12,37 +14,39 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminSessionsPage() {
   await requireAdmin();
+  const locale = await getAdminLocaleFromRequest();
+  const t = await getTranslations({locale, namespace: 'admin.sessions'});
   const [accounts, sessions] = await Promise.all([listAdminAccounts(), listAdminSessions(100)]);
 
   return (
     <section className="space-y-8">
       <AdminPageSection>
         <AdminSectionHeader
-          title="Admin accounts"
-          description="Administrator identities. Password hashes are never exposed."
+          title={t('accountsTitle')}
+          description={t('accountsDescription')}
           count={accounts.length}
         />
 
         <AdminTable
-          caption="Administrator accounts"
+          caption={t('accountsCaption')}
           minWidth={560}
           columns={[
-            {label: 'Email'},
-            {label: 'Role'},
-            {label: 'Enabled'},
-            {label: 'Last login'},
-            {label: 'Created'},
+            {label: t('email')},
+            {label: t('role')},
+            {label: t('enabled')},
+            {label: t('lastLogin')},
+            {label: t('created')},
           ]}
         >
           {accounts.map((account) => (
             <tr key={account.id}>
-              <td className="py-3 pr-4 text-apex-text-primary">{account.email}</td>
-              <td className="py-3 pr-4 text-apex-text-secondary">{account.role}</td>
-              <td className="py-3 pr-4 text-apex-text-secondary">{account.enabled ? 'yes' : 'no'}</td>
-              <td className="py-3 pr-4 text-apex-text-secondary">
-                {account.lastLoginAt ? formatAdminDate(account.lastLoginAt) : '—'}
+              <td className="py-3 pe-4 text-apex-text-primary">{account.email}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">{account.role}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">{account.enabled ? t('yes') : t('no')}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">
+                {account.lastLoginAt ? formatAdminDate(account.lastLoginAt, locale) : '—'}
               </td>
-              <td className="py-3 pr-4 text-apex-text-secondary">{formatAdminDate(account.createdAt)}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">{formatAdminDate(account.createdAt, locale)}</td>
             </tr>
           ))}
         </AdminTable>
@@ -50,29 +54,29 @@ export default async function AdminSessionsPage() {
 
       <AdminPageSection>
         <AdminSectionHeader
-          title="Admin sessions"
-          description="Session lifecycle. Session tokens are stored only as digests and are never exposed."
+          title={t('sessionsTitle')}
+          description={t('sessionsDescription')}
           count={sessions.length}
         />
 
         <AdminTable
-          caption="Administrator sessions"
+          caption={t('sessionsCaption')}
           minWidth={640}
           columns={[
-            {label: 'Admin'},
-            {label: 'Status'},
-            {label: 'Created'},
-            {label: 'Expires'},
+            {label: t('admin')},
+            {label: t('status')},
+            {label: t('created')},
+            {label: t('expires')},
           ]}
         >
           {sessions.map((session) => (
             <tr key={session.id}>
-              <td className="py-3 pr-4 text-apex-text-primary">{session.email}</td>
-              <td className="py-3 pr-4 text-apex-text-secondary">
-                {session.active ? 'active' : session.expired ? 'expired' : 'revoked'}
+              <td className="py-3 pe-4 text-apex-text-primary">{session.email}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">
+                {session.active ? t('active') : session.expired ? t('expired') : t('revoked')}
               </td>
-              <td className="py-3 pr-4 text-apex-text-secondary">{formatAdminDate(session.createdAt)}</td>
-              <td className="py-3 pr-4 text-apex-text-secondary">{formatAdminDate(session.expiresAt)}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">{formatAdminDate(session.createdAt, locale)}</td>
+              <td className="py-3 pe-4 text-apex-text-secondary">{formatAdminDate(session.expiresAt, locale)}</td>
             </tr>
           ))}
         </AdminTable>

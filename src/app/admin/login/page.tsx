@@ -1,13 +1,17 @@
 'use client';
 
 import {FormEvent, useState} from 'react';
+import {useTranslations} from 'next-intl';
+
 import {Button, TextField} from '@/components/ui/platform';
+import {AdminLocaleSwitcher} from '@/components/admin/AdminLocaleSwitcher';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useTranslations('admin.login');
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,26 +26,27 @@ export default function AdminLoginPage() {
       });
       const body = (await response.json().catch(() => null)) as {ok?: boolean; error?: string} | null;
       if (!response.ok || !body?.ok) {
-        setError('Unable to sign in. Check your credentials and try again.');
+        setError(t('error'));
         return;
       }
       window.location.assign('/admin/dashboard');
     } catch {
-      setError('Unable to sign in. Check your credentials and try again.');
+      setError(t('error'));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-apex-surface px-4 py-10">
+    <main className="relative flex min-h-dvh items-center justify-center bg-apex-surface px-4 py-10">
+      <AdminLocaleSwitcher className="absolute end-4 top-4" />
       <section className="w-full max-w-md rounded-3xl border border-apex-border bg-apex-card p-7 shadow-apple-lg">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-apex-primary-text">Apex Home Fit</p>
-        <h1 className="mt-3 text-3xl font-bold">Administrator sign in</h1>
-        <p className="mt-2 text-sm text-apex-text-secondary">This is a private administrator access path.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-apex-primary-text">{t('eyebrow')}</p>
+        <h1 className="mt-3 text-3xl font-bold">{t('title')}</h1>
+        <p className="mt-2 text-sm text-apex-text-secondary">{t('description')}</p>
         <form className="mt-8 space-y-5" onSubmit={submit}>
           <TextField
-            label="Email"
+            label={t('email')}
             id="admin-email"
             name="email"
             type="email"
@@ -51,7 +56,7 @@ export default function AdminLoginPage() {
             onChange={(event) => setEmail(event.target.value)}
           />
           <TextField
-            label="Password"
+            label={t('password')}
             id="admin-password"
             name="password"
             type="password"
@@ -63,7 +68,7 @@ export default function AdminLoginPage() {
           />
           {error ? <p role="alert" className="text-sm font-medium text-apex-state-alert-text">{error}</p> : null}
           <Button type="submit" size="lg" fullWidth loading={busy}>
-            Sign in
+            {t('signIn')}
           </Button>
         </form>
       </section>

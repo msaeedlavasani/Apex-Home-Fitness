@@ -75,8 +75,8 @@ test('AdminTable renders caption, column scope and right-aligned headers', () =>
   const [emailTh, xpTh] = root.findAllByType('th');
   assert.equal(emailTh.props.scope, 'col');
   assert.equal(xpTh.props.scope, 'col');
-  assert.match(xpTh.props.className, /text-right/);
-  assert.ok(!emailTh.props.className.includes('text-right'));
+  assert.match(xpTh.props.className, /text-end/);
+  assert.ok(!emailTh.props.className.includes('text-end'));
 });
 
 test('AdminEmptyState renders the shared message classes', () => {

@@ -1,10 +1,13 @@
 'use client';
 
 import {useState} from 'react';
+import {useTranslations} from 'next-intl';
+
 import {Button} from '@/components/ui/platform';
 
 export function AdminLogoutButton() {
   const [busy, setBusy] = useState(false);
+  const t = useTranslations('admin.common');
 
   async function logout() {
     if (busy) return;
@@ -18,7 +21,7 @@ export function AdminLogoutButton() {
 
   return (
     <Button type="button" variant="outlined" size="md" onClick={logout} loading={busy}>
-      Sign out
+      {t('signOut')}
     </Button>
   );
 }

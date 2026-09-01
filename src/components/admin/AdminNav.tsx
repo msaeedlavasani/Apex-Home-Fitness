@@ -1,21 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import {useTranslations} from 'next-intl';
 import {usePathname} from 'next/navigation';
 
 const NAV_ITEMS = [
-  {href: '/admin/dashboard', label: 'Overview'},
-  {href: '/admin/users', label: 'Users'},
-  {href: '/admin/programs', label: 'Workout Plans'},
-  {href: '/admin/exercises', label: 'Exercises'},
-  {href: '/admin/operations', label: 'Operations'},
-  {href: '/admin/sessions', label: 'Admin / Sessions'},
+  {href: '/admin/dashboard', label: 'overview'},
+  {href: '/admin/users', label: 'users'},
+  {href: '/admin/programs', label: 'programs'},
+  {href: '/admin/exercises', label: 'exercises'},
+  {href: '/admin/operations', label: 'operations'},
+  {href: '/admin/sessions', label: 'sessions'},
 ] as const;
 
 export function AdminNav() {
   const pathname = usePathname();
+  const t = useTranslations('admin.nav');
+  const common = useTranslations('admin.common');
+
   return (
-    <nav aria-label="Administration" className="flex flex-wrap gap-2 border-b border-apex-border pb-3">
+    <nav aria-label={common('adminLabel')} className="flex flex-wrap gap-2 border-b border-apex-border pb-3">
       {NAV_ITEMS.map((item) => {
         const active = pathname === item.href;
         return (
@@ -29,7 +33,7 @@ export function AdminNav() {
                 : 'text-apex-text-secondary hover:bg-apex-card hover:text-apex-text-primary'
             }`}
           >
-            {item.label}
+            {t(item.label)}
           </Link>
         );
       })}

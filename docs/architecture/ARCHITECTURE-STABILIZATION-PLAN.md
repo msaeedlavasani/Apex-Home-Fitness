@@ -1,13 +1,18 @@
 # Architecture Stabilization Plan
 
-`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S02-E AND S-04..S-06 REQUIRE OWNER PROMOTION TO TASKS`
+`STATUS: CURRENT STATUS/EVIDENCE — NON-EXECUTABLE; S03 CLOSED; S-04 PROMOTED TO TASKS (2026-09-01); S02-E AND S-05..S-06 REQUIRE OWNER PROMOTION TO TASKS`
 
 This document defines the approved scope, sequence and governance for the
 controlled Architecture Stabilization phase. Historical planning sections are
 retained for traceability; execution status is recorded explicitly below.
-S-01, S02-A..D2, and S03-A..F are complete. S02-E and S-04..S-06 remain
-planned/not started. This plan does not authorize execution; each remaining
-phase requires its named owner checkpoint and promotion to `docs/TASKS.md`.
+S-01, S02-A..D2, and S03-A..F are complete. **S-04 was promoted to the
+canonical executable backlog on 2026-09-01 (owner checkpoint satisfied via
+POST-MOBILE-READINESS-RATIONALIZATION-01, recorded in `docs/TASKS.md` and
+ADR-0005) as the high-priority mobile-readiness architecture debt** — its
+scope is refined below (contract adoption; the S03 extraction itself is
+closed). S02-E and S-05..S-06 remain planned/not started. This plan does not
+authorize execution; each remaining phase requires its named owner
+checkpoint and promotion to `docs/TASKS.md`.
 
 - Input: `docs/architecture/MODULARITY-AUDIT.md` (audit record) and
   `docs/architecture/COUPLING-RISK-REGISTER.md` (risk register).
@@ -32,7 +37,7 @@ phase requires its named owner checkpoint and promotion to `docs/TASKS.md`.
 | S-01 | Shared Contract Ownership | Two inverted lib→services type imports resolved with zero behavior change | FIRST (smallest) |
 | S-02 | Canonical Exercise Identity Foundation | Minimum compatible foundation: contracts + name→id resolution layer + compatibility fallback; **no schema change before GATE A** | AFTER S-01 |
 | S-03 | Pure Workout Session Core | Framework-independent session core extracted; `useWorkoutEngine` is the runtime adapter | COMPLETE (S03-A..F closed) |
-| S-04 (planned) | Stable Session State Contract | Stable read-model/event surface consumed by player, persistence, future Voice Coach | PLANNED — OWNER CHECKPOINT REQUIRED |
+| S-04 | Stable Session State Contract (Session Core Contract Adoption) | Stable read-model/event surface consumed by player, persistence, future Voice Coach | **PROMOTED TO `docs/TASKS.md` 2026-09-01** (owner checkpoint satisfied; high-priority mobile-readiness architecture debt; NOT yet authorized for implementation) |
 | S-05 (planned) | Snapshot Versioning | Explicit version discipline for persisted workout snapshots, additive evolution only | PLANNED — GATE C REQUIRED |
 | S-06 (planned) | Exercise Library / Catalog Role | Decision + documentation of canonical vs sample/demo role for the current library | PLANNED — OWNER CHECKPOINT REQUIRED |
 
@@ -260,10 +265,27 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
 
 ### Phase S-04 — Stable Session State Contract
 
+`STATUS: PROMOTED TO EXECUTABLE BACKLOG 2026-09-01 (POST-MOBILE-READINESS-
+RATIONALIZATION-01; ADR-0005; owner checkpoint satisfied). Promotion to the
+canonical backlog does NOT authorize implementation; the ordinary
+batch-start authorization is still required before execution.`
+
 - **Objective**: formalize and stabilize the read-model/event surface consumed
   by WorkoutPlayer, persistence and future consumers (Voice Coach, V2).
 - **Why now**: consumers must not bind to hook internals or internal transition
-  implementation (ADR-0002 required goal).
+  implementation (ADR-0002 required goal). This is the high-priority
+  mobile-readiness architecture debt identified by MOBILE-READINESS-01.
+- **Reconciliation (2026-09-01)**: MOBILE-READINESS-01 provisionally framed
+  the debt as "session-core extraction". On-disk verification shows the
+  extraction is CLOSED: `src/lib/workout/sessionCore.ts` exists and
+  `useWorkoutEngine.ts` delegates to it (`createSessionCore`,
+  `core.transition(command, now)`, `core.derive(state)`). The residual debt is
+  the CONTRACT-ADOPTION edge, which is S-04's existing scope: consumers still
+  import hook types (`workoutPersistence.ts` imports `WorkoutEngineState` /
+  `WorkoutExercise` / `WorkoutEngineHydrateInput` from
+  `src/components/workout/useWorkoutEngine`), and
+  `sessionContracts.ts` still carries a stale "wiring does not exist yet"
+  note. No duplicate task is created.
 - **Files/domains expected to change**: contract module (proposed
   `src/lib/workout/sessionState.ts`), player + persistence import points,
   consumer contract tests.
@@ -273,11 +295,11 @@ aliases persistence (see §aliases note). Validation: `prisma validate`
 - **Compatibility**: player and persistence migrate to the contract with
   identical behavior; old snapshot shapes unaffected (see S-05).
 - **Tests**: consumer contract tests (player integration, persistence
-  compatibility); existing suites green.
+  compatibility); existing suites green; parity baseline preserved.
 - **Rollback**: git revert (code-only).
 - **Exit criteria**: player/persistence consume only the stable contract; no
   consumer imports hook internals.
-- **Dependency**: S-03. **Risk**: LOW-MEDIUM.
+- **Dependency**: S-03 (CLOSED). **Risk**: LOW-MEDIUM.
 
 ### Phase S-05 — Snapshot Versioning
 
