@@ -607,7 +607,14 @@
       "enName": "English",
       "faName": "Persian",
       "switchToEn": "Switch to English",
-      "switchToFa": "Switch to Persian"
+      "switchToFa": "Switch to Persian",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "switchToLight": "Switch to Light",
+      "switchToDark": "Switch to Dark",
+      "switchToSystem": "Switch to System"
     },
     "nav": {
       "overview": "Overview",

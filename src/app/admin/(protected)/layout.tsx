@@ -4,6 +4,7 @@ import {requireAdmin} from '@/lib/admin/auth';
 import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
 import {AdminLogoutButton} from '@/components/admin/AdminLogoutButton';
 import {AdminLocaleSwitcher} from '@/components/admin/AdminLocaleSwitcher';
+import {AdminThemeSwitcher} from '@/components/admin/AdminThemeSwitcher';
 import {AdminNav} from '@/components/admin/AdminNav';
 
 export default async function ProtectedAdminLayout({children}: {children: React.ReactNode}) {
@@ -22,6 +23,7 @@ export default async function ProtectedAdminLayout({children}: {children: React.
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <AdminLocaleSwitcher />
+            <AdminThemeSwitcher />
             <AdminLogoutButton />
           </div>
         </header>

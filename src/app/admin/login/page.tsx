@@ -5,6 +5,7 @@ import {useTranslations} from 'next-intl';
 
 import {Button, TextField} from '@/components/ui/platform';
 import {AdminLocaleSwitcher} from '@/components/admin/AdminLocaleSwitcher';
+import {AdminThemeSwitcher} from '@/components/admin/AdminThemeSwitcher';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -39,7 +40,10 @@ export default function AdminLoginPage() {
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-apex-surface px-4 py-10">
-      <AdminLocaleSwitcher className="absolute end-4 top-4" />
+      <div className="absolute end-4 top-4 flex items-center gap-2">
+        <AdminThemeSwitcher />
+        <AdminLocaleSwitcher />
+      </div>
       <section className="w-full max-w-md rounded-3xl border border-apex-border bg-apex-card p-7 shadow-apple-lg">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-apex-primary-text">{t('eyebrow')}</p>
         <h1 className="mt-3 text-3xl font-bold">{t('title')}</h1>

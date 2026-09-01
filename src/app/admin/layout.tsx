@@ -7,6 +7,8 @@ import '../globals.css';
 import {ThemeProvider, ThemeScript} from '@/components/providers/ThemeProvider';
 import {adminContentDir} from '@/lib/admin/locale';
 import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
+import {getAdminThemeFromRequest} from '@/lib/admin/requestTheme';
+import {ADMIN_THEME_COOKIE} from '@/lib/admin/theme';
 
 /**
  * Admin root layout (ADMIN-DS-01 foundation + ADMIN-DS-05 i18n/RTL).
@@ -21,7 +23,11 @@ import {getAdminLocaleFromRequest} from '@/lib/admin/requestLocale';
  *
  * Dark mode: ThemeScript applies the persisted/system theme class to <html>
  * BEFORE hydration (no FOUC) and ThemeProvider manages it afterwards,
- * mirroring the consumer app's theme architecture. Default theme is light.
+ * mirroring the consumer app's theme architecture. The `admin-theme`
+ * cookie (mirrored by the shared provider via `cookieKey`) lets the SERVER
+ * render the same theme state the client will hydrate — no hydration
+ * mismatch, no theme flash — exactly like the `admin-locale` cookie. No
+ * cookie → light (the pre-DS-01 admin default).
  *
  * Fonts: the same self-hosted Inter / Roboto / Vazirmatn variables used by
  * the consumer layout are linked here so admin typography resolves the real
@@ -80,6 +86,7 @@ export const viewport: Viewport = {
 
 export default async function AdminRootLayout({children}: {children: React.ReactNode}) {
   const locale = await getAdminLocaleFromRequest();
+  const theme = await getAdminThemeFromRequest();
   // Admin routes never see a `[locale]` segment, so next-intl's request
   // config always resolves to the default locale — pass the cookie locale
   // explicitly so server components and the client provider agree.
@@ -88,12 +95,12 @@ export default async function AdminRootLayout({children}: {children: React.React
   return (
     <html lang={locale} dir={adminContentDir(locale)} suppressHydrationWarning>
       <head>
-        <ThemeScript defaultTheme="light" />
+        <ThemeScript defaultTheme={theme} />
       </head>
       <body
         className={`${inter.variable} ${roboto.variable} ${vazirmatn.variable} bg-apex-surface text-apex-text-primary`}
       >
-        <ThemeProvider defaultTheme="light">
+        <ThemeProvider defaultTheme={theme} cookieKey={ADMIN_THEME_COOKIE}>
           <NextIntlClientProvider locale={locale} messages={messages}>
             {children}
           </NextIntlClientProvider>
