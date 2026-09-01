@@ -14,16 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE
-ACTIVE_TASK_PROFILE:                   N/A
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-01 delivered/closed; further task start requires explicit Owner instruction)
-ACTIVE_BRANCH:                         N/A (none)
-PREVIOUS_COMPLETED_TASK:               MG-01 Movement Graph canonical schema / domain contract (DELIVERED/CLOSED 2026-09-01 — P0; PR #25 merged b5cf1a9, Main CI PASS on exact SHA; pure TS contract + expressibility bridge + ADR-0006; no Production/DB/UI change) — preceded by S02-E Exercise Identity Backfill (DELIVERED/CLOSED 2026-09-01, governed 0-row apply via gateway v2)
-PREVIOUS_COMPLETED_BRANCH:             feat/mg-01-movement-graph-contract (merged via PR #25 → b5cf1a9; branch retired)
-NEXT_AUTHORIZED_TASK:                  NONE — MG-02 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
+ACTIVE_TASK:                           MG-02 — Movement taxonomy design (Owner-authorized 2026-09-01)
+ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-02 is the second explicitly authorized backlog task)
+ACTIVE_BRANCH:                         feat/mg-02-movement-taxonomy
+PREVIOUS_COMPLETED_TASK:               MG-01 Movement Graph canonical schema / domain contract (DELIVERED/CLOSED 2026-09-01 — P0; PR #25 merged b5cf1a9, Main CI PASS on exact SHA; pure TS contract + expressibility bridge + ADR-0006; no Production/DB/UI change)
+NEXT_AUTHORIZED_TASK:                  NONE — MG-03 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         CLOSED — MG-01 delivered/closed; backlog execution halted pending next explicit Owner instruction
-LAST_UPDATED:                          2026-09-01 (MG-01 CLOSED via PR #25 → b5cf1a9; no Production/DB/UI change; no deployment; MG-02+ not authorized)
+CURRENT_PHASE:                         ACTIVE — MG-02 in progress (branch, local validation, PR/CI, merge, Main CI)
+LAST_UPDATED:                          2026-09-01 (MG-02 authorized and ACTIVE; no Production/DB/UI change; no deployment; MG-03+ not authorized)
 ```
 
 ## Reading this manifest (pre-task gate)

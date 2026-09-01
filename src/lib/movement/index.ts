@@ -1,11 +1,12 @@
 /**
  * Movement domain public entry point (MG-01 — Movement Graph canonical
- * schema / domain contract).
+ * schema / domain contract; MG-02 — movement taxonomy vocabulary).
  *
- * Exposes the Movement Graph contract types plus the expressibility bridge.
- * This domain is PURE and framework-independent — no Prisma, React,
- * services, or runtime side effects. Nothing in the application imports this
- * module yet (no runtime behavior change by design).
+ * Exposes the Movement Graph contract types, the expressibility bridge, and
+ * the closed taxonomy vocabulary + FA/EN display maps. This domain is PURE
+ * and framework-independent — no Prisma, React, services, or runtime side
+ * effects. Nothing in the application imports this module yet (no runtime
+ * behavior change by design).
  */
 
 export {
@@ -37,3 +38,47 @@ export {
 } from './types';
 
 export { draftMovementId, movementDraftFromCatalogEntry } from './expressibility';
+
+export {
+  DIFFICULTY_TIER_DISPLAY,
+  DIFFICULTY_TIERS,
+  EQUIPMENT_TYPE_DISPLAY,
+  EQUIPMENT_TYPES,
+  HOME_SUITABILITY_DISPLAY,
+  HOME_SUITABILITY_LEVELS,
+  IMPACT_LEVEL_DISPLAY,
+  IMPACT_LEVELS,
+  MOVEMENT_CONSTRAINT_DISPLAY,
+  MOVEMENT_CONSTRAINTS,
+  MOVEMENT_PATTERN_DISPLAY,
+  MOVEMENT_PATTERNS,
+  MOVEMENT_SYMMETRIES,
+  MOVEMENT_SYMMETRY_DISPLAY,
+  MUSCLE_GROUP_DISPLAY,
+  MUSCLE_GROUPS,
+  isDifficultyTier,
+  isEquipmentType,
+  isHomeSuitabilityLevel,
+  isImpactLevel,
+  isKnownTaxonomy,
+  isMovementConstraint,
+  isMovementPattern,
+  isMovementSymmetry,
+  isMuscleGroup,
+  taxonomyTokenErrors,
+  toEquipmentTypeToken,
+  toHomeSuitabilityToken,
+  toImpactLevelToken,
+  toMovementConstraintToken,
+  toMovementPatternToken,
+  toMovementSymmetryToken,
+  toMuscleGroupToken,
+  type EquipmentType,
+  type HomeSuitabilityLevel,
+  type ImpactLevel,
+  type MovementConstraint,
+  type MovementPattern,
+  type MovementSymmetry,
+  type MuscleGroup,
+  type TaxonomyDisplay,
+} from './taxonomy';
