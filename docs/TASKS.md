@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `N/A` |
-| State | `CLOSED` — MG-02 DELIVERED/CLOSED 2026-09-01 (PR #26 → `36e68ce`); AHF_EXECUTION_STATE remains ACTIVE |
+| Active task | `MG-03` — Source/provenance contract |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/mg-03-source-provenance` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-03); builds on MG-01/MG-02 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
-| Next authorized task | `NONE` — MG-03 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
+| Next authorized task | `NONE` — MG-04 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
@@ -193,6 +193,11 @@ FA/EN mappings present for every term; no `any` types; typecheck + lint pass.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+
+**Authorization (2026-09-01):** Owner explicit instruction — EXECUTE MG-03
+(TASK DELTA). `TASK_PROFILE=CODE_NO_DEPLOY`; `BRANCH=feat/mg-03-source-provenance`.
+MG-04+ NOT authorized; builds on the MG-01 domain contract (unchanged) and
+MG-02 vocabulary.
 
 **Objective:** define the provenance metadata contract — every movement
 knowledge object carries its source (URL/license), ingestion timestamp,

@@ -1,12 +1,14 @@
 /**
  * Movement domain public entry point (MG-01 — Movement Graph canonical
- * schema / domain contract; MG-02 — movement taxonomy vocabulary).
+ * schema / domain contract; MG-02 — movement taxonomy vocabulary; MG-03 —
+ * source/provenance contract).
  *
- * Exposes the Movement Graph contract types, the expressibility bridge, and
- * the closed taxonomy vocabulary + FA/EN display maps. This domain is PURE
- * and framework-independent — no Prisma, React, services, or runtime side
- * effects. Nothing in the application imports this module yet (no runtime
- * behavior change by design).
+ * Exposes the Movement Graph contract types, the expressibility bridge, the
+ * closed taxonomy vocabulary + FA/EN display maps, and the provenance
+ * module (hash contract, license rules, confidence model). This domain is
+ * PURE and framework-independent — no Prisma, React, services, or runtime
+ * side effects. Nothing in the application imports this module yet (no
+ * runtime behavior change by design).
  */
 
 export {
@@ -82,3 +84,28 @@ export {
   type MuscleGroup,
   type TaxonomyDisplay,
 } from './taxonomy';
+
+export {
+  CONTENT_HASH_ALGORITHM,
+  LICENSE_CLASSIFICATIONS,
+  MOVEMENT_PROVENANCE_VERSION,
+  UNKNOWN_LICENSE,
+  classifyLicense,
+  contentHashOf,
+  evidenceConfidence,
+  isLicenseImportable,
+  isValidConfidence,
+  isValidContentHash,
+  isValidProvenanceRecord,
+  licenseRequiresAttribution,
+  recordProvenance,
+  sha256Hex,
+  sourceKindConfidence,
+  validateProvenanceRecord,
+  type ContentHash,
+  type ContentHashAlgorithm,
+  type LicenseCompatibility,
+  type MovementProvenanceRecord,
+  type ProvenanceEvidence,
+  type SourceProvenanceInput,
+} from './provenance';
