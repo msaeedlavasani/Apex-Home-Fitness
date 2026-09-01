@@ -50,9 +50,14 @@ class GateError(RuntimeError):
 
 
 def run(args, *, cwd=None, quiet=True):
-    result = subprocess.run(args, cwd=cwd, text=True, capture_output=quiet, check=False)
+    # Always capture so failures carry a diagnosable tail (streamed output is
+    # not required for the short bounded commands the gateway runs).
+    result = subprocess.run(args, cwd=cwd, text=True, capture_output=True, check=False)
     if result.returncode:
-        raise GateError(f"allowlisted command failed: {Path(args[0]).name}")
+        output = ((result.stderr or "") + (result.stdout or "")).strip()
+        tail = [line for line in output.splitlines() if line.strip()][-3:]
+        detail = ("; " + " | ".join(tail)[:400]) if tail else ""
+        raise GateError(f"allowlisted command failed: {Path(args[0]).name}{detail}")
     return result.stdout.strip() if quiet else ""
 
 
@@ -225,16 +230,16 @@ def _build_op_image(sha, source, opid, values):
 def _op_command(opid, mode, op_image, rehearsal_token=None):
     """Bounded docker-run command for the operation. The caller can only select
     an allowlisted operation + mode; the image and DB path are daemon-chosen.
-    Rehearsal mode points DATABASE_URL at a clone of app.db (real DB untouched)."""
+    Rehearsal mode points DATABASE_URL at a clone of app.db (real DB untouched).
+    Dry-run ALWAYS mounts the Production volume read-only (both script and
+    migrate kinds) — the read-only inspection contract is unconditional."""
     op = OPERATION_ALLOWLIST[opid]
     db_url = f"file:/data/app.db{'.rehearsal-' + rehearsal_token if rehearsal_token else ''}"
+    mount = f"{VOLUME}:/data:ro" if mode == "dry-run" else f"{VOLUME}:/data"
     base = ["/usr/bin/docker", "run", "--rm", "--network", "none",
-            "-e", f"DATABASE_URL={db_url}", "-v", f"{VOLUME}:/data", op_image]
+            "-e", f"DATABASE_URL={db_url}", "-v", mount, op_image]
     if op["kind"] == "migrate":
         command = "./node_modules/.bin/prisma migrate status" if mode == "dry-run" else "./node_modules/.bin/prisma migrate deploy"
-        if mode == "dry-run":
-            base = ["/usr/bin/docker", "run", "--rm", "--network", "none",
-                    "-e", f"DATABASE_URL={db_url}", "-v", f"{VOLUME}:/data:ro", op_image]
         return base + ["sh", "-c", command]
     return base + ["-e", f"DB_OPERATION_MODE={mode}", "sh", "-c", f"node --import tsx {op['path']}"]
 
@@ -564,6 +569,14 @@ def self_test():
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
     check("canonical json stable", lambda: (_ for _ in ()).throw(AssertionError()) if _canonical({"a": 1, "b": [2, 3]}) != _canonical({"b": [2, 3], "a": 1}) else None)
+
+    # Mount contract: dry-run is ALWAYS read-only; apply/rehearsal are RW and
+    # rehearsal points DATABASE_URL at the clone.
+    check("dry-run mounts volume read-only (script)", lambda: (_ for _ in ()).throw(AssertionError()) if f"{VOLUME}:/data:ro" not in _op_command("s02e-exercise-identity-backfill", "dry-run", "img") else None)
+    check("dry-run mounts volume read-only (migrate)", lambda: (_ for _ in ()).throw(AssertionError()) if f"{VOLUME}:/data:ro" not in _op_command("prisma-migrate-deploy", "dry-run", "img") else None)
+    check("apply mounts volume read-write", lambda: (_ for _ in ()).throw(AssertionError()) if f"{VOLUME}:/data" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") or f"{VOLUME}:/data:ro" in _op_command("s02e-exercise-identity-backfill", "apply", "img") else None)
+    check("rehearsal targets the clone", lambda: (_ for _ in ()).throw(AssertionError()) if "file:/data/app.db.rehearsal-" not in " ".join(_op_command("s02e-exercise-identity-backfill", "apply", "img", "tok123")) else None)
+    check("operations run with no network", lambda: (_ for _ in ()).throw(AssertionError()) if "--network" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") or "none" not in _op_command("s02e-exercise-identity-backfill", "apply", "img") else None)
 
     if failures:
         print(f"SELF_TEST_FAIL ({len(failures)}): {', '.join(failures)}")
