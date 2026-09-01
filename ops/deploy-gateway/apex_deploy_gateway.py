@@ -255,7 +255,9 @@ def _op_command(opid, mode, op_image, rehearsal_token=None):
 
 
 def _run_op(opid, mode, op_image, rehearsal_token=None):
-    return run(_op_command(opid, mode, op_image, rehearsal_token), quiet=False)
+    # quiet=True so the operation's stdout is RETURNED (the operation report
+    # is captured and hashed/parsed by the caller). quiet=False would discard it.
+    return run(_op_command(opid, mode, op_image, rehearsal_token), quiet=True)
 
 
 def _canonical(doc):
@@ -597,6 +599,8 @@ def self_test():
             return str(error)
         return ""
     check("run() error carries output head+tail", lambda: (_ for _ in ()).throw(AssertionError()) if "boom" not in run_error_detail() else None)
+    check("run() quiet=True returns captured stdout", lambda: (_ for _ in ()).throw(AssertionError()) if run(["sh", "-c", "echo hello"], quiet=True) != "hello" else None)
+    check("run() quiet=False discards stdout", lambda: (_ for _ in ()).throw(AssertionError()) if run(["sh", "-c", "echo hello"], quiet=False) != "" else None)
 
     # All docker options (-e/-v/--network/--rm) must precede the image name;
     # only the container command (sh -c ...) may follow it.
