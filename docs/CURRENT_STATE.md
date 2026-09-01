@@ -17,12 +17,12 @@ CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1
 ACTIVE_TASK:                           NONE
 ACTIVE_TASK_PROFILE:                   N/A
 ACTIVE_BRANCH:                         N/A (none)
-PREVIOUS_COMPLETED_TASK:               STABILIZATION BATCH S06+S05 (DELIVERED/CLOSED 2026-09-01; PR #19 + gateway release 4ada1dae2c3e)
-PREVIOUS_COMPLETED_BRANCH:             batch/stabilization-s06-s05 (RETIRED)
-NEXT_AUTHORIZED_TASK:                  NONE (S02-E Exercise Identity Backfill = next isolated Production-DB lifecycle; authorization pending)
+PREVIOUS_COMPLETED_TASK:               GOVERNED-PROD-DB-CAPABILITY-01 (gateway v2 db-operation; DELIVERED/CLOSED 2026-09-01; PRs #20–#24 → a0a47ed; proven on Production WITHOUT any DB mutation)
+PREVIOUS_COMPLETED_BRANCH:             infra/gateway-db-operation + fix/gateway-dbop-* (RETIRED; also STABILIZATION BATCH S06+S05 via PR #19 before it)
+NEXT_AUTHORIZED_TASK:                  S02-E Exercise Identity Backfill — next isolated Production-DB lifecycle; gateway v2 dry-run evidence already on file; apply requires explicit re-authorization with dry_run_evidence_sha
 NEXT_EXPECTED_BRANCH:                 N/A
 CURRENT_PHASE:                         CLOSED
-LAST_UPDATED:                          2026-09-01 (STABILIZATION BATCH S06+S05 delivered via gateway)
+LAST_UPDATED:                          2026-09-01 (gateway v2 db-operation capability delivered; app release unchanged 4ada1dae2c3e)
 ```
 
 ## Reading this manifest (pre-task gate)

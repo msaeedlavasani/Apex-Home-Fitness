@@ -11,6 +11,60 @@ the rules are in [`RELEASE_POLICY.md`](RELEASE_POLICY.md). Historical incident-t
 > and this ledger first.**
 >
 > **CURRENT VERIFIED PRODUCTION CHECKPOINT: STABILIZATION-S06-S05**
+> (app release unchanged — the gateway-v2 capability below is Production
+> infrastructure, not an application release)
+
+---
+
+## GOVERNED-DB-CAPABILITY-01 — gateway v2 `db-operation` (CLOSED)
+
+- **Status:** VERIFIED on Production (2026-09-01); task **CLOSED** — S02-E
+  NOT executed; no app/DB data mutation in this lifecycle
+- **Purpose:** extend the constrained Production Deployment Gateway with the
+  minimum reusable governed DB-mutation capability per Owner Option 1 of the
+  S02-E preflight: read-only Production DB inspection/dry-run evidence AND
+  explicitly authorized, dry-run-gated `DB_CHANGED=YES` backfill/migration
+  execution — preserving the security boundary (no arbitrary SQL/shell/Docker/
+  Compose, no secrets, bounded allowlist, fail closed, exclusive `db-op-active`
+  lock, mandatory pre-mutation backup, dry-run evidence before apply, exact
+  operation identity, idempotency, post-mutation verification, restore-on-
+  failure)
+- **Gateway:** daemon v2 `GATEWAY_VERSION=2` — single `db-operation` action
+  with strict allowlist (`s02e-exercise-identity-backfill` script runner +
+  `prisma-migrate-deploy` pinned Prisma status/deploy); modes `dry-run |
+  apply | rehearsal`; `source_sha` must equal authoritative GitHub `main`
+  HEAD; `apply` refuses without the stored dry-run evidence SHA; dry-run
+  mounts the Production volume read-only (`:ro` for ALL operation kinds);
+  `release` contract unchanged (`DB_CHANGED=false`)
+- **Source:** `a0a47edc8d03f80b7bc21f7dc6a0a80a8d77fa9d` (authoritative GitHub
+  `main` HEAD; integration via PRs #20 `9ec74bf` capability, #21 `66fd1ec` RO
+  mounts + error tails, #22 `5404192` migrate text report + error capture,
+  #23 `ddd6e36` docker option-order fix, #24 `a0a47ed` operation stdout
+  capture — each with Main CI PASS; branches retired on origin + local)
+- **Daemon on host:** `/usr/local/sbin/apex-deploy-gateway-daemon` sha256
+  `6824d85a6c1afc…` (matches merged `a0a47ed`; `--self-test` incl. mount-
+  contract + clone-DATABASE_URL assertions PASS; `py_compile` PASS)
+- **DB_STATE:** zero Production DB mutations — backfill dry-run evidence real
+  (root-only `db-op-dryrun-s02e-exercise-identity-backfill-a0a47edc8d03.json`
+  `report_sha 8cf8a535…`); apply pipeline proven via `mode=rehearsal` on a
+  clone (real DB hash unchanged; Production corpus = 8 rows already
+  backfilled by runtime generation, 1 AMBIGUOUS surfaced never guessed,
+  0 applied); `prisma-migrate-deploy` dry-run + apply PASS (evidence
+  `db-op-dryrun-prisma-migrate-deploy-a0a47edc8d03.json`, 13 migrations,
+  zero pending, backup `gateway-backup-prisma-migrate-deploy-a0a47edc8d03.db`,
+  DB hash unchanged)
+- **SECURITY_BOUNDARY:** fail-closed negatives all PASS (unknown action,
+  bad mode, mismatched source_sha, missing evidence sha, forged evidence
+  path, non-allowlisted operation, db_change=true on `release` all rejected);
+  evidence root-only `0600`; app HTTP 200 loopback; gateway READY, secret
+  boundary `PROTECTED`, image unchanged
+  `apex-home-fit:release-4ada1dae2c3e`; no sudo/docker/`.env` access granted
+- **VALIDATION:** `test:gateway` (11 pure tests) + `py_compile` + daemon
+  `--self-test` wired into CI; governance:check PASS; local reproduction of
+  the exact docker commands end-to-end PASS
+- **FINAL_STATUS:** PASS / CLOSED — S02-E is the next authorized isolated
+  Production-DB lifecycle (dry-run evidence already on file; apply requires
+  explicit re-authorization with the `dry_run_evidence_sha`)
 
 ---
 
