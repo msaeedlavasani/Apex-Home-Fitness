@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-01` — Movement Graph canonical schema / domain contract |
-| Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-01-movement-graph-contract` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: START MG-01); AHF_EXECUTION_STATE remains ACTIVE |
+| Active task | `NONE` |
+| Profile | `N/A` |
+| Branch | `N/A` |
+| State | `CLOSED` — MG-01 DELIVERED/CLOSED 2026-09-01 (PR #25 → `b5cf1a9`); AHF_EXECUTION_STATE remains ACTIVE |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-02 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -110,7 +110,7 @@ P4: Supporting
 
 ## Mission Queue — P0: MOAT / CORE FOUNDATION
 
-### MG-01 — Movement Graph canonical schema / domain contract
+### MG-01 — Movement Graph canonical schema / domain contract — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -121,6 +121,7 @@ P4: Supporting
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `SCHEMA` (new tables; additive migration) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #25 merged `b5cf1a9`; Main CI PASS on exact SHA (run 33564496192); branch `feat/mg-01-movement-graph-contract` retired. No Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Authorization (2026-09-01):** Owner explicit instruction — START MG-01
 (TASK DELTA). `TASK_PROFILE=CODE_NO_DEPLOY`; `BRANCH=feat/mg-01-movement-graph-contract`.
