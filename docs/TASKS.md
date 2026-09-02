@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — MG-04 (Ingestion pipeline) DELIVERED/CLOSED; no task is currently active |
+| Active task | `MG-05` — Normalization / deduplication / identity resolution |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-04-ingestion-pipeline` (retired) |
-| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-04); backlog awaits the next explicit Owner instruction |
+| Branch | `feat/mg-05-identity-resolution` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-05); builds on MG-01…MG-04 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -254,18 +254,18 @@ Production writes.
 
 ---
 
-### MG-05 — Normalization / deduplication / identity resolution
+### MG-05 — Normalization / deduplication / identity resolution — **ACTIVE 2026-09-01**
 
 | Field | Value |
 |---|---|
 | PRIORITY | P0 |
 | DEPENDENCIES | MG-04 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (depends on MG-04 source selection) |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
 | PARALLEL_SAFETY | `SERIAL_ONLY` |
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` |
 | ARCHITECTURE_GATE | `NONE` |
-| OWNER_DECISION_GATE | Where ambiguous identities require Owner resolution |
+| OWNER_DECISION_GATE | Where ambiguous identities require Owner resolution (issuance of an ambiguity report; resolution decisions deferred to Owner) |
 
 **Objective:** implement the normalization and identity-resolution stages:
 name normalization (FA/EN), alias handling, fuzzy matching with a
