@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-08` — Catalog validation + legacy seed reconciliation |
+| Active task | `NONE` — MG-08 (Reconciliation) DELIVERED/CLOSED; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-08-reconciliation` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-08); builds on MG-01…MG-07 (DELIVERED/CLOSED) |
+| Branch | `feat/mg-08-reconciliation` (retired) |
+| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-08); backlog awaits the next explicit Owner instruction |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -347,7 +347,7 @@ break core workout execution); no third-party CDN dependencies.
 
 ---
 
-### MG-08 — Catalog validation + legacy seed reconciliation — **ACTIVE 2026-09-01**
+### MG-08 — Catalog validation + legacy seed reconciliation — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -358,8 +358,8 @@ break core workout execution); no third-party CDN dependencies.
 | PRODUCTION_SENSITIVITY | `PROD_SENSITIVE` (reads Production seed data) |
 | DB_SENSITIVITY | `DATA` (reads; writes only via governed migration — NOT executed in this task) |
 | ARCHITECTURE_GATE | `NONE` |
-| OWNER_DECISION_GATE | Reconciliation mapping decisions (report issuance; decisions deferred to Owner) |
-| STATUS | **ACTIVE** — Owner-authorized 2026-09-01; reconciliation engine + report + governed migration PLAN (no migration executed; no Production write) |
+| OWNER_DECISION_GATE | Reconciliation mapping decisions (report issued; decisions deferred to Owner) |
+| STATUS | **DELIVERED / CLOSED** — PR #32 merged `db7c3a1`; Main CI PASS on exact SHA; branch `feat/mg-08-reconciliation` retired. MAPPED/AMBIGUOUS/UNRESOLVED engine over canonical (72/2/0) + recorded S02-E (8/1/0) corpora; catalog collisions surfaced (`side-lying leg lift`, `glute bridge`); `EXERCISE-CATALOG-DISAMBIGUATION-01` ABSORBED; governed migration plan documented, NOT executed. No Production read/write; no catalog data mutated; no Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Objective:** validate the versioned Movement Graph against the current
 Production seed exercises. Every seed record passes through catalog
