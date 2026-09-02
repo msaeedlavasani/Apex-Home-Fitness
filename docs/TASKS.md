@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — MG-06 (Relationship model) DELIVERED/CLOSED; no task is currently active |
+| Active task | `MG-07` — Localization + media architecture |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-06-relationship-model` (retired) |
-| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-06); backlog awaits the next explicit Owner instruction |
+| Branch | `feat/mg-07-localization-media` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-07); builds on MG-01…MG-06 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -316,17 +316,18 @@ example of each relationship type; unit tests pass.
 
 ---
 
-### MG-07 — Localization + media architecture
+### MG-07 — Localization + media architecture — **ACTIVE 2026-09-01**
 
 | Field | Value |
 |---|---|
 | PRIORITY | P0 |
 | DEPENDENCIES | MG-06 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
 | PARALLEL_SAFETY | `SAFE` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` (media delivery) |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **ACTIVE** — Owner-authorized 2026-09-01; DATA-ONLY/media-rights constraints respected (no media import; architecture + manifest only) |
 
 **Objective:** define the FA/EN localization model for movement knowledge
 objects and the self-hosted media architecture (required exercise media
