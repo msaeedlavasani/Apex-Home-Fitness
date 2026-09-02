@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-06` — Relationship model (progression / regression / substitution) |
+| Active task | `NONE` — MG-06 (Relationship model) DELIVERED/CLOSED; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-06-relationship-model` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-06); builds on MG-01…MG-05 (DELIVERED/CLOSED) |
+| Branch | `feat/mg-06-relationship-model` (retired) |
+| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-06); backlog awaits the next explicit Owner instruction |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -285,7 +285,7 @@ classifier (regression test); unit tests pass.
 
 ---
 
-### MG-06 — Relationship model (progression / regression / substitution) — **ACTIVE 2026-09-01**
+### MG-06 — Relationship model (progression / regression / substitution) — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -296,6 +296,7 @@ classifier (regression test); unit tests pass.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` (relationship edges) |
 | ARCHITECTURE_GATE | `NONE` |
+| STATUS | **DELIVERED / CLOSED** — PR #30 merged `e83a6ec`; Main CI PASS on exact SHA; branch `feat/mg-06-relationship-model` retired. Typed progression/regression/substitution edges + fail-closed deterministic validation (no cycles/dangling/self-loops/duplicates; mirrored inverse pairs = one edge); expressibility exemplars over real canonical slugs. Edges modeled/validated in code only — no DB write; no Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Objective:** implement the relationship model: typed edges between
 movement knowledge objects for progression (harder variants), regression

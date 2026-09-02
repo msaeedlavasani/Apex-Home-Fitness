@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           MG-06 — Relationship model (progression / regression / substitution) (Owner-authorized 2026-09-01)
-ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-06 is the sixth explicitly authorized backlog task)
-ACTIVE_BRANCH:                         feat/mg-06-relationship-model
-PREVIOUS_COMPLETED_TASK:               MG-05 Normalization / deduplication / identity resolution (DELIVERED/CLOSED 2026-09-01 — P0; PR #29 merged a22d967, Main CI PASS on exact SHA; no ADR (gate NONE); pure module; no Production/DB/UI change)
+ACTIVE_TASK:                           NONE — MG-06 (Relationship model) DELIVERED/CLOSED; no task is currently active
+ACTIVE_TASK_PROFILE:                   N/A (no active task)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-06 is the sixth explicitly authorized backlog task and is CLOSED)
+ACTIVE_BRANCH:                         N/A
+PREVIOUS_COMPLETED_TASK:               MG-06 Relationship model (DELIVERED/CLOSED 2026-09-01 — P0; PR #30 merged e83a6ec, Main CI PASS on exact SHA; no ADR (gate NONE); pure module; edges modeled/validated in code only; no Production/DB/UI change)
 NEXT_AUTHORIZED_TASK:                  NONE — MG-07 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         ACTIVE — MG-06 in progress (branch, local validation, PR/CI, merge, Main CI)
-LAST_UPDATED:                          2026-09-01 (MG-06 authorized and ACTIVE; no Production/DB/UI change; no deployment; MG-07+ not authorized)
+CURRENT_PHASE:                         CLOSED — MG-06 complete, Main CI PASS on exact SHA; backlog idle awaiting next explicit Owner instruction
+LAST_UPDATED:                          2026-09-01 (MG-06 DELIVERED/CLOSED; no Production/DB/UI change; no deployment; MG-07+ not authorized)
 ```
 
 ## Reading this manifest (pre-task gate)
