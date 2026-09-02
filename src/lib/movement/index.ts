@@ -3,7 +3,8 @@
  * schema / domain contract; MG-02 — movement taxonomy vocabulary; MG-03 —
  * source/provenance contract; MG-04 — governed ingestion pipeline; MG-05 —
  * normalization / deduplication / identity resolution; MG-06 — relationship
- * model; MG-07 — localization + media architecture).
+ * model; MG-07 — localization + media architecture; MG-08 — catalog
+ * validation + legacy seed reconciliation).
  *
  * Exposes the Movement Graph contract types, the expressibility bridge, the
  * closed taxonomy vocabulary + FA/EN display maps, the provenance module
@@ -12,8 +13,10 @@
  * (FA/EN normalization, S02-E-model classifier, dedup + collision report),
  * and the typed relationship model (progression / regression / substitution
  * with fail-closed graph validation), the FA/EN localization key structure
- * for user-facing movement content, and the self-hosted media manifest
- * format (content-hash integrity + no-third-party-CDN rules). This domain
+ * for user-facing movement content, the self-hosted media manifest
+ * format (content-hash integrity + no-third-party-CDN rules), and the
+ * catalog-validation + legacy seed reconciliation engine (MAPPED /
+ * AMBIGUOUS / UNRESOLVED, fail-closed, S02-E evidence model). This domain
  * is PURE and framework-independent — no Prisma, React, services, or
  * runtime side effects. Nothing in the application imports this module yet
  * (no runtime behavior change by design).
@@ -209,3 +212,18 @@ export {
   type MediaManifestValidation,
   type MovementMediaManifest,
 } from './media';
+
+export {
+  buildReconciliationReport,
+  canonicalSeedCorpus,
+  findCatalogCollisions,
+  reconcileRecord,
+  recordedProductionEvidenceCorpus,
+  verifyReconciliationReport,
+  type CatalogCollision,
+  type ReconcileRowResult,
+  type ReconcileStatus,
+  type ReconciliationReport,
+  type ReconcileVerification,
+  type SeedRecord,
+} from './reconcile';
