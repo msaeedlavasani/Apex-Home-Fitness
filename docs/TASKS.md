@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-04` — Ingestion architecture (governed pipeline) |
+| Active task | `NONE` — MG-04 (Ingestion pipeline) DELIVERED/CLOSED; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-04-ingestion-pipeline` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-04; decision gate CLOSED: free-exercise-db Unlicense, data-only media); builds on MG-01…MG-03 (DELIVERED/CLOSED) |
+| Branch | `feat/mg-04-ingestion-pipeline` (retired) |
+| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-04); backlog awaits the next explicit Owner instruction |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -218,18 +218,19 @@ import (permissive/attribution) and which are not; typecheck passes.
 
 ---
 
-### MG-04 — Ingestion architecture (governed pipeline)
+### MG-04 — Ingestion architecture (governed pipeline) — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
 | PRIORITY | P0 |
 | DEPENDENCIES | MG-02, MG-03 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (requires source selection + licensing assessment) |
+| AUTONOMOUS_ELIGIBILITY | `READY` (gate RESOLVED) |
 | PARALLEL_SAFETY | `SERIAL_ONLY` |
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` (writes new catalog records) |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| OWNER_DECISION_GATE | **RESOLVED 2026-09-01** — source selected: free-exercise-db (Unlicense = permissive per MG-03); media posture DATA-ONLY (all media deferred to MG-07). Decision: [`architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md`](architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md) §7. **Execution NOT yet authorized.** |
+| OWNER_DECISION_GATE | **RESOLVED 2026-09-01** — source selected: free-exercise-db (Unlicense = permissive per MG-03); media posture DATA-ONLY (all media deferred to MG-07). Decision: [`architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md`](architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md) §7. |
+| STATUS | **DELIVERED / CLOSED** — PR #28 merged `0ec424d`; Main CI PASS on exact SHA; branch `feat/mg-04-ingestion-pipeline` retired. Pipeline implemented as code, runnable in dry-run (pinned free-exercise-db snapshot `a859101d`, 876 entries); data-only; no Production/DB write; no deployment (`CODE_NO_DEPLOY`). |
 
 **Objective:** implement the governed ingestion pipeline: external permitted
 sources → ingest → normalize → deduplicate → identity resolution → Apex
