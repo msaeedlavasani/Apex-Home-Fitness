@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — MG-05 (Identity resolution) DELIVERED/CLOSED; no task is currently active |
+| Active task | `MG-06` — Relationship model (progression / regression / substitution) |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-05-identity-resolution` (retired) |
-| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-05); backlog awaits the next explicit Owner instruction |
+| Branch | `feat/mg-06-relationship-model` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-06); builds on MG-01…MG-05 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -285,13 +285,13 @@ classifier (regression test); unit tests pass.
 
 ---
 
-### MG-06 — Relationship model (progression / regression / substitution)
+### MG-06 — Relationship model (progression / regression / substitution) — **ACTIVE 2026-09-01**
 
 | Field | Value |
 |---|---|
 | PRIORITY | P0 |
 | DEPENDENCIES | MG-05 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| AUTONOMOUS_ELIGIBILITY | `READY` |
 | PARALLEL_SAFETY | `SAFE` |
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` (relationship edges) |
