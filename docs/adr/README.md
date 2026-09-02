@@ -76,6 +76,7 @@ Sequential zero-padded numbers (`0001`, `0002`, …). Never renumber.
 | [`0006-movement-graph-domain-contract.md`](./0006-movement-graph-domain-contract.md) | ACCEPTED (2026-09-01) | Movement Graph domain contract = canonical type-level movement schema; pure, fail-closed identity; shapes-not-vocabularies (MG-01) |
 | [`0007-movement-taxonomy-vocabulary.md`](./0007-movement-taxonomy-vocabulary.md) | ACCEPTED (2026-09-01) | Closed Movement Graph taxonomy vocabulary (patterns/muscles/equipment/difficulty/impact/symmetry/home-suitability/constraints) with FA/EN maps; governance-gated extension (MG-02) |
 | [`0008-source-provenance-contract.md`](./0008-source-provenance-contract.md) | ACCEPTED (2026-09-01) | Hardened provenance record (ingestion timestamp) + sha256 hash contract + fail-closed license-compatibility rules + evidence confidence model (MG-03) |
+| [`0009-governed-ingestion-pipeline.md`](./0009-governed-ingestion-pipeline.md) | ACCEPTED (2026-09-01) | Staged governed ingestion pipeline (pin/parse/normalize/fail-closed identity/taxonomy/provenance/MovementObject); snapshot-pinned Unlicense source; DATA-ONLY media; dry-run evidence only (MG-04) |
 
 Full decision summaries live in the records; do not duplicate ADR text here.
 The Architecture Stabilization Plan (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`)

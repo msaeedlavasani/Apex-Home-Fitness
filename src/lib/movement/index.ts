@@ -109,3 +109,28 @@ export {
   type ProvenanceEvidence,
   type SourceProvenanceInput,
 } from './provenance';
+
+export {
+  EQUIPMENT_ALIAS_MAP,
+  FREE_EXERCISE_DB_SNAPSHOT,
+  LEVEL_MAP,
+  MUSCLE_ALIAS_MAP,
+  PATTERN_HINT_MAP,
+  buildMovementObject,
+  canonicalEntryJson,
+  loadSnapshotDocument,
+  mapEntryTaxonomy,
+  parseFreeExerciseDbDocument,
+  resolveIdentity,
+  runIngestion,
+  upstreamMovementId,
+  upstreamMovementSlug,
+  type BuiltMovement,
+  type FreeExerciseDbEntry,
+  type FreeExerciseDbSnapshot,
+  type IdentityResolution,
+  type IdentityStatus,
+  type IngestionRunReport,
+  type SourceDocument,
+  type TaxonomyMapping,
+} from './ingest';
