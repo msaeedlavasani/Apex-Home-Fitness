@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-07` — Localization + media architecture |
+| Active task | `NONE` — MG-07 (Localization + media) DELIVERED/CLOSED; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-07-localization-media` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-07); builds on MG-01…MG-06 (DELIVERED/CLOSED) |
+| Branch | `feat/mg-07-localization-media` (retired) |
+| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-07); backlog awaits the next explicit Owner instruction |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -316,7 +316,7 @@ example of each relationship type; unit tests pass.
 
 ---
 
-### MG-07 — Localization + media architecture — **ACTIVE 2026-09-01**
+### MG-07 — Localization + media architecture — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -327,7 +327,7 @@ example of each relationship type; unit tests pass.
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` (media delivery) |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| STATUS | **ACTIVE** — Owner-authorized 2026-09-01; DATA-ONLY/media-rights constraints respected (no media import; architecture + manifest only) |
+| STATUS | **DELIVERED / CLOSED** — PR #31 merged `1d7b8d0`; Main CI PASS on exact SHA; branch `feat/mg-07-localization-media` retired. Localization key grammar + coverage validator + self-hosted media manifest (sha256 integrity, no-third-party-CDN rules, fallbacks); ADR-0010 ACCEPTED. NO media imported (DATA-ONLY posture respected); no Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Objective:** define the FA/EN localization model for movement knowledge
 objects and the self-hosted media architecture (required exercise media
