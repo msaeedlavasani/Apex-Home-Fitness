@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-05` — Normalization / deduplication / identity resolution |
+| Active task | `NONE` — MG-05 (Identity resolution) DELIVERED/CLOSED; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-05-identity-resolution` |
-| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-05); builds on MG-01…MG-04 (DELIVERED/CLOSED) |
+| Branch | `feat/mg-05-identity-resolution` (retired) |
+| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-05); backlog awaits the next explicit Owner instruction |
 | Production-bound | `NO` |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
@@ -254,7 +254,7 @@ Production writes.
 
 ---
 
-### MG-05 — Normalization / deduplication / identity resolution — **ACTIVE 2026-09-01**
+### MG-05 — Normalization / deduplication / identity resolution — **DELIVERED / CLOSED 2026-09-01**
 
 | Field | Value |
 |---|---|
@@ -266,6 +266,7 @@ Production writes.
 | DB_SENSITIVITY | `DATA` |
 | ARCHITECTURE_GATE | `NONE` |
 | OWNER_DECISION_GATE | Where ambiguous identities require Owner resolution (issuance of an ambiguity report; resolution decisions deferred to Owner) |
+| STATUS | **DELIVERED / CLOSED** — PR #29 merged `a22d967`; Main CI PASS on exact SHA; branch `feat/mg-05-identity-resolution` retired. Deterministic FA/EN normalization + S02-E-model classifier (AUTO/ALIAS/AMBIGUOUS/UNRESOLVED), dedup + collision evidence report; `Side-Lying Leg Lift` AMBIGUOUS regression preserved; fuzzy tier emits suggestions only. No Production/DB/UI change; no deployment (`CODE_NO_DEPLOY`). |
 
 **Objective:** implement the normalization and identity-resolution stages:
 name normalization (FA/EN), alias handling, fuzzy matching with a
