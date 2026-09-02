@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           MG-03 — Source/provenance contract (Owner-authorized 2026-09-01)
-ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-03 is the third explicitly authorized backlog task)
-ACTIVE_BRANCH:                         feat/mg-03-source-provenance
-PREVIOUS_COMPLETED_TASK:               MG-02 Movement taxonomy design (DELIVERED/CLOSED 2026-09-01 — P0; PR #26 merged 36e68ce, Main CI PASS on exact SHA; closed vocabulary + FA/EN maps, ADR-0007; no Production/DB/UI change)
+ACTIVE_TASK:                           NONE
+ACTIVE_TASK_PROFILE:                   N/A
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-03 delivered/closed; further task start requires explicit Owner instruction)
+ACTIVE_BRANCH:                         N/A (none)
+PREVIOUS_COMPLETED_TASK:               MG-03 Source/provenance contract (DELIVERED/CLOSED 2026-09-01 — P0; PR #27 merged 0eac3c2, Main CI PASS on exact SHA; hardened provenance record + sha256 hash contract + license-compatibility rules + confidence model, ADR-0008; no Production/DB/UI change) — preceded by MG-02 taxonomy (PR #26 → 36e68ce) and MG-01 contract (PR #25 → b5cf1a9)
 NEXT_AUTHORIZED_TASK:                  NONE — MG-03 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         ACTIVE — MG-03 in progress (branch, local validation, PR/CI, merge, Main CI)
-LAST_UPDATED:                          2026-09-01 (MG-03 authorized and ACTIVE; no Production/DB/UI change; no deployment; MG-04+ not authorized)
+CURRENT_PHASE:                         CLOSED — MG-03 delivered/closed; backlog execution halted pending next explicit Owner instruction
+LAST_UPDATED:                          2026-09-01 (MG-03 CLOSED via PR #27 → 0eac3c2; no Production/DB/UI change; no deployment; MG-04+ not authorized)
 ```
 
 ## Reading this manifest (pre-task gate)
