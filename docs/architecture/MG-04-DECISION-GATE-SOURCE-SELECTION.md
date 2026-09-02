@@ -1,6 +1,10 @@
 # MG-04 — Decision Gate: Upstream Exercise Source Selection + License Approval
 
-> **STATUS: AWAITING OWNER DECISION — PROPOSED (2026-09-01)**
+> **STATUS: DECIDED — 2026-09-01** (was AWAITING OWNER DECISION / PROPOSED)
+>
+> **OWNER DECISION (2026-09-01):** (1) Primary upstream source = **free-exercise-db (Unlicense)**; (2) license treatment = Unlicense as `permissive` per MG-03 (no RepDB terms needed); (3) media posture = **DATA-ONLY** — no exercise media is ingested now; ALL media is deferred to the MG-07 media architecture. See §7.
+>
+> **MG-04 EXECUTION IS STILL NOT AUTHORIZED** — this gate is closed; starting MG-04 requires a separate explicit Owner instruction.
 >
 > This document prepares the mandatory `OWNER_DECISION_GATE` of `MG-04`
 > (`docs/TASKS.md`): source selection + license approval. It evaluates
@@ -147,6 +151,8 @@ the data-layer decision today.
 
 ## 5. Exact Owner decision required
 
+> **RESOLVED 2026-09-01 — see §7.**
+
 1. **Select the primary upstream source** for MG-04:
    - **(A) free-exercise-db (Unlicense)** — recommended primary;
    - (B) RepDB free tier (attribution) — media-safe alternative;
@@ -176,3 +182,28 @@ NOT STARTED — it starts only on the Owner's next explicit instruction.
 - MG-03 classification is reproducible in-repo: `classifyLicense('Unlicense')`
   → `permissive` (importable); `classifyLicense('CC-BY-SA-4.0')` →
   `restrictive` (not importable)
+
+## 7. OWNER DECISION (2026-09-01) — gate CLOSED
+
+Recorded from the Owner's decision-gate answers:
+
+1. **Primary upstream source: (A) free-exercise-db (yuhonas) — Unlicense.**
+   MG-04 ingests its JSON data (names, muscles, equipment, instructions,
+   level, force/mechanic hints, category) as the initial upstream corpus.
+2. **License treatment approved:** `Unlicense` classified **`permissive`**
+   under the MG-03 contract — no further license approval needed (RepDB
+   terms are NOT engaged; RepDB not selected).
+3. **Media posture: DATA-ONLY.** No exercise media (images/gifs) is ingested
+   in MG-04 — the free-exercise-db image chain-of-title risk is thereby
+   avoided entirely. ALL media import/validation/self-hosting is deferred
+   to the **MG-07** media architecture task (its `validated` flag and
+   self-hosting contract remain the media gate).
+
+**Consequences for MG-04 implementation (when separately authorized):**
+- snapshot-pin a free-exercise-db commit SHA at ingest;
+- record per-entry provenance (sourceRef = pinned raw URL, license
+  `Unlicense`, sha256 content hash, confidence per MG-03);
+- normalize/dedup/identity-resolve fail-closed (S02-E lesson); express
+  entries in the MG-01 contract + MG-02 taxonomy;
+- NO media import, NO Production writes (dry-run + evidence model), NO
+  deployment. This gate does not start MG-04.

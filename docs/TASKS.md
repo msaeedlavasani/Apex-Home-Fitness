@@ -229,7 +229,7 @@ import (permissive/attribution) and which are not; typecheck passes.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` (writes new catalog records) |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| OWNER_DECISION_GATE | Source selection + license approval |
+| OWNER_DECISION_GATE | **RESOLVED 2026-09-01** — source selected: free-exercise-db (Unlicense = permissive per MG-03); media posture DATA-ONLY (all media deferred to MG-07). Decision: [`architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md`](architecture/MG-04-DECISION-GATE-SOURCE-SELECTION.md) §7. **Execution NOT yet authorized.** |
 
 **Objective:** implement the governed ingestion pipeline: external permitted
 sources → ingest → normalize → deduplicate → identity resolution → Apex
