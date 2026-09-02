@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` |
-| Profile | `N/A` |
-| Branch | `N/A` |
-| State | `CLOSED` — MG-03 DELIVERED/CLOSED 2026-09-01 (PR #27 → `0eac3c2`); AHF_EXECUTION_STATE remains ACTIVE |
+| Active task | `MG-04` — Ingestion architecture (governed pipeline) |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/mg-04-ingestion-pipeline` |
+| State | `ACTIVE` — Owner-authorized 2026-09-01 (explicit instruction: EXECUTE MG-04; decision gate CLOSED: free-exercise-db Unlicense, data-only media); builds on MG-01…MG-03 (DELIVERED/CLOSED) |
 | Production-bound | `NO` |
-| Next authorized task | `NONE` — MG-04 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
+| Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
