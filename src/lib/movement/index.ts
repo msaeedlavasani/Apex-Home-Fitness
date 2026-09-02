@@ -1,14 +1,17 @@
 /**
  * Movement domain public entry point (MG-01 — Movement Graph canonical
  * schema / domain contract; MG-02 — movement taxonomy vocabulary; MG-03 —
- * source/provenance contract).
+ * source/provenance contract; MG-04 — governed ingestion pipeline; MG-05 —
+ * normalization / deduplication / identity resolution).
  *
  * Exposes the Movement Graph contract types, the expressibility bridge, the
- * closed taxonomy vocabulary + FA/EN display maps, and the provenance
- * module (hash contract, license rules, confidence model). This domain is
- * PURE and framework-independent — no Prisma, React, services, or runtime
- * side effects. Nothing in the application imports this module yet (no
- * runtime behavior change by design).
+ * closed taxonomy vocabulary + FA/EN display maps, the provenance module
+ * (hash contract, license rules, confidence model), the governed ingestion
+ * pipeline (dry-run only), and the deterministic identity-resolution stage
+ * (FA/EN normalization, S02-E-model classifier, dedup + collision report).
+ * This domain is PURE and framework-independent — no Prisma, React,
+ * services, or runtime side effects. Nothing in the application imports
+ * this module yet (no runtime behavior change by design).
  */
 
 export {
@@ -134,3 +137,24 @@ export {
   type SourceDocument,
   type TaxonomyMapping,
 } from './ingest';
+
+export {
+  buildIdentityReport,
+  classifyMovementName,
+  findDuplicateNames,
+  fuzzySuggestions,
+  hasFaScript,
+  levenshteinDistance,
+  normalizeFaName,
+  normalizeMovementName,
+  similarityScore,
+  verifyIdentityReport,
+  type DuplicateGroup,
+  type FuzzySuggestion,
+  type IdentityClass,
+  type IdentityCollision,
+  type IdentityReport,
+  type IdentityReportRow,
+  type IdentityReportVerification,
+  type MovementIdentityResult,
+} from './identity';
