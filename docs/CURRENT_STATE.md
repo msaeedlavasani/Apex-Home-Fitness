@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — AL-01, AL-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
+ACTIVE_TASK:                           NONE — AL-01, AL-02, AL-03, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
 ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03 — execute docs/TASKS.md one READY task at a time in dependency order; AL-01, AL-02, TS-01, TS-04 delivered/closed; remaining READY items are gated — see CURRENT_PHASE)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03, resumed 2026-09-03 with the AL-03 promotion; AL-01…AL-03, TS-01, TS-04 delivered/closed; AL-04 remains NOT_YET — next executable requires an Owner decision)
 ACTIVE_BRANCH:                         N/A
-PREVIOUS_COMPLETED_TASK:               TS-04 Knowledge / Journal architecture (DELIVERED/CLOSED 2026-09-03 — P3; DOCS_DIRECT_MAIN, Main CI PASS on exact pushed SHA; ADR-0015 ACCEPTED; movement-anchored content model, MG-07/MG-03 contract reuse, SSR rendering + movement-first authoring design; no CMS/pages/migration)
-NEXT_AUTHORIZED_TASK:                  NONE autonomous-READY with satisfied dependencies — chain STOPPED at genuine gates (see report): AL-03/AL-04 NOT_YET; CP-01/CP-02 need AL-04; TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
+PREVIOUS_COMPLETED_TASK:               AL-03 Adaptation input pipeline (DELIVERED/CLOSED 2026-09-03 — P1; promoted NOT_YET → READY by Owner TASK DELTA; PR #37 merged cf82a82, Main CI PASS on exact SHA run 33747870414; ADR-0016 ACCEPTED; pure adaptive-input pipeline src/lib/adaptive — canonical AdaptationInput schema, deterministic projection of profile+graph+history, attributed inference + evidence refs, fail-closed edges; additive, no DB migration, no runtime wiring)
+NEXT_AUTHORIZED_TASK:                  NONE autonomous-READY with satisfied dependencies — AL-04 remains NOT_YET + OWNER_DECISION_GATE (algorithm sign-off) and was NOT bypassed; CP-01/CP-02 need AL-04; TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
 NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         STOPPED at governance gates after AL-01, AL-02, TS-01, TS-04 (autonomous backlog execution 2026-09-03); next executable requires an Owner/Human decision (promote AL-03/AL-04, authorize TS-03 implementation posture or Production release, legal review for TS-02)
-LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01, AL-02, TS-01, TS-04; remaining queue gated — AL-03/AL-04 NOT_YET, TS-02 HUMAN_GATE, TS-03 Production acceptance, TS-05/CP-01+ depend on those; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
+CURRENT_PHASE:                         STOPPED at the AL-04 gate after AL-01…AL-03, TS-01, TS-04 (autonomous backlog execution 2026-09-03); next executable requires an Owner decision (promote AL-04 with algorithm sign-off, authorize TS-03 posture, or start TS-02 legal review)
+LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01, AL-02, AL-03, TS-01, TS-04 — PRs #35/#36/#37 → 89ec8a1/c7f509b/cf82a82, TS-01/TS-04 docs commits; chain STOPPED at AL-04 NOT_YET + OWNER_DECISION_GATE; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)

@@ -22,7 +22,7 @@
 | Active task | `NONE` — AL-01 + AL-02 DELIVERED/CLOSED 2026-09-03; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | `feat/al-02-personal-movement-profile` (retired) |
-| State | `READY` — AL-01, AL-02 CLOSED (autonomous backlog execution, 2026-09-03); next READY candidates: TS-01 (deps NONE), TS-04 (deps MG-07 CLOSED); AL-03/AL-04 `NOT_YET` (gate) |
+| State | `READY` — AL-01, AL-02, AL-03, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-03 promoted and executed; AL-04 remains `NOT_YET` (gate) |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | Per the 2026-09-03 autonomous-execution instruction, continue with READY tasks whose dependencies are satisfied (P1 chain blocked by AL-03 `NOT_YET`) |
 | Pending owner review | AL-03/AL-04 promotion (`NOT_YET`); MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
@@ -520,6 +520,7 @@ principles documented (data minimization, user control); typecheck passes.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #37 merged `cf82a82`; Main CI PASS on exact SHA (run 33747870414); branch `feat/al-03-adaptation-input-pipeline` retired. Pure adaptation-input pipeline (`src/lib/adaptive`) — canonical `AdaptationInput` schema + deterministic projection of (profile AL-02, MG-06 relationship graph, workout history); attributed inference + sorted evidence refs; fail-closed missing-profile/empty-history/empty-graph edges. ADR-0016 ACCEPTED. Additive — no existing type changed; no DB migration; no runtime wiring (`CODE_NO_DEPLOY`). |
 
 **Authorization (2026-09-03):** Owner explicit instruction — RESUME
 AUTONOMOUS CHAIN (TASK DELTA): promote and execute AL-03; AL-04 remains
