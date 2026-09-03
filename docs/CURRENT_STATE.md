@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — MG-09 (Production migration / adoption) DELIVERED/CLOSED (source + rehearsal evidence; Production apply gated); no task is currently active
+ACTIVE_TASK:                           NONE — AL-01 (Workout outcome / feedback model) DELIVERED/CLOSED 2026-09-03; AL-02 next READY; no task is currently active
 ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-09 is the ninth explicitly authorized backlog task and is CLOSED)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03 — execute docs/TASKS.md one READY task at a time in dependency order; AL-01 delivered/closed as the first READY task)
 ACTIVE_BRANCH:                         N/A
-PREVIOUS_COMPLETED_TASK:               MG-09 Production migration / adoption (DELIVERED/CLOSED 2026-09-01 — P0; PR #33 merged 93e3c20, Main CI PASS on exact SHA; ADR-0011 ACCEPTED; additive Movement/MovementRelationship/MovementMedia migration; allowlisted gateway op mg09-movement-graph-adopt (MG-08 engine, dry-run evidence → idempotent apply, AMBIGUOUS never guessed); fail-safe runtime switchover (adoption gate); rehearsal evidence: dry-run PASS 74 planned/5 linked, apply PASS idempotent, Exercise rows untouched, DB hash before/after; Production apply NOT executed — gated on OWNER_DECISION_GATE)
-NEXT_AUTHORIZED_TASK:                  NONE — AL-01 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
-NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         CLOSED — MG-09 complete (source + rehearsal evidence), Main CI PASS on exact SHA; Production apply pending the recorded OWNER_DECISION_GATE; backlog idle awaiting next explicit Owner instruction
-LAST_UPDATED:                          2026-09-01 (MG-09 DELIVERED/CLOSED; additive migration + governed adoption + fail-safe switchover merged; no Production migration executed, no Production/DB write, no media, no deployment; AL-01+ not authorized)
+PREVIOUS_COMPLETED_TASK:               AL-01 Workout outcome / feedback model (DELIVERED/CLOSED 2026-09-03 — P1; PR #35 merged 89ec8a1, Main CI PASS on exact SHA run 33735023618; ADR-0012 ACCEPTED; pure outcome contract src/lib/outcomes — completion/per-exercise performance/subjective feedback/context, fail-closed validator, SessionSummary adapter; additive — no session/persistence change, no DB migration, no runtime wiring)
+NEXT_AUTHORIZED_TASK:                  AL-02 (READY — dependency AL-01 satisfied; autonomous chain per the 2026-09-03 Owner instruction)
+NEXT_EXPECTED_BRANCH:                 feat/al-02-personal-movement-profile
+CURRENT_PHASE:                         ACTIVE — autonomous backlog execution (2026-09-03); AL-01 CLOSED; AL-02 next; Production-bound work remains gated
+LAST_UPDATED:                          2026-09-03 (AL-01 DELIVERED/CLOSED via autonomous backlog execution; PR #35 → 89ec8a1, Main CI PASS; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,17 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **AUTONOMOUS BACKLOG EXECUTION (2026-09-03).** Owner TASK DELTA:
+  execute `docs/TASKS.md` one READY task at a time in dependency order, no
+  Owner confirmation between normal tasks, STOP only at genuine
+  Owner/Human/Production/architecture gates. AL-01 (Workout outcome /
+  feedback model) DELIVERED/CLOSED — PR #35 merged `89ec8a1`, Main CI PASS
+  on exact SHA (run `33735023618`), branch retired (local + remote
+  verified). Branch protection enforcement also hardened the same day:
+  `enforce_admins` enabled on `main` (required `build`/`e2e` checks now bind
+  the Owner; docs commits `92e909b`, `168d5c5`) — direct-main pushes are
+  push-time gated; merges use PRs with CI PASS.
 
 - **STABILIZATION BATCH S06+S05 = DELIVERED/CLOSED (2026-09-01).** Second
   post-S-04 architecture lifecycle completed: PR #19 → merged `4ada1da`

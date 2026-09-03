@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — MG-09 (Production migration / adoption) DELIVERED/CLOSED (source + rehearsal evidence; Production apply gated); no task is currently active |
+| Active task | `NONE` — AL-01 (Workout outcome / feedback model) DELIVERED/CLOSED 2026-09-03; AL-02 next READY; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-09-persisted-movement-graph` (retired) |
-| State | `READY` — MG-01…MG-09 CLOSED; backlog awaits the next explicit Owner instruction |
-| Production-bound | `GATED` — Production apply requires the recorded OWNER_DECISION_GATE (dry-run evidence + explicit apply authorization) |
-| Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
-| Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
+| Branch | `feat/al-01-workout-outcome-model` (retired) |
+| State | `READY` — AL-01 CLOSED (autonomous backlog execution, 2026-09-03); AL-02 READY and next in dependency order; AL-03/AL-04 `NOT_YET` |
+| Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
+| Next authorized task | AL-02 (READY — dependency AL-01 satisfied); autonomous chain continues until a genuine Owner/Human/Production gate |
+| Pending owner review | AL-03/AL-04 promotion (`NOT_YET`); MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -436,7 +436,7 @@ recorded.
 
 ## Mission Queue — P1: CLOSE THE ADAPTIVE LOOP
 
-### AL-01 — Workout outcome / feedback model
+### AL-01 — Workout outcome / feedback model — **DELIVERED / CLOSED 2026-09-03**
 
 | Field | Value |
 |---|---|
@@ -447,6 +447,13 @@ recorded.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `SCHEMA` (new outcome tables; additive) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #35 merged `89ec8a1`; Main CI PASS on exact SHA (run 33735023618); branch `feat/al-01-workout-outcome-model` retired. Pure outcome contract (`src/lib/outcomes`) — completion, per-exercise performance (S-02 canonical identity), subjective difficulty/feedback (closed enums, EN display), session context (MG-02-owned constraint tokens); fail-closed validator + derived summary + pure SessionSummary adapter. ADR-0012 ACCEPTED. Additive — no change to any session/persistence type; no DB migration; no runtime wiring (`CODE_NO_DEPLOY`). |
+
+**Authorization (2026-09-03):** Owner explicit instruction — AUTONOMOUS
+BACKLOG EXECUTION (TASK DELTA): execute `docs/TASKS.md` one READY task at a
+time in dependency order; do not wait for Owner confirmation between normal
+tasks; STOP only at genuine Owner/Human/Production/architecture gates.
+AL-01 is the first READY task (P1; dependency MG-06 CLOSED).
 
 **Objective:** define the workout outcome/feedback data model — what the
 system records after each workout session (completion, per-exercise
