@@ -223,16 +223,40 @@ preparation, Production acceptance, checkpoint recording, mainline merge-back.
 
 ## Enforcement status
 
-`BRANCH_PROTECTION_VERIFICATION = NOT_VERIFIABLE` — GitHub branch protection on
-`main` could not be verified from the available tooling during the Governance
-v2 checkpoint (API returned `Requires authentication`); do NOT claim it is
-enabled. Treat the following as repository governance debt until an
-Owner/admin confirms or enables them:
+`BRANCH_PROTECTION_VERIFICATION = VERIFIED` (2026-09-03; authenticated API via
+`gh api`). Classic branch protection IS enabled on `main`:
 
-- block force pushes to `main`
-- block branch deletion of `main`
-- require pull-request review / status checks before merge to `main`
-- require the CI workflow to pass before merge to `main`
+- required status checks: `build` + `e2e` (GitHub Actions, app `15368`),
+  `strict: true` (branch must be up to date before merge), enforced at
+  `enforcement_level = non_admins` — administrators are exempt
+  (`enforce_admins.enabled = false`);
+- force pushes blocked (`allow_force_pushes = false`) and branch deletion
+  blocked (`allow_deletions = false`) for non-admins;
+- `required_linear_history = true`;
+- `required_pull_request_reviews = null` — PR review is NOT required;
+- no repository rulesets configured (`rulesets = []`; personal-account repo,
+  no organization rulesets possible).
 
-Do not weaken any existing protection; confirm exact settings with the Owner
-before applying changes.
+Observed bypass (2026-09-03, docs commit `61fdaf3`): GitHub reported
+`Bypassed rule violations for refs/heads/main: 2 of 2 required status checks
+are expected`. Cause: the push was made by the repository Owner/administrator
+(`msaeedlavasani`), and classic protection exempts admins — GitHub default
+behavior, not a misconfiguration. The post-push Main CI still ran on the
+exact SHA and PASSED (run `33728121613`), so § J was satisfied by
+verification, not by push-time enforcement.
+
+Remaining governance debt (Owner decision required before changing; never
+weaken existing protection):
+
+- the required `build`/`e2e` checks and linear history do NOT bind the
+  Owner/administrator — direct-main pushes by the Owner bypass them;
+- PR review is not required on `main`.
+
+Safe correction options (recommendation only — not applied by any audit):
+
+1. enable `enforce_admins` ("include administrators") so required status
+   checks bind the Owner — matches § J and the DOCS_DIRECT_MAIN lifecycle
+   (`PUSH → MAIN_CI_PASS_ON_EXACT_SHA`); low-risk and reversible;
+2. add a `main` ruleset with required status checks and no admin bypass (or
+   a minimal bypass list), superseding the classic settings;
+3. optionally require pull-request review on `main`.
