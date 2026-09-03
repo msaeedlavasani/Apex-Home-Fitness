@@ -599,6 +599,7 @@ constraints and recovery signals; unit tests cover the main decision paths.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — 2026-09-03 (docs-only; ADR-0018 ACCEPTED) — Companion architecture + UX behavior spec [`architecture/CP-01-COMPANION-ARCHITECTURE.md`](architecture/CP-01-COMPANION-ARCHITECTURE.md): pure guidance/observation surface (never a decision-maker); mechanical not-policing rules (silence-by-default, value-over-noise, guidance-not-criticism); typed threshold-gated cadence-capped interventions G1–G7 with stay-silent rules; AL-04 apply-mode contract (AUTO announced once from humanText / ADVISORY confirmed / INSUFFICIENT_DATA silent); fitness-not-medical boundary; TS-01 privacy posture; keyed EN-first copy. Authorizes no implementation; camera deferred to CP-03/CP-04. |
 
 **Objective:** write the Companion architecture spec — the experience
 promise «تو ورزش کن؛ ما حواسمون بهت هست.» made tangible: workout guidance,
