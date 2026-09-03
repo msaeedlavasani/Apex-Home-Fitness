@@ -98,6 +98,23 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
 
 ## Notes
 
+- **BATCH DELIVERY V2 = AUTHORIZED (2026-09-04, docs-only).** Governed
+  delivery modes: **SINGLE_TASK** (default — gated, Production-sensitive,
+  security-sensitive, or incompatible work) and **BATCH_5** (up to five
+  compatible low-risk tasks: dependency-safe order; separate identity +
+  acceptance criteria + targeted validation per member; ONE batch branch →
+  ONE PR → ONE full CI → ONE exact-merge-SHA Main CI; per-member close-outs
+  and Owner reports each referencing the shared batch CI evidence).
+  Supersedes `BATCH_DELIVERY_V1`. Fail-closed: any Owner/Human/Production
+  gate or DB/Production/security/UI/file-overlap ineligibility disqualifies
+  batching. Conflict audit (2026-09-04) in `BATCH_DELIVERY_V2.md` §6 +
+  `BRANCHING_POLICY.md` §K: branch protection compatible (`enforce_admins`,
+  `build`/`e2e` strict, linear history, no rulesets); §B/§H/§I deltas
+  authorized; batch manifests are delivery records — machine validation is
+  a separately authorized tooling task (runtime unchanged). No batch
+  authorized and no backlog task executed by this change. `origin/main`
+  advance: `docs(governance)` BATCH_DELIVERY_V2.
+
 - **AUTONOMOUS BACKLOG EXECUTION (2026-09-03).** Owner TASK DELTA:
   execute `docs/TASKS.md` one READY task at a time in dependency order, no
   Owner confirmation between normal tasks, STOP only at genuine

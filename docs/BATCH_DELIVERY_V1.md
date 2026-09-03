@@ -1,8 +1,14 @@
 # Batch Delivery V1 — Operating Model
 
-> **STATUS: AUTHORIZED — OPERATING MODEL (ADOPTED 2026-09-01)**
-> via `GOVERNANCE-HARDENING-PROMOTION-01` (Owner authorization of the
-> Batch Delivery V1 governance prerequisites).
+> **STATUS: SUPERSEDED 2026-09-04 — HISTORICAL RECORD.** Superseded by
+> [`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md) (governed SINGLE_TASK /
+> BATCH_5 delivery modes; Owner TASK DELTA "BATCH DELIVERY V2"). New batch
+> work uses V2. V1 remains the accurate record for the closed V1 batches
+> (ADMIN-DS Batch 1/2, STABILIZATION S06+S05) executed 2026-09-01.
+>
+> **STATUS (historical — at adoption): AUTHORIZED — OPERATING MODEL
+> (ADOPTED 2026-09-01)** via `GOVERNANCE-HARDENING-PROMOTION-01` (Owner
+> authorization of the Batch Delivery V1 governance prerequisites).
 >
 > This document defines the operating model **only**. Adoption of the model
 > does NOT authorize any task, batch, branch, CI run, or release: each

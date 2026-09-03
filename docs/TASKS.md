@@ -22,7 +22,7 @@
 | Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; CP-03 DECIDED — measurement gate PREPARED (physical execution is an Owner/human step); no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED; CP-03 findings DECIDED (Approach A — MoveNet/TF.js, web-first, on-device, v1 HIGH-coverage scope, TEMPO_DRIFT + RANGE_OF_MOTION); **measurement gate PREPARED at scripts/pose-measurement/ — requires Owner-supplied devices to execute**; product implementation blocked on that gate |
+| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED; CP-03 findings DECIDED (Approach A — MoveNet/TF.js, web-first, on-device, v1 HIGH-coverage scope, TEMPO_DRIFT + RANGE_OF_MOTION); **measurement gate PREPARED at scripts/pose-measurement/ — requires Owner-supplied devices to execute**; product implementation blocked on that gate. BATCH_5 delivery mode in force (2026-09-04) — SINGLE_TASK remains the default for gated/Production/security work; no batch is authorized or executing |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | CP-03 measurement-gate execution (physical devices — Owner/human step, protocol in `scripts/pose-measurement/README.md`); then CP-03 findings review → product implementation. TS-03 READY but PROD_SENSITIVE (Production deletion acceptance); TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
 | Pending owner review | **CP-03 measurement-gate execution (needs physical Android + iPhone devices)**; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
@@ -937,10 +937,15 @@ deleted — they are deferred until P0–P3 foundations are established.
 
 ## Autonomous batch readiness
 
-The recomposed backlog supports future batches of up to five tasks. The
-orchestrator selects compatible tasks based on: dependencies, file/resource
-overlap, architecture gates, DB sensitivity, Production sensitivity,
-parallel safety, task size, and independent reviewability.
+Delivery mechanics for authorized batches are governed by
+[`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md) (BATCH_5 mode, authorized
+2026-09-04; SINGLE_TASK remains the default for gated/Production/security
+work). The readiness note below is historical — it preceded V2 and its
+candidate tasks have since executed individually. The recomposed backlog
+supports batches of up to five tasks; the orchestrator selects compatible
+tasks based on: dependencies, file/resource overlap, architecture gates, DB
+sensitivity, Production sensitivity, parallel safety, task size, and
+independent reviewability.
 
 ### AUTONOMOUS_BATCH_CANDIDATES — proposed FIRST autonomous test
 
@@ -1004,7 +1009,7 @@ preserve them until the owner separately authorizes bounded execution:
 |---|---|---|
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
-| Batch Delivery V1 operating model | ACCEPTED / ADOPTED 2026-09-01 — model in force; each batch still requires separate execution authorization | [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
+| Batch Delivery V2 — governed SINGLE_TASK / BATCH_5 delivery modes | ACCEPTED / ADOPTED 2026-09-04 — supersedes V1; BATCH_5 = up to 5 compatible low-risk tasks (READY, no gates, DOCS_ONLY/CODE_NO_DEPLOY, no DB/Production/security/UI surface, file-disjoint, dependency-safe order), ONE batch branch → ONE PR → ONE full CI → ONE exact-merge-SHA Main CI; per-member close-outs + Owner reports referencing shared evidence; SINGLE_TASK mandatory for gated/Production/security/incompatible work; no batch currently authorized | [`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md); V1 historical: [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01` | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP | **RETAINED** — competitive monitoring is a strategic research requirement (strategy §11); folded into the ongoing research agenda, not a discrete task |

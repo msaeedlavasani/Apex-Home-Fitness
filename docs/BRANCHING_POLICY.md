@@ -23,6 +23,12 @@ A previous independently deployable task is **CLOSED** only when ALL hold:
 - remote `main` verified (all required commits are ancestors of remote main)
 - completed branch retired, or explicitly retained with a documented reason
 
+Within ONE authorized BATCH_5 batch
+([`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md)), members integrate as a unit
+and close together at the batch merge (see § K); this strict § B gate
+continues to govern every independent delivery and any member that exits a
+batch (it then completes as SINGLE_TASK).
+
 ## C. PRE-TASK MAINLINE GATE
 
 Before changing application source for a new task, resolve the ACTUAL remote
@@ -84,6 +90,12 @@ verify the merged tree (typecheck/tests/CI) before pushing.
 A branch may remain open across multiple subtasks only when
 `ATOMIC_RELEASE_REQUIRED = YES` and the minimum inseparable release unit is
 documented before continuation. Do not silently bundle tasks.
+
+BATCH_5 delivery ([`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md)) is the
+explicitly authorized, manifest-recorded exception: member tasks may share
+one batch branch only when every BATCH_5 eligibility rule holds and the batch
+manifest (members, order, acceptance, reduction posture, gate declaration) is
+recorded in `docs/TASKS.md` before execution. Never silent.
 
 ## I. DOCS_DIRECT_MAIN fast path
 
@@ -152,6 +164,27 @@ when BOTH refs are deleted and the deletion is re-verified:
    Record the verification (commands + observed results) in the task's
 durable report. An unmerged or active branch (unique commits NOT in `main`)
 is never a retirement candidate; it remains until its task reaches this gate.
+
+## K. BATCH_5 DELIVERY MODE — ONE BRANCH, ONE PR, PER-MEMBER IDENTITY
+
+[`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md) (authorized 2026-09-04;
+supersedes Batch Delivery V1) defines two delivery modes: **SINGLE_TASK**
+(default — gated, Production-sensitive, security-sensitive, DB-touching, or
+incompatible work) and **BATCH_5** (up to five compatible low-risk
+`DOCS_ONLY`/`CODE_NO_DEPLOY` members; no gates, DB/Production/security/UI
+surface; file-disjoint; dependency-safe order). A BATCH_5 batch uses one
+`batch/<id>` branch from current `origin/main`; members execute serially in
+recorded order as attributable commits, each with targeted validation; the
+batch then passes one batch-level integration validation, one PR, one full CI
+(`build` + `e2e` + governance), one squash merge (linear history), and one
+exact-merge-SHA Main CI PASS on the merged SHA (§ J applies to the batch
+branch). Close-outs and Owner reports are per member, each referencing the
+shared batch evidence (BATCH_ID, PR, merged SHA, Main CI run/job IDs).
+`DOCS_DIRECT_MAIN` (§ I) does not apply inside a batch. Adoption of the mode
+authorizes no batch: each batch requires explicit Owner authorization and a
+manifest recorded in `docs/TASKS.md` before any branch, commit, or CI run.
+Fail closed: any gate, failure, or discovered ineligibility freezes the batch
+and requires a recorded Owner decision — never a silent partial merge.
 
 ## Task lifecycle / status model
 
