@@ -509,17 +509,24 @@ principles documented (data minimization, user control); typecheck passes.
 
 ---
 
-### AL-03 — Adaptation input pipeline
+### AL-03 — Adaptation input pipeline — **DELIVERED / CLOSED 2026-09-03**
 
 | Field | Value |
 |---|---|
 | PRIORITY | P1 |
 | DEPENDENCIES | AL-02 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| AUTONOMOUS_ELIGIBILITY | `READY` (promoted from `NOT_YET` 2026-09-03) |
 | PARALLEL_SAFETY | `SAFE` |
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `DATA` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+
+**Authorization (2026-09-03):** Owner explicit instruction — RESUME
+AUTONOMOUS CHAIN (TASK DELTA): promote and execute AL-03; AL-04 remains
+`NOT_YET` and gated (OWNER_DECISION_GATE — decision-algorithm sign-off); do
+not bypass AL-04 or any other Owner/Human/Production gate. Promotion record:
+`AUTONOMOUS_ELIGIBILITY` `NOT_YET` → `READY`; scope unchanged (bounded pure
+module; input schema for the decision layer).
 
 **Objective:** implement the pipeline that feeds profile data + movement
 knowledge + workout history into the adaptation decision layer. This is the
