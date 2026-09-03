@@ -1,20 +1,27 @@
 # AL-04 — Decision Gate: Adaptive Training Graph v1 Decision Algorithm
 
-> **STATUS: AWAITING OWNER DECISION — 2026-09-03** (prepared; NOT decided)
+> **STATUS: DECIDED — 2026-09-03** (was AWAITING OWNER DECISION / PREPARED)
 >
-> This document prepares the mandatory `OWNER_DECISION_GATE` of `AL-04`
-> (`docs/TASKS.md`): **decision-algorithm sign-off**. It proposes the
+> **OWNER DECISION (2026-09-03):** **D1a** v1 scope = adjust-over-intent;
+> **D2a** apply posture = auto-apply safety-lowering only (advisory
+> progressions); **D3a** rule-table defaults adopted as the sign-off
+> baseline; **D4a** session-intent input = additive AL-03 `AdaptationInput`
+> extension. See §9. The decision layer implementing this gate was delivered
+> and closed as AL-04 (2026-09-03; ADR-0017 ACCEPTED).
+>
+> This document prepared the mandatory `OWNER_DECISION_GATE` of `AL-04`
+> (`docs/TASKS.md`): **decision-algorithm sign-off**. It proposed the
 > smallest safe v1 decision model over the existing governed contracts —
 > AL-03 `AdaptationInput` (`src/lib/adaptive`), the AL-02 Personal Movement
 > Profile, the AL-01 outcome model, and the MG-06 relationship graph.
 >
-> **Nothing here authorizes AL-04 implementation.** The four Owner decisions
-> in §9 are the gate. AL-04 execution requires a SEPARATE explicit Owner
-> instruction after this gate closes. No code was written, no schema was
-> changed, no runtime was touched.
+> The gate is now closed. Nothing in this document, before or after
+> closure, authorized any runtime/persistence/UI change on its own — AL-04
+> implementation was authorized by the separate explicit Owner instruction
+> (2026-09-03) that closed this gate.
 >
-> Persisted: 2026-09-03 (docs-only; no code, DB, infrastructure, or
-> Production change).
+> Persisted: 2026-09-03 (docs-only gate; AL-04 delivery itself was
+> `CODE_NO_DEPLOY` — no DB, infrastructure, or Production change).
 
 ## 0. Contract boundary (what AL-04 may consume)
 
