@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01 (Workout outcome / feedback model) DELIVERED/CLOSED 2026-09-03; AL-02 next READY; no task is currently active |
+| Active task | `NONE` — AL-01 + AL-02 DELIVERED/CLOSED 2026-09-03; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/al-01-workout-outcome-model` (retired) |
-| State | `READY` — AL-01 CLOSED (autonomous backlog execution, 2026-09-03); AL-02 READY and next in dependency order; AL-03/AL-04 `NOT_YET` |
+| Branch | `feat/al-02-personal-movement-profile` (retired) |
+| State | `READY` — AL-01, AL-02 CLOSED (autonomous backlog execution, 2026-09-03); next READY candidates: TS-01 (deps NONE), TS-04 (deps MG-07 CLOSED); AL-03/AL-04 `NOT_YET` (gate) |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | AL-02 (READY — dependency AL-01 satisfied); autonomous chain continues until a genuine Owner/Human/Production gate |
+| Next authorized task | Per the 2026-09-03 autonomous-execution instruction, continue with READY tasks whose dependencies are satisfied (P1 chain blocked by AL-03 `NOT_YET`) |
 | Pending owner review | AL-03/AL-04 promotion (`NOT_YET`); MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
@@ -473,7 +473,7 @@ performance, subjective feedback, and context; the contract is additive
 
 ---
 
-### AL-02 — Personal Movement Profile data contract
+### AL-02 — Personal Movement Profile data contract — **DELIVERED / CLOSED 2026-09-03**
 
 | Field | Value |
 |---|---|
@@ -484,6 +484,11 @@ performance, subjective feedback, and context; the contract is additive
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `SCHEMA` (new profile tables; additive) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #36 merged `c7f509b`; Main CI PASS on exact SHA (run 33738933578); branch `feat/al-02-personal-movement-profile` retired. Pure profile contract (`src/lib/profile`) modeling every §2B signal; observed facts structurally split from confidence/derivation/evidence-wrapped inference; projections-only privacy invariant; not-a-medical-system boundary; fail-closed validator + pure windowed activity aggregate. ADR-0013 ACCEPTED. Additive — consumes AL-01 outcomes type-only; no change to existing types; no DB migration; no runtime wiring (`CODE_NO_DEPLOY`). |
+
+**Authorization (2026-09-03):** Owner explicit instruction — AUTONOMOUS
+BACKLOG EXECUTION (TASK DELTA). AL-02 is the second READY task (P1;
+dependency AL-01 CLOSED).
 
 **Objective:** define the Personal Movement Profile data contract — the
 accumulated per-user training signals: capability, training history,
