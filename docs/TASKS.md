@@ -553,13 +553,22 @@ missing profile).
 |---|---|
 | PRIORITY | P1 |
 | DEPENDENCIES | AL-03 |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| AUTONOMOUS_ELIGIBILITY | `READY` (promoted from `NOT_YET` 2026-09-03 — gate closed) |
 | PARALLEL_SAFETY | `SERIAL_ONLY` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| OWNER_DECISION_GATE | Decision algorithm sign-off |
-| STATUS | **GATE PREPARED / AWAITING OWNER DECISION — 2026-09-03** — decision-gate document [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md) persisted (docs-only); smallest-safe-v1 decision model proposed over the AL-03 `AdaptationInput` boundary: L0 safety gates → L1 session frame → L2 per-movement KEEP/PROGRESS/REGRESS/SUBSTITUTE/EXCLUDE → L3 sets deltas; sequencing + catalog exercise selection deferred; pure + deterministic, zero inference inside AL-04, fail-closed insufficient-data posture, fixed-EN-template explainability. **4 Owner decisions required: D1 v1 scope, D2 apply posture, D3 rule-table defaults, D4 session-intent input boundary.** Implementation NOT authorized until the gate closes. |
+| OWNER_DECISION_GATE | Decision algorithm sign-off — **CLOSED 2026-09-03 (D1a D2a D3a D4a)** |
+| STATUS | **ACTIVE** — executing (2026-09-03) |
+
+**Gate close (2026-09-03):** Owner answered the AL-04 decision gate
+[`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md)
+§9 with **D1a D2a D3a D4a**: v1 scope = adjust-over-intent; apply posture =
+auto-apply safety-lowering only (advisory progressions); rule-table defaults
+adopted as the sign-off baseline; session-intent input = additive AL-03
+`AdaptationInput` extension. The gate is closed and AL-04 is promoted to
+`READY` and executing. AL-04 remains `SERIAL_ONLY` / `RELEASE_ONLY`
+(no runtime wiring, no deployment).
 
 **Objective:** implement the decision layer that answers "what is the
 appropriate training decision for this person now?" — exercise selection,

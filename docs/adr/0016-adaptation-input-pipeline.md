@@ -64,9 +64,21 @@ into one decision-layer input schema.
 - A decision can always cite its input evidence; a conservative (empty)
   input never fabricates user state.
 
+## Addendum (2026-09-03) — D4a additive session-intent extension
+
+Per the AL-04 gate decision **D4a** (Owner, 2026-09-03), `AdaptationInput`
+gains an optional, backward-compatible `sessionIntent` section (the user's
+intended session: movements in order + planned sets, fail-closed validated
+by `validateSessionIntent`), and `MovementPerformanceAggregate` gains an
+optional `lastOutcomeId` for per-decision evidence fidelity. The "only shape
+AL-04 may consume" invariant is preserved — the intent is part of
+`AdaptationInput`. `ADAPTATION_INPUT_VERSION` stays 1 (additive).
+Recorded in ADR-0017.
+
 ## Related
 
 - `docs/architecture/AL-03-ADAPTATION-INPUT-PIPELINE.md` — the architecture/schema (this record's evidence)
+- `docs/adr/0017-adaptive-training-graph-decision-layer.md` (AL-04 — D4a extension + decision layer)
 - `docs/adr/0013-personal-movement-profile.md` (AL-02), `docs/adr/0012-workout-outcome-model.md` (AL-01)
 - `docs/adr/0006-movement-graph-domain-contract.md` (MG-01/MG-06 graph)
 - `docs/product/PRODUCT-STRATEGY.md` §3 (closed loop), §2C (Adaptive Training Graph)

@@ -31,6 +31,8 @@ import {
   type AdaptationUserState,
   type MovementKnowledgeEntry,
   type MovementPerformanceAggregate,
+  type SessionIntent,
+  validateSessionIntent,
 } from './types';
 
 /** Source inputs accepted by {@link buildAdaptationInput}. */
@@ -44,6 +46,11 @@ export interface AdaptationInputSource {
    * explicit history is allowed for testing/offline use.
    */
   history?: readonly ProfileTrainingSession[];
+  /**
+   * The user's intended session (AL-04 gate D4a additive extension). An
+   * invalid intent is treated as absent (fail-closed — never interpreted).
+   */
+  sessionIntent?: SessionIntent;
   /** Derivation date (defaults to the newest history date, else `1970-01-01`). */
   asOfDateKey?: string;
 }
@@ -80,6 +87,8 @@ export function aggregateMovementPerformance(
     completedSets: number;
     difficultyFeeling?: 'VERY_EASY' | 'EASY' | 'JUST_RIGHT' | 'HARD' | 'VERY_HARD';
     dateKey: string;
+    /** Outcome id of the row (evidence fidelity for the decision layer). */
+    outcomeId?: string;
   }>,
 ): MovementPerformanceAggregate[] {
   const byKey = new Map<string, MovementPerformanceAggregate>();
@@ -94,6 +103,7 @@ export function aggregateMovementPerformance(
         completionRatio: row.plannedSets === 0 ? 0 : row.completedSets / row.plannedSets,
         lastDateKey: row.dateKey,
         lastDifficultyFeeling: row.difficultyFeeling,
+        lastOutcomeId: row.outcomeId,
       });
     } else {
       existing.totalPlannedSets += row.plannedSets;
@@ -103,6 +113,7 @@ export function aggregateMovementPerformance(
       if (row.dateKey >= existing.lastDateKey) {
         existing.lastDateKey = row.dateKey;
         existing.lastDifficultyFeeling = row.difficultyFeeling;
+        if (row.outcomeId !== undefined) existing.lastOutcomeId = row.outcomeId;
       }
     }
   }
@@ -190,6 +201,8 @@ export function buildAdaptationInput(source: AdaptationInputSource): AdaptationI
   const movementKnowledge = movementKnowledgeFromGraph(source.movementKnowledge);
   const recurring = recurringDifficultySubjects(profile?.observed.difficultyReports ?? []);
 
+  const sessionIntent = validateSessionIntent(source.sessionIntent).valid ? source.sessionIntent : undefined;
+
   return {
     version: ADAPTATION_INPUT_VERSION,
     userId: profile?.userId,
@@ -202,6 +215,7 @@ export function buildAdaptationInput(source: AdaptationInputSource): AdaptationI
       recurringDifficulties: recurring,
     },
     constraints: constraintsFrom(profile, recurring),
+    sessionIntent,
     evidence: collectEvidence(profile, history),
   };
 }
