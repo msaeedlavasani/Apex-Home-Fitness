@@ -19,11 +19,11 @@
 
 | Field | Value |
 |---|---|
-| Active task | `MG-09` — Production migration / adoption (governed) — ACTIVE (authorized 2026-09-01) |
-| Profile | `PROD_SENSITIVE` — additive migration + data migration + runtime switchover, governed DB lifecycle (dry-run → evidence → apply) |
-| Branch | `feat/mg-09-persisted-movement-graph` |
-| State | `ACTIVE` — MG-09 authorized and in execution; earlier backbone tasks CLOSED (MG-01…MG-08) |
-| Production-bound | `GATED` — Production apply requires dry-run evidence + explicit apply authorization (OWNER_DECISION_GATE) |
+| Active task | `NONE` — MG-09 (Production migration / adoption) DELIVERED/CLOSED (source + rehearsal evidence; Production apply gated); no task is currently active |
+| Profile | `CODE_NO_DEPLOY` |
+| Branch | `feat/mg-09-persisted-movement-graph` (retired) |
+| State | `READY` — MG-01…MG-09 CLOSED; backlog awaits the next explicit Owner instruction |
+| Production-bound | `GATED` — Production apply requires the recorded OWNER_DECISION_GATE (dry-run evidence + explicit apply authorization) |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 
@@ -388,7 +388,20 @@ PROPOSED section below with an "absorbed into MG-08" note).
 
 ---
 
-### MG-09 — Production migration / adoption (governed)
+### MG-09 — Production migration / adoption (governed) — **DELIVERED / CLOSED 2026-09-01**
+
+> **Lifecycle:** authorized 2026-09-01 → additive migration + governed data
+> migration runner + fail-safe runtime switchover delivered (PR #33 merged
+> `93e3c20`, Main CI PASS on exact SHA; ADR-0011 ACCEPTED). Rehearsal
+> evidence produced locally: dry-run PASS (74 planned / 5 linked / Side-Lying
+> Leg Lift AMBIGUOUS surfaced) → apply PASS (idempotent; Exercise rows
+> untouched; DB hash before/after recorded). **Production apply is NOT part
+> of this delivery** — it requires the recorded `OWNER_DECISION_GATE`
+> (dry-run evidence + explicit apply authorization) and the gateway
+> environment (server-side/root-only; Docker unavailable in the workspace).
+> The runtime switchover is fail-safe: until the Production migration+data
+> migration are applied, `isMovementGraphAdopted()` is false and the legacy
+> path serves unchanged.
 
 | Field | Value |
 |---|---|
