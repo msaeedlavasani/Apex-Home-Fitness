@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01…AL-04, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active |
+| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — AL-01…AL-04, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-04 gate closed (D1a–D4a) and AL-04 delivered; next READY: CP-01 (deps AL-04 satisfied), then CP-02 (deps CP-01) |
+| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); P1 + P2 Companion prerequisites delivered; next executable (CP-03) requires an Owner decision |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | Continue the 2026-09-03 autonomous-execution chain: CP-01 (Companion architecture spec, READY — AL-04 satisfied), then CP-02 (observation signal model, READY — CP-01) |
-| Pending owner review | **CP-03 OWNER_DECISION_GATE (spike findings review before any implementation)** — next genuine gate after CP-01/CP-02; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
+| Next authorized task | NONE autonomous-READY with satisfied dependencies — CP-03 (pose feasibility spike) is `RESEARCH_ONLY` with OWNER_DECISION_GATE (spike findings review before any implementation); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
+| Pending owner review | **CP-03 OWNER_DECISION_GATE (research-spike authorization + findings review)** — next genuine gate after CP-02; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -630,6 +630,7 @@ policing" principle is operationalized (intervention thresholds, tone rules).
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — PR #39 merged `5f7054c`; Main CI PASS on exact SHA (run 33765314949); branch `feat/cp-02-observation-signal-model` retired (local + remote verified). Pure observation contract `src/lib/observation/` — typed in-session per-set signals REP_COUNT / SET_TIMING / REP_TIMING (tempo) / REST_TIMING / FORM_PROXY, anchored to S-04 plan position + set (optional S-02 identity); closed honest sources (device-measured form proxies refused until CP-03); fail-closed validation + pure deterministic per-set aggregation; signal→AL-01 mapping documented (evidence-only in v1). ADR-0019 ACCEPTED. 15 new tests (755/755). Additive — no existing type changed; no measurement/collection/wiring (`CODE_NO_DEPLOY`). |
 
 **Objective:** define the observation signal model — what the Companion
 observes during a workout (rep counts, phase timing, tempo, form proxies)

@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — AL-01…AL-04, CP-01, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
+ACTIVE_TASK:                           NONE — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
 ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03; resumed with AL-03 promotion; AL-04 gate CLOSED (D1a–D4a), AL-04 + CP-01 DELIVERED/CLOSED 2026-09-03; chain continues with CP-02)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03; resumed with AL-03 promotion; AL-04 gate CLOSED (D1a–D4a); AL-04 + CP-01 + CP-02 DELIVERED/CLOSED 2026-09-03; chain STOPPED at the CP-03 gate — next executable requires an Owner decision)
 ACTIVE_BRANCH:                         N/A
-PREVIOUS_COMPLETED_TASK:               CP-01 Companion architecture + UX behavior spec (DELIVERED/CLOSED 2026-09-03 — P2; docs-only commit 6521696, Main CI PASS on exact SHA run 33760433421; ADR-0018 ACCEPTED; Companion = pure guidance/observation surface, never a decision-maker; mechanical not-policing rules; typed threshold-gated cadence-capped interventions G1–G7; AL-04 apply-mode contract AUTO/ADVISORY/INSUFFICIENT_DATA; fitness-not-medical boundary; TS-01 privacy posture; keyed EN-first copy; camera deferred to CP-03/04; prior: AL-04 Adaptive Training Graph decision layer, PR #38 merged f06e42f)
-NEXT_AUTHORIZED_TASK:                  CP-02 observation signal model (READY, deps CP-01 satisfied — contract-level pure types + signal-to-outcome mapping design); next genuine gate after CP-02: CP-03 OWNER_DECISION_GATE (spike findings review); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
-NEXT_EXPECTED_BRANCH:                 feat/cp-02-observation-signal-model
-CURRENT_PHASE:                         RESUMING autonomous backlog execution (2026-09-03): AL-04 gate closed, AL-04 + CP-01 delivered; executing CP-02; STOP at CP-03 OWNER_DECISION_GATE (or TS-03 Production approval / TS-02 legal gate)
-LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01…AL-04, CP-01, TS-01, TS-04 — PRs #35/#36/#37/#38 → 89ec8a1/c7f509b/cf82a82/f06e42f, docs commits incl. CP-01 6521696; AL-04 gate CLOSED D1a–D4a; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
+PREVIOUS_COMPLETED_TASK:               CP-02 Observation signal model (DELIVERED/CLOSED 2026-09-03 — P2; PR #39 merged 5f7054c, Main CI PASS on exact SHA run 33765314949; ADR-0019 ACCEPTED; typed in-session per-set signals REP_COUNT/SET_TIMING/REP_TIMING/REST_TIMING/FORM_PROXY anchored to S-04 position + set, closed honest sources (device-measured form proxies refused until CP-03), fail-closed validation + pure per-set aggregation, signal→AL-01 mapping documented; prior: CP-01 Companion spec docs commit 6521696)
+NEXT_AUTHORIZED_TASK:                  NONE autonomous-READY with satisfied dependencies — CP-03 pose feasibility spike is RESEARCH_ONLY + OWNER_DECISION_GATE (spike findings review); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
+NEXT_EXPECTED_BRANCH:                 N/A (next execution requires an Owner decision)
+CURRENT_PHASE:                         STOPPED at the CP-03 gate (2026-09-03) after AL-04/CP-01/CP-02 — autonomous-READY chain exhausted; Owner options: authorize CP-03 research spike, authorize TS-03 posture, or start TS-02 legal review
+LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 — PRs #35–#39 → 89ec8a1/c7f509b/cf82a82/f06e42f/5f7054c + docs commits; AL-04 gate CLOSED D1a–D4a; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)
