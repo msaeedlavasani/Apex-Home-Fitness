@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01 + AL-02 DELIVERED/CLOSED 2026-09-03; no task is currently active |
+| Active task | `NONE` — AL-01…AL-03, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; AL-04 decision gate PREPARED (AWAITING OWNER DECISION); no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/al-02-personal-movement-profile` (retired) |
-| State | `READY` — AL-01, AL-02, AL-03, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-03 promoted and executed; AL-04 remains `NOT_YET` (gate) |
+| Branch | (none) |
+| State | `READY` — AL-01, AL-02, AL-03, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-03 promoted and executed; AL-04 remains `NOT_YET` with its decision gate PREPARED (4 Owner decisions pending — D1 scope, D2 apply posture, D3 rule-table defaults, D4 intent-input boundary) |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | Per the 2026-09-03 autonomous-execution instruction, continue with READY tasks whose dependencies are satisfied (P1 chain blocked by AL-03 `NOT_YET`) |
-| Pending owner review | AL-03/AL-04 promotion (`NOT_YET`); MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
+| Next authorized task | Per the 2026-09-03 autonomous-execution instruction, continue with READY tasks whose dependencies are satisfied (P1 chain blocked by AL-04 `NOT_YET` — gate document ready at [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md)) |
+| Pending owner review | **AL-04 decision gate — 4 decisions (D1 scope, D2 apply posture, D3 rule defaults, D4 intent-input boundary)** — see [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md) §9; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -559,6 +559,7 @@ missing profile).
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
 | OWNER_DECISION_GATE | Decision algorithm sign-off |
+| STATUS | **GATE PREPARED / AWAITING OWNER DECISION — 2026-09-03** — decision-gate document [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md) persisted (docs-only); smallest-safe-v1 decision model proposed over the AL-03 `AdaptationInput` boundary: L0 safety gates → L1 session frame → L2 per-movement KEEP/PROGRESS/REGRESS/SUBSTITUTE/EXCLUDE → L3 sets deltas; sequencing + catalog exercise selection deferred; pure + deterministic, zero inference inside AL-04, fail-closed insufficient-data posture, fixed-EN-template explainability. **4 Owner decisions required: D1 v1 scope, D2 apply posture, D3 rule-table defaults, D4 session-intent input boundary.** Implementation NOT authorized until the gate closes. |
 
 **Objective:** implement the decision layer that answers "what is the
 appropriate training decision for this person now?" — exercise selection,
