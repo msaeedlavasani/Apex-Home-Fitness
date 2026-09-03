@@ -19,11 +19,11 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — MG-08 (Reconciliation) DELIVERED/CLOSED; no task is currently active |
-| Profile | `CODE_NO_DEPLOY` |
-| Branch | `feat/mg-08-reconciliation` (retired) |
-| State | `READY` — all completed backbone tasks CLOSED (MG-01…MG-08); backlog awaits the next explicit Owner instruction |
-| Production-bound | `NO` |
+| Active task | `MG-09` — Production migration / adoption (governed) — ACTIVE (authorized 2026-09-01) |
+| Profile | `PROD_SENSITIVE` — additive migration + data migration + runtime switchover, governed DB lifecycle (dry-run → evidence → apply) |
+| Branch | `feat/mg-09-persisted-movement-graph` |
+| State | `ACTIVE` — MG-09 authorized and in execution; earlier backbone tasks CLOSED (MG-01…MG-08) |
+| Production-bound | `GATED` — Production apply requires dry-run evidence + explicit apply authorization (OWNER_DECISION_GATE) |
 | Next authorized task | `NONE` — MG-05 and all subsequent tasks are NOT authorized; begin only on the next explicit Owner instruction |
 | Pending owner review | Mission Queue batch selection; `EXERCISE-CATALOG-DISAMBIGUATION-01` re-evaluation; `ADMIN-IMPERSONATION-01` deferred |
 

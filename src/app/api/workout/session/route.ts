@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 import {prisma} from '@/lib/prisma';
+import {resolveWorkoutExercises} from '@/services/movementGraphStore';
 import {getSupabaseAuthUser, syncUserWithSupabase, UnauthenticatedError} from '@/services/userService';
 
 function strings(value: unknown): string[] {
@@ -22,10 +23,9 @@ export async function POST(request: Request) {
       const program = requestedProgramId
         ? await prisma.program.findFirst({where: {id: requestedProgramId, ownerId: user.id}, select: {id: true}})
         : await prisma.program.findFirst({where: {ownerId: user.id}, orderBy: {createdAt: 'desc'}, select: {id: true}});
-      const exercises = await prisma.exercise.findMany({
-        where: {name: {in: exerciseNames}, ...(program ? {programExercises: {some: {programId: program.id}}} : {})},
-        select: {id: true, name: true},
-      });
+      // MG-09 runtime switchover: resolves through the Movement Graph when
+      // adopted, otherwise the exact legacy Exercise lookup (fail-safe gate).
+      const exercises = await resolveWorkoutExercises(exerciseNames, program?.id ?? null);
       if (exercises.length === 0) return NextResponse.json({error: 'WORKOUT_EXERCISES_NOT_FOUND'}, {status: 422});
       const session = await prisma.workoutSession.create({
         data: {userId: user.id, programId: program?.id ?? null, exercises: {create: exercises.map((exercise, order) => ({exerciseId: exercise.id, order}))}},

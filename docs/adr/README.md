@@ -78,6 +78,7 @@ Sequential zero-padded numbers (`0001`, `0002`, …). Never renumber.
 | [`0008-source-provenance-contract.md`](./0008-source-provenance-contract.md) | ACCEPTED (2026-09-01) | Hardened provenance record (ingestion timestamp) + sha256 hash contract + fail-closed license-compatibility rules + evidence confidence model (MG-03) |
 | [`0009-governed-ingestion-pipeline.md`](./0009-governed-ingestion-pipeline.md) | ACCEPTED (2026-09-01) | Staged governed ingestion pipeline (pin/parse/normalize/fail-closed identity/taxonomy/provenance/MovementObject); snapshot-pinned Unlicense source; DATA-ONLY media; dry-run evidence only (MG-04) |
 | [`0010-localization-media-architecture.md`](./0010-localization-media-architecture.md) | ACCEPTED (2026-09-01) | Localization keys = `<scope>.<ref>.<field>` for every user-facing movement field; self-hosted media manifest (sha256 content hash, self-hosted URL/fallback only, no third-party CDN for required media); no media import now (MG-07) |
+| [`0011-persisted-movement-graph.md`](./0011-persisted-movement-graph.md) | ACCEPTED (2026-09-01) | Additive persisted Movement Graph tables (Movement/MovementRelationship/MovementMedia) with `exerciseId` reference preservation; governed data migration from the MG-08 reconciled catalog (allowlisted gateway op, dry-run evidence → apply); fail-safe runtime switchover gate (MG-09) |
 
 Full decision summaries live in the records; do not duplicate ADR text here.
 The Architecture Stabilization Plan (`docs/architecture/ARCHITECTURE-STABILIZATION-PLAN.md`)

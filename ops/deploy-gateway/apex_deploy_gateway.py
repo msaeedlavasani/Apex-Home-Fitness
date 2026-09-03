@@ -38,6 +38,10 @@ OPERATION_ALLOWLIST = {
         "kind": "script",
         "path": "scripts/gateway-db-ops/s02e-exercise-identity-backfill.mjs",
     },
+    "mg09-movement-graph-adopt": {
+        "kind": "script",
+        "path": "scripts/gateway-db-ops/mg09-movement-graph-adopt.mjs",
+    },
     "prisma-migrate-deploy": {
         "kind": "migrate",
         "path": None,
@@ -574,13 +578,15 @@ def self_test():
     check("db-operation rehearsal valid", lambda: valid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "rehearsal", "source_sha": "a" * 40}))
     check("db-operation apply requires evidence", lambda: valid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "apply", "source_sha": "a" * 40, "dry_run_evidence_sha": "b" * 64}))
     check("db-operation apply without evidence rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "apply", "source_sha": "a" * 40}))
+    check("db-operation mg09-adopt dry-run valid", lambda: valid({"action": "db-operation", "schema_version": 1, "operation_id": "mg09-movement-graph-adopt", "mode": "dry-run", "source_sha": "a" * 40}))
+    check("db-operation mg09-adopt apply requires evidence", lambda: valid({"action": "db-operation", "schema_version": 1, "operation_id": "mg09-movement-graph-adopt", "mode": "apply", "source_sha": "a" * 40, "dry_run_evidence_sha": "b" * 64}))
     check("db-operation unknown operation rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "drop-tables", "mode": "apply", "source_sha": "a" * 40, "dry_run_evidence_sha": "b" * 64}))
     check("db-operation unknown mode rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "exploit", "source_sha": "a" * 40}))
     check("db-operation unknown fields rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "dry-run", "source_sha": "a" * 40, "sql": "DROP TABLE users"}))
     check("db-operation bad source sha rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "dry-run", "source_sha": "short"}))
     check("release db_change=true still rejected", lambda: invalid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": True, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
     check("release db_change=false valid", lambda: valid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
-    check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "prisma-migrate-deploy"} else None)
+    check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
     check("canonical json stable", lambda: (_ for _ in ()).throw(AssertionError()) if _canonical({"a": 1, "b": [2, 3]}) != _canonical({"b": [2, 3], "a": 1}) else None)
 
