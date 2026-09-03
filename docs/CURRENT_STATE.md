@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — AL-01…AL-04, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
+ACTIVE_TASK:                           NONE — AL-01…AL-04, CP-01, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active
 ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03; resumed with AL-03 promotion; AL-04 gate CLOSED (D1a–D4a) and AL-04 DELIVERED/CLOSED 2026-09-03; chain continues with CP-01 → CP-02)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03; resumed with AL-03 promotion; AL-04 gate CLOSED (D1a–D4a), AL-04 + CP-01 DELIVERED/CLOSED 2026-09-03; chain continues with CP-02)
 ACTIVE_BRANCH:                         N/A
-PREVIOUS_COMPLETED_TASK:               AL-04 Adaptive Training Graph decision layer (DELIVERED/CLOSED 2026-09-03 — P1; gate D1a–D4a CLOSED by Owner; PR #38 merged f06e42f, Main CI PASS on exact SHA run 33756172851; ADR-0017 ACCEPTED; pure buildAdaptiveDecision over AdaptationInput — L0 safety gates → L1 session frame → L2 per-movement KEEP/PROGRESS/REGRESS/SUBSTITUTE/EXCLUDE → L3 sets deltas; D2a apply modes, zero inference inside AL-04, fail-closed insufficient-data baseline, fixed-EN-template rationale; D4a additive sessionIntent + lastOutcomeId input extension; DECISION_POLICY knobs; 30 new tests 740/740; additive, no DB migration, no runtime wiring)
-NEXT_AUTHORIZED_TASK:                  CP-01 Companion architecture + UX behavior spec (READY, deps AL-04 satisfied — spec/docs only); then CP-02 observation signal model (READY, deps CP-01); next genuine gate after those: CP-03 OWNER_DECISION_GATE (spike findings review); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
-NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         RESUMING autonomous backlog execution (2026-09-03): AL-04 gate closed + AL-04 delivered; executing CP-01 then CP-02; STOP at CP-03 OWNER_DECISION_GATE (or TS-03 Production approval / TS-02 legal gate)
-LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01…AL-04, TS-01, TS-04 — PRs #35/#36/#37/#38 → 89ec8a1/c7f509b/cf82a82/f06e42f, TS-01/TS-04 docs commits; AL-04 gate CLOSED D1a–D4a; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
+PREVIOUS_COMPLETED_TASK:               CP-01 Companion architecture + UX behavior spec (DELIVERED/CLOSED 2026-09-03 — P2; docs-only commit 6521696, Main CI PASS on exact SHA run 33760433421; ADR-0018 ACCEPTED; Companion = pure guidance/observation surface, never a decision-maker; mechanical not-policing rules; typed threshold-gated cadence-capped interventions G1–G7; AL-04 apply-mode contract AUTO/ADVISORY/INSUFFICIENT_DATA; fitness-not-medical boundary; TS-01 privacy posture; keyed EN-first copy; camera deferred to CP-03/04; prior: AL-04 Adaptive Training Graph decision layer, PR #38 merged f06e42f)
+NEXT_AUTHORIZED_TASK:                  CP-02 observation signal model (READY, deps CP-01 satisfied — contract-level pure types + signal-to-outcome mapping design); next genuine gate after CP-02: CP-03 OWNER_DECISION_GATE (spike findings review); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET
+NEXT_EXPECTED_BRANCH:                 feat/cp-02-observation-signal-model
+CURRENT_PHASE:                         RESUMING autonomous backlog execution (2026-09-03): AL-04 gate closed, AL-04 + CP-01 delivered; executing CP-02; STOP at CP-03 OWNER_DECISION_GATE (or TS-03 Production approval / TS-02 legal gate)
+LAST_UPDATED:                          2026-09-03 (autonomous backlog execution delivered AL-01…AL-04, CP-01, TS-01, TS-04 — PRs #35/#36/#37/#38 → 89ec8a1/c7f509b/cf82a82/f06e42f, docs commits incl. CP-01 6521696; AL-04 gate CLOSED D1a–D4a; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)
