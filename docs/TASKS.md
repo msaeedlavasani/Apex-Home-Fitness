@@ -720,7 +720,7 @@ UI Conformance Gate passes; Production acceptance covers the workout route.
 
 ## Mission Queue — P3: TRUST, SAFETY & KNOWLEDGE
 
-### TS-01 — Privacy / safety architecture
+### TS-01 — Privacy / safety architecture — **DELIVERED / CLOSED 2026-09-03**
 
 | Field | Value |
 |---|---|
@@ -731,6 +731,11 @@ UI Conformance Gate passes; Production acceptance covers the workout route.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — docs-only (`DOCS_DIRECT_MAIN`, 2026-09-03; Main CI PASS on the exact pushed SHA); no task branch (docs-only fast path); ADR-0014 ACCEPTED. Architecture doc: `docs/architecture/TS-01-PRIVACY-SAFETY-ARCHITECTURE.md` — data classification C1–C7, explicit/granular/revocable consent, purpose-bound retention, user control, on-device inference preference (raw video never leaves the device), fitness-not-medical safety boundary. No code, collection, storage, or legal text. |
+
+**Authorization (2026-09-03):** Owner explicit instruction — AUTONOMOUS
+BACKLOG EXECUTION (TASK DELTA). TS-01 is the first P3 READY task
+(dependencies NONE; prerequisite for CP-03/CP-04).
 
 **Objective:** define the privacy/safety architecture for future camera/pose
 functionality and sensitive data handling: the data classification model,

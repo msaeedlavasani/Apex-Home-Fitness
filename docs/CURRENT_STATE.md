@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — AL-01 + AL-02 DELIVERED/CLOSED 2026-09-03; no task is currently active
+ACTIVE_TASK:                           NONE — AL-01, AL-02, TS-01 DELIVERED/CLOSED 2026-09-03; no task is currently active
 ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03 — execute docs/TASKS.md one READY task at a time in dependency order; AL-01, AL-02 delivered/closed; AL-03/AL-04 NOT_YET gate)
+AHF_EXECUTION_STATE:                   ACTIVE (Owner authorized AUTONOMOUS BACKLOG EXECUTION on 2026-09-03 — execute docs/TASKS.md one READY task at a time in dependency order; AL-01, AL-02, TS-01 delivered/closed; AL-03/AL-04 NOT_YET gate)
 ACTIVE_BRANCH:                         N/A
-PREVIOUS_COMPLETED_TASK:               AL-02 Personal Movement Profile data contract (DELIVERED/CLOSED 2026-09-03 — P1; PR #36 merged c7f509b, Main CI PASS on exact SHA run 33738933578; ADR-0013 ACCEPTED; pure profile contract src/lib/profile — every §2B signal, observed/inferred structural split, projections-only privacy invariant, fail-closed validator, windowed activity aggregate; additive, no DB migration, no runtime wiring)
-NEXT_AUTHORIZED_TASK:                  Continue the autonomous chain — READY tasks with satisfied dependencies (TS-01 deps NONE; TS-04 deps MG-07 CLOSED); AL-03/AL-04 remain NOT_YET per TASKS.md
+PREVIOUS_COMPLETED_TASK:               TS-01 Privacy / safety architecture (DELIVERED/CLOSED 2026-09-03 — P3 prerequisite; DOCS_DIRECT_MAIN, Main CI PASS on exact pushed SHA; ADR-0014 ACCEPTED; data classification C1–C7, consent/retention/user-control framework, on-device inference preference, fitness-not-medical safety boundary; no code/collection/legal text)
+NEXT_AUTHORIZED_TASK:                  Continue the autonomous chain — TS-04 (deps MG-07 CLOSED) next; TS-03 (deps TS-01) READY but PROD_SENSITIVE with Production acceptance in scope; AL-03/AL-04 remain NOT_YET per TASKS.md
 NEXT_EXPECTED_BRANCH:                 Per next READY task selection
-CURRENT_PHASE:                         ACTIVE — autonomous backlog execution (2026-09-03); AL-01 + AL-02 CLOSED; P1 chain gated by AL-03 NOT_YET; Production-bound work remains gated
-LAST_UPDATED:                          2026-09-03 (AL-01 + AL-02 DELIVERED/CLOSED via autonomous backlog execution: PR #35 → 89ec8a1, PR #36 → c7f509b, Main CI PASS on exact SHAs; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
+CURRENT_PHASE:                         ACTIVE — autonomous backlog execution (2026-09-03); AL-01, AL-02, TS-01 CLOSED; P1 chain gated by AL-03 NOT_YET; Production-bound work remains gated
+LAST_UPDATED:                          2026-09-03 (AL-01, AL-02, TS-01 DELIVERED/CLOSED via autonomous backlog execution: PR #35 → 89ec8a1, PR #36 → c7f509b, TS-01 docs-direct commit; Main CI PASS on exact SHAs; MG-09 Production apply still gated on OWNER_DECISION_GATE; no Production/DB write, no deployment)
 ```
 
 ## Reading this manifest (pre-task gate)
