@@ -815,7 +815,7 @@ respects any legal retention requirements.
 
 ---
 
-### TS-04 — Knowledge / Journal architecture
+### TS-04 — Knowledge / Journal architecture — **DELIVERED / CLOSED 2026-09-03**
 
 | Field | Value |
 |---|---|
@@ -826,6 +826,11 @@ respects any legal retention requirements.
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `SCHEMA` (content tables; additive) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **DELIVERED / CLOSED** — docs-only (`DOCS_DIRECT_MAIN`, 2026-09-03; Main CI PASS on the exact pushed SHA); no task branch (docs-only fast path); ADR-0015 ACCEPTED. Architecture doc: `docs/architecture/TS-04-KNOWLEDGE-JOURNAL-ARCHITECTURE.md` — movement-anchored content model (never standalone articles), MG-07/MG-03 contract reuse, locale-aware SSR rendering design, movement-first gated authoring, discovery-supported-not-purpose. No CMS/pages/authoring/migration. |
+
+**Authorization (2026-09-03):** Owner explicit instruction — AUTONOMOUS
+BACKLOG EXECUTION (TASK DELTA). TS-04 is the second P3 READY task
+(dependency MG-07 CLOSED).
 
 **Objective:** design the Knowledge/Journal architecture as part of the
 product knowledge system (not an isolated SEO blog): Movement Graph ↔
