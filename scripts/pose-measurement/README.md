@@ -1,0 +1,132 @@
+# CP-03 Measurement Gate — Pose Harness + Protocol
+
+> **RESEARCH TOOLING ONLY — not product code.** This folder contains the
+> bounded on-device measurement harness and protocol for the CP-03
+> measurement gate (decision: Approach A — MoveNet/TF.js, web-first, fully
+> on-device; `docs/architecture/CP-03-POSE-FEASIBILITY.md`).
+>
+> **No Companion camera functionality is implemented here or anywhere else.**
+> Product implementation is blocked until this gate closes with real-device
+> measurements.
+>
+> **Execution requires physical devices** (Android + iPhone) and a human
+> tester — this step cannot run in the development environment. Follow §6
+> exactly and record results in the §7 table.
+
+## 1. What the gate measures
+
+| Metric | How | PASS criterion (proposed — confirm on data) |
+|---|---|---|
+| **FPS / inference latency** | Harness at 10 / 15 / 30 fps target, MoveNet Lightning + Thunder | Android Chrome: sustained ≥ 15 fps at 15 fps target (p95 inference ≤ ~66 ms); iPhone Safari comparable |
+| **Rep-count reliability** | Trials of 10 reps per movement vs detected | ≥ 90% match on the four HIGH-coverage movements at the best placement |
+| **Placement sensitivity** | Same trial at 4 placements (diagonal-90, diagonal-200, front-180, side-90) | Best config ≥ 90%; worst config documented — informs the in-app placement guidance requirement |
+| **Session battery impact** | 10-min run at 15 fps (screen on) vs 10-min camera-off baseline | Δ battery ≤ ~5% per 10-min run (confirm against data; report absolute numbers) |
+
+All processing is on-device; the harness never uploads frames or results
+(results are exported manually as JSON).
+
+## 2. Required devices
+
+1. **Android phone** (Chrome, current) — mid-range preferred as the binding
+   case; a flagship as a bonus.
+2. **iPhone** (Safari, iOS 16+) — note: no `navigator.getBattery()` on iOS;
+   battery is measured pre/post only.
+3. (Optional) Desktop Chrome for a baseline sanity check on localhost.
+
+## 3. Serving the harness (HTTPS required for camera on phones)
+
+The harness is a single static page (`index.html`). Camera access requires a
+**secure context**. Options:
+
+- **Recommended (tunnel):** serve locally, expose over HTTPS with a tunnel.
+  The harness performs **no network sends** — the tunnel only transports the
+  page; frames/results never leave the device.
+  ```bash
+  npx -y serve scripts/pose-measurement -l 4173
+  # in a second terminal:  npx -y cloudflared tunnel --url http://localhost:4173
+  # open the printed https://… URL on each phone
+  ```
+- **Static host (delete after):** drag the folder to Netlify Drop / Vercel,
+  open the URL on the phones, delete the deploy when done.
+- **Desktop only:** `npx -y serve scripts/pose-measurement` →
+  `http://localhost:4173` (localhost is a secure context).
+
+The harness loads TF.js + MoveNet from CDN on first start (~3–8 MB download);
+phones need network for that load only. Verify the "100% on-device" banner
+renders and the status line shows the model loaded.
+
+## 4. Environment and setup (per tester)
+
+- Indoor, well-lit room; plain background; user stands 1.5–1.85 m tall;
+  phone propped at ~chest height, stable.
+- Camera: front (selfie) facing the user; whole body in frame per the
+  on-screen guide.
+- Brightness fixed (e.g., 50%) for the battery runs; same brightness for
+  baseline and test runs.
+- One movement at a time; 1–2 warm-up reps before each trial.
+
+## 5. Measurement runs (per device)
+
+**A. FPS + latency.** Start camera (default Lightning, 15 fps). Let it run
+20 s, record the live FPS + p95 inference ms. Repeat at 30 fps target, and
+with Thunder (10 fps target) — note Thunder is accuracy-check only.
+
+**B. Rep-count reliability + placement sensitivity.** For each movement
+(squat → push-up → hinge → split squat/lunge) and each placement
+(diagonal-90 → diagonal-200 → front-180 → side-90):
+
+1. Set movement + placement in the harness; press **Start trial**.
+2. Perform **10 clean reps** at a steady pace; press **End trial**.
+3. Record the trial row (detected / match % / avg conf / p95 ms).
+
+One trial per (movement, placement) is the minimum; a second trial at the
+best placement adds reliability confidence.
+
+**C. Battery impact.** On the primary Android phone (and iPhone pre/post):
+
+1. Record battery % (harness battery panel, or OS settings on iOS).
+2. Run the harness at 15 fps, screen on, 10 minutes (any movement, no
+   interaction). Record % after → Δtest.
+3. Baseline: screen on, camera off, same brightness, 10 minutes. Record %
+   before/after → Δbaseline.
+4. Report: Δtest − Δbaseline (harness overhead), and note absolute numbers.
+
+## 6. Exact Owner/human test instructions (STOP here for execution)
+
+This step requires **physical devices and a human tester** and cannot be
+executed from the development environment. When ready, the Owner should:
+
+1. Provide the two phones (§2) and a tester, or authorize a tester to run it.
+2. Have the tester follow §3–§5, exporting one JSON per
+   (device, movement, placement, fps config) run.
+3. Return the JSON exports + the §7 results table to the workspace
+   (e.g., drop into `scripts/pose-measurement/results/`), where the findings
+   can be reviewed and the gate closed — product implementation begins only
+   after that review.
+
+## 7. Results table (fill per device)
+
+| Device | Movement | Model | FPS cfg | Placement | Expected | Detected | Match % | Avg conf | p95 ms | Battery Δ (10 min) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Android | squat | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
+| Android | push-up | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
+| Android | hinge | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
+| Android | lunge | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
+| Android | squat | Lightning | 15 | diagonal-90 | 10 |  |  |  |  |  |
+| Android | squat | Lightning | 15 | front-180 | 10 |  |  |  |  |  |
+| Android | squat | Lightning | 15 | side-90 | 10 |  |  |  |  |  |
+| iPhone | squat | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
+| iPhone | squat | Lightning | 15 | front-180 | 10 |  |  |  |  |  |
+| (repeat per device as needed) |  |  |  |  |  |  |  |  |  |  |
+
+## 8. Honest limitations (gate scope)
+
+- The rep-count heuristics use fixed angle thresholds (defined in
+  `index.html` `MOVEMENTS`) — they exist to **measure**, not to ship;
+  product form signals (TEMPO_DRIFT, validated RANGE_OF_MOTION) are separate
+  and remain unimplemented.
+- Battery numbers depend on brightness, model, and camera pipeline; report
+  absolute values and the delta method (§5C).
+- CDN load requires network once; offline measurement is out of scope.
+- The harness targets MoveNet per the Owner decision; BlazePose/other
+  engines are not measured here.

@@ -1,6 +1,17 @@
 # CP-03 — Pose / Form Technical Feasibility Spike
 
-> **STATUS: FINDINGS DELIVERED — AWAITING OWNER REVIEW (2026-09-03)**
+> **STATUS: DECIDED — 2026-09-03** (was FINDINGS DELIVERED / AWAITING OWNER REVIEW)
+>
+> **OWNER DECISION (2026-09-03):** (1) **Approach A — MoveNet (TF.js)**;
+> (2) **web-first, fully on-device** (raw video never leaves the device);
+> (3) **v1 limited to HIGH-coverage movements** (squat family, push-up
+> family, standing hinge, split squat/lunge); (4) form signals in v1 =
+> **TEMPO_DRIFT + validated RANGE_OF_MOTION only** (ASYMMETRY and
+> device-measured form proxies deferred); (5) **a real-device measurement
+> gate is REQUIRED before any product implementation** — the bounded
+> harness/protocol (`scripts/pose-measurement/`) is the gate; physical
+> execution requires Owner-supplied devices. No Companion camera
+> functionality may be implemented before that gate closes.
 >
 > Research-only spike (`RESEARCH_ONLY`): no product implementation, no
 > camera/sensor code, no data collection, no dependency added, no schema
@@ -193,7 +204,7 @@ This is consistent with CP-02's contract, which refuses device-measured form
 proxies until proxy definitions are validated — this spike's coverage
 analysis is exactly that validation groundwork for the HIGH rows.
 
-## 9. Recommendation (for the findings gate)
+## 9. Recommendation (for the findings gate) — DECIDED (Approach A)
 
 **Approach A — MoveNet (TF.js) in-browser, web-first, benchmark-gated:**
 

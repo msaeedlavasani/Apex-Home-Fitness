@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; CP-03 findings DELIVERED (research-only) — no task is currently active |
+| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; CP-03 DECIDED — measurement gate PREPARED (physical execution is an Owner/human step); no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); CP-03 spike EXECUTED (research-only) — findings AWAITING OWNER REVIEW at the CP-03 OWNER_DECISION_GATE |
+| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED; CP-03 findings DECIDED (Approach A — MoveNet/TF.js, web-first, on-device, v1 HIGH-coverage scope, TEMPO_DRIFT + RANGE_OF_MOTION); **measurement gate PREPARED at scripts/pose-measurement/ — requires Owner-supplied devices to execute**; product implementation blocked on that gate |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | NONE — CP-03 OWNER_DECISION_GATE open (findings review: recommend Approach A — MoveNet in-browser, v1 HIGH-coverage scope, measurement gate); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
-| Pending owner review | **CP-03 findings review (OWNER_DECISION_GATE — open)** — decide Approach A/B/F and the measurement-gate step; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
+| Next authorized task | CP-03 measurement-gate execution (physical devices — Owner/human step, protocol in `scripts/pose-measurement/README.md`); then CP-03 findings review → product implementation. TS-03 READY but PROD_SENSITIVE (Production deletion acceptance); TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
+| Pending owner review | **CP-03 measurement-gate execution (needs physical Android + iPhone devices)**; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -659,8 +659,8 @@ existing session records).
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| OWNER_DECISION_GATE | Spike findings review before any implementation — **OPEN (2026-09-03): findings delivered, awaiting review** |
-| STATUS | **FINDINGS DELIVERED / AWAITING OWNER REVIEW** — 2026-09-03, research-only (no product code); report [`architecture/CP-03-POSE-FEASIBILITY.md`](architecture/CP-03-POSE-FEASIBILITY.md): recommendation = **Approach A — MoveNet (TF.js) in-browser** (best Android-browser FPS: 34 on Pixel 5 vs BlazePose ~11–12; fitness-trained; web-first PWA consistent), guided diagonal 90–200 cm camera placement (JMIR 2026: 61% mean detection across configs, 85–95% best), 10–15 fps EXERCISING-only processing, v1 scope = HIGH-coverage movements (squat/push-up/hinge/split-squat families) with TEMPO_DRIFT + validated RANGE_OF_MOTION only; ML Kit/Apple Vision native-only (contradicts ADR-0005 web-first); battery figures DERIVED; **measurement gate on real devices required before any implementation** (no phone hardware in this environment — acceptance gap documented). |
+| OWNER_DECISION_GATE | Spike findings review — **CLOSED 2026-09-03 (Approach A decided)** |
+| STATUS | **DECIDED (2026-09-03) — measurement gate PREPARED, execution requires Owner-supplied devices.** Research-only spike delivered findings (`architecture/CP-03-POSE-FEASIBILITY.md`); Owner decided: **Approach A — MoveNet (TF.js), web-first, fully on-device; v1 = HIGH-coverage movements; TEMPO_DRIFT + validated RANGE_OF_MOTION only; real-device measurement gate REQUIRED before product implementation.** Bounded harness + protocol prepared at `scripts/pose-measurement/` (FPS / rep-count reliability / placement sensitivity / session battery impact; Android Chrome + iPhone Safari). **No Companion camera functionality implemented.** Next step: physical-device run per the protocol README (Owner-supplied phones), then the findings review — product implementation only after that gate closes. |
 
 **Objective:** research spike — evaluate on-device pose inference options
 (MediaPipe, TensorFlow Lite, native APIs) for the target platforms; measure

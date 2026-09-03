@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AHF Pose Measurement Harness (CP-03 gate)</title>
+<!--
+  CP-03 MEASUREMENT HARNESS — RESEARCH TOOLING ONLY. NOT PRODUCT CODE.
+  -------------------------------------------------------------------
+  Purpose: bounded on-device measurement of MoveNet (TF.js) for the CP-03
+  measurement gate (docs/architecture/CP-03-POSE-FEASIBILITY.md; decision:
+  Approach A — MoveNet/TF.js, web-first, fully on-device, v1 HIGH-coverage
+  movements, TEMPO_DRIFT + validated RANGE_OF_MOTION only).
+
+  Measured outputs: (1) sustained FPS + inference ms, (2) rep-count
+  reliability per movement (state-machine heuristics with tunable angle
+  thresholds — MEASUREMENT ONLY, not product form analysis), (3) placement
+  sensitivity (recorded config labels), (4) session battery impact
+  (navigator.getBattery where available + pre/post protocol).
+
+  Privacy: 100% on-device. No frame or derived data is sent anywhere; the
+  only export is a manual JSON download/copy. Raw video is never persisted
+  beyond the live preview. Requires a secure context (HTTPS or localhost)
+  for camera access.
+
+  Dependencies: TF.js + @tensorflow-models/pose-detection from CDN — loaded
+  here ONLY; nothing is added to the app's package.json. No app import, no
+  build integration.
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 0; background: #101216; color: #d7dce3; }
+  header { padding: 12px 16px; background: #171a20; border-bottom: 1px solid #2a2f3a; }
+  header h1 { font-size: 15px; margin: 0 0 4px; }
+  header .banner { color: #f0b429; font-size: 12px; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: #171a20; border: 1px solid #2a2f3a; border-radius: 8px; padding: 12px; }
+  section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #8b93a1; margin: 0 0 10px; }
+  label { display: block; font-size: 12px; margin: 8px 0 3px; color: #aab2bf; }
+  select, input, button { font: inherit; font-size: 13px; width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #3a4150; background: #101216; color: #d7dce3; }
+  button { cursor: pointer; background: #1d4ed8; border-color: #2563eb; font-weight: 600; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.danger { background: #b91c1c; border-color: #dc2626; }
+  button.ok { background: #15803d; border-color: #16a34a; }
+  .row { display: flex; gap: 8px; } .row button { flex: 1; }
+  #video, #canvas { width: 100%; border-radius: 8px; background: #000; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+  .metric { background: #101216; border: 1px solid #2a2f3a; border-radius: 6px; padding: 6px 8px; }
+  .metric b { display: block; font-size: 16px; color: #7dd3fc; }
+  .metric span { font-size: 10px; color: #8b93a1; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th, td { border: 1px solid #2a2f3a; padding: 4px 6px; text-align: left; }
+  th { background: #101216; color: #8b93a1; font-weight: 600; }
+  textarea { width: 100%; height: 120px; font: inherit; font-size: 11px; }
+  .status { font-size: 12px; margin-top: 8px; color: #aab2bf; }
+  .ok-text { color: #4ade80; } .warn-text { color: #f0b429; }
+  #frameGuide { position: relative; }
+  #canvas { position: absolute; top: 0; left: 0; }
+  .fps-big { font-size: 26px; color: #7dd3fc; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AHF Pose Measurement Harness — CP-03 gate</h1>
+  <div class="banner">RESEARCH TOOLING ONLY · 100% on-device · no frames leave this device · not product code</div>
+</header>
+<main>
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <section>
+      <h2>Config</h2>
+      <label>Model</label>
+      <select id="modelSel">
+        <option value="Lightning">MoveNet Lightning (default)</option>
+        <option value="Thunder">MoveNet Thunder</option>
+      </select>
+      <label>Processing target (frames processed per second)</label>
+      <select id="fpsSel">
+        <option value="10">10 fps</option>
+        <option value="15" selected>15 fps</option>
+        <option value="30">30 fps</option>
+      </select>
+      <label>Movement under test</label>
+      <select id="moveSel">
+        <option value="squat">Bodyweight Squat (knee-angle heuristic)</option>
+        <option value="pushup">Push-Up (elbow-angle heuristic)</option>
+        <option value="hinge">Good Morning / Hinge (hip-angle heuristic)</option>
+        <option value="lunge">Split Squat / Lunge (front-knee heuristic)</option>
+      </select>
+      <label>Placement config (record for sensitivity analysis)</label>
+      <select id="placeSel">
+        <option value="diagonal-90">Diagonal · ~90 cm</option>
+        <option value="diagonal-200" selected>Diagonal · ~200 cm</option>
+        <option value="front-180">Front · ~180 cm</option>
+        <option value="side-90">Side · ~90 cm</option>
+      </select>
+      <label>Expected reps per trial</label>
+      <input id="expectedIn" type="number" value="10" min="1" max="50" />
+      <div class="row" style="margin-top:10px;">
+        <button id="startBtn" class="ok">Start camera</button>
+        <button id="stopBtn" class="danger" disabled>Stop</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button id="trialStartBtn" disabled>Start trial</button>
+        <button id="trialEndBtn" disabled>End trial</button>
+      </div>
+      <div class="status" id="status">Idle — press "Start camera". Camera requires HTTPS/localhost.</div>
+    </section>
+
+    <section>
+      <h2>Battery (where available)</h2>
+      <div class="metric"><b id="battLevel">—</b><span>battery %</span></div>
+      <div class="metric"><b id="battTime">—</b><span>discharging time</span></div>
+      <div class="status">Protocol: record % before and after a fixed 10-minute run at 15 fps with screen on; compare against a 10-min camera-off baseline.</div>
+    </section>
+
+    <section>
+      <h2>Export</h2>
+      <button id="exportBtn" disabled>Export JSON results</button>
+      <textarea id="exportBox" readonly placeholder="Results JSON will appear here."></textarea>
+      <div class="status">Manual export only — no network send. Export per device + config and save for the protocol results table.</div>
+    </section>
+  </div>
+
+  <div>
+    <section>
+      <h2>Live view <span class="status">(guided placement: person fully in frame, ~1.8 m working distance, diagonal 90–200 cm)</span></h2>
+      <div id="frameGuide">
+        <video id="video" playsinline muted></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+      </div>
+      <div class="metrics">
+        <div class="metric"><b class="fps-big" id="fps">—</b><span>processed FPS</span></div>
+        <div class="metric"><b id="infMs">—</b><span>inference ms (p50 / p95)</span></div>
+        <div class="metric"><b id="conf">—</b><span>joint confidence (min / mean)</span></div>
+        <div class="metric"><b id="detect">—</b><span>pose detection %</span></div>
+        <div class="metric"><b id="angle">—</b><span>heuristic angle °</span></div>
+        <div class="metric"><b id="repCount">0</b><span>detected reps (trial)</span></div>
+        <div class="metric"><b id="repExp">—</b><span>expected / elapsed s</span></div>
+      </div>
+      <table id="trialTable">
+        <thead><tr><th>#</th><th>Move</th><th>Model</th><th>FPS cfg</th><th>Placement</th><th>Expected</th><th>Detected</th><th>Match %</th><th>Avg conf</th><th>p95 inf ms</th><th>Dur s</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="status" id="trialStatus">No trials yet. Start camera, then Start/End a trial.</div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.20.0/dist/tf-converter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.20.0/dist/tf-backend-webgl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<script>
+"use strict";
+/* global tf, poseDetection */
+
+// --- Tunable heuristic thresholds (MEASUREMENT ONLY — not product form analysis) ----
+const MOVEMENTS = {
+  squat: { label: 'squat', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 95, up: 155, unit: 'knee °' },
+  pushup: { label: 'push-up', joints: ['left_shoulder', 'left_elbow', 'left_wrist'], down: 100, up: 150, unit: 'elbow °' },
+  hinge:  { label: 'hinge', joints: ['left_shoulder', 'left_hip', 'left_knee'], down: 120, up: 165, unit: 'hip °' },
+  lunge:  { label: 'lunge', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 100, up: 160, unit: 'front-knee °' },
+};
+
+const state = {
+  detector: null, video: null, running: false, rafId: 0,
+  lastProcess: 0, fpsTarget: 15,
+  infTimes: [], fpsWindow: [], fps: 0,
+  detections: 0, processed: 0,
+  minConf: 0, meanConf: 0, angle: null,
+  repState: null, repCount: 0, trial: null, trials: [],
+};
+
+const $ = (id) => document.getElementById(id);
+
+// --- Angle helpers ---------------------------------------------------------
+function angleDeg(a, b, c) {
+  const ab = Math.hypot(a.x - b.x, a.y - b.y), bc = Math.hypot(b.x - c.x, b.y - c.y), ac = Math.hypot(a.x - c.x, a.y - c.y);
+  const cos = Math.min(1, Math.max(-1, (ab * ab + bc * bc - ac * ac) / (2 * ab * bc)));
+  return (Math.acos(cos) * 180) / Math.PI;
+}
+
+function keypoint(pose, name) {
+  const kp = pose.keypoints && pose.keypoints.find((k) => k.name === name);
+  return kp && kp.score >= 0.5 ? kp : null;
+}
+
+// --- Rep state machine (bounded measurement heuristic) ----------------------
+function updateRep(downDeg) {
+  const m = MOVEMENTS[state.move];
+  const t = state.repState;
+  if (downDeg == null) { t.phase = 'lost'; t.minAngle = Infinity; return; }
+  if (downDeg < t.minAngle) t.minAngle = downDeg;
+  if (t.phase === 'up' && downDeg < m.down) { t.phase = 'down'; t.downAt = performance.now(); }
+  else if (t.phase === 'down' && downDeg > m.up) {
+    const dur = (performance.now() - t.downAt) / 1000;
+    t.phase = 'up';
+    if (dur >= 0.4) { state.repCount += 1; updateRepUi(); }
+  }
+  state.angle = Math.round(downDeg);
+}
+
+function angleFor(pose) {
+  const m = MOVEMENTS[state.move];
+  const pts = m.joints.map((n) => keypoint(pose, n));
+  if (pts.some((p) => !p)) return null;
+  state.minConf = Math.min(...pts.map((p) => p.score));
+  state.meanConf = pts.reduce((s, p) => s + p.score, 0) / pts.length;
+  return angleDeg(pts[0], pts[1], pts[2]);
+}
+
+// --- Rendering ---------------------------------------------------------------
+function drawPose(pose) {
+  const canvas = $('canvas'), ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!pose) return;
+  ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 3;
+  const edges = [['left_shoulder','left_elbow'],['left_elbow','left_wrist'],['left_shoulder','left_hip'],['left_hip','left_knee'],['left_knee','left_ankle'],['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['right_shoulder','right_hip'],['right_hip','right_knee'],['right_knee','right_ankle'],['left_hip','right_hip'],['left_shoulder','right_shoulder']];
+  ctx.beginPath();
+  for (const [a, b] of edges) {
+    const pa = keypoint(pose, a), pb = keypoint(pose, b);
+    if (!pa || !pb) continue;
+    ctx.moveTo(pa.x * canvas.width, pa.y * canvas.height);
+    ctx.lineTo(pb.x * canvas.width, pb.y * canvas.height);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#7dd3fc';
+  for (const k of pose.keypoints) {
+    if (k.score < 0.5) continue;
+    ctx.beginPath(); ctx.arc(k.x * canvas.width, k.y * canvas.height, 4, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// --- Metrics -----------------------------------------------------------------
+function updateUi() {
+  $('fps').textContent = state.fps.toFixed(1);
+  const sorted = [...state.infTimes].sort((a, b) => a - b);
+  const p = (q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))].toFixed(0) : '—');
+  $('infMs').textContent = `${p(0.5)} / ${p(0.95)} ms`;
+  $('conf').textContent = `${state.minConf.toFixed(2)} / ${state.meanConf.toFixed(2)}`;
+  const detPct = state.processed ? (100 * state.detections / state.processed) : 0;
+  $('detect').textContent = detPct.toFixed(0) + '%';
+  $('angle').textContent = state.angle == null ? '—' : state.angle + '°';
+}
+
+function updateRepUi() {
+  $('repCount').textContent = state.repCount;
+  if (state.trial) {
+    $('repExp').textContent = `${state.trial.expected} / ${((performance.now() - state.trial.startedAt) / 1000).toFixed(0)}s`;
+  }
+}
+
+// --- Processing loop ----------------------------------------------------------
+async function processLoop(now) {
+  if (!state.running) return;
+  state.rafId = requestAnimationFrame(processLoop);
+  const el = now - state.lastProcess;
+  if (el < 1000 / state.fpsTarget) return;
+  state.lastProcess = now;
+
+  const t0 = performance.now();
+  let pose = null;
+  try {
+    const res = await state.detector.estimatePoses(state.video, { flipHorizontal: true });
+    pose = res && res.length ? res[0] : null;
+  } catch { pose = null; }
+  const inf = performance.now() - t0;
+  state.infTimes.push(inf);
+  if (state.infTimes.length > 300) state.infTimes.shift();
+
+  state.processed += 1;
+  if (pose) {
+    state.detections += 1;
+    const deg = angleFor(pose);
+    if (deg != null) updateRep(deg);
+    drawPose(pose);
+  }
+  const fpsNow = 1000 / Math.max(el, 1);
+  state.fpsWindow.push(fpsNow);
+  if (state.fpsWindow.length > 60) state.fpsWindow.shift();
+  state.fps = state.fpsWindow.reduce((a, b) => a + b, 0) / state.fpsWindow.length;
+  updateUi();
+}
+
+// --- Camera -------------------------------------------------------------------
+async function startCamera() {
+  if (state.running) return;
+  if (!state.detector) {
+    $('status').textContent = 'Loading MoveNet model (first load downloads ~3–8 MB from CDN)…';
+    await tf.setBackend('webgl');
+    const modelType = $('modelSel').value === 'Thunder'
+      ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
+      : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING;
+    state.detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, { modelType });
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    audio: false,
+  });
+  state.video = $('video');
+  state.video.srcObject = stream;
+  await state.video.play();
+  state.fpsTarget = parseInt($('fpsSel').value, 10);
+  state.move = $('moveSel').value;
+  state.running = true;
+  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+  $('startBtn').disabled = true; $('stopBtn').disabled = false;
+  $('trialStartBtn').disabled = false; $('exportBtn').disabled = false;
+  $('status').textContent = 'Running. Position the phone per the placement guide, then Start trial and perform the expected reps.';
+  requestAnimationFrame(processLoop);
+}
+
+function stopCamera() {
+  state.running = false;
+  cancelAnimationFrame(state.rafId);
+  if (state.video && state.video.srcObject) {
+    state.video.srcObject.getTracks().forEach((t) => t.stop());
+    state.video.srcObject = null;
+  }
+  $('startBtn').disabled = false; $('stopBtn').disabled = true;
+  $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = true;
+  $('status').textContent = 'Stopped.';
+}
+
+// --- Trials --------------------------------------------------------------------
+function startTrial() {
+  if (!state.running) return;
+  state.repCount = 0;
+  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+  state.infTimes = [];
+  state.trial = {
+    startedAt: performance.now(),
+    expected: parseInt($('expectedIn').value, 10) || 10,
+    move: state.move, model: $('modelSel').value, fpsCfg: state.fpsTarget,
+    placement: $('placeSel').value,
+    maxReps: 0,
+  };
+  $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = false;
+  $('trialStatus').textContent = `Trial ${state.trials.length + 1} running — perform ${state.trial.expected} ${MOVEMENTS[state.move].label}s, then End trial.`;
+  updateRepUi();
+}
+
+function endTrial() {
+  if (!state.trial) return;
+  const dur = (performance.now() - state.trial.startedAt) / 1000;
+  const sorted = [...state.infTimes].sort((a, b) => a - b);
+  const p95 = sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(0.95 * sorted.length))] : null;
+  const row = {
+    move: state.trial.move, model: state.trial.model, fpsCfg: state.trial.fpsCfg,
+    placement: state.trial.placement, expected: state.trial.expected,
+    detected: state.repCount,
+    matchPct: state.trial.expected ? Math.round((100 * Math.min(state.repCount, state.trial.expected)) / state.trial.expected) : 0,
+    avgConf: Math.round(state.meanConf * 100) / 100, p95InfMs: p95 ? Math.round(p95) : null, durSec: Math.round(dur * 10) / 10,
+  };
+  state.trials.push(row);
+  renderTrials();
+  state.trial = null;
+  $('trialStartBtn').disabled = false; $('trialEndBtn').disabled = true;
+  $('trialStatus').textContent = `Trial logged (detected ${row.detected}/${row.expected}, match ${row.matchPct}%). Next: same setup or change placement/movement.`;
+}
+
+function renderTrials() {
+  const tb = $('trialTable').querySelector('tbody');
+  tb.innerHTML = '';
+  for (const [i, t] of state.trials.entries()) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i + 1}</td><td>${t.move}</td><td>${t.model}</td><td>${t.fpsCfg}</td><td>${t.placement}</td>` +
+      `<td>${t.expected}</td><td>${t.detected}</td><td>${t.matchPct}%</td><td>${t.avgConf}</td><td>${t.p95InfMs ?? '—'}</td><td>${t.durSec}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+// --- Export ----------------------------------------------------------------------
+function exportJson() {
+  const out = {
+    harness: 'AHF pose measurement harness (CP-03 gate)',
+    generatedAt: new Date().toISOString(),
+    device: { ua: navigator.userAgent, platform: navigator.platform, battery: $('battLevel').textContent },
+    summary: {
+      bestFps: state.trials.length ? Math.max(...state.trials.map((t) => t.matchPct)) : 0,
+      trialCount: state.trials.length,
+    },
+    trials: state.trials,
+  };
+  const json = JSON.stringify(out, null, 2);
+  $('exportBox').value = json;
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ahf-pose-measurement-${Date.now()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// --- Battery (Chrome/Android; not available on iOS Safari) ------------------------
+async function initBattery() {
+  if (!('getBattery' in navigator)) { $('battLevel').textContent = 'n/a'; $('battTime').textContent = 'n/a'; return; }
+  const b = await navigator.getBattery();
+  const upd = () => {
+    $('battLevel').textContent = `${Math.round(b.level * 100)}%`;
+    $('battTime').textContent = b.charging ? 'charging' : `${Math.round(b.dischargingTime / 60)} min left`;
+  };
+  upd();
+  b.addEventListener('levelchange', upd);
+  b.addEventListener('chargingchange', upd);
+}
+
+// --- Wiring -------------------------------------------------------------------------
+$('startBtn').addEventListener('click', startCamera);
+$('stopBtn').addEventListener('click', stopCamera);
+$('trialStartBtn').addEventListener('click', startTrial);
+$('trialEndBtn').addEventListener('click', endTrial);
+$('exportBtn').addEventListener('click', exportJson);
+['modelSel', 'fpsSel', 'moveSel'].forEach((id) => $(id).addEventListener('change', () => {
+  if (!state.running) return;
+  state.fpsTarget = parseInt($('fpsSel').value, 10);
+  state.move = $('moveSel').value;
+  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+}));
+initBattery();
+</script>
+</body>
+</html>
