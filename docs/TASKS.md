@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01…AL-03, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; AL-04 decision gate PREPARED (AWAITING OWNER DECISION); no task is currently active |
+| Active task | `NONE` — AL-01…AL-04, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — AL-01, AL-02, AL-03, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-03 promoted and executed; AL-04 remains `NOT_YET` with its decision gate PREPARED (4 Owner decisions pending — D1 scope, D2 apply posture, D3 rule-table defaults, D4 intent-input boundary) |
+| State | `READY` — AL-01…AL-04, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); AL-04 gate closed (D1a–D4a) and AL-04 delivered; next READY: CP-01 (deps AL-04 satisfied), then CP-02 (deps CP-01) |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | Per the 2026-09-03 autonomous-execution instruction, continue with READY tasks whose dependencies are satisfied (P1 chain blocked by AL-04 `NOT_YET` — gate document ready at [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md)) |
-| Pending owner review | **AL-04 decision gate — 4 decisions (D1 scope, D2 apply posture, D3 rule defaults, D4 intent-input boundary)** — see [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md) §9; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
+| Next authorized task | Continue the 2026-09-03 autonomous-execution chain: CP-01 (Companion architecture spec, READY — AL-04 satisfied), then CP-02 (observation signal model, READY — CP-01) |
+| Pending owner review | **CP-03 OWNER_DECISION_GATE (spike findings review before any implementation)** — next genuine gate after CP-01/CP-02; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -559,7 +559,7 @@ missing profile).
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
 | OWNER_DECISION_GATE | Decision algorithm sign-off — **CLOSED 2026-09-03 (D1a D2a D3a D4a)** |
-| STATUS | **ACTIVE** — executing (2026-09-03) |
+| STATUS | **DELIVERED / CLOSED** — PR #38 merged `f06e42f`; Main CI PASS on exact SHA (run 33756172851); branch `feat/al-04-adaptive-training-graph` retired (local + remote verified). Pure decision layer `src/lib/adaptive/decisions.ts` — `buildAdaptiveDecision` over `AdaptationInput`: L0 safety gates → L1 session frame → L2 per-movement KEEP/PROGRESS/REGRESS/SUBSTITUTE/EXCLUDE → L3 sets deltas; D2a apply modes (AUTO safety-lowering only); zero inference inside AL-04; fail-closed insufficient-data baseline; fixed-EN-template rationale (ruleId + evidenceRefs); `DECISION_POLICY` knob module (D3a). D4a additive `sessionIntent` + `lastOutcomeId` input extension (ADR-0016 addendum). ADR-0017 ACCEPTED. 30 new tests (740/740). Additive — no existing type changed; no DB migration; no runtime wiring (`CODE_NO_DEPLOY`). |
 
 **Gate close (2026-09-03):** Owner answered the AL-04 decision gate
 [`architecture/AL-04-DECISION-GATE.md`](architecture/AL-04-DECISION-GATE.md)
