@@ -227,36 +227,37 @@ preparation, Production acceptance, checkpoint recording, mainline merge-back.
 `gh api`). Classic branch protection IS enabled on `main`:
 
 - required status checks: `build` + `e2e` (GitHub Actions, app `15368`),
-  `strict: true` (branch must be up to date before merge), enforced at
-  `enforcement_level = non_admins` — administrators are exempt
-  (`enforce_admins.enabled = false`);
+  `strict: true` (branch must be up to date before merge);
+- `enforce_admins.enabled = true` (2026-09-03, explicit Owner instruction —
+  see below) → `enforcement_level = everyone`: the required checks bind the
+  Owner/administrator too;
 - force pushes blocked (`allow_force_pushes = false`) and branch deletion
-  blocked (`allow_deletions = false`) for non-admins;
+  blocked (`allow_deletions = false`);
 - `required_linear_history = true`;
 - `required_pull_request_reviews = null` — PR review is NOT required;
 - no repository rulesets configured (`rulesets = []`; personal-account repo,
   no organization rulesets possible).
 
-Observed bypass (2026-09-03, docs commit `61fdaf3`): GitHub reported
+History: until 2026-09-03 the checks were enforced at `non_admins`
+(`enforce_admins.enabled = false`), so a direct-main push by the repository
+Owner/administrator (`msaeedlavasani`) bypassed them — GitHub reported
 `Bypassed rule violations for refs/heads/main: 2 of 2 required status checks
-are expected`. Cause: the push was made by the repository Owner/administrator
-(`msaeedlavasani`), and classic protection exempts admins — GitHub default
-behavior, not a misconfiguration. The post-push Main CI still ran on the
-exact SHA and PASSED (run `33728121613`), so § J was satisfied by
-verification, not by push-time enforcement.
+are expected` on the `61fdaf3` and `92e909b` docs pushes (default admin
+exemption, not a misconfiguration). Per explicit Owner instruction
+(AHF-FB-20260903-BRANCH-PROTECTION-ENFORCEMENT), `enforce_admins` was then
+enabled; a full before/after diff (URLs stripped) confirmed the ONLY changed
+rule was `enforce_admins.enabled: false → true` (`enforcement_level`
+`non_admins → everyone`). From that point, direct-main pushes by the Owner
+are push-time gated by the required `build`/`e2e` checks, matching § J and
+the DOCS_DIRECT_MAIN lifecycle (`PUSH → MAIN_CI_PASS_ON_EXACT_SHA`).
 
 Remaining governance debt (Owner decision required before changing; never
 weaken existing protection):
 
-- the required `build`/`e2e` checks and linear history do NOT bind the
-  Owner/administrator — direct-main pushes by the Owner bypass them;
 - PR review is not required on `main`.
 
-Safe correction options (recommendation only — not applied by any audit):
+Safe correction options still open (recommendation only):
 
-1. enable `enforce_admins` ("include administrators") so required status
-   checks bind the Owner — matches § J and the DOCS_DIRECT_MAIN lifecycle
-   (`PUSH → MAIN_CI_PASS_ON_EXACT_SHA`); low-risk and reversible;
-2. add a `main` ruleset with required status checks and no admin bypass (or
+1. add a `main` ruleset with required status checks and no admin bypass (or
    a minimal bypass list), superseding the classic settings;
-3. optionally require pull-request review on `main`.
+2. optionally require pull-request review on `main`.
