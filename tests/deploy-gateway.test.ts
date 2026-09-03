@@ -18,6 +18,21 @@ test('gateway accepts only the bounded non-DB release schema', () => {
   assert.equal(validate({...valid, source_sha:'main'}).stdout.trim(), 'GateError');
 });
 
+test('gateway allowlists the S02-E backfill and the MG-09 adoption operations', () => {
+  const source = readFileSync(gateway, 'utf8');
+  assert.match(source, /"s02e-exercise-identity-backfill"/);
+  assert.match(source, /"mg09-movement-graph-adopt"/);
+  assert.match(source, /scripts\/gateway-db-ops\/mg09-movement-graph-adopt\.mjs/);
+});
+
+test('gateway accepts a dry-run db-operation for the MG-09 adoption op', () => {
+  const valid = {action:'db-operation',schema_version:1,operation_id:'mg09-movement-graph-adopt',mode:'dry-run',source_sha:'a'.repeat(40)};
+  assert.equal(validate(valid).stdout.trim(), 'PASS');
+  // apply without evidence is refused by the shared gate.
+  const noEvidence = {...valid, mode:'apply'};
+  assert.equal(validate(noEvidence).stdout.trim(), 'GateError');
+});
+
 test('gateway source is fixed to canonical host, repository, compose and volume', () => {
   const source = readFileSync(gateway, 'utf8');
   assert.match(source, /HOST = "sabtbrooker"/);

@@ -179,6 +179,12 @@ model Exercise {
 
   programExercises ProgramExercise[]
   sessionExercises WorkoutSessionExercise[]
+  // MG-09: optional Movement Graph link. Additive — the legacy Exercise table
+  // stays the durable reference source (Program/WorkoutSession joins are
+  // untouched); a linked Movement row carries the graph knowledge for the same
+  // physical exercise. The FK lives on `Movement.exerciseId`; this back-relation
+  // field adds no column here.
+  movement          Movement?
 
   @@index([category])
   @@index([difficulty])
@@ -186,6 +192,102 @@ model Exercise {
   // together (e.g. "HIIT exercises for intermediates") — one composite index
   // serves both combined and single-column (leftmost prefix) lookups.
   @@index([category, difficulty])
+}
+
+// ---------------------------------------------------------------
+// Movement Graph persisted storage (MG-09 — additive adoption)
+// ---------------------------------------------------------------
+//
+// Persists the Movement Graph domain contract (`src/lib/movement/types.ts`,
+// MG-01) as additive tables. Design rules:
+//   - ADDITIVE ONLY: no existing table is altered beyond the optional
+//     `Exercise.movement` back-relation (no column added there); every legacy
+//     reference (ProgramExercise / WorkoutSessionExercise → Exercise.id)
+//     remains untouched.
+//   - `Movement.exerciseId` is the durable one-to-one link back to the legacy
+//     Exercise row — this is what "preserves every existing exercise
+//     reference" during the governed data migration.
+//   - Relationship/media tables reference movements by canonical SLUG, not by
+//     FK: the MG-01 contract says edges/media reference movements by id or
+//     slug and are never resolved at schema time.
+//   - JSON columns carry the rich contract shapes (taxonomy, provenance,
+//     versioning, LocalizedText) so the pure domain types persist without a
+//     column-per-field explosion; SQLite stores Json as TEXT.
+
+// A persisted movement knowledge object (the Movement Graph node).
+model Movement {
+  id           String   @id @default(cuid())
+  // Canonical source-controlled resolution anchor (slugifyName token format).
+  slug         String   @unique
+  // Canonical English display name (never identity; matches the catalog).
+  nameEn       String   @unique
+  // Canonical Persian display name. ABSENT until a real FA corpus exists
+  // (GATE A: no invented Persian names).
+  nameFa       String?
+  // Confidently-equivalent variant names (readonly string[]).
+  aliases      Json?
+  // MovementTaxonomy shape (MG-02 vocabulary tokens).
+  taxonomy     Json?
+  // LocalizedText (MG-07 key structure).
+  description  Json?
+  // Ordered step-by-step instructions, localized (LocalizedText[]).
+  instructions Json?
+  // Common-mistakes / form cues (LocalizedText[]).
+  coachingCues Json?
+  // MovementProvenance (MG-03).
+  provenance   Json
+  // MovementCatalogVersioning (MG-01 §2.7).
+  versioning   Json
+  // Durable link to the legacy Exercise row (one-to-one; preserves every
+  // existing exercise reference — MG-09 acceptance). Nullable: canonical
+  // catalog entries without a legacy seed row (e.g. the 34 rules entries)
+  // have no link yet.
+  exerciseId   String?   @unique
+  exercise     Exercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([nameEn])
+}
+
+// A persisted typed graph edge (MG-06 model: progression / regression /
+// substitution). References by canonical slug — never resolved at schema time.
+model MovementRelationship {
+  id         String @id @default(cuid())
+  // Canonical slug of the source movement.
+  sourceSlug String
+  // Closed kind set: progression | regression | substitution (MG-06 guard).
+  kind       String
+  // Canonical slug of the related movement (by slug per the MG-01 contract).
+  targetSlug String
+  // Optional context: the constraint/equipment/impact driver.
+  note       String?
+
+  @@index([sourceSlug])
+  @@index([targetSlug])
+}
+
+// A persisted self-hosted media manifest entry (MG-07).
+model MovementMedia {
+  id          String  @id @default(cuid())
+  // Canonical slug of the owning movement.
+  movementSlug String
+  // Stable asset identifier (e.g. `bodyweight-squat--poster`).
+  assetId     String
+  // Closed kind set: image | video | animation | audio (MG-07).
+  kind        String
+  // Self-hosted URL on AHF-controlled infrastructure (MG-07 contract).
+  url         String
+  // sha256 content hash for integrity verification (MG-03/MG-07).
+  contentHash String?
+  // Fallback URL used when the primary asset cannot load (resilience).
+  fallbackUrl String?
+  // Localization key for captions/narration when applicable.
+  captionKey  String?
+  // True once validated against the self-hosting/resilience requirement.
+  validated   Boolean @default(false)
+
+  @@index([movementSlug])
 }
 
 // A structured training plan. Exercises are linked through the

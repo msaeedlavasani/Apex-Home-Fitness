@@ -17,7 +17,7 @@
     "guardrail:test": "node --test tests/guardrail-check.test.mjs",
     "governance:check": "node scripts/governance-runtime.mjs docs && node scripts/governance-runtime.mjs ui",
     "governance:test": "node --test tests/governance-runtime.test.mjs",
-    "test:gateway": "node --import tsx --test tests/gateway-db-op.test.mjs && python3 -m py_compile ops/deploy-gateway/apex_deploy_gateway.py && python3 ops/deploy-gateway/apex_deploy_gateway.py --self-test",
+    "test:gateway": "node --import tsx --test tests/gateway-db-op.test.mjs tests/mg09-adopt.test.mjs && python3 -m py_compile ops/deploy-gateway/apex_deploy_gateway.py && python3 ops/deploy-gateway/apex_deploy_gateway.py --self-test",
     "admin:provision": "node --import tsx scripts/provision-admin.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts tests/*.test.tsx",

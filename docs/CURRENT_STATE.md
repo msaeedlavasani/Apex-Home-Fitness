@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           NONE — MG-08 (Reconciliation) DELIVERED/CLOSED; no task is currently active
-ACTIVE_TASK_PROFILE:                   N/A (no active task)
-AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-08 is the eighth explicitly authorized backlog task and is CLOSED)
-ACTIVE_BRANCH:                         N/A
+ACTIVE_TASK:                           MG-09 — Production migration / adoption (governed) — ACTIVE (authorized 2026-09-01)
+ACTIVE_TASK_PROFILE:                   PROD_SENSITIVE — additive migration + data migration + runtime switchover; governed DB lifecycle (dry-run → evidence → apply); Production apply gated on OWNER_DECISION_GATE
+AHF_EXECUTION_STATE:                   ACTIVE (Owner lifted the execution freeze on 2026-09-01; MG-09 is the ninth explicitly authorized backlog task and is ACTIVE)
+ACTIVE_BRANCH:                         feat/mg-09-persisted-movement-graph
 PREVIOUS_COMPLETED_TASK:               MG-08 Catalog validation + legacy seed reconciliation (DELIVERED/CLOSED 2026-09-01 — P0; PR #32 merged db7c3a1, Main CI PASS on exact SHA; no ADR (gate NONE); engine + report + migration plan; EXERCISE-CATALOG-DISAMBIGUATION-01 ABSORBED; no migration executed; no Production/DB/UI change)
-NEXT_AUTHORIZED_TASK:                  NONE — MG-09 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
-NEXT_EXPECTED_BRANCH:                 N/A
-CURRENT_PHASE:                         CLOSED — MG-08 complete, Main CI PASS on exact SHA; backlog idle awaiting next explicit Owner instruction
-LAST_UPDATED:                          2026-09-01 (MG-08 DELIVERED/CLOSED; no migration executed, no Production read/write; no Production/DB/UI change; no deployment; MG-09+ not authorized)
+NEXT_AUTHORIZED_TASK:                  NONE — AL-01 and all subsequent backlog tasks NOT authorized; begin only on the next explicit Owner instruction
+NEXT_EXPECTED_BRANCH:                 feat/mg-09-persisted-movement-graph (current)
+CURRENT_PHASE:                         ACTIVE — MG-09 in execution (additive migration + governed data migration + runtime switchover); Production apply pending dry-run evidence + explicit apply authorization
+LAST_UPDATED:                          2026-09-01 (MG-09 authorized and ACTIVE; additive migration + governed adoption in execution; Production apply NOT started — gated)
 ```
 
 ## Reading this manifest (pre-task gate)
