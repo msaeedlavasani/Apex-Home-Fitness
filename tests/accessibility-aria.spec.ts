@@ -1,4 +1,5 @@
 import {expect, test, type Page} from '@playwright/test';
+import {useDashboardData} from './helpers/dashboardData';
 
 /**
  * ARIA / accessibility coverage (browser-level).
@@ -61,6 +62,7 @@ test.describe('Dashboard — ARIA', () => {
   test('exposes labelled regions, day-toggle state and a labelled nav', async ({
     page,
   }) => {
+    await useDashboardData(page);
     await page.goto('/en/dashboard');
 
     // Labelled regions (section + aria-label → region role).
@@ -101,10 +103,11 @@ test.describe('Onboarding quiz — ARIA', () => {
   test('exposes progress, option, note and error semantics', async ({page}) => {
     await page.goto('/en/quiz');
 
-    // Progress bar: 1 of 7 on the first step.
+    // Progress bar: 1 of 8 on the first step (rest-days onboarding added a
+    // step — the same 8-step flow pinned by tests/rest-days.spec.ts).
     const progress = page.getByRole('progressbar');
     await expect(progress).toHaveAttribute('aria-valuemin', '0');
-    await expect(progress).toHaveAttribute('aria-valuemax', '7');
+    await expect(progress).toHaveAttribute('aria-valuemax', '8');
     await expect(progress).toHaveAttribute('aria-valuenow', '1');
 
     // Single-choice step is a labelled radiogroup of toggle buttons.
@@ -252,8 +255,20 @@ test.describe('Profile — ARIA', () => {
     await expect(page.getByRole('region', {name: 'Preferences'})).toBeVisible();
     await expect(page.getByRole('region', {name: 'Support'})).toBeVisible();
 
-    // Language segmented control.
-    const language = page.getByRole('radiogroup', {name: 'Language'});
+    // The shell header (desktop corner controls) and the in-page preference
+    // row both expose a locale control; their accessible names must stay
+    // distinct (the in-page row is "Interface language", never a duplicate
+    // "Language" group). The mobile top bar keeps a hidden responsive copy
+    // of the header control — scope to the desktop corner controls, which
+    // also keeps this deterministic at every viewport.
+    await expect(
+      page
+        .locator('div.glass-strong.fixed')
+        .getByRole('radiogroup', {name: 'Language'}),
+    ).toHaveCount(1);
+
+    // In-page language segmented control (distinct accessible name).
+    const language = page.getByRole('radiogroup', {name: 'Interface language'});
     await expect(language.getByRole('radio', {name: 'English'})).toHaveAttribute(
       'aria-checked',
       'true',

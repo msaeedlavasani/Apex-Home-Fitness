@@ -1,4 +1,5 @@
 import {expect, test} from '@playwright/test';
+import {useDashboardData} from './helpers/dashboardData';
 
 /**
  * Offline / PWA coverage for Apex Home Fitness.
@@ -95,6 +96,11 @@ test.describe('Offline / PWA', () => {
       });
     });
 
+    // The calendar requires program data from auth-gated routes; inject the
+    // deterministic fixture (page routes take precedence over the recorder's
+    // context route, and stay active through the offline replay pass).
+    await useDashboardData(page);
+
     // --- Pass 1 — online load; record the whole shell. ---
     await page.goto('/en/dashboard');
     await expect(page.getByText('Your weekly training plan')).toBeVisible();
@@ -174,6 +180,7 @@ test.describe('Offline / PWA', () => {
   test('registering the app service worker never breaks the running app', async ({
     page,
   }) => {
+    await useDashboardData(page);
     await page.goto('/en/dashboard');
     await expect(page.getByText('Your weekly training plan')).toBeVisible();
 

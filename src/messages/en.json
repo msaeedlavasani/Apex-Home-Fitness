@@ -348,7 +348,7 @@
     },
     "notSet": "Not set",
     "preferences": {
-      "language": "Language",
+      "language": "Interface language",
       "appearance": "Appearance",
       "languageOptions": {
         "en": "English",

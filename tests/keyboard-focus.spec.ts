@@ -1,4 +1,5 @@
 import {expect, test, type Locator, type Page} from '@playwright/test';
+import {useDashboardData} from './helpers/dashboardData';
 
 /**
  * Keyboard / focus coverage.
@@ -39,6 +40,7 @@ test.describe('Dashboard weekly calendar — keyboard', () => {
   test('day buttons are focusable and switch the plan with Enter/Space', async ({
     page,
   }) => {
+    await useDashboardData(page);
     await page.goto('/en/dashboard');
     const calendar = page.getByRole('region', {name: 'Weekly calendar'});
     const days = calendar.getByRole('button');
@@ -76,12 +78,12 @@ test.describe('Theme toggle — keyboard', () => {
     await page.emulateMedia({colorScheme: 'light'});
     await page.goto('/en/dashboard');
 
-    // The ThemeToggle exists in both the sidebar footer and the mobile top
-    // bar — scope to the desktop sidebar (role=complementary).
-    const sidebarToggle = () =>
-      page.getByRole('complementary').getByRole('button');
-    const byLabel = (name: string) =>
-      page.getByRole('complementary').getByRole('button', {name});
+    // The toggle lives in the desktop corner controls (the floating glass
+    // pill at the top end edge) — the mobile top bar copy is hidden at this
+    // viewport (md:hidden), so these locators stay unambiguous.
+    const corner = page.locator('div.glass-strong.fixed');
+    const sidebarToggle = () => corner.getByRole('button');
+    const byLabel = (name: string) => corner.getByRole('button', {name});
 
     // Fresh context: theme defaults to "system" → next is "Light".
     await tabTo(page, byLabel('Light'));
@@ -232,8 +234,12 @@ test.describe('Onboarding quiz — keyboard', () => {
     await expect(
       page.getByRole('alert').filter({hasText: 'Please select an option to continue.'}),
     ).toBeVisible();
-    // The quiz stays on step 1 and focus remains on Next.
-    await expect(page.getByRole('radiogroup')).toBeVisible();
+    // The quiz stays on step 1 and focus remains on Next. Scope the group
+    // to the quiz options — the shell header also exposes a Language
+    // radiogroup (TD-02/SPEC-RECONCILIATION-02).
+    await expect(
+      page.getByRole('radiogroup', {name: 'What visual style do you prefer?'}),
+    ).toBeVisible();
     await expect(next).toBeFocused();
   });
 });

@@ -1,4 +1,9 @@
 import {expect, test} from '@playwright/test';
+import {
+  DASHBOARD_TOTAL_SESSIONS,
+  expectedSessionsDone,
+  useDashboardData,
+} from './helpers/dashboardData';
 
 /**
  * E2E coverage for the dashboard weekly-calendar column order:
@@ -10,6 +15,12 @@ import {expect, test} from '@playwright/test';
  * Selection state (exactly one `aria-pressed` day, on today's column) and
  * the completion summary (sessions-done progress) are checked for both
  * locales.
+ *
+ * The weekly calendar only renders once the dashboard has a completed quiz
+ * AND a program (both fetched from auth-gated routes). CI has no session
+ * backend, so every test injects deterministic dashboard data through
+ * `useDashboardData` (see tests/helpers/dashboardData.ts) — all assertions
+ * below still run against the real client-rendered markup.
  */
 
 // Known reference date: Saturday 2026-08-15 (local time). Used only to
@@ -37,6 +48,7 @@ test.describe('Dashboard weekly calendar — column order', () => {
   test('en keeps Monday → Sunday columns (existing convention)', async ({
     page,
   }) => {
+    await useDashboardData(page);
     await page.goto('/en/dashboard');
 
     const days = calendarRegion(page, false).getByRole('button');
@@ -54,6 +66,7 @@ test.describe('Dashboard weekly calendar — column order', () => {
   });
 
   test('fa orders columns Saturday (شنبه) → Friday (جمعه)', async ({page}) => {
+    await useDashboardData(page);
     await page.goto('/fa/dashboard');
 
     const days = calendarRegion(page, true).getByRole('button');
@@ -71,6 +84,7 @@ test.describe('Dashboard weekly calendar — column order', () => {
   });
 
   test('selection lands on today in both locales', async ({page}) => {
+    await useDashboardData(page);
     const today = new Date();
 
     for (const [path, fa, firstDay, regionName] of [
@@ -104,26 +118,33 @@ test.describe('Dashboard weekly calendar — column order', () => {
   });
 
   test('completion summary stays consistent across locales', async ({page}) => {
-    // Mirror of the dashboard's WEEK_PLAN (Monday → Sunday):
-    // [workout, workout, rest, workout, workout, rest, workout].
-    const planWorkouts = [true, true, false, true, true, false, true];
-    const mondayIndex = (new Date().getDay() + 6) % 7;
-    const done = planWorkouts.slice(0, mondayIndex).filter(Boolean).length;
+    await useDashboardData(page);
+
+    // The dashboard counts completed workout days inside the locale's own
+    // week window (en: Monday-start, fa: Saturday-start); the fixture places
+    // a completed session on every workout day before today, so the two
+    // counts can differ on week-boundary days (Saturday/Sunday).
+    const enDone = expectedSessionsDone('en');
+    const faDone = expectedSessionsDone('fa');
 
     // English: exact progress string.
     await page.goto('/en/dashboard');
     await expect(
-      page.getByText(`${done} of 5 sessions done this week`),
+      page.getByText(
+        `${enDone} of ${DASHBOARD_TOTAL_SESSIONS} sessions done this week`,
+      ),
     ).toBeVisible();
 
-    // Persian: same count, localized template (interpolated numbers render
-    // as ASCII digits via intl-messageformat).
+    // Persian: localized template (interpolated numbers render as ASCII
+    // digits via intl-messageformat).
     await page.goto('/fa/dashboard');
     await expect(
       page.getByText('جلسه این هفته انجام شد'),
     ).toBeVisible();
     await expect(
-      page.getByText(`${done} از 5 جلسه این هفته انجام شد`),
+      page.getByText(
+        `${faDone} از ${DASHBOARD_TOTAL_SESSIONS} جلسه این هفته انجام شد`,
+      ),
     ).toBeVisible();
   });
 });
