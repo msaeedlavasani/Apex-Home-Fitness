@@ -62,7 +62,11 @@ from old fix/feature branches.
 
 After successful remote-main verification, retire completed task branches
 unless a documented retention reason exists. Never delete a branch before
-proving `main` contains all of its unique commits (ancestry proof).
+proving `main` contains all of its unique commits (ancestry proof). The
+retirement gate (§ J) additionally requires Main CI PASS on the exact merge
+SHA before any deletion, makes retirement mandatory once that PASS and the
+ancestry proof hold, and requires verified deletion of BOTH the local and the
+remote refs.
 
 ## F. NO HISTORY REWRITE
 
@@ -111,6 +115,43 @@ required on success and every interruption path. If scope escapes eligibility,
 fail closed before the out-of-scope mutation and use the normal task-branch
 lifecycle. Never rewrite or restart an existing task branch merely to use this
 fast path; finish that branch normally.
+
+## J. RETIREMENT GATE — EXACT-MERGE-SHA MAIN CI PASS
+
+Retirement (deletion) of a completed task branch is governed by a hard gate.
+The three rules below are binding for every branch type
+(`feat/**`, `fix/**`, `recovery/**`, `refactor/**`, `batch/**`, …) and are
+enforced at every task close-out:
+
+1. **NEVER RETIRE BEFORE EXACT-MERGE-SHA MAIN CI PASS.** A branch MUST NOT be
+deleted — locally or on the remote — until the CI workflow has PASSED on the
+**exact merge commit on `main`** that integrated the branch. Branch CI PASS,
+PR integration CI PASS, and local validation are NOT substitutes: the gate is
+the post-merge `main` CI run on the exact merge SHA (the `build` and `e2e`
+jobs of `ci.yml` must both report `conclusion = success` on that SHA). Verify
+the check-runs / workflow run for that exact SHA before any deletion and
+record the run/job IDs in the durable report.
+
+2. **AFTER PASS + ANCESTRY PROOF, RETIREMENT IS MANDATORY.** Once the
+exact-merge-SHA Main CI PASS is verified AND ancestry proof holds
+(`git merge-base --is-ancestor <branch-tip> main`, with zero unique commits
+on the branch), the completed branch MUST be retired. Retention is not a
+default option — it requires an explicit, documented Owner-approved reason
+(§ E). A CLOSED task report MUST NOT claim `BRANCH_RETIRED = YES` while any
+local or remote ref for the branch still exists.
+
+3. **VERIFY BOTH LOCAL AND REMOTE DELETION.** Retirement is complete only
+when BOTH refs are deleted and the deletion is re-verified:
+
+   - local: `git branch -d <branch>`; then confirm `git branch -a` no longer
+     lists it and the working tree is clean;
+   - remote: `git push origin --delete <branch>`; then confirm
+     `git ls-remote origin` (and `git branch -r` after `git fetch --prune`)
+     no longer lists it.
+
+   Record the verification (commands + observed results) in the task's
+durable report. An unmerged or active branch (unique commits NOT in `main`)
+is never a retirement candidate; it remains until its task reaches this gate.
 
 ## Task lifecycle / status model
 

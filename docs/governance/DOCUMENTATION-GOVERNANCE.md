@@ -61,6 +61,10 @@ decision changes them.
    DELETE_VERIFIED`. `MERGED` alone is not sufficient for deletion: verify
    ancestry and zero unique commits, delete remote and local refs safely, prune,
    and confirm a clean repository before opening the next normal branch.
+   Retirement additionally requires Main CI PASS on the exact merge SHA on
+   `main` before ANY deletion, makes retirement mandatory once that PASS and
+   the ancestry proof hold, and requires verified deletion of both the local
+   and the remote refs (see `docs/BRANCHING_POLICY.md` § J — Retirement Gate).
 10. **Superseded branch retirement exception** — a branch with unique history
     may be retired without merge only when semantic reconciliation proves its
     substantive capabilities are present or superseded, safety-critical gaps
