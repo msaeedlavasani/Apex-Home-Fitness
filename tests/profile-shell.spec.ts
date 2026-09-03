@@ -3,21 +3,25 @@ import {expect, test, type Page} from '@playwright/test';
 /**
  * Profile shell integration coverage (ProfileView inside AppShell).
  *
- * Profile used to be a standalone route; it now renders inside the platform
- * shell, which owns the navigation chrome (desktop sidebar / mobile pill nav)
- * and an accessible Back control. This spec pins the contract:
+ * Profile renders inside the platform shell, which owns the navigation
+ * chrome (desktop sidebar / mobile pill nav). This spec pins the contract:
  *  1. Desktop: the sidebar marks Profile active (`aria-current="page"`) and
- *     the Back control navigates to the dashboard.
- *  2. Mobile: the pill nav marks Profile active and the Back control keeps a
- *     ≥ 44px touch target.
+ *     the Home link navigates back to the dashboard.
+ *  2. Mobile: the pill nav marks Profile active with a ≥ 44px touch target
+ *     and the Home pill navigates back to the dashboard.
  *  3. No horizontal overflow at either canonical viewport, either locale.
- *  4. RTL (fa): Back is localized ("بازگشت"), the chevron mirrors
- *     (rtl:rotate-180), and the sidebar hugs the inline-start edge.
- *  5. Keyboard: the Back control is tab-reachable, shows a visible focus
- *     ring, and activates with Enter.
+ *  4. RTL (fa): the nav labels are localized, Profile stays active, and the
+ *     sidebar hugs the inline-start edge.
+ *  5. Keyboard: the sidebar Profile link is tab-reachable, shows a visible
+ *     focus ring, and activates with Enter.
  *
  * Deterministic, no external network; runs at the canonical viewports used by
  * responsive-layout.spec.ts (390×844 mobile, 1440×900 desktop).
+ *
+ * SPEC-RECONCILIATION-02: the dedicated Profile Back control was removed by
+ * design (commit aa2b1db — "no stale back buttons": Profile is a top-level
+ * nav destination, unlike pushed screens such as FAQ which keep backHref).
+ * These tests now pin the current shell-navigation paradigm instead.
  */
 
 const MOBILE = {width: 390, height: 844};
@@ -52,7 +56,7 @@ async function tabTo(page: Page, target: import('@playwright/test').Locator, max
 }
 
 test.describe('Profile — shell integration', () => {
-  test('desktop: sidebar marks Profile active and Back returns to the dashboard', async ({
+  test('desktop: sidebar marks Profile active and Home returns to the dashboard', async ({
     page,
   }) => {
     await open(page, '/en/profile', DESKTOP);
@@ -65,17 +69,15 @@ test.describe('Profile — shell integration', () => {
       'page',
     );
 
-    // Back control is present, localized, and navigates to the dashboard.
-    const back = page.getByRole('link', {name: 'Back'});
-    await expect(back).toBeVisible();
-    await back.click();
+    // The sidebar Home link navigates back to the dashboard.
+    await sidebar.getByRole('link', {name: 'Home', exact: true}).click();
     await page.waitForURL('**/en/dashboard');
     await expect(
       page.getByRole('complementary').getByRole('link', {name: 'Home', exact: true}),
     ).toHaveAttribute('aria-current', 'page');
   });
 
-  test('mobile: pill nav marks Profile active and Back meets the 44px touch target', async ({
+  test('mobile: pill nav marks Profile active and meets the 44px touch target', async ({
     page,
   }) => {
     await open(page, '/en/profile', MOBILE);
@@ -87,14 +89,14 @@ test.describe('Profile — shell integration', () => {
       'page',
     );
 
-    // Back control: visible and ≥ 44px tall for touch.
-    const back = page.getByRole('link', {name: 'Back'});
-    await expect(back).toBeVisible();
-    const box = await back.boundingBox();
-    expect(box, 'back control must have a bounding box').not.toBeNull();
+    // Profile pill: visible and ≥ 44px tall for touch.
+    const profilePill = header.getByRole('link', {name: 'Profile'});
+    const box = await profilePill.boundingBox();
+    expect(box, 'profile pill must have a bounding box').not.toBeNull();
     expect(box!.height).toBeGreaterThanOrEqual(44);
 
-    await back.click();
+    // The Home pill navigates back to the dashboard.
+    await header.getByRole('link', {name: 'Home', exact: true}).click();
     await page.waitForURL('**/en/dashboard');
   });
 
@@ -109,17 +111,11 @@ test.describe('Profile — shell integration', () => {
 });
 
 test.describe('Profile — RTL (fa)', () => {
-  test('Back and nav are localized and the sidebar mirrors to the inline-start edge', async ({
+  test('nav is localized, Profile stays active and the sidebar mirrors to the inline-start edge', async ({
     page,
   }) => {
     await open(page, '/fa/profile', DESKTOP);
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-
-    // Localized Back control.
-    const back = page.getByRole('link', {name: 'بازگشت'});
-    await expect(back).toBeVisible();
-    // The chevron mirrors via the logical rtl:rotate-180 utility.
-    await expect(back.locator('svg')).toHaveClass(/rtl:rotate-180/);
 
     // Sidebar: Persian labels, Profile active, hugging the right (start) edge.
     const sidebar = page.getByRole('complementary');
@@ -127,31 +123,37 @@ test.describe('Profile — RTL (fa)', () => {
       'aria-current',
       'page',
     );
+    // The remaining nav entries are localized too (no English leakage).
+    await expect(sidebar.getByRole('link', {name: 'خانه', exact: true})).toBeVisible();
     const box = await sidebar.boundingBox();
     expect(box).not.toBeNull();
     expect(Math.round(box!.x + box!.width)).toBe(DESKTOP.width);
   });
 
-  test('mobile: Persian Back control is visible and ≥ 44px', async ({page}) => {
+  test('mobile: Persian pill nav is visible and Profile meets the 44px touch target', async ({
+    page,
+  }) => {
     await open(page, '/fa/profile', MOBILE);
-    const back = page.getByRole('link', {name: 'بازگشت'});
-    await expect(back).toBeVisible();
-    const box = await back.boundingBox();
+    const profilePill = page.locator('header').getByRole('link', {name: 'پروفایل'});
+    await expect(profilePill).toBeVisible();
+    await expect(profilePill).toHaveAttribute('aria-current', 'page');
+    const box = await profilePill.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.height).toBeGreaterThanOrEqual(44);
-    await expect(back.locator('svg')).toHaveClass(/rtl:rotate-180/);
   });
 });
 
 test.describe('Profile — keyboard', () => {
-  test('Back control is tab-reachable, shows a focus ring, and activates with Enter', async ({
+  test('sidebar navigation is tab-reachable, shows a focus ring, and activates with Enter', async ({
     page,
   }) => {
-    await open(page, '/en/profile', DESKTOP);
+    await open(page, '/en/dashboard', DESKTOP);
 
-    const back = page.getByRole('link', {name: 'Back'});
-    await tabTo(page, back);
-    await expect(back).toBeFocused();
+    const profileLink = page
+      .getByRole('complementary')
+      .getByRole('link', {name: 'Profile'});
+    await tabTo(page, profileLink);
+    await expect(profileLink).toBeFocused();
 
     // Keyboard focus must render a visible ring (focus-visible ring token).
     const ring = await page.evaluate(() => {
@@ -161,7 +163,10 @@ test.describe('Profile — keyboard', () => {
     expect(ring).not.toBe('none');
     expect(ring).toContain('rgba');
 
-    await back.press('Enter');
-    await page.waitForURL('**/en/dashboard');
+    await profileLink.press('Enter');
+    await page.waitForURL('**/en/profile');
+    await expect(
+      page.getByRole('complementary').getByRole('link', {name: 'Profile'}),
+    ).toHaveAttribute('aria-current', 'page');
   });
 });

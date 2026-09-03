@@ -7,6 +7,14 @@ on:
     - cron: '0 22 * * *'
   workflow_dispatch: # manual trigger for release / high-risk validation
 
+# SPEC-RECONCILIATION-02 (2026-09-03): the full suite cannot run in one
+# invocation. auth-flow.spec.ts needs AUTH_OTP_MODE=mock (route protection +
+# OTP UI) and skips transparently without it, while every other spec runs in
+# open mode (signed-out, matching how the app degrades without Supabase) —
+# mirroring the per-commit split in ci.yml. Data-dependent dashboard specs
+# inject deterministic program data via route interception
+# (tests/helpers/dashboardData.ts); the ci.db needs no seed.
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -41,9 +49,20 @@ jobs:
     - name: Install Playwright browser (chromium) + OS dependencies
       run: npx playwright install --with-deps chromium
 
-    - name: Run full E2E regression suite
+    - name: Run E2E auth tests (mock OTP mode)
+      run: npm run test:e2e:auth
+      env:
+        # Mock OTP mode: route protection + auth UI without external credentials.
+        AUTH_OTP_MODE: mock
+        DATABASE_URL: file:./ci.db
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    - name: Run full E2E regression suite (open mode)
       run: npm run test:e2e:full
       env:
+        # Open mode (no auth arming): the full suite runs signed-out, exactly
+        # as the app degrades without Supabase/SMS creds. auth-flow.spec.ts
+        # skips transparently here (its mock-mode run is the step above).
         DATABASE_URL: file:./ci.db
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 

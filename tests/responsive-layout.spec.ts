@@ -56,25 +56,56 @@ test.describe('Responsive shell — geometry', () => {
     }
   }
 
-  test('mobile pill nav fits fully inside 390px — en and fa', async ({page}) => {
+  test('mobile pill nav fits the viewport and scrolls for the fifth pill — en and fa', async ({
+    page,
+  }) => {
     await open(page, '/en/dashboard', MOBILE);
-    const enPills = page.locator('header nav a');
-    await expect(enPills).toHaveCount(4);
-    for (const pill of await enPills.all()) {
+    const nav = page.locator('header nav');
+    // Five items since the preferences tab was added (APP_NAV: dashboard,
+    // history, analytics, preferences, profile — see TD-01).
+    await expect(nav.locator('a')).toHaveCount(5);
+
+    // The nav container itself never breaks the 390px layout…
+    const navBox = await nav.boundingBox();
+    expect(navBox).not.toBeNull();
+    expect(navBox!.x).toBeGreaterThanOrEqual(-1);
+    expect(navBox!.x + navBox!.width).toBeLessThanOrEqual(MOBILE.width + 1);
+
+    // …and pills that exceed the fold are reachable via the nav's own
+    // horizontal scroll (overflow-x-auto); the page itself must not
+    // overflow — that invariant is pinned by the overflow tests above.
+    const scrollable = await nav.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {scrollW: el.scrollWidth, clientW: el.clientWidth, overflowX: style.overflowX};
+    });
+    expect(scrollable.overflowX).toBe('auto');
+    expect(scrollable.scrollW).toBeGreaterThan(scrollable.clientW);
+
+    // Every pill is still a usable touch target.
+    for (const pill of await nav.locator('a').all()) {
       const box = await pill.boundingBox();
-      expect(box, 'pill must be inside the viewport').not.toBeNull();
-      expect(box!.x + box!.width).toBeLessThanOrEqual(MOBILE.width + 1);
+      expect(box, 'pill must have a bounding box').not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
+    // Same contract in Persian (RTL).
     await open(page, '/fa/dashboard', MOBILE);
-    const faPills = page.locator('header nav a');
-    await expect(faPills).toHaveCount(4);
-    for (const pill of await faPills.all()) {
+    const faNav = page.locator('header nav');
+    await expect(faNav.locator('a')).toHaveCount(5);
+    const faNavBox = await faNav.boundingBox();
+    expect(faNavBox).not.toBeNull();
+    expect(faNavBox!.x).toBeGreaterThanOrEqual(-1);
+    expect(faNavBox!.x + faNavBox!.width).toBeLessThanOrEqual(MOBILE.width + 1);
+    const faScrollable = await faNav.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {scrollW: el.scrollWidth, clientW: el.clientWidth, overflowX: style.overflowX};
+    });
+    expect(faScrollable.overflowX).toBe('auto');
+    expect(faScrollable.scrollW).toBeGreaterThan(faScrollable.clientW);
+    for (const pill of await faNav.locator('a').all()) {
       const box = await pill.boundingBox();
-      expect(box).not.toBeNull();
-      // RTL: pills start from the right edge; none may cross the left edge.
-      expect(box!.x).toBeGreaterThanOrEqual(-1);
-      expect(box!.x + box!.width).toBeLessThanOrEqual(MOBILE.width + 1);
+      expect(box, 'fa pill must have a bounding box').not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
     }
   });
 
@@ -216,7 +247,18 @@ test.describe('Responsive shell — focus visibility', () => {
 
   test('keyboard focus renders a visible ring on quiz options', async ({page}) => {
     await open(page, '/en/quiz', MOBILE);
-    await page.keyboard.press('Tab'); // first focusable = first option button
+
+    // The first tabbables are the shell language-switcher radios (the quiz
+    // page hosts the locale control above its options); Tab until the first
+    // option card owns the focus — a real keyboard journey, not a jump.
+    for (let i = 0; i < 8; i++) {
+      const cls = await page.evaluate(
+        () => (document.activeElement as HTMLElement | null)?.className ?? '',
+      );
+      if (String(cls).includes('quiz-option')) break;
+      await page.keyboard.press('Tab');
+    }
+
     const ring = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       return {cls: el?.className ?? '', boxShadow: getComputedStyle(el as HTMLElement).boxShadow};
