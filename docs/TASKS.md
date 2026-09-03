@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; no task is currently active |
+| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 DELIVERED/CLOSED 2026-09-03; CP-03 findings DELIVERED (research-only) — no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); P1 + P2 Companion prerequisites delivered; next executable (CP-03) requires an Owner decision |
+| State | `READY` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04 CLOSED (autonomous backlog execution, 2026-09-03); CP-03 spike EXECUTED (research-only) — findings AWAITING OWNER REVIEW at the CP-03 OWNER_DECISION_GATE |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | NONE autonomous-READY with satisfied dependencies — CP-03 (pose feasibility spike) is `RESEARCH_ONLY` with OWNER_DECISION_GATE (spike findings review before any implementation); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
-| Pending owner review | **CP-03 OWNER_DECISION_GATE (research-spike authorization + findings review)** — next genuine gate after CP-02; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
+| Next authorized task | NONE — CP-03 OWNER_DECISION_GATE open (findings review: recommend Approach A — MoveNet in-browser, v1 HIGH-coverage scope, measurement gate); TS-03 READY but PROD_SENSITIVE with Production deletion acceptance; TS-05 needs TS-02 (HUMAN_GATE legal); TS-02 HUMAN_GATE; SU-01 NOT_YET |
+| Pending owner review | **CP-03 findings review (OWNER_DECISION_GATE — open)** — decide Approach A/B/F and the measurement-gate step; MG-09 Production apply (OWNER_DECISION_GATE); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
 
@@ -659,7 +659,8 @@ existing session records).
 | PRODUCTION_SENSITIVITY | `NONE` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| OWNER_DECISION_GATE | Spike findings review before any implementation |
+| OWNER_DECISION_GATE | Spike findings review before any implementation — **OPEN (2026-09-03): findings delivered, awaiting review** |
+| STATUS | **FINDINGS DELIVERED / AWAITING OWNER REVIEW** — 2026-09-03, research-only (no product code); report [`architecture/CP-03-POSE-FEASIBILITY.md`](architecture/CP-03-POSE-FEASIBILITY.md): recommendation = **Approach A — MoveNet (TF.js) in-browser** (best Android-browser FPS: 34 on Pixel 5 vs BlazePose ~11–12; fitness-trained; web-first PWA consistent), guided diagonal 90–200 cm camera placement (JMIR 2026: 61% mean detection across configs, 85–95% best), 10–15 fps EXERCISING-only processing, v1 scope = HIGH-coverage movements (squat/push-up/hinge/split-squat families) with TEMPO_DRIFT + validated RANGE_OF_MOTION only; ML Kit/Apple Vision native-only (contradicts ADR-0005 web-first); battery figures DERIVED; **measurement gate on real devices required before any implementation** (no phone hardware in this environment — acceptance gap documented). |
 
 **Objective:** research spike — evaluate on-device pose inference options
 (MediaPipe, TensorFlow Lite, native APIs) for the target platforms; measure
