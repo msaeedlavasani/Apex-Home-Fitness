@@ -15,6 +15,12 @@
  *      above the 0.5 gate, the skeleton overlay must draw, and the JSON
  *      export must carry pose telemetry. This closes the gap that the
  *      synthetic pattern could not: real image content reaching the model.
+ *   E. REP-MACHINE regression (deterministic — a still photo cannot move):
+ *      drives the exact counter/step functions the processing loop uses and
+ *      asserts clean squat cycles count 10, a >1.5 s dropout re-arms instead
+ *      of latching forever (the v2 'lost' bug that zeroed the real-device
+ *      squat trials), short dropouts keep continuity, and shallow/fast/
+ *      hysteresis-band motion still counts 0 (thresholds not loosened).
  *
  * This is NOT the CP-03 real-device gate: it runs on a desktop with a
  * virtual camera; Android/iPhone FPS, rep reliability and battery still
@@ -226,6 +232,66 @@ async function main() {
     await pageD.close();
     await ctxD.close();
   }
+
+  // ============ E. Rep state machine (deterministic, scenario D's still photo =========
+  // cannot move; this drives the EXACT machine the process loop uses — v3 repair:
+  // clean squats count, a >dropResetMs dropout re-arms instead of latching forever
+  // (v2 'lost' regression), short dropouts keep continuity, and the original
+  // thresholds (down/up/minRepSec) are proven NOT loosened: shallow, fast-bounce
+  // and hysteresis-band motion still count 0.
+  const pageE = await ctxA.newPage();
+  await pageE.goto(url, { waitUntil: 'domcontentloaded' });
+  const r = await pageE.evaluate(() => {
+    const R = window.__ahf.rep;
+    const m = R.movements.squat;                 // down 95 / up 155 / minRepSec 0.4
+    const T66 = 66;                              // ≈15 fps cadence
+    let now = 0;
+    const fresh = () => { now = 0; return R.makeCounter('squat'); };
+    // Sweep from→to by ±step, stepping the counter each 66 ms. from/to inclusive.
+    const sweep = (c, from, to, step, everyNull) => {
+      let i = 0;
+      for (let v = from; step > 0 ? v <= to : v >= to; v += step) {
+        if (everyNull && i % everyNull === everyNull - 1) { now += T66; R.step(c, null, now); }
+        else { now += T66; R.step(c, v, now); }
+        i++;
+      }
+    };
+    const deepRep = (c, everyNull) => {
+      sweep(c, 170, 86, -12, everyNull);   // 8 frames; crosses down (95) at the 86 frame
+      for (let i = 0; i < 8; i++) { now += T66; if (everyNull && i % 2 === 1) R.step(c, null, now); else R.step(c, 86, now); } // dwell ~528 ms
+      sweep(c, 86, 170, 12, everyNull);    // 7 frames; crosses up (155) at the 158 frame → dur ≈ 858 ms
+    };
+    const snap = (c) => ({ reps: c.repCount, downs: c.downs, ups: c.ups, phase: c.phase, rearmed: c.rearmed, lost: c.lostEvents });
+
+    // E1 — ten clean squat cycles → 10 reps
+    const c1 = fresh();
+    for (let i = 0; i < 10; i++) deepRep(c1);
+    // E2 — two reps, then a 2.6 s dropout (re-arm), then three more → 5, machine never latches
+    const c2 = fresh();
+    for (let i = 0; i < 2; i++) deepRep(c2);
+    for (let i = 0; i < 40; i++) { now += T66; R.step(c2, null, now); }   // 2640 ms ≫ dropResetMs 1500
+    for (let i = 0; i < 3; i++) deepRep(c2);
+    // E3 — short dropouts (every 3rd frame) keep continuity across three reps
+    const c3 = fresh();
+    for (let i = 0; i < 3; i++) deepRep(c3, 3);
+    // E4 — shallow squats (knee never below 95°) → 0
+    const c4 = fresh();
+    for (let i = 0; i < 6; i++) { sweep(c4, 170, 100, -10); sweep(c4, 100, 170, 10); }
+    // E5 — fast bounce below 95° but above it again in <400 ms → 0
+    const c5 = fresh();
+    for (let i = 0; i < 6; i++) { sweep(c5, 170, 78, -46); sweep(c5, 78, 170, 46); }
+    // E6 — hysteresis-band noise (100–160, never below 95) → 0
+    const c6 = fresh();
+    for (let i = 0; i < 30; i++) { now += T66; R.step(c6, i % 2 ? 100 : 160, now); }
+    return { e1: snap(c1), e2: snap(c2), e3: snap(c3), e4: snap(c4), e5: snap(c5), e6: snap(c6) };
+  });
+  check('E. ten clean squat cycles count 10 (downs=ups=10)', r.e1.reps === 10 && r.e1.downs === 10 && r.e1.ups === 10, `reps=${r.e1.reps} downs=${r.e1.downs} ups=${r.e1.ups}`);
+  check('E. 2.6 s dropout re-arms; counting resumes (v2 dead-latch regression)', r.e2.reps === 5 && r.e2.rearmed >= 1 && r.e2.phase === 'up', `reps=${r.e2.reps} rearmed=${r.e2.rearmed} phase=${r.e2.phase}`);
+  check('E. short dropouts (every 3rd frame) keep continuity — no re-arm, reps intact', r.e3.reps === 3 && r.e3.rearmed === 0 && r.e3.lost > 0, `reps=${r.e3.reps} rearmed=${r.e3.rearmed} lost=${r.e3.lost}`);
+  check('E. shallow squats (knee >95°) still count 0 — thresholds not loosened', r.e4.reps === 0, `reps=${r.e4.reps}`);
+  check('E. sub-400 ms bounce still counts 0 — duration guard intact', r.e5.reps === 0, `reps=${r.e5.reps} downs=${r.e5.downs}`);
+  check('E. hysteresis-band noise (100–160°) counts 0 — no down crossing, no reps', r.e6.reps === 0, `reps=${r.e6.reps}`);
+  await pageE.close();
 
   await ctxA.close();
   await browser.close();

@@ -231,6 +231,7 @@ const CFG = {
   trialMinMean: 10,             // trials require input mean ≥ this …
   trialMinCenter: 18,           // … and center-region mean ≥ this (person zone)
   noPoseAfterMs: 6000,          // placement hint after this long with zero detections
+  dropResetMs: 1500,            // rep machine: an angle dropout longer than this re-arms to 'up'
   maxLog: 400,
 };
 const MODEL_URLS = {
@@ -239,11 +240,15 @@ const MODEL_URLS = {
 };
 
 // --- Tunable heuristic thresholds (MEASUREMENT ONLY — not product form analysis) ----
+// v3 2026-09-04: every movement is measured on BOTH sides (joints = L, jointsR = R) and
+// the side whose three joints clear KEYPOINT_GATE is used (higher mean confidence when
+// both do), so a diagonal placement tracks the near leg instead of always forcing the
+// (often far, occluded) left one. down/up/KEYPOINT_GATE/minRepSec are UNCHANGED values.
 const MOVEMENTS = {
-  squat: { label: 'squat', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 95, up: 155, unit: 'knee °' },
-  pushup: { label: 'push-up', joints: ['left_shoulder', 'left_elbow', 'left_wrist'], down: 100, up: 150, unit: 'elbow °' },
-  hinge:  { label: 'hinge', joints: ['left_shoulder', 'left_hip', 'left_knee'], down: 120, up: 165, unit: 'hip °' },
-  lunge:  { label: 'lunge', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 100, up: 160, unit: 'front-knee °' },
+  squat:  { label: 'squat', joints: ['left_hip', 'left_knee', 'left_ankle'], jointsR: ['right_hip', 'right_knee', 'right_ankle'], down: 95, up: 155, unit: 'knee °', minRepSec: 0.4 },
+  pushup: { label: 'push-up', joints: ['left_shoulder', 'left_elbow', 'left_wrist'], jointsR: ['right_shoulder', 'right_elbow', 'right_wrist'], down: 100, up: 150, unit: 'elbow °', minRepSec: 0.4 },
+  hinge:  { label: 'hinge', joints: ['left_shoulder', 'left_hip', 'left_knee'], jointsR: ['right_shoulder', 'right_hip', 'right_knee'], down: 120, up: 165, unit: 'hip °', minRepSec: 0.4 },
+  lunge:  { label: 'lunge', joints: ['left_hip', 'left_knee', 'left_ankle'], jointsR: ['right_hip', 'right_knee', 'right_ankle'], down: 100, up: 160, unit: 'front-knee °', minRepSec: 0.4 },
 };
 const KEYPOINT_GATE = 0.5;       // joint acceptance for angle/reps (and skeleton dots)
 
@@ -274,6 +279,9 @@ const state = {
   frameTrace: [], lastSample: null, sampleAcc: 0, lastWallAt: 0, winAt: 0, winCalls: 0, winRets: 0, winTime: 0,
   minConf: 0, meanConf: 0, angle: null,
   repState: null, repCount: 0, trial: null, trials: [],
+  // v3 rep telemetry (real-device analysis 2026-09-04): per-window + per-trial counters
+  winValid: 0, winMinAngle: Infinity, winMaxAngle: -1,   // since the last 1 s sample
+  trialValid: 0, trialGated: 0, trialMinAngle: Infinity, // since trial start
   error: null, log: [], noPoseHintShown: false, lastNoPoseAt: null,
 };
 
@@ -380,26 +388,59 @@ function poseStats(pose) {
 }
 
 // --- Rep state machine (bounded measurement heuristic) ----------------------
-function updateRep(downDeg) {
-  const m = MOVEMENTS[state.move];
-  const t = state.repState;
-  if (downDeg == null) { t.phase = 'lost'; t.minAngle = Infinity; return; }
-  if (downDeg < t.minAngle) t.minAngle = downDeg;
-  if (t.phase === 'up' && downDeg < m.down) { t.phase = 'down'; t.downAt = performance.now(); }
-  else if (t.phase === 'down' && downDeg > m.up) {
-    const dur = (performance.now() - t.downAt) / 1000;
-    t.phase = 'up';
-    if (dur >= 0.4) { state.repCount += 1; updateRepUi(); }
-  }
-  state.angle = Math.round(downDeg);
+// v3 repair (real-device analysis 2026-09-04): the previous machine latched
+// phase='lost' on ANY frame whose joints failed KEYPOINT_GATE and NO code path
+// ever left 'lost', so the first leg-keypoint flicker inside a trial permanently
+// disabled rep counting — the iPhone squat export (detected 0/0 with healthy
+// tracking, 56% of pose frames gated session-wide) is exactly that signature.
+// v3 treats a missing angle as a DROPOUT: short dropouts keep the phase
+// (continuity), dropouts longer than CFG.dropResetMs re-arm to 'up' so a later
+// full down→up excursion still counts. down/up/KEYPOINT_GATE/minRepSec are
+// unchanged; only the dead latch is removed.
+function makeRepCounter(move) {
+  const m = MOVEMENTS[move];
+  return {
+    move, m, phase: 'up', downAt: 0, minAngle: Infinity,
+    dropAt: 0, lostEvents: 0, rearmed: 0, downs: 0, ups: 0,
+    angle: null, side: null, minConf: 0, meanConf: 0, repCount: 0,
+  };
 }
+function repStep(c, deg, now) {
+  const m = c.m;
+  if (deg == null) {
+    if (c.dropAt === 0) { c.dropAt = now; c.lostEvents += 1; }
+    if (now - c.dropAt >= CFG.dropResetMs) {   // too long to trust continuity
+      c.phase = 'up'; c.minAngle = Infinity; c.downAt = 0; c.dropAt = 0; c.rearmed += 1;
+    }
+    return;
+  }
+  c.dropAt = 0;
+  if (deg < c.minAngle) c.minAngle = deg;
+  if (c.phase === 'up' && deg < m.down) { c.phase = 'down'; c.downAt = now; c.downs += 1; }
+  else if (c.phase === 'down' && deg > m.up) {
+    const dur = (now - c.downAt) / 1000;
+    c.phase = 'up';
+    c.ups += 1;
+    if (dur >= m.minRepSec) c.repCount += 1;
+  }
+  c.angle = deg;
+}
+// Side-aware angle: try BOTH sides, use the one whose three joints all clear
+// KEYPOINT_GATE (higher mean confidence when both do). Returns null only when
+// no side has a usable joint trio (recorded as poseGatedOut).
 function angleFor(pose) {
   const m = MOVEMENTS[state.move];
-  const pts = m.joints.map((n) => keypoint(pose, n));
-  if (pts.some((p) => !p)) return null;
-  state.minConf = Math.min(...pts.map((p) => p.score));
-  state.meanConf = pts.reduce((s, p) => s + p.score, 0) / pts.length;
-  return angleDeg(pts[0], pts[1], pts[2]);
+  const cands = [];
+  for (const [side, names] of [['L', m.joints], ['R', m.jointsR]]) {
+    const pts = names.map((n) => keypoint(pose, n));
+    if (pts.some((p) => !p)) continue;
+    cands.push({ side, deg: angleDeg(pts[0], pts[1], pts[2]),
+                 minConf: Math.min(...pts.map((p) => p.score)),
+                 meanConf: pts.reduce((s, p) => s + p.score, 0) / pts.length });
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.meanConf - a.meanConf);
+  return cands[0];
 }
 
 // --- Rendering ---------------------------------------------------------------
@@ -551,11 +592,13 @@ function maybeSample(now) {
     win: { calls, rets, infErr: state.infErrors, detPct: state.processed ? Math.round(100 * state.detections / state.processed) : 0, fps: Math.round(state.fps * 10) / 10 },
     pose: state.lastPoseStats || null,
     poseAgeSec: state.lastPoseStats ? Math.round(((wall - state.lastPoseAt) / 1000) * 10) / 10 : null,
+    rep: repTelemetry(),
   };
   state.lastSample = samp;
   state.frameTrace.push(samp);
   if (state.frameTrace.length > CFG.traceCap) state.frameTrace.shift();
   state.winAt = now; state.winCalls = state.inferenceCalls; state.winRets = state.poseReturns; state.winTime = v.currentTime;
+  state.winValid = 0; state.winMinAngle = Infinity; state.winMaxAngle = -1;   // new window
 
   // Trials gate: block when the model input is effectively dark/flat (measurements
   // would be meaningless) — but keep the pipeline running so diagnostics continue.
@@ -600,6 +643,23 @@ function renderInputDiag(samp) {
     (p ? '\nposes: ' + samp.win.rets + '/1s · kp≥0.5 ' + p.kp05 + '/' + p.kpTotal + ' · kpMax ' + p.kpMax + ' · mean ' + p.kpMean : '\nposes: ' + samp.win.rets + '/1s (raw returns since start ' + state.poseReturns + ')');
 }
 function running() { return state.phase === 'running'; }
+function repTelemetry() {
+  const c = state.repState;
+  const live = c && c.dropAt > 0 ? Math.max(0, Math.round(performance.now() - c.dropAt)) : 0;
+  return {
+    inTrial: !!state.trial, phase: c ? c.phase : null, side: c ? c.side : null,
+    angle: c && c.angle != null ? Math.round(c.angle) : null,
+    minConf: c ? Math.round(c.minConf * 100) / 100 : null,
+    meanConf: c ? Math.round(c.meanConf * 100) / 100 : null,
+    dropMs: live, lost: c ? c.lostEvents : 0, rearmed: c ? c.rearmed : 0,
+    win: { valid: state.winValid,
+           min: state.winMinAngle === Infinity ? null : Math.round(state.winMinAngle),
+           max: state.winMaxAngle < 0 ? null : Math.round(state.winMaxAngle) },
+    trial: state.trial && c ? { valid: state.trialValid, gated: state.trialGated,
+        minAngle: state.trialMinAngle === Infinity ? null : Math.round(state.trialMinAngle),
+        downs: c.downs, ups: c.ups, reps: c.repCount } : null,
+  };
+}
 
 // --- Metrics -----------------------------------------------------------------
 function updateUi() {
@@ -842,9 +902,23 @@ async function processLoop(now) {
     state.lastPoseStats = poseStats(pose);
     state.lastPoseAt = performance.now();   // rolling — persists until next pose
     state.noPoseHintShown = false;
-    const deg = angleFor(pose);
-    if (deg == null) state.poseGatedOut += 1;   // pose returned but joints < gate
-    else updateRep(deg);
+    const a = angleFor(pose);
+    if (a) {
+      state.minConf = a.minConf; state.meanConf = a.meanConf;
+      const c = state.repState;
+      c.side = a.side; c.minConf = a.minConf; c.meanConf = a.meanConf;
+      repStep(c, a.deg, performance.now());
+      if (state.repCount !== c.repCount) { state.repCount = c.repCount; updateRepUi(); }
+      state.angle = Math.round(a.deg);
+      // per-1 s-window + per-trial angle telemetry (exported in frameTrace / trial rows)
+      state.winValid += 1;
+      if (a.deg < state.winMinAngle) state.winMinAngle = a.deg;
+      if (a.deg > state.winMaxAngle) state.winMaxAngle = a.deg;
+      if (state.trial) { state.trialValid += 1; if (a.deg < state.trialMinAngle) state.trialMinAngle = a.deg; }
+    } else {
+      state.poseGatedOut += 1;   // pose returned but no full joint trio cleared the gate
+      if (state.trial) state.trialGated += 1;
+    }
     drawPoseSafe(pose);               // hypothesis 3: overlay runs / errors counted
   } else if (state.infErrors === 0) {
     drawPoseSafe(null);
@@ -889,6 +963,8 @@ async function runPipeline(opts) {
   state.inferenceCalls = 0; state.poseReturns = 0; state.poseGatedOut = 0;
   state.skeletonDraws = 0; state.lastOverlayHits = 0; state.lastOverlayScanAt = 0;
   state.overlayErrors = 0; state.lastOverlayError = null;
+  state.winValid = 0; state.winMinAngle = Infinity; state.winMaxAngle = -1;
+  state.trialValid = 0; state.trialGated = 0; state.trialMinAngle = Infinity;
   state.lastPoseStats = null; state.lastPoseAt = 0;
   $('inputDiag').classList.add('hidden');
   const b = $('banner');
@@ -921,7 +997,7 @@ async function runPipeline(opts) {
     state.fpsTarget = parseInt($('fpsSel').value, 10);
     state.move = $('moveSel').value;
     state.mirror = $('mirrorChk').checked;
-    state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+    state.repState = makeRepCounter(state.move);
     state.infTimes = []; state.fpsWindow = []; state.processed = 0; state.detections = 0;
     state.infErrors = 0;
     state.winAt = performance.now(); state.winCalls = 0; state.winRets = 0; state.winTime = v.currentTime;
@@ -969,7 +1045,8 @@ function startTrial() {
   if (state.trial) return;
   if ($('trialStartBtn').disabled) return;   // trials may be gated by dark/flat input
   state.repCount = 0;
-  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+  state.repState = makeRepCounter(state.move);
+  state.trialValid = 0; state.trialGated = 0; state.trialMinAngle = Infinity;
   state.infTimes = [];
   state.trial = {
     startedAt: performance.now(),
@@ -979,6 +1056,7 @@ function startTrial() {
   };
   $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = false;
   $('trialStatus').textContent = `Trial ${state.trials.length + 1} running — perform ${state.trial.expected} ${MOVEMENTS[state.move].label}s, then End trial.`;
+  diag('trial', `start — ${state.trial.move} × ${state.trial.expected} expected @ ${state.trial.placement} (${state.detectorModel}, fps cfg ${state.fpsTarget})`, 'info');
   updateRepUi();
 }
 function endTrial() {
@@ -992,12 +1070,17 @@ function endTrial() {
     detected: state.repCount,
     matchPct: state.trial.expected ? Math.round((100 * Math.min(state.repCount, state.trial.expected)) / state.trial.expected) : 0,
     avgConf: Math.round(state.meanConf * 100) / 100, p95InfMs: p95 ? Math.round(p95) : null, durSec: Math.round(dur * 10) / 10,
+    validFrames: state.trialValid, gatedFrames: state.trialGated,
+    minAngle: state.trialMinAngle === Infinity ? null : Math.round(state.trialMinAngle),
+    phaseAtEnd: state.repState.phase, endSide: state.repState.side,
+    downs: state.repState.downs, ups: state.repState.ups,
   };
   state.trials.push(row);
   renderTrials();
   state.trial = null;
   $('trialStartBtn').disabled = false; $('trialEndBtn').disabled = true;
   $('trialStatus').textContent = `Trial logged (detected ${row.detected}/${row.expected}, match ${row.matchPct}%). Next: same setup or change placement/movement.`;
+  diag('trial', `end — detected ${row.detected}/${row.expected} (${row.matchPct}%) · valid ${row.validFrames} / gated ${row.gatedFrames} angle frames · deepest ${row.minAngle}° · phase ${row.phaseAtEnd} side ${row.endSide} · downs ${row.downs} ups ${row.ups}`, row.detected > 0 ? 'ok' : 'warn');
 }
 function renderTrials() {
   const tb = $('trialTable').querySelector('tbody');
@@ -1021,6 +1104,7 @@ function exportJson() {
       model: state.detectorModel, video: state.video ? state.videoWidth + 'x' + state.videoHeight : null,
       inferenceInput: state.capCanvas ? state.capCanvas.width + 'x' + state.capCanvas.height + ' mirrored canvas' : null,
       mirror: $('mirrorChk').checked,
+      repStateVersion: 3, keypointGate: KEYPOINT_GATE, dropResetMs: CFG.dropResetMs,
     },
     summary: {
       bestMatchPct: state.trials.length ? Math.max(...state.trials.map((t) => t.matchPct)) : null,
@@ -1080,7 +1164,7 @@ $('mirrorChk').addEventListener('change', (e) => {
   }
   state.fpsTarget = parseInt($('fpsSel').value, 10);
   state.move = $('moveSel').value;
-  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+  state.repState = makeRepCounter(state.move);
 }));
 initBattery();
 
@@ -1102,6 +1186,9 @@ window.__ahf = {
     error: state.error ? { stage: state.error.stage, message: state.error.message } : null,
     log: state.log.slice(-20),
   }),
+  // Deterministic rep-machine hook (used by smoke scenario E; no network impact,
+  // mirrors the exact functions the processing loop uses).
+  rep: { makeCounter: (move) => makeRepCounter(move), step: repStep, movements: MOVEMENTS },
 };
 const __qs = new URLSearchParams(location.search);
 if (__qs.get('autostart') === '1') {

@@ -26,9 +26,19 @@
 > telemetry (raw returns, keypoint counts/scores, overlay draw verification)
 > and an audit classification per ~1 s (INPUT_NEAR_BLACK / INPUT_FLAT /
 > INPUT_STRUCTURED_NO_POSE / POSES_OK) — all in the JSON export. Record:
-> `docs/architecture/CP-03-TRACKING-REPAIR.md`. **The CP-03 measurement gate
-> is still OPEN** — no real-device results may be inferred from earlier
-> attempts; §6 retest applies.
+> `docs/architecture/CP-03-TRACKING-REPAIR.md`. (3) The first real-device
+> export (iPhone squat trials, diagonal-200) then showed pose tracking
+> working (3620/3923 pose frames, avg conf 0.73–0.75, skeleton drawn) yet
+> **detected 0/0** — root cause: the rep state machine latched `phase='lost'`
+> on ANY gated-out frame and never left it, so the first leg-keypoint flicker
+> permanently disabled counting for the rest of a trial. v3 removes the dead
+> latch (dropouts keep continuity; >1.5 s dropouts re-arm), measures BOTH
+> sides (near leg at diagonal placement), and records per-window/per-trial
+> angle + gating telemetry so the next export discriminates placement-quality
+> vs depth-threshold causes. Thresholds unchanged. Record:
+> `docs/architecture/CP-03-REP-HEURISTIC-REPAIR.md`; smoke **32/32**. **The
+> CP-03 measurement gate is still OPEN** — no real-device results may be
+> inferred from earlier attempts; §6 retest applies.
 
 ## 1. What the gate measures
 
@@ -81,10 +91,13 @@ for most scenarios, and a **real human photo** for the pose-bearing one):
 
 ```bash
 node scripts/pose-measurement/smoke.mjs
-# expects: 26 passed, 0 failed — camera → LIVE VIEW → model → inference →
+# expects: 32 passed, 0 failed — camera → LIVE VIEW → model → inference →
 # trial/export + frame-content sampling + classified MODEL_FETCH error path
 # + CPU-backend path + pose-bearing scenario D (MoveNet must return poses for
-# a real human image and the skeleton must visibly draw)
+# a real human image and the skeleton must visibly draw) + scenario E
+# (deterministic rep-machine regression: clean cycles count, >1.5 s dropouts
+# re-arm instead of latching forever — the v2 bug that zeroed the real-device
+# squat trials — and shallow/fast/hysteresis motion still counts 0)
 ```
 
 Then the manual check with a real webcam: serve the harness on
@@ -158,8 +171,13 @@ person-shaped grid and the audit classification reads `POSES_OK` (a dark
 room reads `INPUT_NEAR_BLACK` — raise lighting — and a valid but untracked
 scene reads `INPUT_STRUCTURED_NO_POSE`, which would be a model/backend
 finding worth its own export). Each exported JSON now includes the
-`frameTrace` (frame-content + pose telemetry samples) and the full
-diagnostics log alongside the trials.
+`frameTrace` (frame-content + pose telemetry samples **plus the `rep` block:
+phase, side used, angle, confidence, dropout length, and per-second angle
+min/max + per-trial valid/gated/down/up counters**), trial rows with the
+per-trial discriminators (`validFrames`, `gatedFrames`, `minAngle`, `downs`,
+`ups`), `trial start/end` Diagnostics entries, and the full diagnostics log
+alongside the trials — so a 0-match trial on the real devices now says *why*
+(see `docs/architecture/CP-03-REP-HEURISTIC-REPAIR.md` §5).
 
 ## 7. Results table (fill per device)
 
@@ -190,13 +208,21 @@ in the red box with a stage label, and every stage is timestamped in the
 | Inference stops mid-run | repeated `inference` diagnostics | Backend/context issue — Stop → Retry; if it recurs, capture the Diagnostics log| Trial buttons are enabled only while the LIVE VIEW is verified rendering **and** the model input is structured (not dark/flat), so a black/stuck or unlit view can no longer produce bogus "measurements" (trials pause with an on-page reason when the input is too dark/flat). |
 | RUNNING but **poseDetections = 0** (no keypoints) — this was the 2026-09-04 tracking failure | `audit` classification + telemetry | Two code bugs were fixed: the inference loop previously called `estimatePoses(null)` (state.video was never assigned → silent zero poses) and the skeleton drew off-canvas (MoveNet returns pixel-space keypoints; overlay now normalizes). If it recurs on your machine, the Diagnostics will show which class: `INPUT_NEAR_BLACK` (mean < 8 — lighting/capture), `INPUT_FLAT` (no contrast — camera), or `INPUT_STRUCTURED_NO_POSE` (valid frames, zero poses — model/backend on this engine; try Thunder or Retry-on-CPU and export the JSON) |
 | Skeleton/keypoints drawn but NOT aligned on the body | mirror checkbox + `kpsSample`/`coordSpace` in the export | Capture is mirror-consistent (keypoints arrive in the same space as the mirrored LIVE VIEW); if misaligned, toggle Mirror and export — the export's `kpsSample` coordinates show the raw keypoint space |
+| RUNNING, pose tracking healthy (poses + skeleton + conf ~0.7) but trial detects 0 reps — the 2026-09-04 real-device case | trial row fields `validFrames`/`gatedFrames`/`minAngle`/`downs`/`ups` + `frameTrace[].rep` | v2 rep machine latched `'lost'` forever on the first gated frame — fixed in v3 (dropout continuity + 1.5 s re-arm; both sides measured; thresholds unchanged). If a retest still shows 0: `gatedFrames≈total` → placement/quality at that distance (raise light / move closer); `validFrames>0` but `minAngle>95°` → the squats stayed shallower than the fixed threshold (report the observed depth honestly — do not loosen); `minAngle≤95` + `downs≈10` but no count → export and report (temporal edge, now visible via phase/dropouts) |
 
 ## 9. Honest limitations (gate scope)
 
 - The rep-count heuristics use fixed angle thresholds (defined in
   `index.html` `MOVEMENTS`) — they exist to **measure**, not to ship;
   product form signals (TEMPO_DRIFT, validated RANGE_OF_MOTION) are separate
-  and remain unimplemented.
+  and remain unimplemented. v3 (2026-09-04) fixed a machine defect (dead
+  `'lost'` latch) and measures both sides, but the down/up/0.5-gate values are
+  unchanged; a legitimately shallow squat (knee > 95°) still counts 0 and the
+  export's `minAngle` reports the honest depth.
+- The first iPhone squat export (2 trials, 0/0) is retained at
+  `results/iphone-squat-diagonal200-2026-09-04.json` as evidence of the v2
+  latch defect — it is **not** counted toward the gate; the §6 retest on v3
+  is required.
 - `smoke.mjs` scenario D feeds MoveNet a **real human photo** via a virtual
   camera, so pose detection, keypoint gating and the skeleton overlay are
   now verified on real pixels (pose-bearing regression guard — it catches
