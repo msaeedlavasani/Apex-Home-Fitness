@@ -13,15 +13,22 @@
 > tester — this step cannot run in the development environment. Follow §6
 > exactly and record results in the §7 table.
 
-> **REPAIRED 2026-09-04** — the harness's startup pipeline was rebuilt so it
+> **REPAIRED TWICE 2026-09-04** — (1) the startup pipeline was rebuilt so it
 > can no longer hang silently on "Loading MoveNet model…" or run with a
-> black LIVE VIEW. Every stage (backend → camera → video → model →
-> inference) is now bounded by a timeout, reports a **classified error with
-> a remedy**, and writes to the on-page Diagnostics panel (included in the
-> JSON export). See `docs/architecture/CP-03-HARNESS-REPAIR.md` for the root
-> cause + evidence. **The CP-03 measurement gate is still OPEN** — no
-> real-device results may be inferred from earlier attempts; §6 retest
-> applies.
+> black LIVE VIEW (classified, timed stages; record
+> `docs/architecture/CP-03-HARNESS-REPAIR.md`). (2) Real-human Mac testing
+> then showed **zero poses while RUNNING** — root causes: `state.video` was
+> never assigned (`estimatePoses(null)` silently returned zero poses every
+> frame) and MoveNet keypoints arrive in **pixel space** while the overlay
+> multiplied by canvas.width (skeleton drew off-canvas). Fixed, and the
+> harness now instruments the full pixel path: a **MODEL INPUT panel** shows
+> the 8×5 luminance grid of the exact frame MoveNet receives, plus pose
+> telemetry (raw returns, keypoint counts/scores, overlay draw verification)
+> and an audit classification per ~1 s (INPUT_NEAR_BLACK / INPUT_FLAT /
+> INPUT_STRUCTURED_NO_POSE / POSES_OK) — all in the JSON export. Record:
+> `docs/architecture/CP-03-TRACKING-REPAIR.md`. **The CP-03 measurement gate
+> is still OPEN** — no real-device results may be inferred from earlier
+> attempts; §6 retest applies.
 
 ## 1. What the gate measures
 
@@ -69,20 +76,29 @@ Loading message).
 
 ### 3.1 Desktop sanity check (do this first, on macOS Chrome)
 
-Repairs are verified by an automated smoke run (real Chrome, virtual camera):
+Repairs are verified by an automated smoke run (real Chrome; virtual camera
+for most scenarios, and a **real human photo** for the pose-bearing one):
 
 ```bash
 node scripts/pose-measurement/smoke.mjs
-# expects: 13 passed, 0 failed — camera → LIVE VIEW → model → inference →
-# trial/export + classified MODEL_FETCH error path + CPU-backend path
+# expects: 26 passed, 0 failed — camera → LIVE VIEW → model → inference →
+# trial/export + frame-content sampling + classified MODEL_FETCH error path
+# + CPU-backend path + pose-bearing scenario D (MoveNet must return poses for
+# a real human image and the skeleton must visibly draw)
 ```
 
-Then, optionally, a manual check with a real webcam: serve the harness on
+Then the manual check with a real webcam: serve the harness on
 `http://localhost:4173`, open it in Chrome, press **Start**, and confirm the
 sequence **stage 1/5 → stage 5/5 (RUNNING)** with yourself visible in the
-LIVE VIEW and pose keypoints overlaid. If any stage errors, the red box
-names the failing stage and remedy — copy the Diagnostics panel into the
-report.
+LIVE VIEW **and pose keypoints overlaid ON your body**. Below the LIVE VIEW
+the **MODEL INPUT panel** shows the 8×5 luminance grid of the exact pixels
+MoveNet receives (a person-shaped blob = good), the current classification
+(`POSES_OK` = tracking), and the pose telemetry for the last second. If the
+classifier reports `INPUT_NEAR_BLACK`/`INPUT_FLAT`, raise lighting or check
+the camera; if it reports `INPUT_STRUCTURED_NO_POSE` with a clearly visible
+bright person, capture the export — that would point at the model/backend on
+that engine. If any stage errors, the red box names the failing stage and
+remedy — copy the Diagnostics panel into the report.
 
 ## 4. Environment and setup (per tester)
 
@@ -134,9 +150,16 @@ executed from the development environment. When ready, the Owner should:
    after that review.
 
 **Before the phones:** confirm each phone reaches **RUNNING** with the LIVE
-VIEW showing the tester (if it errors, the red box names the stage — CDN,
-BACKEND, CAMERA_*, VIDEO_*, MODEL_FETCH — and the Diagnostics log records
-every stage; do not count that device/config as measured).
+VIEW showing the tester **and the skeleton overlaid on their body** (if it
+errors, the red box names the stage — CDN, BACKEND, CAMERA_*, VIDEO_*,
+MODEL_FETCH — and the Diagnostics log records every stage; do not count that
+device/config as measured). Confirm the **MODEL INPUT panel** shows a
+person-shaped grid and the audit classification reads `POSES_OK` (a dark
+room reads `INPUT_NEAR_BLACK` — raise lighting — and a valid but untracked
+scene reads `INPUT_STRUCTURED_NO_POSE`, which would be a model/backend
+finding worth its own export). Each exported JSON now includes the
+`frameTrace` (frame-content + pose telemetry samples) and the full
+diagnostics log alongside the trials.
 
 ## 7. Results table (fill per device)
 
@@ -164,10 +187,9 @@ in the red box with a stage label, and every stage is timestamped in the
 | Stuck on "Loading MoveNet model…" forever | `CDN` / `BACKEND` / `MODEL_FETCH` / `TIMEOUT` | Previously **any** failure was an unhandled rejection that left that Loading text; now the real stage is named. `CDN` → allow cdn.jsdelivr.net; `MODEL_FETCH` → allow tfhub.dev + kaggle.com (model host) or retry on another network; `BACKEND` → enable hardware acceleration or **Retry on CPU** (slow, sanity only) |
 | Camera permission ok but LIVE VIEW black / stuck | `CAMERA_*` then `VIDEO` / `VIDEO_FRAME` | The harness now waits for the first rendered frame (8 s) and measures frame luminance. `VIDEO_FRAME`/black luma → camera in use elsewhere, macOS privacy, or a browser GPU-compositing glitch (Safari) — try the other browser / toggle hardware acceleration / focus the tab, then Retry |
 | Page not on HTTPS/localhost | `SECURE_CONTEXT` | Camera API unavailable — serve over HTTPS or localhost |
-| Inference stops mid-run | repeated `inference` diagnostics | Backend/context issue — Stop → Retry; if it recurs, capture the Diagnostics log |
-
-Trial buttons are enabled only while the LIVE VIEW is verified rendering, so
-a black/stuck view can no longer produce bogus "measurements".
+| Inference stops mid-run | repeated `inference` diagnostics | Backend/context issue — Stop → Retry; if it recurs, capture the Diagnostics log| Trial buttons are enabled only while the LIVE VIEW is verified rendering **and** the model input is structured (not dark/flat), so a black/stuck or unlit view can no longer produce bogus "measurements" (trials pause with an on-page reason when the input is too dark/flat). |
+| RUNNING but **poseDetections = 0** (no keypoints) — this was the 2026-09-04 tracking failure | `audit` classification + telemetry | Two code bugs were fixed: the inference loop previously called `estimatePoses(null)` (state.video was never assigned → silent zero poses) and the skeleton drew off-canvas (MoveNet returns pixel-space keypoints; overlay now normalizes). If it recurs on your machine, the Diagnostics will show which class: `INPUT_NEAR_BLACK` (mean < 8 — lighting/capture), `INPUT_FLAT` (no contrast — camera), or `INPUT_STRUCTURED_NO_POSE` (valid frames, zero poses — model/backend on this engine; try Thunder or Retry-on-CPU and export the JSON) |
+| Skeleton/keypoints drawn but NOT aligned on the body | mirror checkbox + `kpsSample`/`coordSpace` in the export | Capture is mirror-consistent (keypoints arrive in the same space as the mirrored LIVE VIEW); if misaligned, toggle Mirror and export — the export's `kpsSample` coordinates show the raw keypoint space |
 
 ## 9. Honest limitations (gate scope)
 
@@ -175,9 +197,11 @@ a black/stuck view can no longer produce bogus "measurements".
   `index.html` `MOVEMENTS`) — they exist to **measure**, not to ship;
   product form signals (TEMPO_DRIFT, validated RANGE_OF_MOTION) are separate
   and remain unimplemented.
-- The `smoke.mjs` check uses Chrome's synthetic camera (no human in frame),
-  so it verifies the pipeline — camera → LIVE VIEW → model → inference →
-  trial/export — **not** pose/reps accuracy. Real pose/reps need §6 devices.
+- `smoke.mjs` scenario D feeds MoveNet a **real human photo** via a virtual
+  camera, so pose detection, keypoint gating and the skeleton overlay are
+  now verified on real pixels (pose-bearing regression guard — it catches
+  the null-input class of bug). It still uses a **virtual** camera: real
+  webcam/rep/battery numbers and per-device FPS need §6 devices.
 - The macOS-Safari black-LIVE-VIEW case could not be reproduced in the
   development environment; it is now instrumented (first-frame + luminance
   + classified errors) so the Owner retest reports the exact failing stage.

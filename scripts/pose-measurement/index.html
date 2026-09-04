@@ -28,13 +28,34 @@
   here ONLY; nothing is added to the app's package.json. No app import, no
   build integration.
 
-  DIAGNOSTIC BEHAVIOR (harness repair, 2026-09-04): startup runs as a
+  DIAGNOSTIC BEHAVIOR (harness repair 2026-09-04): startup runs as a
   bounded, observable pipeline with per-stage timeouts and classified
   errors — CDN scripts → TF.js backend (WebGL, optional CPU retry) →
   camera permission → video metadata → first video frame → MoveNet model
   fetch → inference loop. Every stage logs to the on-page Diagnostics panel
   (included in the JSON export); a failure never leaves the page hanging on
   a generic "Loading…" message.
+
+  TRACKING-FAILURE INSTRUMENTATION (harness repair #2, 2026-09-04): the
+  first repair shipped with a critical wiring bug — state.video was never
+  assigned, so estimatePoses() received null every frame and silently
+  returned zero poses (phase RUNNING, FPS fine, poseDetections=0, no
+  keypoints — reproduced in real Chrome with the synthetic camera, and
+  matching the real-Mac cross-browser failure). This revision:
+    (a) assigns the live video element and infers from an explicit
+        MIRRORED capture canvas (video → canvas → MoveNet), so the pixel
+        path is explicit and "what the model receives" is inspectable;
+    (b) adds a periodic frame-content sampler: source readiness/clock
+        (currentTime delta), page-level luma of the video element, an 8×5
+        luminance grid + stats of the ACTUAL inference input, raw
+        estimatePoses return counts, keypoint score/count telemetry,
+        pose-returned-but-gated-out tracking, and overlay-error counting;
+    (c) classifies the pipeline state each sample (INPUT_NEAR_BLACK /
+        INPUT_FLAT / INPUT_STRUCTURED_NO_POSE / POSE_LOW_CONF / POSES_OK)
+        so a human reading Diagnostics can tell whether the frame reaching
+        MoveNet is the problem, whether lighting is the problem, or
+        whether the model/backend is failing on real content.
+  All of it stays in the manual JSON export. No product decision changed.
 -->
 <style>
   :root { color-scheme: dark; }
@@ -74,6 +95,7 @@
   #banner { border: 1px solid #a16207; background: #2a2110; color: #fde68a; border-radius: 6px; padding: 6px 8px; font-size: 12px; margin-bottom: 10px; }
   #diagLog { background: #0c0e12; border: 1px solid #2a2f3a; border-radius: 6px; padding: 6px; font-size: 10px; height: 120px; overflow-y: auto; white-space: pre-wrap; margin-top: 8px; color: #8b93a1; }
   #diagLog .ok { color: #4ade80; } #diagLog .err { color: #f87171; } #diagLog .warn { color: #f0b429; }
+  #inputDiag { background: #0c0e12; border: 1px solid #2a2f3a; border-radius: 6px; padding: 6px; font-size: 10px; margin-top: 6px; white-space: pre-wrap; color: #aab2bf; }
   .fps-big { font-size: 26px; color: #7dd3fc; font-weight: 700; }
   .inline { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: #aab2bf; }
   .inline input { width: auto; }
@@ -146,7 +168,7 @@
     <section>
       <h2>Export</h2>
       <button id="exportBtn" disabled>Export JSON results</button>
-      <textarea id="exportBox" readonly placeholder="Results JSON will appear here (includes the diagnostics log)."></textarea>
+      <textarea id="exportBox" readonly placeholder="Results JSON will appear here (includes diagnostics, frame-content trace and pose telemetry)."></textarea>
       <div class="status">Manual export only — no network send. Export per device + config and save for the protocol results table.</div>
     </section>
 
@@ -164,6 +186,7 @@
         <video id="video" playsinline muted autoplay class="mirror"></video>
         <canvas id="canvas"></canvas>
       </div>
+      <div class="status hidden" id="inputDiag">—</div>
       <div class="metrics">
         <div class="metric"><b class="fps-big" id="fps">—</b><span>processed FPS</span></div>
         <div class="metric"><b id="infMs">—</b><span>inference ms (p50 / p95)</span></div>
@@ -199,8 +222,15 @@ const CFG = {
   firstFrameTimeoutMs: 8000,    // first rendered video frame (rVFC / readyState)
   playTimeoutMs: 5000,          // video.play()
   modelTimeoutMs: 60000,        // MoveNet download + parse (3–8 MB, mobile can be slow)
-  blackLuma: 5,                 // mean luma below this ⇒ video appears black at page level
-  noPoseAfterMs: 6000,          // show placement hint after this long with zero detections
+  blackLuma: 5,                 // page-level video "appears black" threshold (full-frame mean)
+  sampleEveryMs: 1000,          // frame-content / pose-telemetry sample cadence
+  traceCap: 300,                // rolling samples kept in the export trace
+  // Frame-content classification thresholds (measured on the ACTUAL inference input)
+  nearBlackMean: 8,             // input mean luma below this ⇒ effectively black frames
+  flatDelta: 14,                // input (max − min) below this ⇒ no contrast/structure
+  trialMinMean: 10,             // trials require input mean ≥ this …
+  trialMinCenter: 18,           // … and center-region mean ≥ this (person zone)
+  noPoseAfterMs: 6000,          // placement hint after this long with zero detections
   maxLog: 400,
 };
 const MODEL_URLS = {
@@ -215,17 +245,33 @@ const MOVEMENTS = {
   hinge:  { label: 'hinge', joints: ['left_shoulder', 'left_hip', 'left_knee'], down: 120, up: 165, unit: 'hip °' },
   lunge:  { label: 'lunge', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 100, up: 160, unit: 'front-knee °' },
 };
+const KEYPOINT_GATE = 0.5;       // joint acceptance for angle/reps (and skeleton dots)
 
 // --- State ------------------------------------------------------------------------
 const state = {
   phase: 'idle',            // idle | starting | running | stopped | error
   bootSeq: 0,               // stale-async guard: bump to discard in-flight pipeline work
   stream: null, video: null, videoLive: false, luma: -1,
+  capCanvas: null, capCtx: null,   // explicit inference input: video → mirrored capture canvas
   detector: null, detectorModel: null, backend: null,
   running: false, rafId: 0,
   lastProcess: 0, fpsTarget: 15, mirror: true, move: 'squat',
   infTimes: [], fpsWindow: [], fps: 0,
-  detections: 0, processed: 0, infErrors: 0, lastInfError: null,
+  processed: 0, detections: 0, infErrors: 0, lastInfError: null,
+  // tracking-failure telemetry (added in repair #2)
+  inferenceCalls: 0,        // estimatePoses invocations (did inference run?)
+  poseReturns: 0,           // invocations that returned ≥1 pose (raw, unfiltered)
+  poseGatedOut: 0,          // pose returned but its joints failed the KEYPOINT_GATE (angle n/a)
+  skeletonDraws: 0,         // overlay draws attempted with a pose (did overlay run?)
+  lastOverlayHits: 0,       // colored (skeleton) pixels measured at draw time (≥2 s apart)
+  lastOverlayScanAt: 0,
+  overlayErrors: 0, lastOverlayError: null,
+  videoFrames: 0, srcLuma: -1,
+  lastPoseStats: null, lastPoseAt: 0,   // rolling stats from the MOST RECENT pose
+                                      // (persisted until the next pose — samples
+                                      // then never miss an earlier detection)
+  trialsBlockedBy: null,    // 'dark' | 'flat' | null → why trials are disabled while running
+  frameTrace: [], lastSample: null, sampleAcc: 0, lastWallAt: 0, winAt: 0, winCalls: 0, winRets: 0, winTime: 0,
   minConf: 0, meanConf: 0, angle: null,
   repState: null, repCount: 0, trial: null, trials: [],
   error: null, log: [], noPoseHintShown: false, lastNoPoseAt: null,
@@ -263,8 +309,7 @@ function setPhase(p, okRun) {
   $('startBtn').disabled = starting || running;
   $('stopBtn').disabled = !(starting || running);
   if (p !== 'error') { $('retryBtn').classList.add('hidden'); $('cpuBtn').classList.add('hidden'); }
-  const trialsOk = running && state.videoLive && state.luma >= CFG.blackLuma;
-  $('trialStartBtn').disabled = !trialsOk;
+  if (!running) $('trialStartBtn').disabled = true;
   $('trialEndBtn').disabled = !(state.trial && running);
   if (running) $('exportBtn').disabled = false;
 }
@@ -312,7 +357,26 @@ function angleDeg(a, b, c) {
 }
 function keypoint(pose, name) {
   const kp = pose.keypoints && pose.keypoints.find((k) => k.name === name);
-  return kp && kp.score >= 0.5 ? kp : null;
+  return kp && kp.score >= KEYPOINT_GATE ? kp : null;
+}
+function poseStats(pose) {
+  // Raw keypoint score telemetry over the returned pose (hypothesis 1 vs 2):
+  // pose exists at all, and how many keypoints clear 0.3 / 0.5 gates.
+  const kps = (pose && pose.keypoints) || [];
+  let max = 0, sum = 0;
+  for (const k of kps) { if (k.score > max) max = k.score; sum += k.score; }
+  return {
+    kpTotal: kps.length,
+    kp03: kps.filter((k) => k.score >= 0.3).length,
+    kp05: kps.filter((k) => k.score >= KEYPOINT_GATE).length,
+    kpMax: Math.round(max * 100) / 100,
+    kpMean: kps.length ? Math.round((sum / kps.length) * 100) / 100 : 0,
+    // coordinate sanity sample (raw engine output, mirror space) for overlay forensics
+    kpsSample: kps.filter((k) => k.score >= KEYPOINT_GATE).slice(0, 5).map((k) => ({
+      n: k.name || '?', x: Math.round(k.x * 100) / 100, y: Math.round(k.y * 100) / 100, s: Math.round(k.score * 100),
+    })),
+    coordSpace: kps.some((k) => Math.abs(k.x) > 2 || Math.abs(k.y) > 2) ? 'px' : 'norm',
+  };
 }
 
 // --- Rep state machine (bounded measurement heuristic) ----------------------
@@ -339,6 +403,20 @@ function angleFor(pose) {
 }
 
 // --- Rendering ---------------------------------------------------------------
+// pose-detection 2.1.3 MoveNet returns keypoints in the SOURCE IMAGE'S PIXEL
+// space (nose ≈ x=637 on a 1280-wide frame), NOT normalized [0,1]. The v1/v2
+// overlay multiplied by canvas.width again, sending every stroke ~1280× off-
+// canvas — a skeleton that never visibly drew (masked by the null-input bug).
+// pxMode detects the convention per pose; keypoints are then normalized to the
+// input canvas and scaled to the overlay canvas (same size in this harness).
+function poseCoordToCanvas(k, canvas) {
+  const w = state.capCanvas ? state.capCanvas.width : canvas.width;
+  const h = state.capCanvas ? state.capCanvas.height : canvas.height;
+  return {
+    x: (Math.abs(k.x) > 2 ? k.x / w : k.x) * canvas.width,
+    y: (Math.abs(k.y) > 2 ? k.y / h : k.y) * canvas.height,
+  };
+}
 function drawPose(pose) {
   const canvas = $('canvas'), ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -349,16 +427,179 @@ function drawPose(pose) {
   for (const [a, b] of edges) {
     const pa = keypoint(pose, a), pb = keypoint(pose, b);
     if (!pa || !pb) continue;
-    ctx.moveTo(pa.x * canvas.width, pa.y * canvas.height);
-    ctx.lineTo(pb.x * canvas.width, pb.y * canvas.height);
+    const A = poseCoordToCanvas(pa, canvas), B = poseCoordToCanvas(pb, canvas);
+    ctx.moveTo(A.x, A.y);
+    ctx.lineTo(B.x, B.y);
   }
   ctx.stroke();
   ctx.fillStyle = '#7dd3fc';
   for (const k of pose.keypoints) {
-    if (k.score < 0.5) continue;
-    ctx.beginPath(); ctx.arc(k.x * canvas.width, k.y * canvas.height, 4, 0, Math.PI * 2); ctx.fill();
+    if (k.score < KEYPOINT_GATE) continue;
+    const P = poseCoordToCanvas(k, canvas);
+    ctx.beginPath(); ctx.arc(P.x, P.y, 4, 0, Math.PI * 2); ctx.fill();
   }
 }
+function drawPoseSafe(pose) {
+  // Hypothesis 3: does the overlay actually run? Count attempts + surface errors.
+  if (!pose) { try { drawPose(null); } catch (e) { state.overlayErrors++; } return; }
+  try {
+    drawPose(pose);
+    state.skeletonDraws += 1;
+    // Measure colored pixels in the SAME tick the strokes were drawn (the next
+    // processed frame clears the overlay, so external reads race it). Full-res
+    // scan throttled to every 2 s — a downscaled scan erases thin 3 px strokes.
+    const now = performance.now();
+    if (now - state.lastOverlayScanAt > 2000) {
+      state.lastOverlayScanAt = now;
+      state.lastOverlayHits = scanOverlayPixels();
+    }
+  } catch (e) {
+    state.overlayErrors += 1;
+    state.lastOverlayError = e && e.message ? e.message : String(e);
+    diag('overlay', 'skeleton overlay error: ' + state.lastOverlayError, 'err');
+  }
+}
+function scanOverlayPixels() {
+  try {
+    const canvas = $('canvas');
+    const x = canvas.getContext('2d');
+    const d = x.getImageData(0, 0, canvas.width, canvas.height).data;
+    let hits = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (hits >= 50) break;
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      if (g > 140 && g > r * 1.4 && b > 60) hits++;   // #4ade80 strokes / #7dd3fc dots
+    }
+    return hits;
+  } catch (e) { return -1; }
+}
+
+// --- Frame capture: video → mirrored analysis canvas ------------------------------
+// Inference reads capCanvas (an explicit, inspectable pixel path) rather than the
+// video element directly. Mirror is baked into the capture so keypoints land in
+// the same space as the (CSS-mirrored) live view, and flipHorizontal stays false.
+function drawCapture() {
+  const v = state.video, c = state.capCtx;
+  if (!v || !c) return;
+  const w = state.capCanvas.width, h = state.capCanvas.height;
+  if (state.mirror) { c.save(); c.translate(w, 0); c.scale(-1, 1); c.drawImage(v, 0, 0, w, h); c.restore(); }
+  else c.drawImage(v, 0, 0, w, h);
+}
+
+// --- Frame-content sampler (hypotheses 4 & 5 + pose telemetry) ---------------------
+function lumaSample(video) {
+  try {
+    const c = document.createElement('canvas'); c.width = 32; c.height = 18;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(video, 0, 0, 32, 18);
+    const d = x.getImageData(0, 0, 32, 18).data;
+    let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    return s / (32 * 18);
+  } catch (e) { return -1; }
+}
+function gridOf(canvas) {
+  // 8×5 luminance grid + stats of the ACTUAL inference input (capCanvas).
+  const GX = 8, GY = 5;
+  const g = document.createElement('canvas'); g.width = GX; g.height = GY;
+  const gx = g.getContext('2d', { willReadFrequently: true });
+  gx.drawImage(canvas, 0, 0, GX, GY);
+  const d = gx.getImageData(0, 0, GX, GY).data;
+  const cells = [];
+  let sum = 0, min = 255, max = 0;
+  for (let i = 0; i < GX * GY; i++) {
+    const o = i * 4;
+    const y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2];
+    cells.push(Math.round(y)); sum += y; min = Math.min(min, y); max = Math.max(max, y);
+  }
+  let csum = 0, cn = 0;
+  for (let r = 1; r <= GY - 2; r++) for (let c2 = 1; c2 <= GX - 2; c2++) { csum += cells[r * GX + c2]; cn++; }
+  const mean = sum / (GX * GY);
+  const chars = cells.map((v) => (v < 8 ? '.' : v < 24 ? '+' : v < 48 ? 'o' : v < 96 ? 'O' : '#')).join('');
+  return { grid: cells, mean: Math.round(mean * 10) / 10, min: Math.round(min), max: Math.round(max),
+           centerMean: cn ? Math.round((csum / cn) * 10) / 10 : 0, map: chars };
+}
+function classifyInput(gs, srcLuma) {
+  if (gs.mean < CFG.nearBlackMean) return 'INPUT_NEAR_BLACK';
+  if (gs.max - gs.min < CFG.flatDelta) return 'INPUT_FLAT';
+  return null; // structured → caller decides pose outcome
+}
+function maybeSample(now) {
+  // Wall-clock accumulation (state.lastProcess is already updated by the time
+  // this runs, so frame-delta accumulation would always be ~0 — a bug caught
+  // by the smoke check that required samples to exist).
+  const wall = performance.now();
+  state.sampleAcc += wall - state.lastWallAt;
+  state.lastWallAt = wall;
+  if (state.sampleAcc < CFG.sampleEveryMs) return;
+  state.sampleAcc = 0;
+  const v = state.video;
+  if (!v || !state.capCanvas) return;
+  const gs = gridOf(state.capCanvas);
+  const srcLuma = lumaSample(v);
+  state.srcLuma = srcLuma;
+  const dt = (now - state.winAt) / 1000;
+  const dct = v.currentTime - state.winTime;
+  const calls = state.inferenceCalls - state.winCalls;
+  const rets = state.poseReturns - state.winRets;
+  const cls = classifyInput(gs, srcLuma) || (rets > 0 ? 'POSES_OK' : 'INPUT_STRUCTURED_NO_POSE');
+  const samp = {
+    t: new Date().toISOString().slice(11, 23), dtSec: Math.round(dt * 10) / 10,
+    cls,
+    input: { w: state.capCanvas.width, h: state.capCanvas.height, mean: gs.mean, min: gs.min, max: gs.max, center: gs.centerMean, map: gs.map },
+    src: { rs: v.readyState, ct: Math.round(v.currentTime * 100) / 100, dct: Math.round(dct * 100) / 100, luma: Math.round(srcLuma * 10) / 10, w: v.videoWidth, h: v.videoHeight },
+    win: { calls, rets, infErr: state.infErrors, detPct: state.processed ? Math.round(100 * state.detections / state.processed) : 0, fps: Math.round(state.fps * 10) / 10 },
+    pose: state.lastPoseStats || null,
+    poseAgeSec: state.lastPoseStats ? Math.round(((wall - state.lastPoseAt) / 1000) * 10) / 10 : null,
+  };
+  state.lastSample = samp;
+  state.frameTrace.push(samp);
+  if (state.frameTrace.length > CFG.traceCap) state.frameTrace.shift();
+  state.winAt = now; state.winCalls = state.inferenceCalls; state.winRets = state.poseReturns; state.winTime = v.currentTime;
+
+  // Trials gate: block when the model input is effectively dark/flat (measurements
+  // would be meaningless) — but keep the pipeline running so diagnostics continue.
+  const blocked = (cls === 'INPUT_NEAR_BLACK' || cls === 'INPUT_FLAT');
+  const reason = cls === 'INPUT_NEAR_BLACK' ? 'dark' : cls === 'INPUT_FLAT' ? 'flat' : null;
+  state.trialsBlockedBy = blocked && reason ? reason : null;
+  const trialsGate = running() && state.videoLive && !blocked && gs.mean >= CFG.trialMinMean && gs.centerMean >= CFG.trialMinCenter;
+  const wasEnabled = !$('trialStartBtn').disabled;
+  $('trialStartBtn').disabled = !trialsGate;
+  if (wasEnabled && !trialsGate) $('trialStatus').textContent = 'Trials paused — model input is too dark/flat to measure (mean ' + gs.mean + ', center ' + gs.centerMean + '). Improve lighting, then trials re-enable automatically.';
+  else if (!wasEnabled && trialsGate && state.videoLive) $('trialStatus').textContent = 'Ready. Start a trial when positioned.';
+
+  // Periodic human-readable audit line (not on every sample — on state changes / 10 s).
+  const auditMsg = auditLine(samp, gs, rets);
+  const lastKind = state.lastAuditKind;
+  const newKind = samp.cls + (rets > 0 ? ':' + (samp.pose ? samp.pose.kp05 : '?') : '');
+  if (newKind !== lastKind || !lastKind) {
+    state.lastAuditKind = newKind;
+    diag('audit', auditMsg, samp.cls === 'POSES_OK' ? 'ok' : samp.cls === 'INPUT_STRUCTURED_NO_POSE' ? 'warn' : 'err');
+  }
+  renderInputDiag(samp);
+}
+function auditLine(samp, gs, rets) {
+  const p = samp.pose;
+  const base = 'input ' + samp.input.w + '×' + samp.input.h + ' mean ' + gs.mean + ' center ' + gs.centerMean + ' Δ' + (gs.max - gs.min) + ' · srcLuma ' + samp.src.luma + ' (video ct +' + samp.src.dct + 's) · est ' + samp.win.calls + ' calls / ' + samp.win.rets + ' poses / ' + samp.win.infErr + ' err';
+  switch (samp.cls) {
+    case 'INPUT_NEAR_BLACK': return base + ' → INPUT_NEAR_BLACK: the frame MoveNet receives is ~black (page-level video luma ' + samp.src.luma + '). If the LIVE VIEW looks fine to you, the video→canvas capture is failing (report this export). Otherwise: raise lighting.';
+    case 'INPUT_FLAT': return base + ' → INPUT_FLAT: no contrast — check the camera is uncovered and pointing at the scene, and lighting.';
+    case 'INPUT_STRUCTURED_NO_POSE': return base + ' → INPUT_STRUCTURED_NO_POSE: frames are valid but estimatePoses returns zero. Raw-return counter ' + state.poseReturns + ' since start. If a bright person is clearly visible, this points at model/backend on this engine (try Thunder / CPU retry and capture this export).';
+    case 'POSE_LOW_CONF': return base + ' → POSE_LOW_CONF: pose returned but all keypoints < ' + KEYPOINT_GATE + ' (kpMax ' + (p ? p.kpMax : '?') + '). Distance/lighting/framing may be marginal.';
+    default: return base + ' → POSES_OK (kp≥' + KEYPOINT_GATE + ': ' + (p ? p.kp05 : 0) + ').';
+  }
+}
+function renderInputDiag(samp) {
+  const el = $('inputDiag');
+  el.classList.remove('hidden');
+  const p = samp.pose;
+  el.textContent =
+    'MODEL INPUT ' + samp.input.w + '×' + samp.input.h + ' [' + samp.cls + '] mean ' + samp.input.mean + ' center ' + samp.input.center + ' Δ' + (samp.input.max - samp.input.min) +
+    ' · srcLuma ' + samp.src.luma + ' · ct+' + samp.src.dct + 's/1s\n' +
+    'grid(8×5): ' + samp.input.map.replace(/(.{8})/g, '$1\n           ') +
+    (p ? '\nposes: ' + samp.win.rets + '/1s · kp≥0.5 ' + p.kp05 + '/' + p.kpTotal + ' · kpMax ' + p.kpMax + ' · mean ' + p.kpMean : '\nposes: ' + samp.win.rets + '/1s (raw returns since start ' + state.poseReturns + ')');
+}
+function running() { return state.phase === 'running'; }
 
 // --- Metrics -----------------------------------------------------------------
 function updateUi() {
@@ -451,17 +692,6 @@ async function acquireCamera(boot) {
 }
 
 // --- Stage: video rendering (LIVE VIEW) --------------------------------------------
-function lumaSample(video) {
-  try {
-    const c = document.createElement('canvas'); c.width = 32; c.height = 18;
-    const x = c.getContext('2d', { willReadFrequently: true });
-    x.drawImage(video, 0, 0, 32, 18);
-    const d = x.getImageData(0, 0, 32, 18).data;
-    let s = 0;
-    for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-    return s / (32 * 18);
-  } catch (e) { return -1; }
-}
 function waitFirstFrame(video) {
   return new Promise((resolve) => {
     const t0 = performance.now();
@@ -487,6 +717,8 @@ function waitFirstFrame(video) {
 async function attachVideo(boot, stream) {
   const v = $('video');
   state.stream = stream;
+  state.video = v;                // ★ THE CORE FIX (repair #2): was never assigned,
+                                  // so estimatePoses() received null → silent zero poses.
   v.srcObject = stream;
   v.setAttribute('playsinline', '');
   v.muted = true; v.setAttribute('muted', '');
@@ -504,7 +736,11 @@ async function attachVideo(boot, stream) {
   if (!w || !h) throw mkErr('VIDEO', 'Video metadata arrived without dimensions.', 'Camera driver issue — Retry, or try another browser.');
   $('canvas').width = w; $('canvas').height = h;
   $('frameGuide').style.aspectRatio = `${w} / ${h}`;
-  diag('video', `stream ${w}×${h}`, 'ok');
+  // Explicit inference-input canvas (video → canvas → MoveNet), same size as the stream.
+  state.capCanvas = document.createElement('canvas');
+  state.capCanvas.width = w; state.capCanvas.height = h;
+  state.capCtx = state.capCanvas.getContext('2d', { willReadFrequently: false });
+  diag('video', `stream ${w}×${h}; inference input canvas ${w}×${h}`, 'ok');
   try {
     await withTimeout(v.play(), CFG.playTimeoutMs, 'video.play()');
   } catch (e) {
@@ -582,8 +818,8 @@ async function processLoop(now) {
   const t0 = performance.now();
   let pose = null;
   try {
-    const flip = $('mirrorChk').checked;   // match keypoints to the displayed (mirrored) view
-    const res = await state.detector.estimatePoses(state.video, { flipHorizontal: flip });
+    drawCapture();   // explicit frame path: video → mirrored capCanvas
+    const res = await state.detector.estimatePoses(state.capCanvas, { flipHorizontal: false });
     pose = res && res.length ? res[0] : null;
     state.infErrors = 0;
   } catch (e) {
@@ -594,6 +830,7 @@ async function processLoop(now) {
       setStatus('Inference failing (' + state.infErrors + ' consecutive errors): ' + state.lastInfError + ' — Retry recommended.', 'err');
     }
   }
+  state.inferenceCalls += 1;          // hypothesis 1 counter: did estimatePoses run?
   const inf = performance.now() - t0;
   state.infTimes.push(inf);
   if (state.infTimes.length > 300) state.infTimes.shift();
@@ -601,18 +838,26 @@ async function processLoop(now) {
   state.processed += 1;
   if (pose) {
     state.detections += 1;
+    state.poseReturns += 1;           // hypothesis 1 vs 2: raw returns (no threshold)
+    state.lastPoseStats = poseStats(pose);
+    state.lastPoseAt = performance.now();   // rolling — persists until next pose
     state.noPoseHintShown = false;
     const deg = angleFor(pose);
-    if (deg != null) updateRep(deg);
-    drawPose(pose);
+    if (deg == null) state.poseGatedOut += 1;   // pose returned but joints < gate
+    else updateRep(deg);
+    drawPoseSafe(pose);               // hypothesis 3: overlay runs / errors counted
   } else if (state.infErrors === 0) {
-    drawPose(null);
+    drawPoseSafe(null);
     if (state.videoLive && !state.noPoseHintShown) {
       if (state.lastNoPoseAt === null) state.lastNoPoseAt = now;
       else if (now - state.lastNoPoseAt > CFG.noPoseAfterMs) {
         state.noPoseHintShown = true;
+        const gs = state.lastSample && state.lastSample.input;
+        const darkHint = gs && (gs.mean < CFG.nearBlackMean || gs.max - gs.min < CFG.flatDelta);
         diag('pose', 'no person detected after ' + Math.round(CFG.noPoseAfterMs / 1000) + 's of processing', 'warn');
-        setStatus('Running — but NO PERSON DETECTED yet. Step fully into frame (whole body), check lighting, and use the placement guide (diagonal ~200 cm). Detection % stays low until a person is visible.', 'warn');
+        setStatus(darkHint
+          ? 'Running — the frames reaching MoveNet are too dark/flat (mean ' + gs.mean + '). A person cannot be detected like this: increase lighting / avoid backlight. (The MODEL INPUT panel under LIVE VIEW shows what the model receives.)'
+          : 'Running — but NO PERSON DETECTED yet. Step fully into frame (whole body), check lighting, and use the placement guide (diagonal ~200 cm). Watch the MODEL INPUT panel under LIVE VIEW — it shows exactly what MoveNet receives.', 'warn');
       }
     }
   } else {
@@ -622,6 +867,7 @@ async function processLoop(now) {
   state.fpsWindow.push(fpsNow);
   if (state.fpsWindow.length > 60) state.fpsWindow.shift();
   state.fps = state.fpsWindow.reduce((a, b) => a + b, 0) / state.fpsWindow.length;
+  maybeSample(now);
   updateUi();
 }
 
@@ -638,7 +884,13 @@ async function runPipeline(opts) {
   state.lastNoPoseAt = null;
   state.noPoseHintShown = false;
   state.videoLive = false;
-  $('banner').classList.add('hidden');
+  state.trialsBlockedBy = null;
+  state.frameTrace = []; state.lastSample = null; state.sampleAcc = 0; state.lastAuditKind = null;
+  state.inferenceCalls = 0; state.poseReturns = 0; state.poseGatedOut = 0;
+  state.skeletonDraws = 0; state.lastOverlayHits = 0; state.lastOverlayScanAt = 0;
+  state.overlayErrors = 0; state.lastOverlayError = null;
+  state.lastPoseStats = null; state.lastPoseAt = 0;
+  $('inputDiag').classList.add('hidden');
   const b = $('banner');
   b.classList.add('hidden');
   setPhase('starting');
@@ -662,19 +914,22 @@ async function runPipeline(opts) {
     if (!alive(boot) || model === null) return;
 
     if (!state.videoLive) {
-      // Do not run trials on a black view; park in error so Retry (after fixing the cause) restarts cleanly.
       throw mkErr('VIDEO_BLACK', 'LIVE VIEW is black at the page level — measurements cannot be trusted.',
         'Troubleshoot per README (macOS camera privacy / hardware acceleration / camera in use / browser GPU compositing), then Retry. If the model loaded fine (see Diagnostics), the camera path is the problem.');
     }
 
     state.fpsTarget = parseInt($('fpsSel').value, 10);
     state.move = $('moveSel').value;
+    state.mirror = $('mirrorChk').checked;
     state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
     state.infTimes = []; state.fpsWindow = []; state.processed = 0; state.detections = 0;
+    state.infErrors = 0;
+    state.winAt = performance.now(); state.winCalls = 0; state.winRets = 0; state.winTime = v.currentTime;
+    state.lastWallAt = performance.now(); state.sampleAcc = 0;
     setPhase('running');
-    diag('run', 'running — MoveNet ' + state.detectorModel + ' / ' + state.backend + ' @ ' + state.fpsTarget + ' fps target, model ready', 'ok');
+    diag('run', 'running — MoveNet ' + state.detectorModel + ' / ' + state.backend + ' @ ' + state.fpsTarget + ' fps target, inference input = mirrored ' + state.capCanvas.width + '×' + state.capCanvas.height + ' capture canvas (mirror=' + state.mirror + ', flipHorizontal=false)', 'ok');
     setStage('stage 5/5 — RUNNING');
-    setStatus('Running. Position the phone per the placement guide, then Start trial and perform the expected reps. (If "no person" shows, adjust framing/lighting.)', 'ok');
+    setStatus('Running. Position yourself per the placement guide, then Start trial and perform the expected reps. (The MODEL INPUT panel under LIVE VIEW shows exactly what MoveNet receives.)', 'ok');
     requestAnimationFrame(processLoop);
   } catch (e) {
     if (alive(boot)) {
@@ -696,8 +951,10 @@ function stopPipeline() {
   if (state.stream) { state.stream.getTracks().forEach((t) => t.stop()); state.stream = null; }
   state.videoLive = false;
   state.trial = null;
+  state.trialsBlockedBy = null;
   $('canvas').width = 640; $('canvas').height = 480;
   const ctx = $('canvas').getContext('2d'); ctx.clearRect(0, 0, 640, 480);
+  $('inputDiag').classList.add('hidden');
   $('startBtn').disabled = false; $('stopBtn').disabled = true;
   $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = true;
   $('status').className = 'status';
@@ -710,6 +967,7 @@ function stopPipeline() {
 function startTrial() {
   if (!state.running || !state.videoLive) return;
   if (state.trial) return;
+  if ($('trialStartBtn').disabled) return;   // trials may be gated by dark/flat input
   state.repCount = 0;
   state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
   state.infTimes = [];
@@ -761,6 +1019,7 @@ function exportJson() {
     runtime: {
       phase: state.phase, backend: state.backend, videoLive: state.videoLive, luma: Math.round(state.luma * 10) / 10,
       model: state.detectorModel, video: state.video ? state.videoWidth + 'x' + state.videoHeight : null,
+      inferenceInput: state.capCanvas ? state.capCanvas.width + 'x' + state.capCanvas.height + ' mirrored canvas' : null,
       mirror: $('mirrorChk').checked,
     },
     summary: {
@@ -768,8 +1027,13 @@ function exportJson() {
       trialCount: state.trials.length,
       lastFps: Math.round(state.fps * 10) / 10,
       processedFrames: state.processed, poseDetections: state.detections,
+      inferenceCalls: state.inferenceCalls, poseReturns: state.poseReturns,
+      poseGatedOut: state.poseGatedOut, skeletonDraws: state.skeletonDraws,
+      lastOverlayHits: state.lastOverlayHits,
+      overlayErrors: state.overlayErrors, infErrors: state.infErrors,
     },
     trials: state.trials,
+    frameTrace: state.frameTrace,
     diagnostics: state.log,
   };
   const json = JSON.stringify(out, null, 2);
@@ -805,6 +1069,7 @@ $('trialEndBtn').addEventListener('click', endTrial);
 $('exportBtn').addEventListener('click', exportJson);
 $('mirrorChk').addEventListener('change', (e) => {
   if (state.video) state.video.classList.toggle('mirror', e.target.checked);
+  state.mirror = e.target.checked;   // applied on the next capture draw
 });
 ['modelSel', 'fpsSel', 'moveSel'].forEach((id) => $(id).addEventListener('change', () => {
   if (!state.running) return;
@@ -825,7 +1090,14 @@ window.__ahf = {
     phase: state.phase, running: state.running, backend: state.backend, videoLive: state.videoLive,
     luma: Math.round(state.luma * 10) / 10, model: state.detectorModel, detector: !!state.detector,
     fps: Math.round(state.fps * 10) / 10, processed: state.processed, detections: state.detections,
-    infErrors: state.infErrors, mirror: $('mirrorChk').checked,
+    inferenceCalls: state.inferenceCalls, poseReturns: state.poseReturns, poseGatedOut: state.poseGatedOut,
+    skeletonDraws: state.skeletonDraws, lastOverlayHits: state.lastOverlayHits, overlayErrors: state.overlayErrors,
+    infErrors: state.infErrors, hasVideo: !!state.video,
+    videoW: state.video ? state.video.videoWidth : 0, videoH: state.video ? state.video.videoHeight : 0,
+    inputCanvas: state.capCanvas ? state.capCanvas.width + 'x' + state.capCanvas.height : null,
+    mirror: $('mirrorChk').checked,
+    lastSample: state.lastSample,
+    trialsBlockedBy: state.trialsBlockedBy,
     status: $('status').textContent, stage: $('stageStatus').textContent,
     error: state.error ? { stage: state.error.stage, message: state.error.message } : null,
     log: state.log.slice(-20),
