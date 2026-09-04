@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="data:," />
 <title>AHF Pose Measurement Harness (CP-03 gate)</title>
 <!--
   CP-03 MEASUREMENT HARNESS — RESEARCH TOOLING ONLY. NOT PRODUCT CODE.
@@ -26,6 +27,14 @@
   Dependencies: TF.js + @tensorflow-models/pose-detection from CDN — loaded
   here ONLY; nothing is added to the app's package.json. No app import, no
   build integration.
+
+  DIAGNOSTIC BEHAVIOR (harness repair, 2026-09-04): startup runs as a
+  bounded, observable pipeline with per-stage timeouts and classified
+  errors — CDN scripts → TF.js backend (WebGL, optional CPU retry) →
+  camera permission → video metadata → first video frame → MoveNet model
+  fetch → inference loop. Every stage logs to the on-page Diagnostics panel
+  (included in the JSON export); a failure never leaves the page hanging on
+  a generic "Loading…" message.
 -->
 <style>
   :root { color-scheme: dark; }
@@ -45,7 +54,10 @@
   button.danger { background: #b91c1c; border-color: #dc2626; }
   button.ok { background: #15803d; border-color: #16a34a; }
   .row { display: flex; gap: 8px; } .row button { flex: 1; }
-  #video, #canvas { width: 100%; border-radius: 8px; background: #000; }
+  .hidden { display: none !important; }
+  #frameGuide { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+  #video, #canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  #video.mirror { transform: scaleX(-1); }
   .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
   .metric { background: #101216; border: 1px solid #2a2f3a; border-radius: 6px; padding: 6px 8px; }
   .metric b { display: block; font-size: 16px; color: #7dd3fc; }
@@ -55,10 +67,16 @@
   th { background: #101216; color: #8b93a1; font-weight: 600; }
   textarea { width: 100%; height: 120px; font: inherit; font-size: 11px; }
   .status { font-size: 12px; margin-top: 8px; color: #aab2bf; }
-  .ok-text { color: #4ade80; } .warn-text { color: #f0b429; }
-  #frameGuide { position: relative; }
-  #canvas { position: absolute; top: 0; left: 0; }
+  .ok-text { color: #4ade80; } .warn-text { color: #f0b429; } .err-text { color: #f87171; }
+  #errBox { border: 1px solid #b91c1c; background: #2a1214; border-radius: 6px; padding: 8px; font-size: 12px; margin-top: 8px; }
+  #errBox .stage { color: #f87171; font-weight: 700; text-transform: uppercase; }
+  #errBox .remedy { color: #fcd34d; margin-top: 4px; }
+  #banner { border: 1px solid #a16207; background: #2a2110; color: #fde68a; border-radius: 6px; padding: 6px 8px; font-size: 12px; margin-bottom: 10px; }
+  #diagLog { background: #0c0e12; border: 1px solid #2a2f3a; border-radius: 6px; padding: 6px; font-size: 10px; height: 120px; overflow-y: auto; white-space: pre-wrap; margin-top: 8px; color: #8b93a1; }
+  #diagLog .ok { color: #4ade80; } #diagLog .err { color: #f87171; } #diagLog .warn { color: #f0b429; }
   .fps-big { font-size: 26px; color: #7dd3fc; font-weight: 700; }
+  .inline { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: #aab2bf; }
+  .inline input { width: auto; }
 </style>
 </head>
 <body>
@@ -97,15 +115,25 @@
       </select>
       <label>Expected reps per trial</label>
       <input id="expectedIn" type="number" value="10" min="1" max="50" />
+      <div class="inline">
+        <input id="mirrorChk" type="checkbox" checked />
+        <label for="mirrorChk" style="margin:0;">Mirror preview (selfie view)</label>
+      </div>
       <div class="row" style="margin-top:10px;">
-        <button id="startBtn" class="ok">Start camera</button>
+        <button id="startBtn" class="ok">Start</button>
         <button id="stopBtn" class="danger" disabled>Stop</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button id="retryBtn" class="hidden">Retry</button>
+        <button id="cpuBtn" class="hidden">Retry on CPU</button>
       </div>
       <div class="row" style="margin-top:8px;">
         <button id="trialStartBtn" disabled>Start trial</button>
         <button id="trialEndBtn" disabled>End trial</button>
       </div>
-      <div class="status" id="status">Idle — press "Start camera". Camera requires HTTPS/localhost.</div>
+      <div id="errBox" class="hidden"></div>
+      <div class="status" id="status">Idle — press "Start". Camera requires HTTPS/localhost.</div>
+      <div class="status" id="stageStatus"></div>
     </section>
 
     <section>
@@ -118,17 +146,23 @@
     <section>
       <h2>Export</h2>
       <button id="exportBtn" disabled>Export JSON results</button>
-      <textarea id="exportBox" readonly placeholder="Results JSON will appear here."></textarea>
+      <textarea id="exportBox" readonly placeholder="Results JSON will appear here (includes the diagnostics log)."></textarea>
       <div class="status">Manual export only — no network send. Export per device + config and save for the protocol results table.</div>
+    </section>
+
+    <section>
+      <h2>Diagnostics</h2>
+      <pre id="diagLog">— startup log appears here (stage-by-stage; included in the JSON export) —</pre>
     </section>
   </div>
 
   <div>
     <section>
       <h2>Live view <span class="status">(guided placement: person fully in frame, ~1.8 m working distance, diagonal 90–200 cm)</span></h2>
+      <div id="banner" class="hidden"></div>
       <div id="frameGuide">
-        <video id="video" playsinline muted></video>
-        <canvas id="canvas" width="640" height="480"></canvas>
+        <video id="video" playsinline muted autoplay class="mirror"></video>
+        <canvas id="canvas"></canvas>
       </div>
       <div class="metrics">
         <div class="metric"><b class="fps-big" id="fps">—</b><span>processed FPS</span></div>
@@ -143,18 +177,36 @@
         <thead><tr><th>#</th><th>Move</th><th>Model</th><th>FPS cfg</th><th>Placement</th><th>Expected</th><th>Detected</th><th>Match %</th><th>Avg conf</th><th>p95 inf ms</th><th>Dur s</th></tr></thead>
         <tbody></tbody>
       </table>
-      <div class="status" id="trialStatus">No trials yet. Start camera, then Start/End a trial.</div>
+      <div class="status" id="trialStatus">No trials yet. Start, then Start/End a trial.</div>
     </section>
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.20.0/dist/tf-converter.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.20.0/dist/tf-backend-webgl.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js" onerror="window.__cdnFail = window.__cdnFail || []; window.__cdnFail.push('tfjs-core');"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.20.0/dist/tf-converter.min.js" onerror="window.__cdnFail = window.__cdnFail || []; window.__cdnFail.push('tfjs-converter');"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@4.20.0/dist/tf-backend-cpu.min.js" onerror="window.__cdnFail = window.__cdnFail || []; window.__cdnFail.push('tfjs-backend-cpu');"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.20.0/dist/tf-backend-webgl.min.js" onerror="window.__cdnFail = window.__cdnFail || []; window.__cdnFail.push('tfjs-backend-webgl');"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js" onerror="window.__cdnFail = window.__cdnFail || []; window.__cdnFail.push('pose-detection');"></script>
 <script>
 "use strict";
 /* global tf, poseDetection */
+
+// --- Configuration --------------------------------------------------------------
+const CFG = {
+  backendTimeoutMs: 12000,      // WebGL / CPU backend init
+  cameraTimeoutMs: 45000,       // getUserMedia (permission prompt is human-time)
+  videoMetaTimeoutMs: 10000,    // video metadata after stream attach
+  firstFrameTimeoutMs: 8000,    // first rendered video frame (rVFC / readyState)
+  playTimeoutMs: 5000,          // video.play()
+  modelTimeoutMs: 60000,        // MoveNet download + parse (3–8 MB, mobile can be slow)
+  blackLuma: 5,                 // mean luma below this ⇒ video appears black at page level
+  noPoseAfterMs: 6000,          // show placement hint after this long with zero detections
+  maxLog: 400,
+};
+const MODEL_URLS = {
+  Lightning: "https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4",
+  Thunder: "https://tfhub.dev/google/tfjs-model/movenet/singlepose/thunder/4",
+};
 
 // --- Tunable heuristic thresholds (MEASUREMENT ONLY — not product form analysis) ----
 const MOVEMENTS = {
@@ -164,16 +216,93 @@ const MOVEMENTS = {
   lunge:  { label: 'lunge', joints: ['left_hip', 'left_knee', 'left_ankle'], down: 100, up: 160, unit: 'front-knee °' },
 };
 
+// --- State ------------------------------------------------------------------------
 const state = {
-  detector: null, video: null, running: false, rafId: 0,
-  lastProcess: 0, fpsTarget: 15,
+  phase: 'idle',            // idle | starting | running | stopped | error
+  bootSeq: 0,               // stale-async guard: bump to discard in-flight pipeline work
+  stream: null, video: null, videoLive: false, luma: -1,
+  detector: null, detectorModel: null, backend: null,
+  running: false, rafId: 0,
+  lastProcess: 0, fpsTarget: 15, mirror: true, move: 'squat',
   infTimes: [], fpsWindow: [], fps: 0,
-  detections: 0, processed: 0,
+  detections: 0, processed: 0, infErrors: 0, lastInfError: null,
   minConf: 0, meanConf: 0, angle: null,
   repState: null, repCount: 0, trial: null, trials: [],
+  error: null, log: [], noPoseHintShown: false, lastNoPoseAt: null,
 };
 
 const $ = (id) => document.getElementById(id);
+
+// --- Diagnostics log + status -------------------------------------------------------
+function diag(stage, msg, kind) {
+  const line = { t: new Date().toISOString().slice(11, 23), stage, kind: kind || 'info', msg };
+  state.log.push(line);
+  if (state.log.length > CFG.maxLog) state.log.shift();
+  renderLog();
+}
+function renderLog() {
+  const el = $('diagLog');
+  el.innerHTML = state.log.map((l) =>
+    `<span class="${l.kind}">[${l.t}] ${l.stage}</span> ${l.msg.replace(/&/g, '&amp;').replace(/</g, '&lt;')}`
+  ).join('\n');
+  el.scrollTop = el.scrollHeight;
+}
+function setStatus(msg, cls) {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = 'status' + (cls ? ' ' + cls + '-text' : '');
+}
+function setStage(msg) {
+  $('stageStatus').textContent = msg || '';
+}
+function setPhase(p, okRun) {
+  state.phase = p;
+  const running = p === 'running';
+  state.running = running;
+  const starting = p === 'starting';
+  $('startBtn').disabled = starting || running;
+  $('stopBtn').disabled = !(starting || running);
+  if (p !== 'error') { $('retryBtn').classList.add('hidden'); $('cpuBtn').classList.add('hidden'); }
+  const trialsOk = running && state.videoLive && state.luma >= CFG.blackLuma;
+  $('trialStartBtn').disabled = !trialsOk;
+  $('trialEndBtn').disabled = !(state.trial && running);
+  if (running) $('exportBtn').disabled = false;
+}
+function mkErr(stage, message, remedy, extra) {
+  return Object.assign(new Error(message), { stage, remedy }, extra || {});
+}
+function showError(e) {
+  const err = {
+    stage: e && e.stage ? e.stage : 'UNKNOWN',
+    message: (e && e.message) ? e.message : String(e),
+    remedy: (e && e.remedy) || 'Retry. If it persists, copy the Diagnostics log into the report.',
+    cpuOffer: !!(e && e.cpuOffer),
+  };
+  state.error = err;
+  state.phase = 'error';
+  state.running = false;
+  $('startBtn').disabled = false;
+  $('stopBtn').disabled = true;
+  $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = true;
+  const box = $('errBox');
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="stage">${err.stage}</div><div>${err.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div><div class="remedy">→ ${err.remedy.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;
+  $('retryBtn').classList.remove('hidden');
+  if (err.cpuOffer) $('cpuBtn').classList.remove('hidden');
+  diag('error', `[${err.stage}] ${err.message}`, 'err');
+  setStatus(`Error (${err.stage}). See the red box for the cause and remedy.`, 'err');
+}
+function clearError() {
+  state.error = null;
+  $('errBox').classList.add('hidden');
+}
+
+function withTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(mkErr('TIMEOUT', `Timed out after ${Math.round(ms / 1000)}s — ${label}`, 'See the stage above; retry, or check network/device state.')), ms);
+    promise.then((v) => { clearTimeout(id); resolve(v); }, (e) => { clearTimeout(id); reject(e); });
+  });
+}
 
 // --- Angle helpers ---------------------------------------------------------
 function angleDeg(a, b, c) {
@@ -181,7 +310,6 @@ function angleDeg(a, b, c) {
   const cos = Math.min(1, Math.max(-1, (ab * ab + bc * bc - ac * ac) / (2 * ab * bc)));
   return (Math.acos(cos) * 180) / Math.PI;
 }
-
 function keypoint(pose, name) {
   const kp = pose.keypoints && pose.keypoints.find((k) => k.name === name);
   return kp && kp.score >= 0.5 ? kp : null;
@@ -201,7 +329,6 @@ function updateRep(downDeg) {
   }
   state.angle = Math.round(downDeg);
 }
-
 function angleFor(pose) {
   const m = MOVEMENTS[state.move];
   const pts = m.joints.map((n) => keypoint(pose, n));
@@ -244,7 +371,6 @@ function updateUi() {
   $('detect').textContent = detPct.toFixed(0) + '%';
   $('angle').textContent = state.angle == null ? '—' : state.angle + '°';
 }
-
 function updateRepUi() {
   $('repCount').textContent = state.repCount;
   if (state.trial) {
@@ -252,7 +378,200 @@ function updateRepUi() {
   }
 }
 
-// --- Processing loop ----------------------------------------------------------
+// --- Stage: TF.js backend -------------------------------------------------------
+async function initBackend(boot, preferCpu) {
+  if (!window.tf) throw mkErr('CDN', 'TF.js (tf) is missing — a CDN script failed to load.', 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js in a tab; if it fails, allow that host (and tfhub.dev/kaggle.com for the model) and reload.');
+  const want = preferCpu ? 'cpu' : 'webgl';
+  setStage('stage 1/5 — TF.js backend (' + want + ')');
+  setStatus('Initializing TF.js ' + (want === 'webgl' ? 'WebGL' : 'CPU (fallback — slow, sanity only)') + ' backend…');
+  diag('backend', 'tf.setBackend("' + want + '")', 'info');
+  try {
+    await withTimeout(tf.setBackend(want), CFG.backendTimeoutMs, 'TF.js backend init (' + want + ')');
+    await withTimeout(tf.ready(), 5000, 'TF.js ready');
+  } catch (e) {
+    if (!alive(boot)) return null;
+    if (want === 'webgl') {
+      diag('backend', 'WebGL init failed: ' + (e && e.message ? e.message : e), 'err');
+      throw mkErr('BACKEND', 'WebGL backend failed to initialize: ' + (e && e.message ? e.message : e),
+        'WebGL is unavailable or stuck (driver/hardware-acceleration/GPU-blocklist). Try "Retry on CPU" to validate the rest of the pipeline (slow, sanity only), or enable hardware acceleration / try another browser.',
+        { cpuOffer: true });
+    }
+    throw mkErr('BACKEND', 'TF.js init failed: ' + (e && e.message ? e.message : e), 'Retry, or use a browser with WebGL enabled.');
+  }
+  if (!alive(boot)) return null;
+  state.backend = tf.getBackend();
+  diag('backend', 'backend ready: ' + state.backend, 'ok');
+  setStage('stage 1/5 — backend OK (' + state.backend + ')');
+}
+
+// --- Stage: camera ---------------------------------------------------------------
+function classifyCameraError(e) {
+  const n = (e && e.name) || '';
+  if (n === 'NotAllowedError' || n === 'PermissionDeniedError' || n === 'SecurityError' || n === 'AbortError')
+    return mkErr('CAMERA_PERMISSION', 'Camera permission was denied or blocked (' + n + ').', 'Click the camera/lock icon in the address bar → allow camera for this site, then Retry. On macOS also check System Settings → Privacy & Security → Camera.');
+  if (n === 'NotFoundError' || n === 'DevicesNotFoundError')
+    return mkErr('CAMERA_NOT_FOUND', 'No camera was found (' + n + ').', 'Attach/enable a camera, close apps using it, then Retry.');
+  if (n === 'NotReadableError' || n === 'TrackStartError')
+    return mkErr('CAMERA_IN_USE', 'The camera could not be opened — already in use (' + n + ').', 'Close other apps/tabs using the camera (video calls, camera apps), then Retry.');
+  if (n === 'OverconstrainedError')
+    return mkErr('CAMERA_CONSTRAINTS', 'Camera could not satisfy the requested resolution (' + n + ').', 'A fallback to basic constraints will be tried automatically on Retry.');
+  if (e && e.stage === 'TIMEOUT' || n === 'TimeoutError')
+    return mkErr('CAMERA_TIMEOUT', 'No response to the camera request within ' + Math.round(CFG.cameraTimeoutMs / 1000) + 's.', 'The permission prompt may still be open — answer it, or check that this page is served over HTTPS/localhost (secure context), then Retry.');
+  return mkErr('CAMERA_UNKNOWN', 'Camera error: ' + (e && e.message ? e.message : e), 'Retry; if it persists, copy the Diagnostics log into the report.');
+}
+async function acquireCamera(boot) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    throw mkErr('SECURE_CONTEXT', 'navigator.mediaDevices is unavailable.', 'The page must be served over HTTPS or http://localhost (secure context). Reload from one of those, then Retry.');
+  setStage('stage 2/5 — camera permission');
+  setStatus('Requesting camera — allow access when the browser asks…');
+  diag('camera', 'getUserMedia(front camera, 1280×720 ideal)', 'info');
+  const t0 = performance.now();
+  let stream;
+  try {
+    stream = await withTimeout(
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }),
+      CFG.cameraTimeoutMs, 'camera permission/open');
+  } catch (e) {
+    // Retry once with minimal constraints (OverconstrainedError path)
+    if ((e && e.name) === 'OverconstrainedError' && !state.cameraRetried) {
+      state.cameraRetried = true;
+      diag('camera', 'Overconstrained — retrying with basic constraints', 'warn');
+      try {
+        stream = await withTimeout(navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }), CFG.cameraTimeoutMs, 'camera (basic constraints)');
+      } catch (e2) { throw classifyCameraError(e2); }
+    } else {
+      throw classifyCameraError(e);
+    }
+  }
+  if (!alive(boot)) { stream.getTracks().forEach((t) => t.stop()); return null; }
+  state.cameraRetried = false;
+  diag('camera', 'permission granted, stream acquired in ' + Math.round(performance.now() - t0) + 'ms', 'ok');
+  setStage('stage 2/5 — camera OK');
+  return stream;
+}
+
+// --- Stage: video rendering (LIVE VIEW) --------------------------------------------
+function lumaSample(video) {
+  try {
+    const c = document.createElement('canvas'); c.width = 32; c.height = 18;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(video, 0, 0, 32, 18);
+    const d = x.getImageData(0, 0, 32, 18).data;
+    let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    return s / (32 * 18);
+  } catch (e) { return -1; }
+}
+function waitFirstFrame(video) {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    let done = false;
+    let iv = null;
+    const fin = (ok, reason) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (iv) clearInterval(iv);
+      resolve({ ok, reason, ms: performance.now() - t0 });
+    };
+    const timer = setTimeout(() => fin(false, 'first-frame timeout (' + CFG.firstFrameTimeoutMs + 'ms)'), CFG.firstFrameTimeoutMs);
+    if ('requestVideoFrameCallback' in video) {
+      video.requestVideoFrameCallback(() => fin(true, 'requestVideoFrameCallback'));
+    } else {
+      iv = setInterval(() => {
+        if (video.readyState >= 2 && video.currentTime > 0 && video.videoWidth > 0) fin(true, 'readyState≥2');
+      }, 100);
+    }
+  });
+}
+async function attachVideo(boot, stream) {
+  const v = $('video');
+  state.stream = stream;
+  v.srcObject = stream;
+  v.setAttribute('playsinline', '');
+  v.muted = true; v.setAttribute('muted', '');
+  v.setAttribute('autoplay', '');
+  v.classList.toggle('mirror', $('mirrorChk').checked);
+  setStage('stage 3/5 — video ready');
+  setStatus('Waiting for the camera stream (video metadata)…');
+  diag('video', 'srcObject attached; waiting for metadata', 'info');
+  await withTimeout(new Promise((res, rej) => {
+    if (v.readyState >= 1 && v.videoWidth > 0) return res();
+    v.addEventListener('loadedmetadata', () => res(), { once: true });
+  }), CFG.videoMetaTimeoutMs, 'video metadata');
+  if (!alive(boot)) return null;
+  const w = v.videoWidth, h = v.videoHeight;
+  if (!w || !h) throw mkErr('VIDEO', 'Video metadata arrived without dimensions.', 'Camera driver issue — Retry, or try another browser.');
+  $('canvas').width = w; $('canvas').height = h;
+  $('frameGuide').style.aspectRatio = `${w} / ${h}`;
+  diag('video', `stream ${w}×${h}`, 'ok');
+  try {
+    await withTimeout(v.play(), CFG.playTimeoutMs, 'video.play()');
+  } catch (e) {
+    throw mkErr('VIDEO', 'video.play() failed: ' + (e && e.message ? e.message : e), 'Autoplay policy issue — Retry from the Start button (user gesture).');
+  }
+  setStatus('Camera live — waiting for the first rendered frame…');
+  const ff = await waitFirstFrame(v);
+  if (!alive(boot)) return null;
+  if (!ff.ok) {
+    throw mkErr('VIDEO_FRAME', 'The camera stream opened but no video frame reached the page within ' + Math.round(CFG.firstFrameTimeoutMs / 1000) + 's.',
+      'The LIVE VIEW would be black/stuck. Common causes: (1) macOS Safari/Chrome GPU compositing glitch — toggle System Settings → hardware acceleration or try the other browser; (2) camera in use elsewhere; (3) this browser tab is backgrounded. Retry with this tab focused.');
+  }
+  const luma = lumaSample(v);
+  state.luma = luma;
+  state.videoLive = luma < 0 || luma >= CFG.blackLuma;
+  if (luma < 0) {
+    diag('video', 'first frame received (' + Math.round(ff.ms) + 'ms) — luma sample unavailable (n/a)', 'ok');
+  } else if (state.videoLive) {
+    diag('video', 'first frame received (' + Math.round(ff.ms) + 'ms), mean luma ' + luma.toFixed(1) + ' — video visibly rendering', 'ok');
+  } else {
+    diag('video', 'first frame received but mean luma ' + luma.toFixed(1) + ' ≈ black at page level', 'err');
+    const b = $('banner');
+    b.classList.remove('hidden');
+    b.textContent = 'WARNING: the camera stream is rendering BLACK at the page level (mean luma ' + luma.toFixed(1) + '). Measurements are invalid until this is fixed — see the red error guidance or README troubleshooting. Trials are disabled.';
+  }
+  setStage('stage 3/5 — LIVE VIEW ' + (state.videoLive ? 'ACTIVE' : 'BLACK'));
+  setStatus(state.videoLive
+    ? 'LIVE VIEW active — camera works. Loading the MoveNet model…'
+    : 'Camera opened but video is black at page level — see the red box/README. Model load continues for isolation…', state.videoLive ? undefined : 'warn');
+  return v;
+}
+
+// --- Stage: model ------------------------------------------------------------------
+async function loadModel(boot) {
+  const mt = $('modelSel').value;
+  if (state.detector && state.detectorModel === mt) {
+    diag('model', 'MoveNet ' + mt + ' already loaded — reusing', 'ok');
+    setStage('stage 4/5 — model already loaded');
+    return true;
+  }
+  const url = MODEL_URLS[mt];
+  setStage('stage 4/5 — model download');
+  setStatus('Loading MoveNet ' + mt + ' from CDN (3–8 MB first download; ' + Math.round(CFG.modelTimeoutMs / 1000) + 's timeout)…');
+  diag('model', 'createDetector(MoveNet ' + mt + ') ← ' + url, 'info');
+  const t0 = performance.now();
+  let det;
+  try {
+    det = await withTimeout(
+      poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+        modelType: mt === 'Thunder' ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+      }),
+      CFG.modelTimeoutMs, 'MoveNet model download/parse');
+  } catch (e) {
+    if (!alive(boot)) return null;
+    diag('model', 'load failed: ' + (e && e.message ? e.message : e), 'err');
+    throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + (e && e.message ? e.message : e),
+      'The model is fetched from ' + url + ' (redirects via Kaggle). Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or retry on a different network.');
+  }
+  if (!alive(boot)) { try { det && det.dispose && det.dispose(); } catch (_) {} return null; }
+  state.detector = det;
+  state.detectorModel = mt;
+  diag('model', 'MoveNet ' + mt + ' ready in ' + Math.round(performance.now() - t0) + 'ms', 'ok');
+  setStage('stage 4/5 — model ready');
+  return true;
+}
+
+// --- Processing loop ----------------------------------------------------------------
 async function processLoop(now) {
   if (!state.running) return;
   state.rafId = requestAnimationFrame(processLoop);
@@ -263,9 +582,18 @@ async function processLoop(now) {
   const t0 = performance.now();
   let pose = null;
   try {
-    const res = await state.detector.estimatePoses(state.video, { flipHorizontal: true });
+    const flip = $('mirrorChk').checked;   // match keypoints to the displayed (mirrored) view
+    const res = await state.detector.estimatePoses(state.video, { flipHorizontal: flip });
     pose = res && res.length ? res[0] : null;
-  } catch { pose = null; }
+    state.infErrors = 0;
+  } catch (e) {
+    state.infErrors += 1;
+    state.lastInfError = e && e.message ? e.message : String(e);
+    if (state.infErrors === 5 || state.infErrors % 20 === 0) {
+      diag('inference', 'estimatePoses error ×' + state.infErrors + ': ' + state.lastInfError, 'err');
+      setStatus('Inference failing (' + state.infErrors + ' consecutive errors): ' + state.lastInfError + ' — Retry recommended.', 'err');
+    }
+  }
   const inf = performance.now() - t0;
   state.infTimes.push(inf);
   if (state.infTimes.length > 300) state.infTimes.shift();
@@ -273,9 +601,22 @@ async function processLoop(now) {
   state.processed += 1;
   if (pose) {
     state.detections += 1;
+    state.noPoseHintShown = false;
     const deg = angleFor(pose);
     if (deg != null) updateRep(deg);
     drawPose(pose);
+  } else if (state.infErrors === 0) {
+    drawPose(null);
+    if (state.videoLive && !state.noPoseHintShown) {
+      if (state.lastNoPoseAt === null) state.lastNoPoseAt = now;
+      else if (now - state.lastNoPoseAt > CFG.noPoseAfterMs) {
+        state.noPoseHintShown = true;
+        diag('pose', 'no person detected after ' + Math.round(CFG.noPoseAfterMs / 1000) + 's of processing', 'warn');
+        setStatus('Running — but NO PERSON DETECTED yet. Step fully into frame (whole body), check lighting, and use the placement guide (diagonal ~200 cm). Detection % stays low until a person is visible.', 'warn');
+      }
+    }
+  } else {
+    state.lastNoPoseAt = null;
   }
   const fpsNow = 1000 / Math.max(el, 1);
   state.fpsWindow.push(fpsNow);
@@ -284,64 +625,104 @@ async function processLoop(now) {
   updateUi();
 }
 
-// --- Camera -------------------------------------------------------------------
-async function startCamera() {
-  if (state.running) return;
-  if (!state.detector) {
-    $('status').textContent = 'Loading MoveNet model (first load downloads ~3–8 MB from CDN)…';
-    await tf.setBackend('webgl');
-    const modelType = $('modelSel').value === 'Thunder'
-      ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
-      : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING;
-    state.detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, { modelType });
-  }
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-    audio: false,
-  });
-  state.video = $('video');
-  state.video.srcObject = stream;
-  await state.video.play();
-  state.fpsTarget = parseInt($('fpsSel').value, 10);
-  state.move = $('moveSel').value;
-  state.running = true;
-  state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
-  $('startBtn').disabled = true; $('stopBtn').disabled = false;
-  $('trialStartBtn').disabled = false; $('exportBtn').disabled = false;
-  $('status').textContent = 'Running. Position the phone per the placement guide, then Start trial and perform the expected reps.';
-  requestAnimationFrame(processLoop);
-}
+// --- Pipeline ----------------------------------------------------------------------
+function alive(boot) { return boot === state.bootSeq; }
 
-function stopCamera() {
+async function runPipeline(opts) {
+  const boot = ++state.bootSeq;
+  opts = opts || {};
+  clearError();
+  state.phase = 'starting';
   state.running = false;
   cancelAnimationFrame(state.rafId);
-  if (state.video && state.video.srcObject) {
-    state.video.srcObject.getTracks().forEach((t) => t.stop());
-    state.video.srcObject = null;
+  state.lastNoPoseAt = null;
+  state.noPoseHintShown = false;
+  state.videoLive = false;
+  $('banner').classList.add('hidden');
+  const b = $('banner');
+  b.classList.add('hidden');
+  setPhase('starting');
+  setStage('pipeline start');
+  setStatus('Starting…');
+  diag('start', 'pipeline start (boot #' + boot + ')', 'info');
+  try {
+    if (window.__cdnFail && window.__cdnFail.length)
+      throw mkErr('CDN', 'CDN scripts failed to load: ' + window.__cdnFail.join(', '), 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net in a tab; if it fails, allow that host (and tfhub.dev/kaggle.com for the model) and reload.');
+
+    const backend = await initBackend(boot, opts.cpu);
+    if (!alive(boot) || backend === null) return;
+
+    const stream = await acquireCamera(boot);
+    if (!alive(boot) || stream === null) return;
+
+    const v = await attachVideo(boot, stream);
+    if (!alive(boot) || v === null) return;
+
+    const model = await loadModel(boot);
+    if (!alive(boot) || model === null) return;
+
+    if (!state.videoLive) {
+      // Do not run trials on a black view; park in error so Retry (after fixing the cause) restarts cleanly.
+      throw mkErr('VIDEO_BLACK', 'LIVE VIEW is black at the page level — measurements cannot be trusted.',
+        'Troubleshoot per README (macOS camera privacy / hardware acceleration / camera in use / browser GPU compositing), then Retry. If the model loaded fine (see Diagnostics), the camera path is the problem.');
+    }
+
+    state.fpsTarget = parseInt($('fpsSel').value, 10);
+    state.move = $('moveSel').value;
+    state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
+    state.infTimes = []; state.fpsWindow = []; state.processed = 0; state.detections = 0;
+    setPhase('running');
+    diag('run', 'running — MoveNet ' + state.detectorModel + ' / ' + state.backend + ' @ ' + state.fpsTarget + ' fps target, model ready', 'ok');
+    setStage('stage 5/5 — RUNNING');
+    setStatus('Running. Position the phone per the placement guide, then Start trial and perform the expected reps. (If "no person" shows, adjust framing/lighting.)', 'ok');
+    requestAnimationFrame(processLoop);
+  } catch (e) {
+    if (alive(boot)) {
+      diag('error', 'pipeline failed at stage ' + ((e && e.stage) || '?') + ': ' + (e && e.message ? e.message : e), 'err');
+      showError(e);
+      setStage('');
+    }
   }
+}
+
+function stopPipeline() {
+  state.bootSeq += 1;              // discard any in-flight pipeline work
+  state.running = false;
+  cancelAnimationFrame(state.rafId);
+  if (state.video) {
+    state.video.srcObject = null;
+    state.video.pause && state.video.pause();
+  }
+  if (state.stream) { state.stream.getTracks().forEach((t) => t.stop()); state.stream = null; }
+  state.videoLive = false;
+  state.trial = null;
+  $('canvas').width = 640; $('canvas').height = 480;
+  const ctx = $('canvas').getContext('2d'); ctx.clearRect(0, 0, 640, 480);
   $('startBtn').disabled = false; $('stopBtn').disabled = true;
   $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = true;
-  $('status').textContent = 'Stopped.';
+  $('status').className = 'status';
+  setStage('');
+  diag('stop', 'stopped', 'info');
+  setStatus('Stopped. Press Start again (model stays cached after first load).');
 }
 
 // --- Trials --------------------------------------------------------------------
 function startTrial() {
-  if (!state.running) return;
+  if (!state.running || !state.videoLive) return;
+  if (state.trial) return;
   state.repCount = 0;
   state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
   state.infTimes = [];
   state.trial = {
     startedAt: performance.now(),
     expected: parseInt($('expectedIn').value, 10) || 10,
-    move: state.move, model: $('modelSel').value, fpsCfg: state.fpsTarget,
+    move: state.move, model: state.detectorModel, fpsCfg: state.fpsTarget,
     placement: $('placeSel').value,
-    maxReps: 0,
   };
   $('trialStartBtn').disabled = true; $('trialEndBtn').disabled = false;
   $('trialStatus').textContent = `Trial ${state.trials.length + 1} running — perform ${state.trial.expected} ${MOVEMENTS[state.move].label}s, then End trial.`;
   updateRepUi();
 }
-
 function endTrial() {
   if (!state.trial) return;
   const dur = (performance.now() - state.trial.startedAt) / 1000;
@@ -360,7 +741,6 @@ function endTrial() {
   $('trialStartBtn').disabled = false; $('trialEndBtn').disabled = true;
   $('trialStatus').textContent = `Trial logged (detected ${row.detected}/${row.expected}, match ${row.matchPct}%). Next: same setup or change placement/movement.`;
 }
-
 function renderTrials() {
   const tb = $('trialTable').querySelector('tbody');
   tb.innerHTML = '';
@@ -372,17 +752,25 @@ function renderTrials() {
   }
 }
 
-// --- Export ----------------------------------------------------------------------
+// --- Export ------------------------------------------------------------------------
 function exportJson() {
   const out = {
     harness: 'AHF pose measurement harness (CP-03 gate)',
     generatedAt: new Date().toISOString(),
     device: { ua: navigator.userAgent, platform: navigator.platform, battery: $('battLevel').textContent },
+    runtime: {
+      phase: state.phase, backend: state.backend, videoLive: state.videoLive, luma: Math.round(state.luma * 10) / 10,
+      model: state.detectorModel, video: state.video ? state.videoWidth + 'x' + state.videoHeight : null,
+      mirror: $('mirrorChk').checked,
+    },
     summary: {
-      bestFps: state.trials.length ? Math.max(...state.trials.map((t) => t.matchPct)) : 0,
+      bestMatchPct: state.trials.length ? Math.max(...state.trials.map((t) => t.matchPct)) : null,
       trialCount: state.trials.length,
+      lastFps: Math.round(state.fps * 10) / 10,
+      processedFrames: state.processed, poseDetections: state.detections,
     },
     trials: state.trials,
+    diagnostics: state.log,
   };
   const json = JSON.stringify(out, null, 2);
   $('exportBox').value = json;
@@ -394,7 +782,7 @@ function exportJson() {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-// --- Battery (Chrome/Android; not available on iOS Safari) ------------------------
+// --- Battery (Chrome/Android; not available on iOS Safari) ----------------------------
 async function initBattery() {
   if (!('getBattery' in navigator)) { $('battLevel').textContent = 'n/a'; $('battTime').textContent = 'n/a'; return; }
   const b = await navigator.getBattery();
@@ -407,19 +795,46 @@ async function initBattery() {
   b.addEventListener('chargingchange', upd);
 }
 
-// --- Wiring -------------------------------------------------------------------------
-$('startBtn').addEventListener('click', startCamera);
-$('stopBtn').addEventListener('click', stopCamera);
+// --- Wiring --------------------------------------------------------------------------
+$('startBtn').addEventListener('click', () => runPipeline({}));
+$('retryBtn').addEventListener('click', () => runPipeline({ cpu: false }));
+$('cpuBtn').addEventListener('click', () => runPipeline({ cpu: true }));
+$('stopBtn').addEventListener('click', stopPipeline);
 $('trialStartBtn').addEventListener('click', startTrial);
 $('trialEndBtn').addEventListener('click', endTrial);
 $('exportBtn').addEventListener('click', exportJson);
+$('mirrorChk').addEventListener('change', (e) => {
+  if (state.video) state.video.classList.toggle('mirror', e.target.checked);
+});
 ['modelSel', 'fpsSel', 'moveSel'].forEach((id) => $(id).addEventListener('change', () => {
   if (!state.running) return;
+  const sel = $(id);
+  if (id === 'modelSel' && sel.value !== state.detectorModel) {
+    diag('model', 'model selection changed to ' + sel.value + ' — applies on next Start (reloads the model)', 'warn');
+    return;
+  }
   state.fpsTarget = parseInt($('fpsSel').value, 10);
   state.move = $('moveSel').value;
   state.repState = { phase: 'up', downAt: 0, minAngle: Infinity };
 }));
 initBattery();
+
+// --- Automation hook (diagnostics only; no network impact) ----------------------------
+window.__ahf = {
+  getState: () => ({
+    phase: state.phase, running: state.running, backend: state.backend, videoLive: state.videoLive,
+    luma: Math.round(state.luma * 10) / 10, model: state.detectorModel, detector: !!state.detector,
+    fps: Math.round(state.fps * 10) / 10, processed: state.processed, detections: state.detections,
+    infErrors: state.infErrors, mirror: $('mirrorChk').checked,
+    status: $('status').textContent, stage: $('stageStatus').textContent,
+    error: state.error ? { stage: state.error.stage, message: state.error.message } : null,
+    log: state.log.slice(-20),
+  }),
+};
+const __qs = new URLSearchParams(location.search);
+if (__qs.get('autostart') === '1') {
+  setTimeout(() => { runPipeline({ cpu: __qs.get('backend') === 'cpu' }); }, 400);
+}
 </script>
 </body>
 </html>

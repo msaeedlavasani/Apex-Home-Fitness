@@ -13,6 +13,16 @@
 > tester — this step cannot run in the development environment. Follow §6
 > exactly and record results in the §7 table.
 
+> **REPAIRED 2026-09-04** — the harness's startup pipeline was rebuilt so it
+> can no longer hang silently on "Loading MoveNet model…" or run with a
+> black LIVE VIEW. Every stage (backend → camera → video → model →
+> inference) is now bounded by a timeout, reports a **classified error with
+> a remedy**, and writes to the on-page Diagnostics panel (included in the
+> JSON export). See `docs/architecture/CP-03-HARNESS-REPAIR.md` for the root
+> cause + evidence. **The CP-03 measurement gate is still OPEN** — no
+> real-device results may be inferred from earlier attempts; §6 retest
+> applies.
+
 ## 1. What the gate measures
 
 | Metric | How | PASS criterion (proposed — confirm on data) |
@@ -31,7 +41,7 @@ All processing is on-device; the harness never uploads frames or results
    case; a flagship as a bonus.
 2. **iPhone** (Safari, iOS 16+) — note: no `navigator.getBattery()` on iOS;
    battery is measured pre/post only.
-3. (Optional) Desktop Chrome for a baseline sanity check on localhost.
+3. (Recommended sanity step) Desktop Chrome on macOS with a webcam — §3.1.
 
 ## 3. Serving the harness (HTTPS required for camera on phones)
 
@@ -53,7 +63,26 @@ The harness is a single static page (`index.html`). Camera access requires a
 
 The harness loads TF.js + MoveNet from CDN on first start (~3–8 MB download);
 phones need network for that load only. Verify the "100% on-device" banner
-renders and the status line shows the model loaded.
+renders and the status line reaches "Running" (it reports each stage —
+backend → camera → LIVE VIEW → model — instead of hanging on a generic
+Loading message).
+
+### 3.1 Desktop sanity check (do this first, on macOS Chrome)
+
+Repairs are verified by an automated smoke run (real Chrome, virtual camera):
+
+```bash
+node scripts/pose-measurement/smoke.mjs
+# expects: 13 passed, 0 failed — camera → LIVE VIEW → model → inference →
+# trial/export + classified MODEL_FETCH error path + CPU-backend path
+```
+
+Then, optionally, a manual check with a real webcam: serve the harness on
+`http://localhost:4173`, open it in Chrome, press **Start**, and confirm the
+sequence **stage 1/5 → stage 5/5 (RUNNING)** with yourself visible in the
+LIVE VIEW and pose keypoints overlaid. If any stage errors, the red box
+names the failing stage and remedy — copy the Diagnostics panel into the
+report.
 
 ## 4. Environment and setup (per tester)
 
@@ -67,9 +96,9 @@ renders and the status line shows the model loaded.
 
 ## 5. Measurement runs (per device)
 
-**A. FPS + latency.** Start camera (default Lightning, 15 fps). Let it run
-20 s, record the live FPS + p95 inference ms. Repeat at 30 fps target, and
-with Thunder (10 fps target) — note Thunder is accuracy-check only.
+**A. FPS + latency.** Start (default Lightning, 15 fps). Let it run 20 s,
+record the live FPS + p95 inference ms. Repeat at 30 fps target, and with
+Thunder (10 fps target) — note Thunder is accuracy-check only.
 
 **B. Rep-count reliability + placement sensitivity.** For each movement
 (squat → push-up → hinge → split squat/lunge) and each placement
@@ -97,12 +126,17 @@ This step requires **physical devices and a human tester** and cannot be
 executed from the development environment. When ready, the Owner should:
 
 1. Provide the two phones (§2) and a tester, or authorize a tester to run it.
-2. Have the tester follow §3–§5, exporting one JSON per
-   (device, movement, placement, fps config) run.
+2. Have the tester follow §3.1 (desktop sanity) then §3–§5 on the phones,
+   exporting one JSON per (device, movement, placement, fps config) run.
 3. Return the JSON exports + the §7 results table to the workspace
    (e.g., drop into `scripts/pose-measurement/results/`), where the findings
    can be reviewed and the gate closed — product implementation begins only
    after that review.
+
+**Before the phones:** confirm each phone reaches **RUNNING** with the LIVE
+VIEW showing the tester (if it errors, the red box names the stage — CDN,
+BACKEND, CAMERA_*, VIDEO_*, MODEL_FETCH — and the Diagnostics log records
+every stage; do not count that device/config as measured).
 
 ## 7. Results table (fill per device)
 
@@ -119,12 +153,34 @@ executed from the development environment. When ready, the Owner should:
 | iPhone | squat | Lightning | 15 | front-180 | 10 |  |  |  |  |  |
 | (repeat per device as needed) |  |  |  |  |  |  |  |  |  |  |
 
-## 8. Honest limitations (gate scope)
+## 8. Troubleshooting (harness repair 2026-09-04)
+
+The harness now fails **fast and visibly** instead of hanging. Errors appear
+in the red box with a stage label, and every stage is timestamped in the
+**Diagnostics** panel (included in the JSON export). Stage map:
+
+| Observed (before/after repair) | Harness stage reported | Most likely cause → remedy |
+|---|---|---|
+| Stuck on "Loading MoveNet model…" forever | `CDN` / `BACKEND` / `MODEL_FETCH` / `TIMEOUT` | Previously **any** failure was an unhandled rejection that left that Loading text; now the real stage is named. `CDN` → allow cdn.jsdelivr.net; `MODEL_FETCH` → allow tfhub.dev + kaggle.com (model host) or retry on another network; `BACKEND` → enable hardware acceleration or **Retry on CPU** (slow, sanity only) |
+| Camera permission ok but LIVE VIEW black / stuck | `CAMERA_*` then `VIDEO` / `VIDEO_FRAME` | The harness now waits for the first rendered frame (8 s) and measures frame luminance. `VIDEO_FRAME`/black luma → camera in use elsewhere, macOS privacy, or a browser GPU-compositing glitch (Safari) — try the other browser / toggle hardware acceleration / focus the tab, then Retry |
+| Page not on HTTPS/localhost | `SECURE_CONTEXT` | Camera API unavailable — serve over HTTPS or localhost |
+| Inference stops mid-run | repeated `inference` diagnostics | Backend/context issue — Stop → Retry; if it recurs, capture the Diagnostics log |
+
+Trial buttons are enabled only while the LIVE VIEW is verified rendering, so
+a black/stuck view can no longer produce bogus "measurements".
+
+## 9. Honest limitations (gate scope)
 
 - The rep-count heuristics use fixed angle thresholds (defined in
   `index.html` `MOVEMENTS`) — they exist to **measure**, not to ship;
   product form signals (TEMPO_DRIFT, validated RANGE_OF_MOTION) are separate
   and remain unimplemented.
+- The `smoke.mjs` check uses Chrome's synthetic camera (no human in frame),
+  so it verifies the pipeline — camera → LIVE VIEW → model → inference →
+  trial/export — **not** pose/reps accuracy. Real pose/reps need §6 devices.
+- The macOS-Safari black-LIVE-VIEW case could not be reproduced in the
+  development environment; it is now instrumented (first-frame + luminance
+  + classified errors) so the Owner retest reports the exact failing stage.
 - Battery numbers depend on brightness, model, and camera pipeline; report
   absolute values and the delta method (§5C).
 - CDN load requires network once; offline measurement is out of scope.
