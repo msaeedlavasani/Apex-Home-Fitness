@@ -162,6 +162,21 @@ Equivalent strategic framing: **User ↔ Movement ↔ Workout ↔ Outcome**.
 The long-term system should improve its understanding of the individual as
 that user trains with Apex.
 
+**Movement Observation framing (ACCEPTED 2026-09-04 — CP-03 outcome):** pose
+tracking is a **Movement Observation system**, not merely a rep counter. For
+every prescribed movement/set the observation model must be able to
+distinguish prescribed reps/duration, observed reps, validated reps,
+measurable ROM proxy, tempo/tempo drift, measurement confidence,
+invalid/incomplete measurable reps (where deterministically supported),
+unobservable/uncertain periods or reps, timestamps/durations, and the
+observation source (`DEVICE_MEASURED` / `USER_REPORTED` / `UNKNOWN`).
+**Measurement uncertainty is never classified as user performance failure.**
+Consent-bound longitudinal movement data feeds the loop:
+`Prescription → Observation → Performance History → Personal Movement Profile
+→ Adaptation` — the adaptation layer must distinguish actual performance
+evidence from measurement uncertainty. Full record:
+`docs/architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md`.
+
 ## 4. Candidate moat
 
 **Commodity capability (NOT a durable moat):**
@@ -196,6 +211,14 @@ anonymized/consented data may become another strategic knowledge asset.
 
 > Do NOT imply this capability already exists. It is a **strategic direction**,
 > not a current feature.
+
+**Potential value/monetization layer (RECORDED 2026-09-04 — opportunity only,
+NOT evaluated):** enhanced movement measurement, longitudinal performance
+intelligence, richer progress insights, and more precise adaptive programming
+**may** support premium capabilities. **No pricing model, paywall, tier
+structure, or monetization implementation is chosen** — this is persisted
+only for later product/business evaluation.
+(`docs/architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md` §4)
 
 ## 5. Exercise Library rebuild — top product priority
 
@@ -319,6 +342,15 @@ explicitly define:
 - data minimization.
 
 > Do NOT implement camera functionality now.
+
+**Strictly OPT-IN (ACCEPTED 2026-09-04 — CP-03 outcome):** any future
+camera-based movement tracking is strictly opt-in. Apex Home Fit must remain
+fully usable without camera permission; camera denial must never block the
+workout; raw video stays on-device and is not retained or uploaded by
+default. Consent/retention/deletion/user-control remain per TS-01/TS-02
+requirements. Follow-ups: CP-06 (opt-in/consent UX + no-camera fallback),
+CP-07 (Movement Observation runtime), MO-01 (Performance History) — all
+`NOT_YET` in `docs/TASKS.md`.
 
 ## 9. Trust, Safety & Knowledge Surface
 

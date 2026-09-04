@@ -586,6 +586,37 @@ constraints and recovery signals; unit tests cover the main decision paths.
 
 ---
 
+### MO-01 — Movement Performance History (longitudinal observation store)
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 |
+| DEPENDENCIES | CP-07 (Movement Observation runtime), AL-01 (outcome contract), AL-02 (profile projections), consent/privacy policy (TS-02 HUMAN_GATE) |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (depends on CP-07 + consent policy; registered 2026-09-04) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `SCHEMA` (longitudinal observation tables; additive when authorized) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** persist structured longitudinal movement observations — the
+consent-bound pipeline `Prescription → Movement Observation → Movement
+Performance History → Personal Movement Profile → Adaptive Training`
+(CP-03 outcome §3). The store must let the adaptation layer distinguish
+actual performance evidence from measurement uncertainty.
+
+**Inputs:** CP-07 observation records; AL-01 outcomes; AL-02 profile
+contract; consent/privacy policy (TS-01/TS-02).
+
+**Output:** the longitudinal observation schema + retention/consent design
+(no implementation without consent policy).
+
+**Acceptance:** evidence vs uncertainty separation survives from capture to
+AL-03/AL-04 input; retention and consent are purpose-bound per TS-01;
+observation source (`DEVICE_MEASURED`/`USER_REPORTED`/`UNKNOWN`) is
+preserved end-to-end.
+
+---
+
 ## Mission Queue — P2: DELIVER THE COMPANION EXPERIENCE
 
 ### CP-01 — Companion architecture + UX behavior spec
@@ -739,6 +770,67 @@ V2 UI changes (guided by the UI Conformance Gate).
 **Acceptance:** the Companion provides real-time guidance during workout
 playback; adaptive adjustments respect the AL-04 decision output; the
 UI Conformance Gate passes; Production acceptance covers the workout route.
+
+---
+
+### CP-06 — Camera opt-in / consent UX + no-camera fallback
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-03 measurement gate (CLOSED before product implementation), CP-04 (camera architecture), TS-01 (privacy architecture), TS-02 (HUMAN_GATE — legal/consent wording) |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (registered 2026-09-04 from the CP-03 outcome) |
+| PARALLEL_SAFETY | `CLAIM_REQUIRED` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** implement the strictly-opt-in camera surface (CP-03 outcome
+§1): explicit/revocable consent flow, Apex Home Fit fully usable without
+camera permission, camera denial never blocks the workout, raw video
+on-device and not retained/uploaded by default.
+
+**Inputs:** CP-03 outcome record; CP-04 camera architecture; TS-01 consent
+model; TS-02 legal requirements.
+
+**Output:** the opt-in consent flow (UI + storage of consent state); the
+no-camera fallback path end-to-end.
+
+**Acceptance:** a camera-denied user completes a full workout untouched;
+consent is explicit and revocable; raw video never leaves the device;
+Production acceptance covers the denial and revocation paths.
+
+---
+
+### CP-07 — Movement Observation runtime
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 |
+| DEPENDENCIES | CP-03 measurement gate (CLOSED before product implementation), CP-02 (observation signal model), CP-04 (camera architecture), AL-01 (outcome contract) |
+| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (registered 2026-09-04 from the CP-03 outcome) |
+| PARALLEL_SAFETY | `CLAIM_REQUIRED` |
+| PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
+| DB_SENSITIVITY | `NONE` (v1 runtime contract; persistence deferred to MO-01) |
+| ARCHITECTURE_GATE | `REQUIRED` |
+
+**Objective:** implement the Movement Observation runtime per the CP-03
+outcome §2 — per movement/set distinguishing prescribed reps/duration,
+observed reps, validated reps, measurable ROM proxy, tempo/tempo drift,
+measurement confidence, invalid/incomplete measurable reps (deterministic
+only), unobservable/uncertain periods, timestamps/durations, and
+observation source (`DEVICE_MEASURED`/`USER_REPORTED`/`UNKNOWN`).
+**Measurement uncertainty is never classified as user performance failure.**
+
+**Inputs:** CP-03 outcome record; CP-02 signals; CP-04 camera pipeline;
+AL-01 outcome mapping.
+
+**Output:** the typed observation runtime (pure + fail-closed, source-honest)
+producing CP-02-aligned observation records.
+
+**Acceptance:** every prescribed movement/set produces a complete observation
+record with all §2 dimensions or an explicit unobservable/uncertain state;
+uncertainty never mislabeled as failure; no persistence (deferred to MO-01).
 
 ---
 
@@ -1013,6 +1105,9 @@ preserve them until the owner separately authorizes bounded execution:
 | Dedicated administrator authentication independent of the public OTP journey | ACCEPTED AND PROMOTED TO `ADMIN-AUTH-01`; Email + Password V1, manual provisioning, one `ADMIN` role, no Passkey in V1 | [`ADMIN_AUTH.md`](ADMIN_AUTH.md), [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Admin impersonation / View-as-User | DEFERRED / NOT AUTHORIZED; mandatory future requirements persisted in the dedicated capability spec | [`ADMIN_IMPERSONATION_01.md`](ADMIN_IMPERSONATION_01.md), [`ADMIN_AUTH.md`](ADMIN_AUTH.md) |
 | Batch Delivery V2 — governed SINGLE_TASK / BATCH_5 delivery modes | ACCEPTED / ADOPTED 2026-09-04 — supersedes V1; BATCH_5 = up to 5 compatible low-risk tasks (READY, no gates, DOCS_ONLY/CODE_NO_DEPLOY, no DB/Production/security/UI surface, file-disjoint, dependency-safe order), ONE batch branch → ONE PR → ONE full CI → ONE exact-merge-SHA Main CI; per-member close-outs + Owner reports referencing shared evidence; SINGLE_TASK mandatory for gated/Production/security/incompatible work; no batch currently authorized | [`BATCH_DELIVERY_V2.md`](BATCH_DELIVERY_V2.md); V1 historical: [`BATCH_DELIVERY_V1.md`](BATCH_DELIVERY_V1.md), [`orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md`](orchestration/FREEBUFF-ORCHESTRATION-INVESTIGATION-01.md) |
+| Camera-based movement tracking strictly OPT-IN (CP-03 outcome) | **ACCEPTED 2026-09-04** — Apex Home Fit fully usable without camera permission; camera denial never blocks the workout; raw video stays on-device and is not retained/uploaded by default. Product direction only — no feature implementation. | [`architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md`](architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md) |
+| Pose tracking = **Movement Observation system**, not merely a rep counter (CP-03 outcome) | **ACCEPTED 2026-09-04** — future observation model distinguishes prescribed/observed/validated reps, ROM proxy, tempo/tempo drift, measurement confidence, invalid-incomplete measurable reps (deterministic only), unobservable/uncertain periods, timestamps/durations, observation source (DEVICE_MEASURED/USER_REPORTED/UNKNOWN); **measurement uncertainty is never classified as user performance failure**; consent-bound longitudinal data pipeline Prescription → Observation → Performance History → Personal Movement Profile → Adaptation | [`architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md`](architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md) |
+| Movement-measurement monetization / value-layer opportunity | **RECORDED / NOT EVALUATED 2026-09-04** — enhanced measurement, longitudinal performance intelligence, richer progress insights, more precise adaptive programming MAY support premium capabilities; **no pricing model, paywall, tier structure, or monetization implementation chosen**; persisted for later product/business evaluation | [`architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md`](architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md) §4 |
 | Owner-free Production deployment operations | ACCEPTED AND PROMOTED TO ACTIVE `AUTONOMOUS-PROD-OPS-01` | [`RELEASING.md`](RELEASING.md) |
 | Iran/international-connectivity resilience and external/Supabase dependency evaluation | ACCEPTED EVALUATION NEED / DEFERRED; no provider migration selected | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md) |
 | Iranian competitor research gap | KNOWN ADVISORY GAP | **RETAINED** — competitive monitoring is a strategic research requirement (strategy §11); folded into the ongoing research agenda, not a discrete task |
