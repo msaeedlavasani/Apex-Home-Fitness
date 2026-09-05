@@ -183,16 +183,29 @@ alongside the trials — so a 0-match trial on the real devices now says *why*
 
 | Device | Movement | Model | FPS cfg | Placement | Expected | Detected | Match % | Avg conf | p95 ms | Battery Δ (10 min) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Android | squat | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
-| Android | push-up | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
-| Android | hinge | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
-| Android | lunge | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
-| Android | squat | Lightning | 15 | diagonal-90 | 10 |  |  |  |  |  |
-| Android | squat | Lightning | 15 | front-180 | 10 |  |  |  |  |  |
-| Android | squat | Lightning | 15 | side-90 | 10 |  |  |  |  |  |
-| iPhone | squat | Lightning | 15 | diagonal-200 | 10 |  |  |  |  |  |
-| iPhone | squat | Lightning | 15 | front-180 | 10 |  |  |  |  |  |
-| (repeat per device as needed) |  |  |  |  |  |  |  |  |  |  |
+| iPhone (CriOS 150, iOS 26) | squat | Lightning | 15 | diagonal-90 | 10 | **9** | **90%** | 0.66 | **33** | n/a — NOT_MEASURED (iOS Battery API unavailable) |
+| iPhone (CriOS) | squat | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone (CriOS) | squat | Lightning | 15 | front-180 | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone (CriOS) | squat | Lightning | 15 | side-90 | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone (CriOS) | push-up | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone (CriOS) | hinge | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone (CriOS) | lunge | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
+| Android (Chrome) | all v1 movements | Lightning | 15 | all | 10 | — | NOT_MEASURED |  |  |  |
+| iPhone **Safari** | squat | Lightning | 15 | diagonal-90 | 10 | — | NOT_MEASURED (CriOS measured instead — WebKit proxy, not Safari) |  |  |  |
+
+**Status (2026-09-05): one cell MEASURED, all others honestly NOT_MEASURED.**
+Measured cell — iPhone Chrome (CriOS) squat @ diagonal-90, 10 real squats:
+**9/10 = 90%** — meets the proposed ≥ 90% rep-count criterion for this
+cell; minAngle **57°** (real depth, below the 95° down threshold),
+avgConf 0.66, p95 inference **33 ms** (under the ~66 ms bound), 8,436
+inference calls / 7,211 pose returns / **0 inference errors**, `POSES_OK`
+audits throughout. Evidence export:
+`results/iphone-squat-diagonal90-crios-2026-09-05.json`. Remaining cells
+(Android Chrome — the binding constraint; Safari; push-up/hinge/lunge;
+other placements; battery) are **NOT_MEASURED** and must not be inferred.
+The CP-03 review records these gaps honestly — no further Owner squat
+testing is requested; the remaining matrix is optional Owner-side
+continuation with zero backlog impact.
 
 ## 8. Troubleshooting (harness repair 2026-09-04)
 
@@ -221,8 +234,15 @@ in the red box with a stage label, and every stage is timestamped in the
   export's `minAngle` reports the honest depth.
 - The first iPhone squat export (2 trials, 0/0) is retained at
   `results/iphone-squat-diagonal200-2026-09-04.json` as evidence of the v2
-  latch defect — it is **not** counted toward the gate; the §6 retest on v3
-  is required.
+  latch defect — it is **not** counted toward the gate.
+- The **first counted real-device measurement** is
+  `results/iphone-squat-diagonal90-crios-2026-09-05.json` (iPhone Chrome
+  CriOS squat @ diagonal-90: 9/10 = 90%, minAngle 57°, p95 33 ms, 0
+  inference errors) — it satisfies the ≥ 90% rep-count criterion **for
+  that one cell only**. Android Chrome, Safari, the other three v1
+  movements, the remaining placements, and battery are **NOT_MEASURED**;
+  the CP-03 review records them as such and no further Owner squat testing
+  is requested.
 - `smoke.mjs` scenario D feeds MoveNet a **real human photo** via a virtual
   camera, so pose detection, keypoint gating and the skeleton overlay are
   now verified on real pixels (pose-bearing regression guard — it catches

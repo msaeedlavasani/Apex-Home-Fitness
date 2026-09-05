@@ -252,6 +252,36 @@ E — rejected (server-side); F — defer pose, keep USER_REPORTED-only signals.
 - Findings review (this OWNER_DECISION_GATE) precedes any implementation,
   per CP-03's gate. No product code exists or was run.
 
+## 11. First-party measurement outcomes (2026-09-05)
+
+First-party real-device measurement evidence was produced on the repaired
+v3 harness (smoke 32/32 before the run). **One matrix cell is MEASURED;
+every other cell is honestly NOT_MEASURED.** These trials are real,
+exported evidence — never inferred, never fabricated.
+
+| Metric (per README §1) | Measured | Result | Verdict vs proposed criterion |
+|---|---|---|---|
+| Rep-count reliability — squat @ diagonal-90, iPhone Chrome (CriOS 150, iOS 26), 10 squats | `results/iphone-squat-diagonal90-crios-2026-09-05.json` | **9/10 = 90%** (downs 9 / ups 9, phase-at-end `up`); minAngle **57°** (below the 95° down threshold — real depth); avgConf **0.66**; trial 71.7 s; valid 770 / gated 188 angle frames | **PASS** (≥ 90% criterion met for this cell) |
+| FPS / inference latency — same run | p95 inference **33 ms** @ 15 fps cfg, WebGL, Lightning, sustained ~13.5 live FPS (input 720×1280 mirrored canvas) | p95 33 ms is well under the ~66 ms p95 bound — latency headroom confirmed on iPhone-class WebKit (CriOS) | PASS (latency) |
+| Inference health — same run | 8,436 inference calls / 7,211 pose returns / **0 inference errors** / 7,211 skeleton draws / overlay hits 50 / `POSES_OK` audits throughout (luma mean ≈ 132–159, source clock advancing ~1.05 s) | Tracking + overlay healthy end-to-end on the device | PASS |
+| Placement sensitivity | Only diagonal-90 measured | Other placements (diagonal-200, front-180, side-90) **NOT_MEASURED** | Not scored |
+| Rep-count — other v1 movements | push-up / hinge / lunge | **NOT_MEASURED** | Not scored |
+| Android Chrome | none | **NOT_MEASURED** — Android remains the spike's binding-constraint case (best published browser FPS), so this is the largest evidence gap | Not scored |
+| iPhone **Safari** | measured in **CriOS** (Chrome for iOS — WebKit underneath) | Safari itself **NOT_MEASURED**; CriOS is a reasonable WebKit proxy but not a Safari measurement | Not scored |
+| Session battery impact | iOS has no `navigator.getBattery()`; no pre/post run | **NOT_MEASURED** (device reports battery `n/a`) | Not scored |
+
+**Gate conclusion:** the proposal's core de-risking claim now has
+first-party support — a real iPhone-browser device counted 9/10 real
+squats (90%) at the recommended placement with healthy FPS/latency,
+zero inference errors, and honest depth (minAngle 57°). The full
+acceptance matrix is **not** complete: Android Chrome, Safari, the other
+three v1 movements, three placements, and battery remain
+**NOT_MEASURED** and must not be represented as measured. These gaps are
+recorded for the Owner-side optional continuation; they are not
+backlog-blocking (the downstream camera work is independently gated on
+CP-04/TS-02 consent work, not on the remaining matrix). Product
+implementation remains unstarted and separately gated as before.
+
 ## 12. Sources (accessed 2026-09-03)
 
 1. Google TensorFlow Blog — *Next-Generation Pose Detection with MoveNet and TensorFlow.js* (2021-05; official TF.js WebGL/WASM FPS table: MacBook Pro 104\|77, iPhone 12 51\|43, Pixel 5 34\|12, desktop 87\|82 — Lightning\|Thunder; Active fitness dataset; IncludeHealth supine/seated-knee note):
