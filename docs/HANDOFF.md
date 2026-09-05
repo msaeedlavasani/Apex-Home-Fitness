@@ -26,7 +26,7 @@
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
 - Machine-oriented state: [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
-- **CP-06 Camera opt-in / consent UX + no-camera fallback is DELIVERED — PENDING INTEGRATION** (CODE_NO_DEPLOY, 2026-09-05). Client-side consent entity, consent banner, tracking indicator, WorkoutPlayer integration, and EN/FA i18n delivered. Legal wording (TS-02), browser camera access, on-device inference wiring, and persistence/retention remain separately gated.
+- **CP-06 Camera opt-in / consent UX + no-camera fallback is CLOSED (CODE_NO_DEPLOY, 2026-09-06)** (CODE_NO_DEPLOY, 2026-09-05). Client-side consent entity, consent banner, tracking indicator, WorkoutPlayer integration, and EN/FA i18n delivered (PR #43 merged 0041cb9; Main CI PASS on exact SHA run 33991593333; branch retired). Legal wording (TS-02), browser camera access, on-device inference wiring, and persistence/retention remain separately gated.
 
 ## Stable operational context
 
