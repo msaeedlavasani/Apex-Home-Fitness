@@ -729,25 +729,10 @@ code written.
 | DB_SENSITIVITY | `DATA` (if landmarks/metrics are stored) |
 | ARCHITECTURE_GATE | `REQUIRED` |
 | OWNER_DECISION_GATE | Required — camera/pose consent + data retention decisions |
-
-**Objective:** design the privacy-preserving camera integration: on-device
-pose/landmark inference → movement metrics → Companion feedback. If
-landmarks/metrics are stored/transmitted, define purpose, consent, retention,
-deletion, security, user control, and data minimization.
-
-**Inputs:** CP-03 feasibility report; TS-01 privacy architecture.
-
-**Output:** the camera architecture doc; the consent flow; the data
-retention/deletion policy; the on-device inference pipeline design.
-
-**Acceptance:** raw video never leaves the device; the consent flow is
-explicit and revocable; the data retention policy defines purpose, retention
-period, and deletion mechanism; the architecture supports the "no camera"
-fallback (Companion works without pose tracking).
-
----
-
-### CP-05 — Workout Experience V2 integration
+| STATUS | **DELIVERED / CLOSED (ARCHITECTURE-GATE, docs-only, CODE_NO_DEPLOY) — 2026-09-05 (capability trial).** Camera authorization architecture designed and documented: the privacy-preserving consent surface (two-layer: browser camera permission + product pose-tracking purpose consent; explicit/granular/revocable; session-level transparency; denial never degrades the core workout — no-camera fallback is binding), the on-device pipeline shape (Capture → in-browser short-lived buffer → MoveNet/TF.js on-device inference → CP-02 C2 observation signals; raw video C1 never leaves the device; only derived C2 is a persistence candidate, subject to an explicit purpose+retention decision), the consent-record content (accountability-only: purpose/scope/state/version/timestamps — no raw sensor content), and a written **default posture of non-persistence** unless + until a purpose + retention + deletion policy is explicitly chosen (recorded decision-range item). ADR-0021 (`DISCUSSED`; records the architecture as implementation-ready and the remaining OWNER_DECISION_GATE / TS-02 / mobile-scope / legal-wording items as pending). **Does NOT decide** whether to implement the camera surface, what to persist/transmit, mobile scope, or legal consent wording — those remain Owner-gated (OWNER_DECISION_GATE) + TS-02; **CODE_NO_DEPLOY**: no camera/sensor code, no data collection, no dependency, no schema/backend change, no Production change. |
+| AUTONOMOUS_ELIGIBILITY_NOTE | This task's `AUTONOMOUS_ELIGIBILITY` stays `HUMAN_GATE` (the camera integration decision is not made here). What was advanced here is the **ARCHITECTURE_GATE** only — carried out as a bounded, intra-gate, doc/code-unchanged capability trial of Solar Pro 4; the camera surface is still not implemented and no Production change is made. |
+| Evidence | `docs/architecture/CP-04-COMPANION-CAMERA-ARCHITECTURE.md`; ADR-0021; Architecture decision + ADR `DISCUSSED` state; `CODE_NO_DEPLOY`; gated downstream items recorded in §8 of the architecture doc + ADR `Considered` list |
+| NEXT_TASK | **Owner-gated — do NOT advance here.** Camera integration + data retention decisions remain OWNER_DECISION_GATE; consent wording remains TS-02; camera surface not implemented, no code/Production change. Any future continuation would begin from a NOT_YET/READY candidate that becomes eligible after the Owner gates lift (e.g. CP-05 once its dependencies are satisfied / authorized, or TS-05 once TS-02 exists) — none is being started now; the chain stops after CP-04's architecture gate closes. |
 
 | Field | Value |
 |---|---|
