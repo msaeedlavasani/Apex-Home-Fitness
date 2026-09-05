@@ -6,6 +6,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {AppShell} from '@/components/layout/AppShell';
 import {WorkoutPlayer} from '@/components/workout/WorkoutPlayer';
 import type {SessionExercise, SessionSummary} from '@/lib/workout/sessionContracts';
+import type {ConsentScope} from '@/lib/workout/consentEntity';
 import {
   enrichScheduleExercises,
   exerciseIdentityIndex,
@@ -157,6 +158,18 @@ export default function WorkoutPage() {
       // Completion remains available locally; a later sync can be added without blocking UX.
     }
   }
+  const cameraConsentScopes: ConsentScope[] = useMemo(() => {
+    const scopes = new Set<ConsentScope>();
+    for (const ex of exercises) {
+      const name = ex.name.toLowerCase();
+      if (name.includes('squat') || name.includes('اسکات')) scopes.add('poseTracking:squat');
+      if (name.includes('push') || name.includes('شنا')) scopes.add('poseTracking:pushup');
+      if (name.includes('bridge') || name.includes('پل')) scopes.add('poseTracking:hinge');
+      if (name.includes('lunge') || name.includes('لانژ')) scopes.add('poseTracking:lunge');
+    }
+    return Array.from(scopes);
+  }, [exercises]);
+
   const subtitle = program && selectedDay
     ? (isGeneratedRestDay ? tDashboard('summaryRest') : tDashboard('workouts.generated'))
     : tDashboard(`workouts.${fallbackKey}`);
@@ -182,6 +195,8 @@ export default function WorkoutPage() {
         ) : (
           <WorkoutPlayer
             exercises={exercises}
+            cameraConsentScopes={cameraConsentScopes}
+            cameraConsentVersion={1}
             onWorkoutStart={() => { void startPersistedSession(); }}
             onWorkoutComplete={(summary) => { void completePersistedSession(summary); }}
           />
