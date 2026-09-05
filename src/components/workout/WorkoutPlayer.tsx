@@ -13,6 +13,9 @@ import { ANALYTICS_EVENTS, trackEvent } from '@/services/analyticsEvents';
 import { getTodayWorkoutState, saveTodayWorkoutState } from '@/lib/offline/db';
 import { buildWorkoutStateRecord, hydrateFromRecord } from '@/lib/offline/workoutPersistence';
 import { CircularProgressRing, CountdownTimer, RepSetCounter, WORKOUT_TONES } from './index';
+import { CameraConsentBanner } from './CameraConsentBanner';
+import { CameraTrackingIndicator } from './CameraTrackingIndicator';
+import { ConsentEntity, type ConsentScope } from '@/lib/workout/consentEntity';
 
 /**
  * WorkoutPlayer
@@ -98,6 +101,12 @@ export interface WorkoutPlayerProps {
   onWorkoutComplete?: (summary: SessionSummary) => void;
   /** Extra classes applied to the root element. */
   className?: string;
+  /** Camera consent scopes relevant to this workout (empty = no consent UI). */
+  cameraConsentScopes?: readonly ConsentScope[];
+  /** Consent version (bump when consent terms change). */
+  cameraConsentVersion?: number;
+  /** Fired when the user changes camera consent state. */
+  onConsentChange?: (snapshot: {consented: boolean; scopes: readonly ConsentScope[]; version: number}) => void;
 }
 
 export function WorkoutPlayer({
@@ -109,6 +118,9 @@ export function WorkoutPlayer({
   onWorkoutComplete,
   onWorkoutStart,
   className = '',
+  cameraConsentScopes,
+  cameraConsentVersion,
+  onConsentChange,
 }: WorkoutPlayerProps) {
   const t = useTranslations('WorkoutPlayer');
 
@@ -120,6 +132,34 @@ export function WorkoutPlayer({
   // ---- Reps counted in the current set (resets on set/exercise change) ----
 
   const [repsDone, setRepsDone] = useState(0);
+
+  // ---- Camera consent state (session-local, in-memory only) --------------
+
+  const [consentGranted, setConsentGranted] = useState(false);
+  const [consentScopes, setConsentScopes] = useState<readonly ConsentScope[]>([]);
+  const consentEntityRef = useRef<ConsentEntity | null>(null);
+  if (consentEntityRef.current == null) {
+    consentEntityRef.current = new ConsentEntity();
+  }
+
+  const handleConsentChange = useCallback(
+    (snapshot: {consented: boolean; scopes: readonly ConsentScope[]; version: number}) => {
+      setConsentGranted(snapshot.consented);
+      setConsentScopes(snapshot.scopes);
+      onConsentChange?.(snapshot);
+    },
+    [onConsentChange]
+  );
+
+  const handleRevokeConsent = useCallback(() => {
+    setConsentGranted(false);
+    setConsentScopes([]);
+    onConsentChange?.({
+      consented: false,
+      scopes: [],
+      version: cameraConsentVersion ?? 1,
+    });
+  }, [cameraConsentVersion, onConsentChange]);
 
   // ---- Audio + haptics callbacks -----------------------------------------
 
@@ -394,26 +434,48 @@ export function WorkoutPlayer({
             />
           </div>
 
+          {/* ---- Camera tracking indicator (active workout + consented) ---- */}
+          {consentGranted && (phase === 'EXERCISING' || phase === 'RESTING') && (
+            <div className="mt-6">
+              <CameraTrackingIndicator active={true} onRevoke={handleRevokeConsent} />
+            </div>
+          )}
+
           {/* ---- Controls ---- */}
           <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-2.5 sm:gap-2">
-            {phase === 'READY' && (
-              <button
-                type="button"
-                onClick={() => {
-                  // Critical action: the workout is actually starting.
-                  trackEvent(ANALYTICS_EVENTS.WORKOUT_STARTED, {
-                    exercises: totalExercises,
-                    sets: totalSets,
-                  });
-                  onWorkoutStart?.();
-                  start();
-                }}
-                className={cn(BUTTON_BASE, BUTTON_PRIMARY)}
-              >
-                <Play className="h-4 w-4" aria-hidden="true" />
-                {t('actions.start')}
-              </button>
-            )}
+            {phase === 'READY' &&
+              (cameraConsentScopes && cameraConsentScopes.length > 0 && !consentGranted ? (
+                <CameraConsentBanner
+                  scopes={cameraConsentScopes}
+                  version={cameraConsentVersion ?? 1}
+                  onConsentChange={handleConsentChange}
+                  onStartWithoutCamera={() => {
+                    trackEvent(ANALYTICS_EVENTS.WORKOUT_STARTED, {
+                      exercises: totalExercises,
+                      sets: totalSets,
+                    });
+                    onWorkoutStart?.();
+                    start();
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Critical action: the workout is actually starting.
+                    trackEvent(ANALYTICS_EVENTS.WORKOUT_STARTED, {
+                      exercises: totalExercises,
+                      sets: totalSets,
+                    });
+                    onWorkoutStart?.();
+                    start();
+                  }}
+                  className={cn(BUTTON_BASE, BUTTON_PRIMARY)}
+                >
+                  <Play className="h-4 w-4" aria-hidden="true" />
+                  {t('actions.start')}
+                </button>
+              ))}
 
             {(phase === 'EXERCISING' || phase === 'RESTING') && (
               <>

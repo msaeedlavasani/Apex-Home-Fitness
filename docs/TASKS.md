@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04, CP-03, TS-03 DELIVERED/CLOSED (CP-03 closed 2026-09-05: findings DECIDED Approach A; measurement gate EXECUTED for the iPhone Chrome squat cell — 9/10 = 90% PASS — all other matrix cells honestly NOT_MEASURED; TS-03 delivered same day as CODE_NO_DEPLOY — irreversible confirmation-gated account deletion, ADR-0020, Production deletion acceptance Owner-gated); no task is currently active |
+| Active task | `NONE` — AL-01…AL-04, CP-01, CP-02, TS-01, TS-04, CP-03, TS-03, CP-04 DELIVERED/CLOSED (CP-04 service-boundary tranche 2026-09-06); CP-06 DELIVERED — PENDING INTEGRATION (consent UX entity + UI surface 2026-09-05, uncommitted on local main — no feature branch, no commit, no push, no PR, no Main CI PASS, no branch retirement) (CP-03 closed 2026-09-05: findings DECIDED Approach A; measurement gate EXECUTED for the iPhone Chrome squat cell — 9/10 = 90% PASS — all other matrix cells honestly NOT_MEASURED; TS-03 delivered same day as CODE_NO_DEPLOY — irreversible confirmation-gated account deletion, ADR-0020, Production deletion acceptance Owner-gated); no task is currently active |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
-| State | `READY` — backlog P0–P4 fully CLOSED or gated: AL/MG/CP-01/CP-02/CP-03/TS-01/TS-03/TS-04 CLOSED; remaining candidates all gated — **TS-05** (dep TS-02 = HUMAN_GATE legal), **CP-04** (HUMAN_GATE camera authorization), CP-05/CP-06/CP-07/MO-01/SU-01 NOT_YET; **no further autonomous-READY task with satisfied dependencies remains**. BATCH_5 delivery mode in force (2026-09-04); TS-03 was delivered via the batch lifecycle (sole eligible member — every other candidate hit a dependency/Human/Production gate) |
+| State | `READY` — backlog P0–P4 fully CLOSED or gated: AL/MG/CP-01/CP-02/CP-03/TS-01/TS-03/TS-04/CP-04 CLOSED; CP-06 DELIVERED — PENDING INTEGRATION; remaining candidates all gated — **TS-05** (dep TS-02 = HUMAN_GATE legal), CP-05/CP-07/MO-01/SU-01 NOT_YET; **no further autonomous-READY task with satisfied dependencies remains**. BATCH_5 delivery mode in force (2026-09-04); TS-03 was delivered via the batch lifecycle (sole eligible member — every other candidate hit a dependency/Human/Production gate) |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | **None autonomously executable.** TS-03 was executed CODE_NO_DEPLOY 2026-09-05 (delivered; Production apply gated). Remaining candidates all gated: **TS-05** needs TS-02 (HUMAN_GATE — legal review); **CP-04** HUMAN_GATE (camera authorization); CP-05/CP-06/CP-07/MO-01/SU-01 NOT_YET. Continuing requires an Owner decision (e.g., promote a NOT_YET task, authorize CP-04 architecture, or execute the TS-03 Production deletion acceptance via the gateway) |
+| Next authorized task | **None autonomously executable.** TS-03 was executed CODE_NO_DEPLOY 2026-09-05 (delivered; Production apply gated). Remaining candidates all gated: **TS-05** needs TS-02 (HUMAN_GATE — legal review); CP-05/CP-07/MO-01/SU-01 NOT_YET. Continuing requires an Owner decision (e.g., promote a NOT_YET task, authorize TS-02 legal review, authorize Production camera wiring + persistence policy, or execute the TS-03 Production deletion acceptance via the gateway) |
 | Pending owner review | **TS-03 Production deletion acceptance (OWNER_DECISION_GATE — CODE_NO_DEPLOY delivered; real deletion against the Production Supabase project + acceptance requires explicit Owner authorization + gateway environment)**; MG-09 Production apply (OWNER_DECISION_GATE); optional CP-03 remaining measurement matrix (NOT_MEASURED cells — zero backlog impact); `ADMIN-IMPERSONATION-01` deferred |
 
 ## Strategic basis
@@ -764,7 +764,9 @@ UI Conformance Gate passes; Production acceptance covers the workout route.
 |---|---|
 | PRIORITY | P2 |
 | DEPENDENCIES | CP-03 measurement gate (CLOSED before product implementation), CP-04 (camera architecture), TS-01 (privacy architecture), TS-02 (HUMAN_GATE — legal/consent wording) |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (registered 2026-09-04 from the CP-03 outcome) |
+| STATUS | **DELIVERED / PENDING INTEGRATION (consent UX entity + UI surface, CODE_NO_DEPLOY) — 2026-09-05/06 under Owner authorization.** Implementation complete and validated (typecheck clean, lint 0) but NOT yet integrated: changes are uncommitted on local `main` — no feature branch, no commit, no push, no PR, no Main CI PASS on exact merge SHA, no branch retirement. Client-side consent entity (`src/lib/workout/consentEntity.ts`), consent banner (`src/components/workout/CameraConsentBanner.tsx`), active tracking indicator (`src/components/workout/CameraTrackingIndicator.tsx`), WorkoutPlayer integration (`src/components/workout/WorkoutPlayer.tsx`), workout page scope derivation (`src/app/[locale]/workout/page.tsx`), and EN/FA i18n keys delivered. **Does NOT implement** legal consent wording (TS-02 HUMAN_GATE), browser camera access, on-device inference wiring, or any persistence/retention — those remain separately gated. Default posture preserved: non-persistence, raw video never leaves device, camera denial never blocks workout. |
+| AUTHORIZATION | Owner authorization 2026-09-05: **execute CP-04 camera integration + CP-06 consent UX as CODE_NO_DEPLOY** (CP-04 architecture + CP-06 consent UX surface; Production wiring, TS-02 legal wording, and persistence decisions remain separately gated) |
+| AUTONOMOUS_ELIGIBILITY | `DELIVERED — PENDING INTEGRATION` (Owner-authorized tranche; remaining camera-surface items gated by TS-02 / Production; integration lifecycle incomplete: no feature branch / commit / push / PR / Main CI PASS / branch retirement) |
 | PARALLEL_SAFETY | `CLAIM_REQUIRED` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
@@ -784,6 +786,8 @@ no-camera fallback path end-to-end.
 **Acceptance:** a camera-denied user completes a full workout untouched;
 consent is explicit and revocable; raw video never leaves the device;
 Production acceptance covers the denial and revocation paths.
+
+**Evidence:** `src/lib/workout/consentEntity.ts`; `src/components/workout/CameraConsentBanner.tsx`; `src/components/workout/CameraTrackingIndicator.tsx`; `src/components/workout/WorkoutPlayer.tsx`; `src/app/[locale]/workout/page.tsx`; `src/messages/en.json`; `src/messages/fa.json`; `docs/architecture/CP-04-COMPANION-CAMERA-ARCHITECTURE.md`; `docs/adr/0021-companion-camera-architecture.md` (UPDATED ACCEPTED); `docs/TASKS.md`; `docs/CURRENT_STATE.md`; `/Users/msl/Documents/ApexHFAgentReports/AHF-FB-20260905-CP-06-CONSENT-UX.md`; CODE_NO_DEPLOY; typecheck clean, lint 0; UI_CHANGED=YES, UI_CONFORMANCE=PASS (REUSE platform kit + EXTEND domain components; no new primitives; architecture preserved); TS-02 legal wording not implemented; test runner environment tsx resolution pre-existing limitation; remaining Production/TS-02 items gated.
 
 ---
 

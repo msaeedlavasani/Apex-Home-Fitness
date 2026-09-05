@@ -1,12 +1,12 @@
 # ADR-0021: Companion camera / pose authorization architecture
 
-> **STATUS: DISCUSSED — 2026-09-05**
+> **STATUS: ACCEPTED — 2026-09-05**
 >
 > **Decision owner (candidate):** Product / architecture owner
 >
 > **Evidence task:** `CP-04` — Privacy-preserving camera architecture
 > (delivered 2026-09-05 as an ARCHITECTURE-GATE, docs-only,
-> `CODE_NO_DEPLOY` capability trial).
+> `CODE_NO_DEPLOY` capability trial; CP-06 implemented the consent UX surface (client-side entity + banner + tracking indicator + WorkoutPlayer integration) under Owner authorization 2026-09-05).
 >
 > **Execution gating:** this ADR records the **architecture** that makes
 > CP-04 **implementation-ready** (consent surface, on-device pipeline shape,
