@@ -369,6 +369,18 @@
       "label": "Log out",
       "signingOut": "Signing out…"
     },
+    "deleteAccount": {
+      "sectionTitle": "Delete account",
+      "open": "Delete account",
+      "warning": "This permanently removes your profile, weight history, workouts, quiz answers, generated programs, synced workout logs, avatar and your login identity. It cannot be undone.",
+      "kept": "Shared workout programs and the exercise library are kept — they belong to everyone, not to your account.",
+      "confirmPrompt": "Type DELETE to confirm.",
+      "confirmPlaceholder": "DELETE",
+      "cancel": "Cancel",
+      "submit": "Permanently delete my account",
+      "submitting": "Deleting…",
+      "error": "We couldn't delete your account. Please try again."
+    },
     "unauthenticated": {
       "title": "Not signed in",
       "message": "Sign in to see your profile details and preferences.",

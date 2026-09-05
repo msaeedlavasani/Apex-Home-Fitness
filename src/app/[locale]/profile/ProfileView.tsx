@@ -4,7 +4,7 @@ import {useRef, useState, type ReactNode} from 'react';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
 import {useLocale, useTranslations} from 'next-intl';
-import {Camera, ChevronRight, CircleHelp, LifeBuoy, Loader2, LogOut, Mail, Monitor, Moon, Pencil, Phone, Save, Sun, Target, TrendingUp, UserRound, X, type LucideIcon} from 'lucide-react';
+import {Camera, ChevronRight, CircleHelp, LifeBuoy, Loader2, LogOut, Mail, Monitor, Moon, Pencil, Phone, Save, Sun, Target, Trash2, TrendingUp, UserRound, X, type LucideIcon} from 'lucide-react';
 import {useTheme, type Theme} from '@/components/providers/ThemeProvider';
 import {createBrowserSupabaseClient} from '@/lib/supabase';
 import {AppShell} from '@/components/layout/AppShell';
@@ -46,12 +46,39 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
 
   function switchLocale(next: AppLocale) {
     if (next === locale) return;
     const prefix = `/${locale}`;
     const rest = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : pathname;
     router.replace(rest === '' ? `/${next}` : `/${next}${rest}`);
+  }
+
+  /**
+   * TS-03: irreversible account deletion. The typed confirmation must equal
+   * the server contract literal `DELETE`; on success the session is cleared
+   * server-side and the client lands on the public start page.
+   */
+  async function handleDeleteAccount() {
+    if (deletingAccount || confirmText !== 'DELETE') return;
+    setDeletingAccount(true);
+    setDeleteError(false);
+    try {
+      const response = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({confirmation: confirmText}),
+      });
+      if (!response.ok) throw new Error('account deletion failed');
+      router.replace('/');
+    } catch {
+      setDeleteError(true);
+      setDeletingAccount(false);
+    }
   }
 
   async function handleLogout() {
@@ -150,6 +177,44 @@ export function ProfileView({user}: {user: ProfileUser | null}) {
                 {signingOut ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <LogOut className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />}
                 {signingOut ? t('logout.signingOut') : t('logout.label')}
               </button>
+            </Section>
+          ) : null}
+
+          {user ? (
+            <Section title={t('deleteAccount.sectionTitle')}>
+              <div className="px-4 py-3 sm:px-5">
+                <p className="text-[15px] leading-relaxed text-apple-label-secondary">{t('deleteAccount.warning')}</p>
+                <p className="mt-2 text-[15px] leading-relaxed text-apple-label-secondary">{t('deleteAccount.kept')}</p>
+                {deleting ? (
+                  <div className="mt-4 rounded-xl border border-apple-separator bg-apple-grouped-background-secondary p-4">
+                    <label htmlFor="delete-confirm" className="text-sm font-medium text-apple-label">{t('deleteAccount.confirmPrompt')}</label>
+                    <input
+                      id="delete-confirm"
+                      type="text"
+                      value={confirmText}
+                      onChange={(event) => setConfirmText(event.target.value)}
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="input-apple mt-2"
+                      placeholder={t('deleteAccount.confirmPlaceholder')}
+                      dir="ltr"
+                    />
+                    {deleteError ? <p role="alert" className="mt-2 text-sm text-apple-red">{t('deleteAccount.error')}</p> : null}
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <button type="button" onClick={() => {setDeleting(false); setConfirmText(''); setDeleteError(false);}} disabled={deletingAccount} className="flex-1 rounded-xl border border-apple-separator px-4 py-3 font-semibold transition-colors touch-manipulation disabled:opacity-50">{t('deleteAccount.cancel')}</button>
+                      <button type="button" onClick={() => void handleDeleteAccount()} disabled={deletingAccount || confirmText !== 'DELETE'} className={`flex flex-1 items-center justify-center gap-2 rounded-xl bg-apple-red px-4 py-3 font-semibold text-white transition-colors touch-manipulation disabled:opacity-50 ${FOCUS_RING}`}>
+                        {deletingAccount ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                        {deletingAccount ? t('deleteAccount.submitting') : t('deleteAccount.submit')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setDeleting(true)} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-apple-separator px-4 py-3 text-[15px] font-semibold text-apple-red transition-colors touch-manipulation ${FOCUS_RING} hover:bg-apple-fill active:bg-apple-fill-secondary`}>
+                    <Trash2 className="h-5 w-5" aria-hidden="true" />
+                    {t('deleteAccount.open')}
+                  </button>
+                )}
+              </div>
             </Section>
           ) : null}
           <footer className="mt-8 text-center text-xs text-apple-label-tertiary">{t('footer')}</footer>
