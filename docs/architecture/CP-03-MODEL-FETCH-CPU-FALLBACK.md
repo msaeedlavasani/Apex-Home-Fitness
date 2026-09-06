@@ -1,83 +1,80 @@
-# CP-03 — Harness MODEL_FETCH CPU Fallback (Android GPU Memory)
+# CP-03 — Harness MODEL_FETCH CPU Fallback (Broadened; Diagnostics Enhanced)
 
-> **Type:** Research-tooling repair + architectural finding
-> **Status:** `DELIVERED` — 2026-09-06
+> **Type:** Research-tooling repair + architectural finding (corrected 2026-09-06)
+> **Status:** `DELIVERED` — 2026-09-06 (v2: broadened fallback + full error context preservation)
 > **Persistence:** `CODE_NO_DEPLOY` — research tooling only, no product boundary change
-> **Source of discovery:** Android Chrome CP-03 harness field test exposing MODEL_FETCH failure; desktop smoke reproduction confirmed root cause pattern
+> **Source of discovery:** Android Chrome CP-03 harness field test exposing MODEL_FETCH failure; post-fix validation proved the initial GPU-memory hypothesis incorrect
 > **Related:** `architecture/CP-03-HARNESS-REPAIR.md`, `scripts/pose-measurement/`
 
 ---
 
-## 1. Observed failure
+## 1. Observed failure (reopened 2026-09-06)
 
-A real Android Chrome CP-03 harness test exposed a **MODEL_FETCH** error when loading MoveNet Lightning. The error message suggested network/connectivity causes ("Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com"), but this was **not the root cause**.
+A real Android Chrome CP-03 harness test exposed a **MODEL_FETCH** error when loading MoveNet Lightning. The error surfaced at stage 4/5 (model download); WebGL backend init succeeded, camera acquired successfully, video rendered — only model loading failed. Same harness on iPhone Chrome (CriOS) and desktop Chrome works without issue.
 
-Field evidence: pipeline reached stage 4/5 (model download), backend init (WebGL) succeeded, camera acquired successfully, video rendered — only model loading failed. Same harness on iPhone Chrome (CriOS) and desktop Chrome works without issue.
+## 2. Root cause analysis (CORRECTED)
 
-## 2. Root cause analysis
+### Initial hypothesis (WRONG)
 
-**Root cause: WebGL GPU memory exhaustion during model weight allocation.**
+The first analysis concluded **WebGL GPU memory exhaustion during model weight allocation**. Rationale:
+- TF.js WebGL backend init (`tf.setBackend('webgl')`) only verifies context creation, not texture allocation budget
+- MoveNet Lightning requires ~3–8 MB of WebGL texture memory
+- Mid-range Android devices have constrained shared GPU/CPU memory
+- Common TF.js/WebGL OOM messages include `WebGL: OUT_OF_MEMORY`, `context lost`, `Failed to upload texture`
 
-The TF.js WebGL backend init (`tf.setBackend('webgl')`) only verifies that a WebGL context can be created. It does **not** verify that the GPU has sufficient memory to load large model tensors. MoveNet Lightning requires ~3–8 MB of WebGL texture memory for model weights. On mid-range Android devices with constrained GPU memory (typically 2–4 GB total RAM, shared between system and GPU), the WebGL context passes init but fails during the large texture allocations required by `poseDetection.createDetector()`.
+An automatic CPU fallback was implemented: on MODEL_FETCH errors matching GPU-memory heuristics, switch to CPU backend and retry once.
 
-The error surfaces as a generic model-fetch failure because `@tensorflow-models/pose-detection` wraps all TF.js errors. Common TF.js/WebGL OOM messages include:
-- `WebGL: OUT_OF_MEMORY — failed to upload model tensors`
-- `WebGL: context lost`
-- `Failed to upload texture to GPU`
-- `TensorBuffer allocation failed`
+### Field validation disproved the hypothesis
 
-These are easily confused with network errors by both the developer and the automated error classifier.
+Post-fix testing on the **same Android device** still produced a MODEL_FETCH failure. Since the CPU fallback did not resolve the issue, the error **cannot be GPU-memory related** (if it were, the CPU path would succeed as it avoids WebGL texture allocation entirely).
 
-**Why iPhone works but Android doesn't:**
-- iPhone 12+ has dedicated GPU memory architecture with generous texture allocation budgets
-- Mid-range Android devices share RAM between CPU and GPU, with tighter WebGL texture limits
-- The WebGL implementation on Android Chrome varies by GPU vendor (Adreno, Mali, PowerVR), each with different texture size limits and driver behavior
+**Conclusion: The actual Android error message does not match the GPU-memory heuristic.** The real failure class is unknown without seeing the error output, but possible causes include:
+- Network/CDN blocking (tfhub.dev → kaggle.com redirect chain failing on Android)
+- WebGL context loss/creation failure (driver-level, not OOM)
+- TF.js version incompatibility with specific Android Chrome builds
+- Model format/version mismatch
+- Browser-specific pose-detection library bug
 
-**Why desktop works:**
-- Desktop GPUs have dedicated VRAM (4–8+ GB) with generous allocation budgets
-- No shared-memory constraints
+**Key lesson:** An error classified as `MODEL_FETCH` does not imply GPU-memory exhaustion. The error-classification heuristic was insufficient — any MODEL_FETCH failure on WebGL should trigger a CPU retry because the underlying cause is indistinguishable from the error string alone.
 
-## 3. Resolution
-
-Added **automatic CPU backend fallback** for MODEL_FETCH failures that match GPU/memory error patterns:
+## 3. Resolution (v2 — broadened fallback + enhanced diagnostics)
 
 ### Code change: `scripts/pose-measurement/index.html`
 
-- `loadModel(boot, preferCpu)` now accepts an optional `preferCpu` parameter
-- On MODEL_FETCH error, applies heuristic detection:
-  - Matches: `out of memory`, `out_of_memory`, `out-of-memory`, `webgl.*err`, `webgl.*out`, `webgl.*mem`, `gpu.*fail`, `tensor.*alloc`, `context lost`, `tex`
-  - Distinguishes from pure network errors (fetch failures, timeouts)
-- If GPU/memory pattern detected AND currently on WebGL AND no fallback attempted yet:
-  1. Calls `tf.setBackend('cpu')` + `tf.ready()`
-  2. Sets `state.modelFbCpu = true` (one-shot guard)
-  3. Retries `poseDetection.createDetector()` on CPU
-  4. If CPU also fails → throws MODEL_FETCH with `{ cpuOffer: true }` showing both network and GPU remedies
-- If non-GPU MODEL_FETCH (network error) → original remedy preserved
-- Diagnostic log records every fallback step for post-hoc analysis
+**Fallback heuristic widened:**
+- Removed the `isGpuMem` pattern gate
+- On ANY `MODEL_FETCH` error when on WebGL backend (and no CPU attempt yet), auto-fallback to CPU is now attempted
+- This is safe: CPU inference is fully on-device (no privacy/persistence boundary crossed); performance is slower but functional for measurement purposes
+
+**Full error context preservation:**
+- The raw error object is now decomposed into `error.name`, `error.cause`, and `error.message` in the diagnostic log
+- These fields are included in `state.error` and the JSON export under `errorContext`
+- Future Android failures can be classified post-hoc from the exported JSON without needing screenshots
+- The error remedy message now includes the raw error name and first 200 chars of the message
 
 ### State tracking
 
-- Added `modelFbCpu: false` to harness state (reset per pipeline boot)
-- Exposed via `window.__ahf.getState().modelFbCpu` for smoke-test verification
-- "Retry on CPU" button shown for dual-failure MODEL_FETCH (same as BACKEND errors)
+- `modelFbCpu: false` added to harness state (reset per pipeline boot) — unchanged from v1
+- `errorName` and `errorCause` added to `state.error` and `window.__ahf.getState()` — new in v2
+- `errorContext` field in JSON export — new in v2
+- "Retry on CPU" button shown for dual-failure MODEL_FETCH — unchanged from v1
 
-### Smoke test: scenario F
+### Smoke test: scenario F (redesigned)
 
-New automated test verifies the full fallback path:
-1. Mocks `poseDetection.createDetector` to throw `WebGL: OUT_OF_MEMORY` on first call
-2. Second call returns a dummy detector (simulating successful CPU load)
-3. Asserts: phase=running, backend=cpu, modelFbCpu=true, inference loop active
-4. Result: **35/35 PASS** (was 32/32 before this change)
+Two sub-cases verify both error classes trigger fallback:
+1. **F1**: Generic network-style error (`"Failed to fetch model shards from tfhub.dev/kaggle.com"`) → must fall back to CPU
+2. **F2**: GPU-memory-style error (`"WebGL: OUT_OF_MEMORY"`) → must fall back to CPU (regression guard)
+
+Result: **40/40 PASS** (was 35/35; scenarios F1+F2 replace the old single scenario F)
 
 ## 4. Architecture implications
 
 **No change to CP-03 product decision.** Approach A (MoveNet/TF.js, web-first, fully on-device) remains intact. CPU inference is still fully on-device — no privacy, persistence, or network boundary crossed.
 
-**Performance trade-off documented:**
+**Performance trade-off unchanged:**
 - WebGL inference: ~34 FPS on Pixel 5 (from feasibility spike data)
-- CPU inference: significantly slower (~5–10 FPS estimated on same device based on TF.js WASM benchmarks)
-- CPU fallback is a **resilience path**, not the primary path — it preserves functionality on devices where WebGL cannot accommodate the model
-- For the measurement gate, CPU fallback produces valid (if slower) measurements; rep-counting heuristics are timing-aware and tolerate lower fps
+- CPU inference: significantly slower (~5–10 FPS estimated on same device)
+- CPU fallback is a **resilience path**, not the primary path
 
 **No cross-gate changes:**
 - No new dependencies
@@ -91,13 +88,13 @@ New automated test verifies the full fallback path:
 
 | Artifact | Path | Status |
 |---|---|---|
-| Harness fix | `scripts/pose-measurement/index.html` | DELIVERED |
-| Smoke test | `scripts/pose-measurement/smoke.mjs` scenario F | DELIVERED (35/35 PASS) |
-| This record | `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md` | DELIVERED |
+| Harness fix (v2) | `scripts/pose-measurement/index.html` | DELIVERED |
+| Smoke test (40 scenarios) | `scripts/pose-measurement/smoke.mjs` | DELIVERED (40/40 PASS) |
+| This record | `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md` | DELIVERED (v2 corrected) |
 
 ## 6. Limitations
 
-- Heuristic detection is best-effort; some TF.js error messages may not match patterns and will skip fallback
 - CPU fallback is attempted at most once per pipeline boot (guarded by `state.modelFbCpu`)
-- Does not address the underlying GPU memory constraint — only provides a working alternative
+- Does not identify the actual Android error class — full error context is preserved in export for post-hoc analysis
+- If BOTH WebGL and CPU fail, the user sees the raw error name/message in the export for diagnosis
 - Measurement gate remaining matrix (Android Chrome) still requires physical-device testing with this improved harness
