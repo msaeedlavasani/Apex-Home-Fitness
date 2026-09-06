@@ -331,6 +331,8 @@ function showError(e) {
     message: (e && e.message) ? e.message : String(e),
     remedy: (e && e.remedy) || 'Retry. If it persists, copy the Diagnostics log into the report.',
     cpuOffer: !!(e && e.cpuOffer),
+    errorName: e && e.errorName ? e.errorName : null,
+    errorCause: e && e.errorCause ? e.errorCause : null,
   };
   state.error = err;
   state.phase = 'error';
@@ -858,19 +860,17 @@ async function loadModel(boot, preferCpu) {
   } catch (e) {
     if (!alive(boot)) return null;
     diag('model', 'load failed: ' + (e && e.message ? e.message : e), 'err');
-    // Heuristic: detect GPU/memory-related failures vs network failures.
-    // tfhub.dev redirects to kaggle.com for model shards; network errors are
-    // typically timeouts or fetch failures (already bounded by withTimeout).
-    // GPU/memory errors surface as texture alloc / out-of-memory from WebGL.
-    const msg = (e && e.message ? e.message : '').toLowerCase();
-    // Match GPU/memory errors regardless of separator style (space/underscore/hyphen)
-    // and catch WebGL-bound errors even when 'error' word is absent (TF.js sometimes
-    // uses only the backend name, e.g. 'WebGL: OUT_OF_MEMORY').
-    const isGpuMem = /out[_\- ]?of[_\- ]?memory|tex|webgl.*[eE]rr|webgl.*[oO]ut|gpu.*[fF]ail|tensor.*[aA]lloc|context[_\- ]?lost/i.test(msg)
-      || (msg.indexOf('webgl') >= 0 && (msg.indexOf('err') >= 0 || msg.indexOf('out') >= 0 || msg.indexOf('mem') >= 0));
-    if (wantBackend === 'webgl' && !state.modelFbCpu && isGpuMem) {
-      // Auto-fallback: switch to CPU and retry once.
-      diag('model', 'GPU/memory error detected — falling back to CPU backend', 'warn');
+    // Diagnostic: capture full error context for post-hoc classification.
+    // Field evidence (Android still failing after GPU-mem hypothesis fix) proves
+    // the heuristic was too narrow — any MODEL_FETCH error on WebGL gets a CPU
+    // retry because we cannot distinguish failure classes from the error string alone.
+    const msg = (e && e.message ? e.message : '');
+    const errName = e && e.name ? e.name : null;
+    const errCause = e && e.cause ? String(e.cause) : null;
+    diag('model', 'raw error: name=' + errName + ' cause=' + errCause + ' msg=' + msg, 'err');
+    if (wantBackend === 'webgl' && !state.modelFbCpu) {
+      // Auto-fallback on ANY model-fetch failure: switch to CPU and retry once.
+      diag('model', 'model fetch failed on WebGL — falling back to CPU backend', 'warn');
       try {
         await tf.setBackend('cpu');
         await tf.ready();
@@ -887,12 +887,13 @@ async function loadModel(boot, preferCpu) {
         if (!alive(boot)) return null;
         diag('model', 'CPU fallback also failed: ' + (e2 && e2.message ? e2.message : e2), 'err');
         throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load on both WebGL and CPU: ' + (e2 && e2.message ? e2.message : e),
-          'WebGL: possible GPU memory exhaustion on this device (mid-range Android common). CPU: also failed — could be network (allow tfhub.dev + kaggle.com) or device resource limit. Try Retry on CPU button, a different network, or a higher-end device.',
+          'Both backends failed. First error: ' + (errName || '?') + ' — "' + msg.slice(0, 200) + '". Second error (CPU): ' + (e2 && e2.message ? e2.message : e).slice(0, 200) + '. Check connectivity (tfhub.dev + kaggle.com), try a different network or a higher-end device.',
           { cpuOffer: true });
       }
     } else {
-      throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + (e && e.message ? e.message : e),
-        'The model is fetched from ' + url + ' (redirects via Kaggle).' + (isGpuMem ? ' GPU/memory issue on this device — try Retry on CPU.' : ' Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or retry on a different network.'));
+      throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + msg,
+        'The model is fetched from ' + url + ' (redirects via Kaggle). Error: ' + (errName || 'unknown') + ' — "' + msg.slice(0, 200) + '". Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or try Retry on CPU if available.',
+        { errorName: errName, errorCause: errCause });
     }
   }
   if (!alive(boot)) { try { det && det.dispose && det.dispose(); } catch (_) {} return null; }
@@ -1157,6 +1158,13 @@ function exportJson() {
     trials: state.trials,
     frameTrace: state.frameTrace,
     diagnostics: state.log,
+    errorContext: state.error ? {
+      stage: state.error.stage,
+      message: state.error.message,
+      errorName: state.error.errorName,
+      errorCause: state.error.errorCause,
+      remedy: state.error.remedy,
+    } : null,
   };
   const json = JSON.stringify(out, null, 2);
   $('exportBox').value = json;
@@ -1221,7 +1229,7 @@ window.__ahf = {
     lastSample: state.lastSample,
     trialsBlockedBy: state.trialsBlockedBy,
     status: $('status').textContent, stage: $('stageStatus').textContent,
-    error: state.error ? { stage: state.error.stage, message: state.error.message } : null,
+    error: state.error ? { stage: state.error.stage, message: state.error.message, errorName: state.error.errorName, errorCause: state.error.errorCause } : null,
     modelFbCpu: state.modelFbCpu,
     log: state.log.slice(-20),
   }),

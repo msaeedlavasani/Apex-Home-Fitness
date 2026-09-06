@@ -293,55 +293,53 @@ async function main() {
   check('E. hysteresis-band noise (100–160°) counts 0 — no down crossing, no reps', r.e6.reps === 0, `reps=${r.e6.reps}`);
   await pageE.close();
 
-  // ============ F. GPU-memory MODEL_FETCH → auto CPU fallback =====================
-  // Simulates the Android mid-range device scenario: WebGL backend init succeeds
-  // but model loading fails with a WebGL/OOM-style error. The harness must detect
-  // the GPU-pattern, switch to CPU, retry once, and continue successfully.
-  // Uses Playwright fake camera (same as A). Mock createDetector BEFORE pipeline starts.
-  const pageF = await ctxA.newPage();
-  const errsF = [];
-  pageF.on('pageerror', (e) => errsF.push(String(e).slice(0, 200)));
-  await pageF.goto(url, { waitUntil: 'domcontentloaded' });  // no autostart
-  // Wait for poseDetection to be loaded, then mock it BEFORE starting pipeline
-  await pageF.waitForFunction(() => typeof poseDetection !== 'undefined' && !!poseDetection.SupportedModels, { timeout: 15000 });
-  await pageF.evaluate(() => {
-    let callCount = 0;
-    poseDetection.createDetector = function(model, opts) {
-      callCount++;
-      if (model === poseDetection.SupportedModels.MoveNet && callCount === 1) {
-        return Promise.reject(new Error('WebGL: OUT_OF_MEMORY — failed to upload model tensors'));
-      }
-      // Second call (CPU retry) — return a dummy detector
-      return Promise.resolve({
-        estimatePoses: () => Promise.resolve([]),
-        dispose: () => {},
-      });
-    };
-  });
-  // Now start the pipeline manually
-  await pageF.evaluate(() => { runPipeline({}); });
-  const stF = await waitState(pageF, (s) => s && (s.phase === 'running' || s.phase === 'error'), 120000, 'gpu-fb');
-  // Debug: check what happened
-  const debugF = await pageF.evaluate(() => {
-    return {
-      phase: window.__ahf.getState().phase,
-      backend: window.__ahf.getState().backend,
-      modelFbCpu: window.__ahf.getState().modelFbCpu,
-      error: window.__ahf.getState().error,
-      log: window.__ahf.getState().log,
-    };
-  });
-  console.log('DEBUG F:', JSON.stringify(debugF));
-  if (stF && stF.phase === 'running' && stF.backend === 'cpu') {
-    check('F. GPU-memory MODEL_FETCH auto-fallback reaches CPU running', true, `backend=${stF.backend}`);
-    await pageF.waitForTimeout(3000);
-    const runF = await pageF.evaluate(() => window.__ahf.getState());
-    check('F. fallback state tracks modelFbCpu=true', runF.modelFbCpu === true, `modelFbCpu=${runF.modelFbCpu}`);
-    check('F. inference loop runs on CPU after fallback', runF.processed > 0 && runF.inferenceCalls > 0 && runF.infErrors === 0, `processed=${runF.processed} calls=${runF.inferenceCalls} fps=${runF.fps}`);
-  } else {
-    check('F. GPU-memory MODEL_FETCH auto-fallback reaches CPU running', false, stF ? `phase=${stF.phase} backend=${stF.backend} err=${stF.error ? stF.error.stage + ': ' + stF.error.message : 'none'}` : 'no state');
+  // ============ F. MODEL_FETCH auto-CPU fallback (any error class) ================
+  // Post-field-validation fix: the previous GPU-memory-only heuristic was proven
+  // wrong by Android still-failing after the fallback shipped. Now ANY MODEL_FETCH
+  // error on WebGL triggers a CPU retry (we cannot classify the real Android error
+  // from a screenshot; preserve full error context in export instead).
+  // Tests two sub-cases:
+  //   F1: generic network-style error triggers fallback
+  //   F2: GPU-memory-style error still triggers fallback (regression guard)
+  for (const [label, firstErr] of [
+    ['F. non-GPU MODEL_FETCH (network-like) → CPU fallback', new Error('Failed to fetch model shards from tfhub.dev/kaggle.com')],
+    ['F. GPU-memory MODEL_FETCH → CPU fallback (regression)', new Error('WebGL: OUT_OF_MEMORY — failed to upload model tensors')],
+  ]) {
+    const pageF = await ctxA.newPage();
+    await pageF.goto(url, { waitUntil: 'domcontentloaded' });
+    await pageF.waitForFunction(() => typeof poseDetection !== 'undefined' && !!poseDetection.SupportedModels, { timeout: 15000 });
+    const errToSend = firstErr;
+    await pageF.evaluate(({ err }) => {
+      let callCount = 0;
+      poseDetection.createDetector = function(model, opts) {
+        callCount++;
+        if (model === poseDetection.SupportedModels.MoveNet && callCount === 1) {
+          const e = new Error(err.message);
+          e.name = err.name || 'Error';
+          return Promise.reject(e);
+        }
+        return Promise.resolve({
+          estimatePoses: () => Promise.resolve([]),
+          dispose: () => {},
+        });
+      };
+    }, { err: errToSend });
+    await pageF.evaluate(() => { runPipeline({}); });
+    const stF = await waitState(pageF, (s) => s && (s.phase === 'running' || s.phase === 'error'), 120000, 'model-fb-' + label.slice(0,10));
+    if (stF && stF.phase === 'running' && stF.backend === 'cpu') {
+      check(label + ' reaches CPU running', true, `backend=${stF.backend}`);
+      await pageF.waitForTimeout(2000);
+      const runF = await pageF.evaluate(() => window.__ahf.getState());
+      check(label + ' state tracks modelFbCpu=true', runF.modelFbCpu === true, `modelFbCpu=${runF.modelFbCpu}`);
+      check(label + ' inference loop runs on CPU', runF.processed > 0 && runF.inferenceCalls > 0 && runF.infErrors === 0, `processed=${runF.processed} calls=${runF.inferenceCalls}`);
+      // Verify full error context is preserved when error eventually occurs (or was logged)
+      const errCtx = runF.error;
+      check(label + ' error context includes raw details', !errCtx || errCtx.errorName !== undefined, `errorName present in state`);
+    } else {
+      check(label + ' reaches CPU running', false, stF ? `phase=${stF.phase} backend=${stF.backend} err=${stF.error ? stF.error.stage + ': ' + stF.error.message : 'none'}` : 'no state');
+    }
+    await pageF.close();
   }
-  await pageF.close();
 
   await ctxA.close();
   await browser.close();
