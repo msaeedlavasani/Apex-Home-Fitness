@@ -259,6 +259,7 @@ const state = {
   stream: null, video: null, videoLive: false, luma: -1,
   capCanvas: null, capCtx: null,   // explicit inference input: video → mirrored capture canvas
   detector: null, detectorModel: null, backend: null,
+  modelFbCpu: false,     // model-load CPU fallback already attempted this boot
   running: false, rafId: 0,
   lastProcess: 0, fpsTarget: 15, mirror: true, move: 'squat',
   infTimes: [], fpsWindow: [], fps: 0,
@@ -834,7 +835,7 @@ async function attachVideo(boot, stream) {
 }
 
 // --- Stage: model ------------------------------------------------------------------
-async function loadModel(boot) {
+async function loadModel(boot, preferCpu) {
   const mt = $('modelSel').value;
   if (state.detector && state.detectorModel === mt) {
     diag('model', 'MoveNet ' + mt + ' already loaded — reusing', 'ok');
@@ -842,9 +843,10 @@ async function loadModel(boot) {
     return true;
   }
   const url = MODEL_URLS[mt];
-  setStage('stage 4/5 — model download');
-  setStatus('Loading MoveNet ' + mt + ' from CDN (3–8 MB first download; ' + Math.round(CFG.modelTimeoutMs / 1000) + 's timeout)…');
-  diag('model', 'createDetector(MoveNet ' + mt + ') ← ' + url, 'info');
+  const wantBackend = preferCpu ? 'cpu' : (state.backend || 'webgl');
+  setStage('stage 4/5 — model download' + (preferCpu ? ' (CPU fallback)' : ''));
+  setStatus('Loading MoveNet ' + mt + ' from CDN (3–8 MB first download; ' + Math.round(CFG.modelTimeoutMs / 1000) + 's timeout)...');
+  diag('model', 'createDetector(MoveNet ' + mt + ') ← ' + url + ' [backend: ' + wantBackend + ']', 'info');
   const t0 = performance.now();
   let det;
   try {
@@ -856,16 +858,51 @@ async function loadModel(boot) {
   } catch (e) {
     if (!alive(boot)) return null;
     diag('model', 'load failed: ' + (e && e.message ? e.message : e), 'err');
-    throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + (e && e.message ? e.message : e),
-      'The model is fetched from ' + url + ' (redirects via Kaggle). Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or retry on a different network.');
+    // Heuristic: detect GPU/memory-related failures vs network failures.
+    // tfhub.dev redirects to kaggle.com for model shards; network errors are
+    // typically timeouts or fetch failures (already bounded by withTimeout).
+    // GPU/memory errors surface as texture alloc / out-of-memory from WebGL.
+    const msg = (e && e.message ? e.message : '').toLowerCase();
+    // Match GPU/memory errors regardless of separator style (space/underscore/hyphen)
+    // and catch WebGL-bound errors even when 'error' word is absent (TF.js sometimes
+    // uses only the backend name, e.g. 'WebGL: OUT_OF_MEMORY').
+    const isGpuMem = /out[_\- ]?of[_\- ]?memory|tex|webgl.*[eE]rr|webgl.*[oO]ut|gpu.*[fF]ail|tensor.*[aA]lloc|context[_\- ]?lost/i.test(msg)
+      || (msg.indexOf('webgl') >= 0 && (msg.indexOf('err') >= 0 || msg.indexOf('out') >= 0 || msg.indexOf('mem') >= 0));
+    if (wantBackend === 'webgl' && !state.modelFbCpu && isGpuMem) {
+      // Auto-fallback: switch to CPU and retry once.
+      diag('model', 'GPU/memory error detected — falling back to CPU backend', 'warn');
+      try {
+        await tf.setBackend('cpu');
+        await tf.ready();
+        state.backend = 'cpu';
+        state.modelFbCpu = true;
+        diag('model', 'CPU backend ready, retrying model load', 'info');
+        setStage('stage 4/5 — model download (CPU retry)');
+        det = await withTimeout(
+          poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+            modelType: mt === 'Thunder' ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+          }),
+          CFG.modelTimeoutMs, 'MoveNet model download/parse (CPU)');
+      } catch (e2) {
+        if (!alive(boot)) return null;
+        diag('model', 'CPU fallback also failed: ' + (e2 && e2.message ? e2.message : e2), 'err');
+        throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load on both WebGL and CPU: ' + (e2 && e2.message ? e2.message : e),
+          'WebGL: possible GPU memory exhaustion on this device (mid-range Android common). CPU: also failed — could be network (allow tfhub.dev + kaggle.com) or device resource limit. Try Retry on CPU button, a different network, or a higher-end device.',
+          { cpuOffer: true });
+      }
+    } else {
+      throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + (e && e.message ? e.message : e),
+        'The model is fetched from ' + url + ' (redirects via Kaggle).' + (isGpuMem ? ' GPU/memory issue on this device — try Retry on CPU.' : ' Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or retry on a different network.'));
+    }
   }
   if (!alive(boot)) { try { det && det.dispose && det.dispose(); } catch (_) {} return null; }
   state.detector = det;
   state.detectorModel = mt;
-  diag('model', 'MoveNet ' + mt + ' ready in ' + Math.round(performance.now() - t0) + 'ms', 'ok');
+  diag('model', 'MoveNet ' + mt + ' ready in ' + Math.round(performance.now() - t0) + 'ms (backend: ' + state.backend + ')', 'ok');
   setStage('stage 4/5 — model ready');
   return true;
 }
+
 
 // --- Processing loop ----------------------------------------------------------------
 async function processLoop(now) {
@@ -959,6 +996,7 @@ async function runPipeline(opts) {
   state.noPoseHintShown = false;
   state.videoLive = false;
   state.trialsBlockedBy = null;
+  state.modelFbCpu = false;
   state.frameTrace = []; state.lastSample = null; state.sampleAcc = 0; state.lastAuditKind = null;
   state.inferenceCalls = 0; state.poseReturns = 0; state.poseGatedOut = 0;
   state.skeletonDraws = 0; state.lastOverlayHits = 0; state.lastOverlayScanAt = 0;
@@ -986,7 +1024,7 @@ async function runPipeline(opts) {
     const v = await attachVideo(boot, stream);
     if (!alive(boot) || v === null) return;
 
-    const model = await loadModel(boot);
+    const model = await loadModel(boot, opts.cpu);
     if (!alive(boot) || model === null) return;
 
     if (!state.videoLive) {
@@ -1184,6 +1222,7 @@ window.__ahf = {
     trialsBlockedBy: state.trialsBlockedBy,
     status: $('status').textContent, stage: $('stageStatus').textContent,
     error: state.error ? { stage: state.error.stage, message: state.error.message } : null,
+    modelFbCpu: state.modelFbCpu,
     log: state.log.slice(-20),
   }),
   // Deterministic rep-machine hook (used by smoke scenario E; no network impact,
