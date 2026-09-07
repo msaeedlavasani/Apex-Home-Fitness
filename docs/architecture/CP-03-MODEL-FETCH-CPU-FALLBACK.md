@@ -1,7 +1,7 @@
 # CP-03 — Model Delivery Incident: HTTP 403 and Same-Origin Artifact Resolution
 
 > **Type:** Research-tooling incident finding + delivery repair (supersedes the prior GPU-memory finding)
-> **Status:** `DELIVERED` — 2026-09-07 (pending physical Android retest)
+> **Status:** `CLOSED` — 2026-09-07 (physical acceptance complete on two Android phones)
 > **Persistence:** `CODE_NO_DEPLOY` — CP-03 harness only; no product/Production boundary change
 > **Source:** Two-phone Android field evidence (HTTP 403), browser-fetch reproduction, official Kaggle model metadata and artifact download
 > **Related:** `scripts/pose-measurement/`, `scripts/pose-measurement/README.md`, `architecture/CP-03-POSE-FEASIBILITY.md`
@@ -9,6 +9,8 @@
 ---
 
 ## 1. Authoritative field evidence
+
+### Incident evidence
 
 The latest Android device failed while loading MoveNet Lightning with HTTP **403**.
 The failing request shown in the field export/screenshots was:
@@ -113,9 +115,23 @@ provenance, but are not runtime dependencies.
   remain active.
 - Result after the repair: **48/48 smoke checks PASS**.
 
-The physical Android retest remains necessary to close the field incident; no
-repository test can prove the affected carrier/browser path until the Owner runs
-the updated static harness on both phones.
+### Final physical acceptance (2026-09-07)
+
+The Owner completed field validation of the corrected harness on **two separate
+Android phones**. On both devices:
+
+- The bundled same-origin MoveNet model loaded successfully.
+- The harness reached the green **RUNNING** state.
+- The HTTP 403 model-delivery failure did not recur.
+
+This is authoritative acceptance of the **model-delivery incident repair** and
+closes this incident. It does not claim that the full optional CP-03
+measurement matrix is complete: Android FPS, rep-count accuracy, placement
+sensitivity, and battery remain unmeasured unless separately exported and
+reviewed.
+
+No repository test can replace the physical acceptance evidence; the two-phone
+result is recorded as the field gate that closes this incident.
 
 ## 6. Superseded findings
 
@@ -138,4 +154,4 @@ by this record:
   those third-party libraries is not part of this repair.
 - The model bundle increases harness static payload (approximately 17 MB for
   both selectors; only the selected model is fetched at runtime).
-- Physical Android retest is an evidence gate, not an autonomous code gate.
+- Physical Android model-delivery acceptance is complete; broader CP-03 measurement cells remain optional and separately NOT_MEASURED.

@@ -93,8 +93,9 @@ lens; monetization is a separate, later product/business decision.
 
 - No production schema, UI, or backend implementation is authorized by this
   record or by CP-03's findings.
-- No change to the CP-03 real-device measurement gate: the gate stays OPEN and
-  these records do not count toward it.
+- No change to the broader CP-03 measurement matrix: optional unrun cells remain
+  NOT_MEASURED. The separate HTTP 403 model-delivery incident was closed on
+  2026-09-07 after two Android phones accepted the bundled same-origin model.
 - No change to CP-03 product decisions (Approach A — MoveNet/TF.js, web-first,
   fully on-device, v1 HIGH-coverage movements, TEMPO_DRIFT + validated
   RANGE_OF_MOTION only, real-device measurement gate REQUIRED before product
