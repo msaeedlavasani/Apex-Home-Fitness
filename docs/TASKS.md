@@ -739,7 +739,7 @@ code written.
 | PRIORITY | P2 |
 | DEPENDENCIES | CP-02, AL-04, [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
 | AUTONOMOUS_ELIGIBILITY | `OWNER_AUTHORIZED` — Owner promotion 2026-09-07; bounded CODE_NO_DEPLOY tranche only |
-| AUTHORIZATION | Owner decision 2026-09-07: promote CP-05 for the smallest defensible workout-runtime observation integration; CP-04 camera runtime, TS-02 legal, MO-01 persistence, and Production remain gated |
+| AUTHORIZATION | Owner decision 2026-09-07: promote CP-05 for the smallest defensible workout-runtime observation integration; Owner decision 2026-09-08: authorize the bounded consent-gated browser-camera/device-measured squat tranche; CP-04 broader runtime, TS-02 legal, MO-01 persistence, and Production remain gated |
 | PARALLEL_SAFETY | `CLAIM_REQUIRED` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
