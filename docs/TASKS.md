@@ -798,11 +798,13 @@ Production acceptance covers the denial and revocation paths.
 |---|---|
 | PRIORITY | P2 |
 | DEPENDENCIES | CP-03 measurement gate (CLOSED before product implementation), CP-02 (observation signal model), CP-04 (camera architecture), AL-01 (outcome contract) |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` (registered 2026-09-04 from the CP-03 outcome) |
+| AUTONOMOUS_ELIGIBILITY | `OWNER_AUTHORIZED` — Owner promotion 2026-09-07; bounded pure CODE_NO_DEPLOY runtime only |
+| AUTHORIZATION | Owner decision 2026-09-07: promote CP-07 for autonomous implementation within existing gates; no camera/persistence/Production/legal expansion |
 | PARALLEL_SAFETY | `CLAIM_REQUIRED` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` (v1 runtime contract; persistence deferred to MO-01) |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **IMPLEMENTED — bounded pure/in-memory CP-07 v1, CODE_NO_DEPLOY, pending governed delivery.** Added `src/lib/observation/runtime.ts` and public exports; accepts validated CP-02 count/timing signals, deterministic per-set summaries, explicit OBSERVED/UNCERTAIN/UNOBSERVABLE states, and `persisted: false`. FORM_PROXY, camera invocation, WorkoutPlayer wiring, outcome mutation, persistence, retention, Production, legal wording, and unsupported movement-quality claims remain out of scope. Targeted tests 20/20 PASS; typecheck/lint PASS. Architecture record: `docs/architecture/CP-07-MOVEMENT-OBSERVATION-RUNTIME.md`. |
 
 **Objective:** implement the Movement Observation runtime per the CP-03
 outcome §2 — per movement/set distinguishing prescribed reps/duration,

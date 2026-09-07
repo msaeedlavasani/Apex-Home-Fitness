@@ -1,13 +1,9 @@
 /**
- * Observation-domain public entry point (CP-02 — observation signal model).
+ * Observation-domain public entry point (CP-02 + CP-07).
  *
- * Exposes the typed in-session observation signal contract (rep counts, set/
- * rep/rest timing, form proxies), fail-closed validation, and the pure
- * deterministic per-set aggregation helper. This domain is PURE and
- * framework-independent — no camera, sensors, Prisma, React, services, or
- * runtime side effects. Nothing in the application imports this module yet
- * (no runtime behavior change by design). Device-measured form proxies stay
- * refused until CP-03 validates the proxy definitions.
+ * CP-02 signal types/validation remain pure. CP-07 adds an in-memory,
+ * non-persisting runtime recorder around the same contract. Neither module
+ * accesses camera/sensors, React, Prisma, IndexedDB, or network services.
  */
 
 export {
@@ -36,3 +32,20 @@ export {
   type SetObservationSummary,
   type SetTimingSignal,
 } from './types';
+
+export {
+  MOVEMENT_OBSERVATION_RUNTIME_VERSION,
+  createMovementObservationRuntime,
+  type BeginObservationSetInput,
+  type CompleteObservationSetInput,
+  type MovementObservationRuntime,
+  type MovementObservationRuntimeVersion,
+  type ObservationRecord,
+  type ObservationRecordSource,
+  type ObservationRecordStatus,
+  type ObservationRuntimeClock,
+  type ObservationRuntimeOptions,
+  type ObservationSetPlan,
+  type RuntimeSignalResult,
+  type UnobservableObservationSetInput,
+} from './runtime';
