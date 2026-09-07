@@ -62,7 +62,7 @@ export interface ConsentSnapshotContract {
  *  Used as the gate at the inference boundary: a `DEVICE_MEASURED` observation
  *  must not be produced unless this gate passes.
  */
-export function cameraPoseConsented(snapshot: ConsentSnapshotContract): boolean {
+export function cameraPoseConsented(snapshot: Pick<ConsentSnapshotContract, 'consented' | 'scopes'>): boolean {
   return snapshot.consented && snapshot.scopes.length > 0;
 }
 

@@ -34,6 +34,14 @@ export {
 } from './types';
 
 export {
+  cameraObservationSessionGate,
+  cameraPoseConsented,
+  type CameraGateSnapshot,
+  type CameraSessionGateInput,
+  type CameraSessionGateResult,
+} from './cameraGate';
+
+export {
   MOVEMENT_OBSERVATION_RUNTIME_VERSION,
   createMovementObservationRuntime,
   type BeginObservationSetInput,

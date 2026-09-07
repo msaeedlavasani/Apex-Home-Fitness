@@ -6,6 +6,7 @@ import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucid
 import {useWorkoutEngine} from './useWorkoutEngine';
 import type {SessionExercise, SessionPhase, SessionState, SessionSummary} from '@/lib/workout/sessionContracts';
 import {createMovementObservationRuntime, type ObservationRuntimeSnapshot} from '@/lib/observation';
+import {ConsentGatedCameraRuntime, type CameraRuntimeStatus} from '@/services/cameraRuntime';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -145,18 +146,24 @@ export function WorkoutPlayer({
   // This is USER_REPORTED only: it reflects the existing manual rep control.
   // No camera, MoveNet, persistence, or outcome mutation is involved.
   const observationRuntimeRef = useRef<ReturnType<typeof createMovementObservationRuntime> | null>(null);
+  const cameraObservationRuntimeRef = useRef<ReturnType<typeof createMovementObservationRuntime> | null>(null);
+  const observationRuntime = observationRuntimeRef.current;
+  const cameraObservationRuntime = cameraObservationRuntimeRef.current;
+  const activeObservationRuntime = cameraObservationRuntime ?? observationRuntime;
   if (observationRuntimeRef.current == null) {
     observationRuntimeRef.current = createMovementObservationRuntime({sessionId: `workout-${Date.now()}`});
   }
-  const observationRuntime = observationRuntimeRef.current;
   const observationSnapshot = useCallback(() => {
-    onObservationChange?.(observationRuntime.snapshot());
-  }, [observationRuntime, onObservationChange]);
+    const runtime = cameraObservationRuntimeRef.current ?? observationRuntimeRef.current;
+    if (runtime) onObservationChange?.(runtime.snapshot());
+  }, [onObservationChange]);
 
   // ---- Camera consent state (session-local, in-memory only) --------------
 
   const [consentGranted, setConsentGranted] = useState(false);
   const [consentScopes, setConsentScopes] = useState<readonly ConsentScope[]>([]);
+  const [cameraRuntimeStatus, setCameraRuntimeStatus] = useState<CameraRuntimeStatus>('idle');
+  const cameraRuntimeRef = useRef<ConsentGatedCameraRuntime | null>(null);
   const consentEntityRef = useRef<ConsentEntity | null>(null);
   if (consentEntityRef.current == null) {
     consentEntityRef.current = new ConsentEntity();
@@ -172,6 +179,10 @@ export function WorkoutPlayer({
   );
 
   const handleRevokeConsent = useCallback(() => {
+    cameraRuntimeRef.current?.stop();
+    cameraRuntimeRef.current = null;
+    cameraObservationRuntimeRef.current = null;
+    setCameraRuntimeStatus('stopped');
     setConsentGranted(false);
     setConsentScopes([]);
     onConsentChange?.({
@@ -211,6 +222,13 @@ export function WorkoutPlayer({
     if (hapticsEnabled) haptic('setComplete');
     const context = observationContextRef.current;
     if (!context.exercise) return;
+    if (cameraRuntimeRef.current && !['stopped', 'error', 'unsupported'].includes(cameraRuntimeStatus)) {
+      // If camera inference is uncertain/unavailable, the same CP-07 runtime
+      // records the manual USER_REPORTED fallback instead of losing the set.
+      cameraRuntimeRef.current.complete(repsDone);
+      observationSnapshot();
+      return;
+    }
     const runtime = observationRuntimeRef.current;
     if (!runtime) return;
     if (!runtime.snapshot().active) {
@@ -236,7 +254,7 @@ export function WorkoutPlayer({
     runtime.appendSignal(signal);
     runtime.completeSet();
     observationSnapshot();
-  }, [hapticsEnabled, haptic, observationSnapshot, repsDone]);
+  }, [cameraRuntimeStatus, hapticsEnabled, haptic, observationSnapshot, repsDone]);
 
   // ---- IndexedDB persistence (only when a `userId` is provided) ---------
 
@@ -292,6 +310,31 @@ export function WorkoutPlayer({
   });
 
   observationContextRef.current = {exercise: currentExercise, exerciseIndex: currentExerciseIndex, set: currentSet};
+
+  useEffect(() => () => {
+    cameraRuntimeRef.current?.stop();
+    cameraObservationRuntimeRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!consentGranted || phase !== 'EXERCISING' || !currentExercise || !cameraConsentScopes?.includes('poseTracking:squat')) return;
+    if (currentExercise.name.toLowerCase().includes('squat') === false) return;
+    const runtime = new ConsentGatedCameraRuntime({
+      consented: consentGranted,
+      scope: 'poseTracking:squat', exerciseIndex: currentExerciseIndex, set: currentSet,
+      plannedReps: currentExercise.reps ?? null, exerciseId: currentExercise.exerciseId, slug: currentExercise.slug,
+      observationRuntime: (cameraObservationRuntimeRef.current ??= createMovementObservationRuntime({sessionId: `camera-workout-${Date.now()}`})),
+      // Runtime uses the same CP-07 boundary; no parallel observation store.
+      onUpdate: (update) => {
+        setCameraRuntimeStatus(update.status);
+        if (update.record) observationSnapshot();
+      },
+    });
+    cameraRuntimeRef.current?.stop();
+    cameraRuntimeRef.current = runtime;
+    void runtime.start();
+    return () => { runtime.stop(); if (cameraRuntimeRef.current === runtime) cameraRuntimeRef.current = null; };
+  }, [cameraConsentScopes, consentGranted, currentExercise, currentExerciseIndex, currentSet, observationSnapshot, phase]);
 
   // On mount, restore today's snapshot (if any) when it still matches the
   // loaded plan. `hydrate()` no-ops once the user has started, so a slow
@@ -492,7 +535,10 @@ export function WorkoutPlayer({
           {/* ---- Camera tracking indicator (active workout + consented) ---- */}
           {consentGranted && (phase === 'EXERCISING' || phase === 'RESTING') && (
             <div className="mt-6">
-              <CameraTrackingIndicator active={true} onRevoke={handleRevokeConsent} />
+              <CameraTrackingIndicator active={cameraRuntimeStatus === 'active'} onRevoke={handleRevokeConsent} />
+              {cameraRuntimeStatus === 'uncertain' || cameraRuntimeStatus === 'error' ? (
+                <p className="mt-2 text-xs text-apex-text-secondary" role="status">Camera observation is temporarily uncertain; manual workout controls remain available.</p>
+              ) : null}
             </div>
           )}
 

@@ -744,7 +744,7 @@ code written.
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| STATUS | **DELIVERED / CLOSED 2026-09-07 — bounded CP-05 CODE_NO_DEPLOY tranche.** WorkoutPlayer emits an in-memory CP-07 observation snapshot from the existing manual USER_REPORTED rep control; no camera/MoveNet/DEVICE_MEASURED path, persistence/history, outcome mutation, legal wording, Production, or unsupported quality claims. Full suite **771/771**, typecheck/lint PASS. PR #56 merged `d265174`; exact merge Main CI run `34160248294` (build `101860307782`, e2e `101861466037`); branch retired local/remote. Architecture record: `docs/architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`. Full CP-05 V2/camera/device-measured/Production scope remains separately gated. |
+| STATUS | **IMPLEMENTED — bounded CP-05 browser-camera/device-measured CODE_NO_DEPLOY tranche, pending governed delivery and physical-device acceptance.** Owner authorized this tranche 2026-09-08. Reuses CP-06 explicit consent/no-camera UX, CP-07 runtime, CP-03 same-origin MoveNet Lightning v4 bundle, and CP-04 gate shape. Only validated `squat` emits `DEVICE_MEASURED REP_COUNT`; raw frames stay in-browser; failures preserve manual fallback; no persistence/history/retention, outcome mutation, legal wording, Production, or unsupported quality claims. Explicit Enable action is required before camera access; scope toggles alone do not grant consent. Architecture record: `docs/architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`. Physical-device acceptance remains required; no field claim is made. |
 
 **Objective:** integrate the Companion's observation and adaptation signals
 into the Workout Experience V2 runtime — real-time guidance during the

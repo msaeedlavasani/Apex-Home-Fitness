@@ -31,17 +31,8 @@ export function CameraConsentBanner({
   const [enabledScopes, setEnabledScopes] = useState<ConsentScope[]>([]);
 
   const handleScopeToggle = useCallback((scope: ConsentScope, checked: boolean) => {
-    setEnabledScopes((prev) => {
-      const next = checked ? [...prev, scope] : prev.filter((s) => s !== scope);
-      const snapshot = entity.grant(next, version);
-      onConsentChange({
-        consented: snapshot.consented,
-        scopes: snapshot.scopes,
-        version: snapshot.version,
-      });
-      return next;
-    });
-  }, [entity, version, onConsentChange]);
+    setEnabledScopes((prev) => checked ? [...prev, scope] : prev.filter((s) => s !== scope));
+  }, []);
 
   const handleGrant = useCallback(() => {
     const snapshot = entity.grant(enabledScopes, version);
