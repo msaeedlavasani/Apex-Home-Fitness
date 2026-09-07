@@ -1,100 +1,141 @@
-# CP-03 — Harness MODEL_FETCH CPU Fallback (Broadened; Diagnostics Enhanced)
+# CP-03 — Model Delivery Incident: HTTP 403 and Same-Origin Artifact Resolution
 
-> **Type:** Research-tooling repair + architectural finding (corrected 2026-09-06)
-> **Status:** `DELIVERED` — 2026-09-06 (v2: broadened fallback + full error context preservation)
-> **Persistence:** `CODE_NO_DEPLOY` — research tooling only, no product boundary change
-> **Source of discovery:** Android Chrome CP-03 harness field test exposing MODEL_FETCH failure; post-fix validation proved the initial GPU-memory hypothesis incorrect
-> **Related:** `architecture/CP-03-HARNESS-REPAIR.md`, `scripts/pose-measurement/`
+> **Type:** Research-tooling incident finding + delivery repair (supersedes the prior GPU-memory finding)
+> **Status:** `DELIVERED` — 2026-09-07 (pending physical Android retest)
+> **Persistence:** `CODE_NO_DEPLOY` — CP-03 harness only; no product/Production boundary change
+> **Source:** Two-phone Android field evidence (HTTP 403), browser-fetch reproduction, official Kaggle model metadata and artifact download
+> **Related:** `scripts/pose-measurement/`, `scripts/pose-measurement/README.md`, `architecture/CP-03-POSE-FEASIBILITY.md`
 
 ---
 
-## 1. Observed failure (reopened 2026-09-06)
+## 1. Authoritative field evidence
 
-A real Android Chrome CP-03 harness test exposed a **MODEL_FETCH** error when loading MoveNet Lightning. The error surfaced at stage 4/5 (model download); WebGL backend init succeeded, camera acquired successfully, video rendered — only model loading failed. Same harness on iPhone Chrome (CriOS) and desktop Chrome works without issue.
+The latest Android device failed while loading MoveNet Lightning with HTTP **403**.
+The failing request shown in the field export/screenshots was:
 
-## 2. Root cause analysis (CORRECTED)
+`https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4/model.json?tfjs-format=file`
 
-### Initial hypothesis (WRONG)
+The field evidence also establishes:
 
-The first analysis concluded **WebGL GPU memory exhaustion during model weight allocation**. Rationale:
-- TF.js WebGL backend init (`tf.setBackend('webgl')`) only verifies context creation, not texture allocation budget
-- MoveNet Lightning requires ~3–8 MB of WebGL texture memory
-- Mid-range Android devices have constrained shared GPU/CPU memory
-- Common TF.js/WebGL OOM messages include `WebGL: OUT_OF_MEMORY`, `context lost`, `Failed to upload texture`
+- WebGL receives the 403.
+- Manual **Retry on CPU** receives the same 403.
+- The failure occurs before inference.
+- Changing the inference backend cannot resolve it.
+- The same incident was observed on two different Android phones.
 
-An automatic CPU fallback was implemented: on MODEL_FETCH errors matching GPU-memory heuristics, switch to CPU backend and retry once.
+This supersedes the earlier GPU-memory explanation and the later “unknown error
+class” finding. The verified class is **model artifact delivery/access**, not
+WebGL tensor allocation.
 
-### Field validation disproved the hypothesis
+## 2. Reconstructed delivery path
 
-Post-fix testing on the **same Android device** still produced a MODEL_FETCH failure. Since the CPU fallback did not resolve the issue, the error **cannot be GPU-memory related** (if it were, the CPU path would succeed as it avoids WebGL texture allocation entirely).
+The repository previously configured MoveNet through
+`@tensorflow-models/pose-detection@2.1.3` with these model roots:
 
-**Conclusion: The actual Android error message does not match the GPU-memory heuristic.** The real failure class is unknown without seeing the error output, but possible causes include:
-- Network/CDN blocking (tfhub.dev → kaggle.com redirect chain failing on Android)
-- WebGL context loss/creation failure (driver-level, not OOM)
-- TF.js version incompatibility with specific Android Chrome builds
-- Model format/version mismatch
-- Browser-specific pose-detection library bug
+- `https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4`
+- `https://tfhub.dev/google/tfjs-model/movenet/singlepose/thunder/4`
 
-**Key lesson:** An error classified as `MODEL_FETCH` does not imply GPU-memory exhaustion. The error-classification heuristic was insufficient — any MODEL_FETCH failure on WebGL should trigger a CPU retry because the underlying cause is indistinguishable from the error string alone.
+TF.js converter 4.20.0 adds `/model.json?tfjs-format=file` when `fromTFHub` is
+true. The observed/reproduced path is:
 
-## 3. Resolution (v2 — broadened fallback + enhanced diagnostics)
+```text
+TF.js model URL
+  → tfhub.dev redirect
+    → www.kaggle.com model endpoint
+      → signed storage.googleapis.com model.json and weight shards
+```
 
-### Code change: `scripts/pose-measurement/index.html`
+The official model endpoint works from the development desktop and iPhone
+browser profile, but the affected Android browser path returns 403/failed fetch.
+The signed storage URLs are intentionally time-limited and cannot be hard-coded
+as a durable application URL. Bare storage paths are not a valid substitute.
 
-**Fallback heuristic widened:**
-- Removed the `isGpuMem` pattern gate
-- On ANY `MODEL_FETCH` error when on WebGL backend (and no CPU attempt yet), auto-fallback to CPU is now attempted
-- This is safe: CPU inference is fully on-device (no privacy/persistence boundary crossed); performance is slower but functional for measurement purposes
+The previous smoke scenario only mocked `createDetector`; it did not exercise
+this redirect and artifact path. That is why it could prove CPU fallback logic
+while missing the Android delivery failure.
 
-**Full error context preservation:**
-- The raw error object is now decomposed into `error.name`, `error.cause`, and `error.message` in the diagnostic log
-- These fields are included in `state.error` and the JSON export under `errorContext`
-- Future Android failures can be classified post-hoc from the exported JSON without needing screenshots
-- The error remedy message now includes the raw error name and first 200 chars of the message
+## 3. Verified artifact provenance
 
-### State tracking
+The official Kaggle API metadata for `google/movenet` identifies:
 
-- `modelFbCpu: false` added to harness state (reset per pipeline boot) — unchanged from v1
-- `errorName` and `errorCause` added to `state.error` and `window.__ahf.getState()` — new in v2
-- `errorContext` field in JSON export — new in v2
-- "Retry on CPU" button shown for dual-failure MODEL_FETCH — unchanged from v1
+- TF.js `singlepose-lightning`, version 4, version ID 1205
+- TF.js `singlepose-thunder`, version 4
+- License: **Apache 2.0**
+- Lightning uncompressed size: 4,818,229 bytes
+- Official download endpoint: `/models/google/movenet/TfJs/singlepose-lightning/4/download`
 
-### Smoke test: scenario F (redesigned)
+The downloaded official tarballs contained the expected `model.json` and weight
+shards. The bundles are stored under `scripts/pose-measurement/models/`.
 
-Two sub-cases verify both error classes trigger fallback:
-1. **F1**: Generic network-style error (`"Failed to fetch model shards from tfhub.dev/kaggle.com"`) → must fall back to CPU
-2. **F2**: GPU-memory-style error (`"WebGL: OUT_OF_MEMORY"`) → must fall back to CPU (regression guard)
+### Full SHA-256 manifest
 
-Result: **40/40 PASS** (was 35/35; scenarios F1+F2 replace the old single scenario F)
+```text
+Lightning v4
+c65a3447162efa0c42af29498a4b151f4415b36ff3ae6fae2b28a32e840dcbfb  model.json
+b42c3232bf13b0efc691d3f0693dd3fc74404f709b1deee0a271828af6dbbea2  group1-shard1of2.bin
+8253ab965aa3122c08f331777ca395ce9ca19bb9e7cb278b99de1c46dbdeb6dc  group1-shard2of2.bin
 
-## 4. Architecture implications
+Thunder v4
+957721af760b24a1abc93ce5d42caf0cb7795723ab873d3791f5f42f5cb8c7ca  model.json
+58dd47fd600a4849c342ce14e2ec32102744ca3d5f7fd9e6888d284f7f922cba  group1-shard1of3.bin
+08da980bc00886854f29b49b9c14528cd41626c0498c67b450de394713f1d0bc  group1-shard2of3.bin
+c1c6b712e33456aa95aa556b6425528d04fe8730ce9b92de38ec58e947fede34  group1-shard3of3.bin
+```
 
-**No change to CP-03 product decision.** Approach A (MoveNet/TF.js, web-first, fully on-device) remains intact. CPU inference is still fully on-device — no privacy, persistence, or network boundary crossed.
+## 4. Durable resolution
 
-**Performance trade-off unchanged:**
-- WebGL inference: ~34 FPS on Pixel 5 (from feasibility spike data)
-- CPU inference: significantly slower (~5–10 FPS estimated on same device)
-- CPU fallback is a **resilience path**, not the primary path
+The harness now passes a **relative same-origin `modelUrl`** to
+`poseDetection.createDetector()` and serves the pinned official artifacts from
+`models/movenet/...`. This is the narrowest safe repair because it:
 
-**No cross-gate changes:**
-- No new dependencies
-- No schema changes
-- No persistence
-- No camera wiring
-- No product surface exposure
-- Research tooling only
+1. Removes the affected runtime dependency on the tfhub.dev → Kaggle redirect
+   and mobile access-control/protection behavior.
+2. Keeps model delivery within the static harness host; no proxy, server-side
+   fetch, credentials, or new network data path is introduced.
+3. Keeps MoveNet/TF.js inference fully on-device.
+4. Preserves the no-frame-upload, no-persistence, and manual-export-only
+   privacy guarantees.
+5. Applies to both Lightning and Thunder model selectors.
+6. Does not alter model architecture, thresholds, measurements, app wiring, or
+   any Production surface.
 
-## 5. Deliverables
+The model upstream URLs remain recorded in the harness diagnostics/export as
+provenance, but are not runtime dependencies.
 
-| Artifact | Path | Status |
-|---|---|---|
-| Harness fix (v2) | `scripts/pose-measurement/index.html` | DELIVERED |
-| Smoke test (40 scenarios) | `scripts/pose-measurement/smoke.mjs` | DELIVERED (40/40 PASS) |
-| This record | `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md` | DELIVERED (v2 corrected) |
+## 5. Diagnostics and regression coverage
 
-## 6. Limitations
+- Runtime/export now reports `modelDelivery: same-origin-bundled`, selected
+  `modelAsset`, and the official `modelUpstream` provenance URL.
+- Smoke verifies every manifest and weight shard is present.
+- Smoke scenario B now blocks the same-origin model assets and verifies a
+  bounded, classified `MODEL_FETCH` failure — not the old tfhub/Kaggle mock.
+- Existing pipeline, pose-bearing, CPU, rep-machine, and error-context checks
+  remain active.
+- Result after the repair: **48/48 smoke checks PASS**.
 
-- CPU fallback is attempted at most once per pipeline boot (guarded by `state.modelFbCpu`)
-- Does not identify the actual Android error class — full error context is preserved in export for post-hoc analysis
-- If BOTH WebGL and CPU fail, the user sees the raw error name/message in the export for diagnosis
-- Measurement gate remaining matrix (Android Chrome) still requires physical-device testing with this improved harness
+The physical Android retest remains necessary to close the field incident; no
+repository test can prove the affected carrier/browser path until the Owner runs
+the updated static harness on both phones.
+
+## 6. Superseded findings
+
+The following persisted conclusions are no longer supported and are superseded
+by this record:
+
+- **GPU memory exhaustion as the root cause:** disproved by identical HTTP 403
+  on CPU; delivery fails before backend inference.
+- **Generic unknown MODEL_FETCH cause:** narrowed by the HTTP status and exact
+  URL to model-delivery/access behavior.
+- **CPU fallback as a resolution:** retained only as a backend resilience path;
+  it is not a remedy for an HTTP 403 artifact request.
+
+## 7. Gates and limitations
+
+- This is a `CODE_NO_DEPLOY` research-harness change only.
+- No product camera wiring, consent, legal wording, persistence, database,
+  security, or Production change is made.
+- Runtime TF.js and pose-detection scripts still come from jsDelivr; bundling
+  those third-party libraries is not part of this repair.
+- The model bundle increases harness static payload (approximately 17 MB for
+  both selectors; only the selected model is fetched at runtime).
+- Physical Android retest is an evidence gate, not an autonomous code gate.

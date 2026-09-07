@@ -13,32 +13,19 @@
 > tester — this step cannot run in the development environment. Follow §6
 > exactly and record results in the §7 table.
 
-> **REPAIRED TWICE 2026-09-04** — (1) the startup pipeline was rebuilt so it
-> can no longer hang silently on "Loading MoveNet model…" or run with a
-> black LIVE VIEW (classified, timed stages; record
-> `docs/architecture/CP-03-HARNESS-REPAIR.md`). (2) Real-human Mac testing
-> then showed **zero poses while RUNNING** — root causes: `state.video` was
-> never assigned (`estimatePoses(null)` silently returned zero poses every
-> frame) and MoveNet keypoints arrive in **pixel space** while the overlay
-> multiplied by canvas.width (skeleton drew off-canvas). Fixed, and the
-> harness now instruments the full pixel path: a **MODEL INPUT panel** shows
-> the 8×5 luminance grid of the exact frame MoveNet receives, plus pose
-> telemetry (raw returns, keypoint counts/scores, overlay draw verification)
-> and an audit classification per ~1 s (INPUT_NEAR_BLACK / INPUT_FLAT /
-> INPUT_STRUCTURED_NO_POSE / POSES_OK) — all in the JSON export. Record:
-> `docs/architecture/CP-03-TRACKING-REPAIR.md`. (3) The first real-device
-> export (iPhone squat trials, diagonal-200) then showed pose tracking
-> working (3620/3923 pose frames, avg conf 0.73–0.75, skeleton drawn) yet
-> **detected 0/0** — root cause: the rep state machine latched `phase='lost'`
-> on ANY gated-out frame and never left it, so the first leg-keypoint flicker
-> permanently disabled counting for the rest of a trial. v3 removes the dead
-> latch (dropouts keep continuity; >1.5 s dropouts re-arm), measures BOTH
-> sides (near leg at diagonal placement), and records per-window/per-trial
-> angle + gating telemetry so the next export discriminates placement-quality
-> vs depth-threshold causes. Thresholds unchanged. Record:
-> `docs/architecture/CP-03-REP-HEURISTIC-REPAIR.md`; smoke **32/32**. **The
-> CP-03 measurement gate is still OPEN** — no real-device results may be
-> inferred from earlier attempts; §6 retest applies.
+> **REPAIRS THROUGH 2026-09-07** — the harness has bounded staged diagnostics,
+> explicit live-frame and pose telemetry, a repaired rep state machine, and a
+> same-origin bundle of the official Apache-2.0 MoveNet TF.js v4 Lightning and
+> Thunder artifacts. The latest Android incident showed HTTP 403 on the
+> tfhub.dev → Kaggle model-delivery chain on two phones; the model failed
+> before inference on both WebGL and CPU. The redirect dependency was removed
+> from runtime delivery. Records: `docs/architecture/CP-03-HARNESS-REPAIR.md`,
+> `docs/architecture/CP-03-TRACKING-REPAIR.md`,
+> `docs/architecture/CP-03-REP-HEURISTIC-REPAIR.md`, and
+> `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md`. Smoke **48/48**.
+> **The CP-03 measurement gate remains OPEN pending physical Android retest**
+> of the corrected same-origin model delivery; no real-device results may be
+> inferred from earlier failed attempts.
 
 ## 1. What the gate measures
 
@@ -78,11 +65,15 @@ The harness is a single static page (`index.html`). Camera access requires a
 - **Desktop only:** `npx -y serve scripts/pose-measurement` →
   `http://localhost:4173` (localhost is a secure context).
 
-The harness loads TF.js + MoveNet from CDN on first start (~3–8 MB download);
-phones need network for that load only. Verify the "100% on-device" banner
-renders and the status line reaches "Running" (it reports each stage —
-backend → camera → LIVE VIEW → model — instead of hanging on a generic
-Loading message).
+The harness loads TF.js + pose-detection runtime scripts from jsDelivr and
+loads the official MoveNet TF.js v4 artifacts from the same-origin
+`models/movenet/` bundle (about 17 MB for Lightning + Thunder, only the selected
+model is fetched). The model no longer depends on the tfhub.dev → Kaggle
+redirect chain. Phones need network for the runtime scripts on first load;
+model delivery is same-origin and cacheable. Verify the "100% on-device" banner
+renders and the status line reaches "Running" (it reports each stage — backend
+→ camera → LIVE VIEW → model — instead of hanging on a generic Loading
+message).
 
 ### 3.1 Desktop sanity check (do this first, on macOS Chrome)
 
@@ -91,7 +82,7 @@ for most scenarios, and a **real human photo** for the pose-bearing one):
 
 ```bash
 node scripts/pose-measurement/smoke.mjs
-# expects: 32 passed, 0 failed — camera → LIVE VIEW → model → inference →
+# expects: 48 passed, 0 failed — bundled model assets + camera → LIVE VIEW → model → inference →
 # trial/export + frame-content sampling + classified MODEL_FETCH error path
 # + CPU-backend path + pose-bearing scenario D (MoveNet must return poses for
 # a real human image and the skeleton must visibly draw) + scenario E
@@ -112,6 +103,30 @@ the camera; if it reports `INPUT_STRUCTURED_NO_POSE` with a clearly visible
 bright person, capture the export — that would point at the model/backend on
 that engine. If any stage errors, the red box names the failing stage and
 remedy — copy the Diagnostics panel into the report.
+
+## 3.2 Model delivery and provenance
+
+The field incident (two Android phones, 2026-09-07) showed HTTP 403 while
+TF.js requested:
+
+`https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4/model.json?tfjs-format=file`
+
+The same 403 occurred on WebGL and manual CPU retry. This is a model-delivery
+failure before inference, not a backend-memory failure. TF.js 4.20.0 rewrites
+that TF Hub URL through Kaggle and then signed Google Cloud Storage URLs; those
+redirect/protection steps are not reliable on the affected mobile clients.
+
+The harness now bundles the official Kaggle `google/movenet` TF.js deployment
+artifacts, version 4, same-origin:
+
+| Model | Files | Source/provenance | License | SHA-256 |
+|---|---|---|---|---|
+| Lightning | `model.json`, `group1-shard1of2.bin`, `group1-shard2of2.bin` | Kaggle `google/movenet`, TF.js instance `singlepose-lightning`, version 4, version ID 1205; downloaded from the official `/download` endpoint 2026-09-07 | Apache 2.0 | `model.json` `c65a3447162efa0c...`; shard 1 `b42c3232bf13b0ef...`; shard 2 `8253ab965aa3122c...` |
+| Thunder | `model.json`, `group1-shard1of3.bin`, `group1-shard2of3.bin`, `group1-shard3of3.bin` | Kaggle `google/movenet`, TF.js instance `singlepose-thunder`, version 4; downloaded from the official `/download` endpoint 2026-09-07 | Apache 2.0 | `model.json` `957721af760b24a1...`; shards `58dd47fd600a4849...`, `08da980bc0088685...`, `c1c6b712e33456aa...` |
+
+The complete hashes are recorded in `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md`.
+Only delivery changed: the model remains loaded and executed in-browser; no
+frames, model inputs, outputs, or derived measurements leave the device.
 
 ## 4. Environment and setup (per tester)
 
@@ -215,7 +230,7 @@ in the red box with a stage label, and every stage is timestamped in the
 
 | Observed (before/after repair) | Harness stage reported | Most likely cause → remedy |
 |---|---|---|
-| Stuck on "Loading MoveNet model…" forever | `CDN` / `BACKEND` / `MODEL_FETCH` / `TIMEOUT` | Previously **any** failure was an unhandled rejection that left that Loading text; now the real stage is named. `CDN` → allow cdn.jsdelivr.net; `MODEL_FETCH` → allow tfhub.dev + kaggle.com (model host) or retry on another network; `BACKEND` → enable hardware acceleration or **Retry on CPU** (slow, sanity only) |
+| Stuck on "Loading MoveNet model…" forever | `CDN` / `BACKEND` / `MODEL_FETCH` / `TIMEOUT` | Previously **any** failure was an unhandled rejection that left that Loading text; now the real stage is named. `CDN` → allow cdn.jsdelivr.net; `MODEL_FETCH` → verify the same-origin `models/movenet/` assets were served completely; `BACKEND` → enable hardware acceleration or **Retry on CPU** (slow, sanity only) |
 | Camera permission ok but LIVE VIEW black / stuck | `CAMERA_*` then `VIDEO` / `VIDEO_FRAME` | The harness now waits for the first rendered frame (8 s) and measures frame luminance. `VIDEO_FRAME`/black luma → camera in use elsewhere, macOS privacy, or a browser GPU-compositing glitch (Safari) — try the other browser / toggle hardware acceleration / focus the tab, then Retry |
 | Page not on HTTPS/localhost | `SECURE_CONTEXT` | Camera API unavailable — serve over HTTPS or localhost |
 | Inference stops mid-run | repeated `inference` diagnostics | Backend/context issue — Stop → Retry; if it recurs, capture the Diagnostics log| Trial buttons are enabled only while the LIVE VIEW is verified rendering **and** the model input is structured (not dark/flat), so a black/stuck or unlit view can no longer produce bogus "measurements" (trials pause with an on-page reason when the input is too dark/flat). |
@@ -253,6 +268,6 @@ in the red box with a stage label, and every stage is timestamped in the
   + classified errors) so the Owner retest reports the exact failing stage.
 - Battery numbers depend on brightness, model, and camera pipeline; report
   absolute values and the delta method (§5C).
-- CDN load requires network once; offline measurement is out of scope.
+- Runtime CDN scripts require network once; the MoveNet model artifacts are bundled same-origin and do not require tfhub.dev/Kaggle access. Offline measurement still requires the runtime scripts to have been cached or bundled by the serving environment.
 - The harness targets MoveNet per the Owner decision; BlazePose/other
   engines are not measured here.

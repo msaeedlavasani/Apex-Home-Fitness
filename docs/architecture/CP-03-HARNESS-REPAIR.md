@@ -44,12 +44,11 @@ Two compounding defects, both in the harness's startup code:
 
 Contributing factors (confirmed/observed during the repair):
 
-- The model is fetched from `tfhub.dev` (redirecting to Kaggle since the
-  tfhub sunset). From the development network a real Chrome loads MoveNet
-  Lightning successfully in ~3 s (`MODEL OK`, inference runs) — so the CDN
-  path is not inherently broken; on the Owner's machines a backend/model
-  stall is the likely Chrome-localhost cause, and it hung **because nothing
-  bounded it or surfaced it**.
+- **Superseded delivery note (2026-09-07):** the model was previously fetched
+  from `tfhub.dev` (redirecting to Kaggle since the TF Hub delivery change).
+  Two Android phones later returned HTTP 403 for `model.json`, on both WebGL
+  and CPU. The model is now bundled same-origin; see
+  `CP-03-MODEL-FETCH-CPU-FALLBACK.md` for the authoritative finding.
 - The WebGL backend is initialized unconditionally; where WebGL init is slow
   or unavailable there was no fallback and no message (a CPU path existed
   nowhere). The repair added a CPU fallback — which required registering the
@@ -104,15 +103,15 @@ synthetic camera):
   VIEW active (first frame, mean luma ≈ 102); inference loop processes
   frames at target fps; trial start/end logs a row; JSON export contains the
   trial + diagnostics; no unhandled page errors.
-- Model-CDN blocked (route-aborted tfhub/kaggle): **classified `MODEL_FETCH`
-  error** displayed with remedy + Retry — no hang.
+- Model asset delivery blocked (route-aborted same-origin model assets):
+  **classified `MODEL_FETCH` error** displayed with remedy + Retry — no hang.
 - CPU-backend path (`?backend=cpu`): reaches running and infers cleanly
   (13/13 checks passed).
 
-Manual browser reproduction from the development network (Chrome, headless):
-MoveNet Lightning `createDetector` + `estimatePoses` succeeded (~3 s load),
-confirming the tfhub→Kaggle model endpoint works in a real browser from
-here.
+Manual browser reproduction from the development network is retained as
+historical evidence only. The authoritative 2026-09-07 finding is the
+cross-device Android HTTP 403 on the tfhub→Kaggle delivery path; runtime now
+uses the pinned same-origin artifacts.
 
 ## 5. Honest limitations
 
