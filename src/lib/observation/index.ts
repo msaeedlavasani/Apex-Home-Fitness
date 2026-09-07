@@ -40,6 +40,7 @@ export {
   type CompleteObservationSetInput,
   type MovementObservationRuntime,
   type MovementObservationRuntimeVersion,
+  type ObservationRuntimeSnapshot,
   type ObservationRecord,
   type ObservationRecordSource,
   type ObservationRecordStatus,

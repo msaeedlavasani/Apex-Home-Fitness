@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Check, Pause, Play, RotateCcw, SkipForward, Timer, Trophy } from 'lucide-react';
 import {useWorkoutEngine} from './useWorkoutEngine';
 import type {SessionExercise, SessionPhase, SessionState, SessionSummary} from '@/lib/workout/sessionContracts';
+import {createMovementObservationRuntime, type ObservationRuntimeSnapshot} from '@/lib/observation';
 import { playCountdownSound, playEndSound, playStartSound, unlockAudio } from '@/services/audioService';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -48,6 +49,10 @@ import { ConsentEntity, type ConsentScope } from '@/lib/workout/consentEntity';
  *     wall-clock based and re-synced on background return, so countdowns
  *     never drift while the tab is hidden.
  */
+
+function formatDateKey(date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
 
 function formatTime(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
@@ -97,6 +102,8 @@ export interface WorkoutPlayerProps {
   hapticsEnabled?: boolean;
   /** Fired once when the user starts the workout. */
   onWorkoutStart?: () => void;
+  /** In-memory CP-05 observation read-model updates; never persisted here. */
+  onObservationChange?: (snapshot: ObservationRuntimeSnapshot) => void;
   /** Fired once with a summary when the whole workout is finished. */
   onWorkoutComplete?: (summary: SessionSummary) => void;
   /** Extra classes applied to the root element. */
@@ -117,6 +124,7 @@ export function WorkoutPlayer({
   hapticsEnabled = true,
   onWorkoutComplete,
   onWorkoutStart,
+  onObservationChange,
   className = '',
   cameraConsentScopes,
   cameraConsentVersion,
@@ -132,6 +140,18 @@ export function WorkoutPlayer({
   // ---- Reps counted in the current set (resets on set/exercise change) ----
 
   const [repsDone, setRepsDone] = useState(0);
+
+  // ---- CP-05 in-session observation bridge ------------------------------
+  // This is USER_REPORTED only: it reflects the existing manual rep control.
+  // No camera, MoveNet, persistence, or outcome mutation is involved.
+  const observationRuntimeRef = useRef<ReturnType<typeof createMovementObservationRuntime> | null>(null);
+  if (observationRuntimeRef.current == null) {
+    observationRuntimeRef.current = createMovementObservationRuntime({sessionId: `workout-${Date.now()}`});
+  }
+  const observationRuntime = observationRuntimeRef.current;
+  const observationSnapshot = useCallback(() => {
+    onObservationChange?.(observationRuntime.snapshot());
+  }, [observationRuntime, onObservationChange]);
 
   // ---- Camera consent state (session-local, in-memory only) --------------
 
@@ -181,9 +201,42 @@ export function WorkoutPlayer({
     [soundEnabled, hapticsEnabled, haptic]
   );
 
+  const observationContextRef = useRef<{
+    exercise: SessionExercise | undefined;
+    exerciseIndex: number;
+    set: number;
+  }>({exercise: undefined, exerciseIndex: 0, set: 1});
+
   const handleSetComplete = useCallback(() => {
     if (hapticsEnabled) haptic('setComplete');
-  }, [hapticsEnabled, haptic]);
+    const context = observationContextRef.current;
+    if (!context.exercise) return;
+    const runtime = observationRuntimeRef.current;
+    if (!runtime) return;
+    if (!runtime.snapshot().active) {
+      runtime.beginSet({
+        exerciseIndex: context.exerciseIndex,
+        set: context.set,
+        exercise: context.exercise,
+        plannedReps: context.exercise.reps ?? null,
+        plannedSeconds: context.exercise.durationSeconds ?? null,
+      });
+    }
+    const signal = {
+      kind: 'REP_COUNT' as const,
+      signalId: `manual-${context.exerciseIndex}-${context.set}-${Date.now()}`,
+      dateKey: formatDateKey(),
+      exerciseIndex: context.exerciseIndex,
+      set: context.set,
+      observedReps: repsDone,
+      plannedReps: context.exercise.reps ?? null,
+      source: 'USER_REPORTED' as const,
+      confidence: 1,
+    };
+    runtime.appendSignal(signal);
+    runtime.completeSet();
+    observationSnapshot();
+  }, [hapticsEnabled, haptic, observationSnapshot, repsDone]);
 
   // ---- IndexedDB persistence (only when a `userId` is provided) ---------
 
@@ -237,6 +290,8 @@ export function WorkoutPlayer({
     onSetComplete: handleSetComplete,
     onStateChange: handleStateChange,
   });
+
+  observationContextRef.current = {exercise: currentExercise, exerciseIndex: currentExerciseIndex, set: currentSet};
 
   // On mount, restore today's snapshot (if any) when it still matches the
   // loaded plan. `hydrate()` no-ops once the user has started, so a slow
