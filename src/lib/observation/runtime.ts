@@ -73,6 +73,14 @@ export interface ObservationRuntimeOptions {
   readonly idFactory?: () => string;
 }
 
+/** Runtime-owned view for a workout player/Companion consumer. */
+export interface ObservationRuntimeSnapshot {
+  readonly sessionId: string;
+  readonly active: boolean;
+  readonly current: ObservationSetPlan | null;
+  readonly records: readonly ObservationRecord[];
+}
+
 export interface BeginObservationSetInput extends ObservationSetPlan {
   readonly startedAt?: number;
 }
@@ -99,6 +107,7 @@ export interface MovementObservationRuntime {
   recordUnobservable(input: UnobservableObservationSetInput): ObservationRecord;
   recordUncertain(input: UnobservableObservationSetInput): ObservationRecord;
   cancelActive(reason: string, endedAt?: number): ObservationRecord;
+  snapshot(): ObservationRuntimeSnapshot;
   records(): readonly ObservationRecord[];
   reset(): void;
 }
@@ -235,6 +244,12 @@ export function createMovementObservationRuntime(options: ObservationRuntimeOpti
     recordUnobservable,
     recordUncertain,
     cancelActive,
+    snapshot: () => ({
+      sessionId: options.sessionId,
+      active: active !== null,
+      current: active ? {...active.plan} : null,
+      records: records.map((record) => ({...record, signals: [...record.signals]})),
+    }),
     records: () => records.map((record) => ({...record, signals: [...record.signals]})),
     reset: () => {
       if (active) throw new Error('cannot reset observation runtime while a set is active');

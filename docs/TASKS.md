@@ -738,11 +738,13 @@ code written.
 |---|---|
 | PRIORITY | P2 |
 | DEPENDENCIES | CP-02, AL-04, [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md) |
-| AUTONOMOUS_ELIGIBILITY | `NOT_YET` |
+| AUTONOMOUS_ELIGIBILITY | `OWNER_AUTHORIZED` — Owner promotion 2026-09-07; bounded CODE_NO_DEPLOY tranche only |
+| AUTHORIZATION | Owner decision 2026-09-07: promote CP-05 for the smallest defensible workout-runtime observation integration; CP-04 camera runtime, TS-02 legal, MO-01 persistence, and Production remain gated |
 | PARALLEL_SAFETY | `CLAIM_REQUIRED` |
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
+| STATUS | **IMPLEMENTED — bounded CP-05 CODE_NO_DEPLOY tranche, pending governed delivery.** WorkoutPlayer now emits an in-memory CP-07 observation snapshot from the existing manual USER_REPORTED rep control; no camera/MoveNet/DEVICE_MEASURED path, persistence/history, outcome mutation, legal wording, Production, or unsupported quality claims. Typecheck/lint PASS. Architecture record: `docs/architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`. |
 
 **Objective:** integrate the Companion's observation and adaptation signals
 into the Workout Experience V2 runtime — real-time guidance during the

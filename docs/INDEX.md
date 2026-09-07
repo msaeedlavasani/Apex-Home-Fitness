@@ -23,7 +23,7 @@
 | Product advisory, competitor evidence, North Star ideas | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Comprehensive product strategy (parent/master; PROPOSED / NON-EXECUTABLE) | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md) |
 | Movement Intelligence strategy (deep-dive specialist; PROPOSED / NON-EXECUTABLE) | [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
-| Workout V2 advisory vision and unresolved questions | [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md), [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) |
+| Workout V2 / CP-05 observation integration (Owner-promoted 2026-09-07; bounded WorkoutPlayer USER_REPORTED observation bridge to CP-07; no camera, DEVICE_MEASURED, persistence, Production, legal, or unsupported quality claims) | [`architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`](architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md), [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md), [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) |
 | Architecture principles and accepted architecture decisions | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md), [`adr/README.md`](adr/README.md) |
 | Admin Auth V1 architecture decision | [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Architecture stabilization status and remaining boundaries | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
