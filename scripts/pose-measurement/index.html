@@ -25,8 +25,9 @@
   for camera access.
 
   Dependencies: TF.js + @tensorflow-models/pose-detection from CDN — loaded
-  here ONLY; nothing is added to the app's package.json. No app import, no
-  build integration.
+  here ONLY; the official MoveNet TF.js v4 model artifacts are bundled under
+  scripts/pose-measurement/models/ and served same-origin. Nothing is added to
+  the app's package.json. No app import, no build integration.
 
   DIAGNOSTIC BEHAVIOR (harness repair 2026-09-04): startup runs as a
   bounded, observable pipeline with per-stage timeouts and classified
@@ -234,7 +235,16 @@ const CFG = {
   dropResetMs: 1500,            // rep machine: an angle dropout longer than this re-arms to 'up'
   maxLog: 400,
 };
+// CP-03 model artifacts are served same-origin from this research harness.
+// The official MoveNet TF.js v4 artifacts were pinned from Kaggle's public
+// google/movenet model (Apache 2.0) after field devices received HTTP 403 from
+// the tfhub.dev → Kaggle redirect chain. This changes delivery only; inference
+// remains entirely in-browser/on-device.
 const MODEL_URLS = {
+  Lightning: "models/movenet/singlepose-lightning/4/model.json",
+  Thunder: "models/movenet/singlepose-thunder/4/model.json",
+};
+const MODEL_UPSTREAMS = {
   Lightning: "https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4",
   Thunder: "https://tfhub.dev/google/tfjs-model/movenet/singlepose/thunder/4",
 };
@@ -684,7 +694,7 @@ function updateRepUi() {
 
 // --- Stage: TF.js backend -------------------------------------------------------
 async function initBackend(boot, preferCpu) {
-  if (!window.tf) throw mkErr('CDN', 'TF.js (tf) is missing — a CDN script failed to load.', 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js in a tab; if it fails, allow that host (and tfhub.dev/kaggle.com for the model) and reload.');
+  if (!window.tf) throw mkErr('CDN', 'TF.js (tf) is missing — a CDN script failed to load.', 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js in a tab; if it fails, allow that host and reload; the MoveNet model is bundled with this harness.');
   const want = preferCpu ? 'cpu' : 'webgl';
   setStage('stage 1/5 — TF.js backend (' + want + ')');
   setStatus('Initializing TF.js ' + (want === 'webgl' ? 'WebGL' : 'CPU (fallback — slow, sanity only)') + ' backend…');
@@ -837,6 +847,15 @@ async function attachVideo(boot, stream) {
 }
 
 // --- Stage: model ------------------------------------------------------------------
+function createMoveNetDetector(mt) {
+  return poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+    modelType: mt === 'Thunder' ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+    // A relative model URL intentionally avoids tfc's fromTFHub URL rewrite.
+    // The model JSON and weight shards are same-origin static assets.
+    modelUrl: MODEL_URLS[mt],
+  });
+}
+
 async function loadModel(boot, preferCpu) {
   const mt = $('modelSel').value;
   if (state.detector && state.detectorModel === mt) {
@@ -847,15 +866,13 @@ async function loadModel(boot, preferCpu) {
   const url = MODEL_URLS[mt];
   const wantBackend = preferCpu ? 'cpu' : (state.backend || 'webgl');
   setStage('stage 4/5 — model download' + (preferCpu ? ' (CPU fallback)' : ''));
-  setStatus('Loading MoveNet ' + mt + ' from CDN (3–8 MB first download; ' + Math.round(CFG.modelTimeoutMs / 1000) + 's timeout)...');
-  diag('model', 'createDetector(MoveNet ' + mt + ') ← ' + url + ' [backend: ' + wantBackend + ']', 'info');
+  setStatus('Loading MoveNet ' + mt + ' from the harness bundle (3–12 MB first download; ' + Math.round(CFG.modelTimeoutMs / 1000) + 's timeout)...');
+  diag('model', 'createDetector(MoveNet ' + mt + ') ← same-origin ' + url + ' [backend: ' + wantBackend + '; upstream: ' + MODEL_UPSTREAMS[mt] + ']', 'info');
   const t0 = performance.now();
   let det;
   try {
     det = await withTimeout(
-      poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-        modelType: mt === 'Thunder' ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-      }),
+      createMoveNetDetector(mt),
       CFG.modelTimeoutMs, 'MoveNet model download/parse');
   } catch (e) {
     if (!alive(boot)) return null;
@@ -879,20 +896,18 @@ async function loadModel(boot, preferCpu) {
         diag('model', 'CPU backend ready, retrying model load', 'info');
         setStage('stage 4/5 — model download (CPU retry)');
         det = await withTimeout(
-          poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-            modelType: mt === 'Thunder' ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-          }),
+          createMoveNetDetector(mt),
           CFG.modelTimeoutMs, 'MoveNet model download/parse (CPU)');
       } catch (e2) {
         if (!alive(boot)) return null;
         diag('model', 'CPU fallback also failed: ' + (e2 && e2.message ? e2.message : e2), 'err');
         throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load on both WebGL and CPU: ' + (e2 && e2.message ? e2.message : e),
-          'Both backends failed. First error: ' + (errName || '?') + ' — "' + msg.slice(0, 200) + '". Second error (CPU): ' + (e2 && e2.message ? e2.message : e).slice(0, 200) + '. Check connectivity (tfhub.dev + kaggle.com), try a different network or a higher-end device.',
+          'Both backends failed. First error: ' + (errName || '?') + ' — "' + msg.slice(0, 200) + '". Second error (CPU): ' + (e2 && e2.message ? e2.message : e).slice(0, 200) + '. Check that the same-origin model assets are available, then retry or use a different device.',
           { cpuOffer: true });
       }
     } else {
       throw mkErr('MODEL_FETCH', 'MoveNet ' + mt + ' failed to load: ' + msg,
-        'The model is fetched from ' + url + ' (redirects via Kaggle). Error: ' + (errName || 'unknown') + ' — "' + msg.slice(0, 200) + '". Check connectivity/ad-blocker/firewall; allow tfhub.dev + kaggle.com, or try Retry on CPU if available.',
+        'The model is served same-origin from ' + url + ' (official source: ' + MODEL_UPSTREAMS[mt] + '). Error: ' + (errName || 'unknown') + ' — "' + msg.slice(0, 200) + '". Check that the same-origin model assets are available; retry if the page was partially cached or served incompletely.',
         { errorName: errName, errorCause: errCause });
     }
   }
@@ -1014,7 +1029,7 @@ async function runPipeline(opts) {
   diag('start', 'pipeline start (boot #' + boot + ')', 'info');
   try {
     if (window.__cdnFail && window.__cdnFail.length)
-      throw mkErr('CDN', 'CDN scripts failed to load: ' + window.__cdnFail.join(', '), 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net in a tab; if it fails, allow that host (and tfhub.dev/kaggle.com for the model) and reload.');
+      throw mkErr('CDN', 'CDN scripts failed to load: ' + window.__cdnFail.join(', '), 'Network/CDN issue or blocker. Load https://cdn.jsdelivr.net in a tab; if it fails, allow that host and reload; the MoveNet model is bundled with this harness.');
 
     const backend = await initBackend(boot, opts.cpu);
     if (!alive(boot) || backend === null) return;
@@ -1140,7 +1155,11 @@ function exportJson() {
     device: { ua: navigator.userAgent, platform: navigator.platform, battery: $('battLevel').textContent },
     runtime: {
       phase: state.phase, backend: state.backend, videoLive: state.videoLive, luma: Math.round(state.luma * 10) / 10,
-      model: state.detectorModel, video: state.video ? state.videoWidth + 'x' + state.videoHeight : null,
+      model: state.detectorModel,
+      modelDelivery: 'same-origin-bundled',
+      modelAsset: state.detectorModel ? MODEL_URLS[state.detectorModel] : null,
+      modelUpstream: state.detectorModel ? MODEL_UPSTREAMS[state.detectorModel] : null,
+      video: state.video ? state.videoWidth + 'x' + state.videoHeight : null,
       inferenceInput: state.capCanvas ? state.capCanvas.width + 'x' + state.capCanvas.height + ' mirrored canvas' : null,
       mirror: $('mirrorChk').checked,
       repStateVersion: 3, keypointGate: KEYPOINT_GATE, dropResetMs: CFG.dropResetMs,
@@ -1219,6 +1238,9 @@ window.__ahf = {
   getState: () => ({
     phase: state.phase, running: state.running, backend: state.backend, videoLive: state.videoLive,
     luma: Math.round(state.luma * 10) / 10, model: state.detectorModel, detector: !!state.detector,
+    modelDelivery: 'same-origin-bundled',
+    modelAsset: state.detectorModel ? MODEL_URLS[state.detectorModel] : null,
+    modelUpstream: state.detectorModel ? MODEL_UPSTREAMS[state.detectorModel] : null,
     fps: Math.round(state.fps * 10) / 10, processed: state.processed, detections: state.detections,
     inferenceCalls: state.inferenceCalls, poseReturns: state.poseReturns, poseGatedOut: state.poseGatedOut,
     skeletonDraws: state.skeletonDraws, lastOverlayHits: state.lastOverlayHits, overlayErrors: state.overlayErrors,

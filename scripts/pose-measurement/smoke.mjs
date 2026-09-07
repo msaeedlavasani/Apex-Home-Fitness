@@ -83,6 +83,16 @@ async function main() {
   if (!existsSync(CHROME)) { console.log('SKIP  harness smoke — Google Chrome not found at ' + CHROME); skipped++; return; }
   const hasHuman = existsSync(HUMAN_IMG);
   const { server, url } = await serve(4175);
+  // The harness must ship the official model artifacts locally; this prevents
+  // a regression back to an expiring/blocked tfhub.dev redirect dependency.
+  for (const [model, files] of [
+    ['singlepose-lightning', ['model.json', 'group1-shard1of2.bin', 'group1-shard2of2.bin']],
+    ['singlepose-thunder', ['model.json', 'group1-shard1of3.bin', 'group1-shard2of3.bin', 'group1-shard3of3.bin']],
+  ]) {
+    for (const file of files) {
+      check(`assets. ${model}/${file} is bundled`, existsSync(join(HARNESS_DIR, 'models', 'movenet', model, '4', file)), 'same-origin official model artifact');
+    }
+  }
   const browser = await chromium.launch({
     executablePath: CHROME,
     headless: true,
@@ -91,8 +101,12 @@ async function main() {
   const ctxA = await browser.newContext({ viewport: { width: 1200, height: 1000 } });
   const page = await ctxA.newPage();
   const consoleErrs = [];
+  const externalModelRequests = [];
   page.on('pageerror', (e) => consoleErrs.push(String(e).slice(0, 200)));
   page.on('console', (m) => { if (m.type() === 'error') consoleErrs.push(m.text().slice(0, 200)); });
+  page.on('request', (r) => {
+    if (/tfhub\.dev|kaggle\.com|storage\.googleapis\.com/.test(r.url())) externalModelRequests.push(r.url());
+  });
 
   // ============ A. Pipeline health (synthetic pattern camera) ================
   await page.goto(url + '?autostart=1', { waitUntil: 'domcontentloaded' });
@@ -104,6 +118,7 @@ async function main() {
   } else {
     check('A. pipeline reaches running', true, `backend=${st.backend} model=${st.model}`);
     check('A. LIVE VIEW active (first frame + luma)', st.videoLive === true && st.luma >= 5, `luma=${st.luma}`);
+    check('A. model delivery stays same-origin (no tfhub/Kaggle/storage request)', externalModelRequests.length === 0, `externalModelRequests=${externalModelRequests.length}`);
     check('A. inference input is the live frame (repair-#2 regression guard)', st.hasVideo === true && !!st.inputCanvas && st.inferenceCalls > 0, `video=${st.videoW}x${st.videoH} input=${st.inputCanvas} calls=${st.inferenceCalls} det=${st.detections}`);
     check('A. no inference errors (input real, loop clean)', st.infErrors === 0, `infErrors=${st.infErrors}`);
 
@@ -130,17 +145,17 @@ async function main() {
   }
   await page.close();
 
-  // ============ B. Model CDN blocked → classified MODEL_FETCH (no hang) ===========
+  // ============ B. Model asset delivery blocked → classified MODEL_FETCH (no hang) ===
   const page2 = await ctxA.newPage();
-  await page2.route(/tfhub\.dev|kaggle\.com/, (r) => r.abort('failed'));
+  await page2.route(/\/models\/movenet\//, (r) => r.abort('failed'));
   await page2.goto(url + '?autostart=1', { waitUntil: 'domcontentloaded' });
   const st2 = await waitState(page2, (s) => s && (s.phase === 'error' || s.phase === 'running'), 90000, 'modelblock');
   if (st2 && st2.phase === 'error' && st2.error) {
-    check('B. blocked model CDN surfaces classified error (no hang)', st2.error.stage === 'MODEL_FETCH', `stage=${st2.error.stage}: ${st2.error.message.slice(0, 120)}`);
+    check('B. blocked model assets surface classified error (no hang)', st2.error.stage === 'MODEL_FETCH', `stage=${st2.error.stage}: ${st2.error.message.slice(0, 120)}`);
     check('B. error box visible with remedy', await page2.locator('#errBox').isVisible(), 'errBox shown');
     check('B. retry button offered', await page2.locator('#retryBtn').isVisible(), 'retryBtn shown');
   } else {
-    check('B. blocked model CDN surfaces classified error (no hang)', false, st2 ? `phase=${st2.phase}` : 'no state');
+    check('B. blocked model assets surface classified error (no hang)', false, st2 ? `phase=${st2.phase}` : 'no state');
   }
   await page2.close();
 
