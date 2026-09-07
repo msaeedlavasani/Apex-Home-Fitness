@@ -26,7 +26,7 @@
 - Executable work and dependencies: [`TASKS.md`](TASKS.md).
 - Machine-oriented state: [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
-- **CP-07 Movement Observation runtime is Owner-promoted and implemented in a bounded pure/in-memory CODE_NO_DEPLOY tranche (2026-09-07)**: CP-02-aligned validated count/timing recorder with explicit uncertainty/unobservable states; no camera invocation, persistence, UI, Production, legal wording, or unsupported movement-quality claims. Delivery is pending PR/CI/merge lifecycle; architecture record: `docs/architecture/CP-07-MOVEMENT-OBSERVATION-RUNTIME.md`.
+- **CP-07 Movement Observation runtime is CLOSED (CODE_NO_DEPLOY, 2026-09-07)**: CP-02-aligned validated count/timing recorder with explicit uncertainty/unobservable states; no camera invocation, persistence, UI, Production, legal wording, or unsupported movement-quality claims. PR #54 merged `a3e0522`; exact Main CI PASS run `34156003017`; branch retired. Future camera adapter/workout wiring remains behind CP-04 gates; persistence remains MO-01/TS-02 gated. Architecture record: `docs/architecture/CP-07-MOVEMENT-OBSERVATION-RUNTIME.md`.
 - **CP-06 Camera opt-in / consent UX + no-camera fallback is CLOSED (CODE_NO_DEPLOY, 2026-09-06)** (CODE_NO_DEPLOY, 2026-09-05). Client-side consent entity, consent banner, tracking indicator, WorkoutPlayer integration, and EN/FA i18n delivered (PR #43 merged 0041cb9; Main CI PASS on exact SHA run 33991593333; branch retired; re-audit 2026-09-06 discovered and retired stray remote branches `docs/cp-06-close-governance` and `docs/cp-06-manifest-fixes`). Legal wording (TS-02), browser camera access, on-device inference wiring, and persistence/retention remain separately gated.
 
 ## Stable operational context
