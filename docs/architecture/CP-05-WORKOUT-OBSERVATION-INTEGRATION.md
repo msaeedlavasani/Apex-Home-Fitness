@@ -1,6 +1,9 @@
 # CP-05 — Workout Observation Integration / Camera Runtime (bounded tranche)
 
-> **Status:** IMPLEMENTED — pending governed delivery
+> **Status:** CLOSED — delivered via PR #58 merge `20d793b`
+> **Exact merge Main CI:** run `34166027889`; build `101877109577` PASS; e2e `101878062998` PASS
+> **Branch retirement:** `feat/cp-05-camera-observation-runtime` retired locally/remotely
+> **Physical acceptance:** OPEN — no device field claim yet
 > **Authorization:** Owner authorized browser-camera/device-measured tranche on 2026-09-08
 > **Profile:** `CODE_NO_DEPLOY`; no persistence, Production, retention, or legal change
 > **Scope status:** source-level implementation complete; physical-device acceptance pending

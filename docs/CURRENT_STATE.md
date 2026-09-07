@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           CP-05 browser-camera/device-measured integration — bounded squat-only CODE_NO_DEPLOY tranche; pending governed delivery and physical acceptance.
-ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY (consent-gated on-device runtime; no persistence/Production/legal change)
-AHF_EXECUTION_STATE:                   ACTIVE — Owner authorized CP-05 camera tranche 2026-09-08; implementation reuses CP-04/CP-06/CP-07; MO-01, TS-02, and Production gates remain intact.
-ACTIVE_BRANCH:                         feat/cp-05-camera-observation-runtime
+ACTIVE_TASK:                           NONE — CP-05 browser-camera/device-measured code tranche CLOSED; physical-device acceptance remains OPEN.
+ACTIVE_TASK_PROFILE:                   N/A (no active task)
+AHF_EXECUTION_STATE:                   ACTIVE — CP-05 camera tranche delivered 2026-09-08; physical device evidence remains required; MO-01, TS-02, and Production gates remain intact.
+ACTIVE_BRANCH:                         N/A
 PREVIOUS_COMPLETED_TASK:               CP-06 Camera opt-in / consent UX + no-camera fallback (2026-09-06 CODE_NO_DEPLOY; PR #43 merged 0041cb9; Main CI PASS run 33991593333; branch retired local + remote verified; re-audit 2026-09-06 discovered and retired stray remote branches docs/cp-06-close-governance and docs/cp-06-manifest-fixes) (2026-09-05 CODE_NO_DEPLOY; Owner-authorized CP-04 camera integration + CP-06 consent UX tranche; src/lib/workout/consentEntity.ts + src/components/workout/CameraConsentBanner.tsx + src/components/workout/CameraTrackingIndicator.tsx + src/components/workout/WorkoutPlayer.tsx + src/app/[locale]/workout/page.tsx + src/messages/en.json + src/messages/fa.json; consent UX entity + UI surface only — no legal wording, no browser camera, no inference wiring, no persistence/retention; TS-02 / Production items still pending); prior completed task: CP-04 camera authorization architecture + first service-boundary tranche 2026-09-05/06 (CODE_NO_DEPLOY; ADR-0021 ACCEPTED; CP-04-COMPANION-CAMERA-ARCHITECTURE.md + src/services/cameraConsentService.ts + src/services/cameraService.ts); before that: TS-03 Account / data deletion 2026-09-05 (CODE_NO_DEPLOY, batch with CP-03 review) and CP-03 feasibility + measurement review 2026-09-05 (iPhone Chrome CriOS squat 9/10 = 90% PASS cell; matrix NOT_MEASURED recorded)
-NEXT_AUTHORIZED_TASK:                  CP-05 browser-camera/device-measured delivery and physical acceptance — squat-only, consent-gated, no persistence; no broader capability claim.
-NEXT_EXPECTED_BRANCH:                 feat/cp-05-camera-observation-runtime → PR/CI/merge lifecycle
-CURRENT_PHASE:                         CP-05 ACTIVE — consent-gated browser camera adapter implemented for validated squat-only device measurement; CP-04 camera runtime gate is being executed within Owner authorization; MO-01, TS-02 legal, and Production remain separately gated.
-LAST_UPDATED:                          2026-09-08 — Owner authorized CP-05 browser-camera/device-measured tranche. Same-origin MoveNet Lightning reused; only squat `DEVICE_MEASURED REP_COUNT`; raw frames in-browser; manual fallback preserved; no persistence/history/retention/Production/legal change.
+NEXT_AUTHORIZED_TASK:                  Physical-device acceptance of CP-05 squat-only camera runtime; no further autonomous scope expansion without new evidence.
+NEXT_EXPECTED_BRANCH:                 N/A (physical evidence gate)
+CURRENT_PHASE:                         CP-05 CODE CLOSED — consent-gated browser camera adapter delivered for validated squat-only device measurement; physical acceptance pending. MO-01, TS-02 legal, and Production remain separately gated.
+LAST_UPDATED:                          2026-09-08 — CP-05 camera runtime tranche delivered via PR #58 merge `20d793b`; exact Main CI run `34166027889` (build `101877109577`, e2e `101878062998`) PASS; branch retired. Physical device acceptance remains OPEN; no persistence/history/retention/Production/legal change.
 ```
 
 ## Reading this manifest (pre-task gate)
