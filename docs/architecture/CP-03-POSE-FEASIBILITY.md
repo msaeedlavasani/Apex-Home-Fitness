@@ -18,16 +18,13 @@
 > change. This report answers the OWNER_DECISION_GATE of CP-03 ("Spike
 > findings review before any implementation").
 >
-> **Evidence basis — read this first.** Sources: §12. This spike was executed in a
-> development environment with **no physical phone hardware, no camera
-> device, and no iOS/Android test matrix**. Every latency/accuracy/battery
-> number below is a **published measurement** (official vendor benchmark or
-> peer-reviewed study) with its source and measurement conditions cited.
-> Where we derive session-level estimates, they are labeled DERIVED. The
-> acceptance criterion "real measurements (not estimates)" therefore has a
-> documented gap: on-device validation on the actual target device matrix is
-> a required next step (§8) before any implementation — this is a finding,
-> not a blocker to deciding the approach.
+> **Evidence basis — read this first.** Sources: §12 and the first-party evidence
+> in §11. The spike began with no physical phone matrix, but subsequent
+> first-party evidence includes one counted iPhone CriOS squat cell and final
+> model-delivery acceptance on **two separate Android phones**. The Android
+> acceptance closes the HTTP 403 artifact-delivery incident only; it does not
+> turn unrun FPS, rep-accuracy, placement, movement, Safari, or battery cells
+> into measurements. Every unrun cell remains explicitly NOT_MEASURED.
 
 ## 1. Question and posture
 
@@ -252,35 +249,53 @@ E — rejected (server-side); F — defer pose, keep USER_REPORTED-only signals.
 - Findings review (this OWNER_DECISION_GATE) precedes any implementation,
   per CP-03's gate. No product code exists or was run.
 
-## 11. First-party measurement outcomes (2026-09-05)
+## 11. First-party measurement and delivery outcomes (2026-09-07)
 
-First-party real-device measurement evidence was produced on the repaired
-v3 harness (smoke 32/32 before the run). **One matrix cell is MEASURED;
-every other cell is honestly NOT_MEASURED.** These trials are real,
-exported evidence — never inferred, never fabricated.
+First-party evidence now has two separate meanings and must not be conflated:
 
-| Metric (per README §1) | Measured | Result | Verdict vs proposed criterion |
-|---|---|---|---|
-| Rep-count reliability — squat @ diagonal-90, iPhone Chrome (CriOS 150, iOS 26), 10 squats | `results/iphone-squat-diagonal90-crios-2026-09-05.json` | **9/10 = 90%** (downs 9 / ups 9, phase-at-end `up`); minAngle **57°** (below the 95° down threshold — real depth); avgConf **0.66**; trial 71.7 s; valid 770 / gated 188 angle frames | **PASS** (≥ 90% criterion met for this cell) |
-| FPS / inference latency — same run | p95 inference **33 ms** @ 15 fps cfg, WebGL, Lightning, sustained ~13.5 live FPS (input 720×1280 mirrored canvas) | p95 33 ms is well under the ~66 ms p95 bound — latency headroom confirmed on iPhone-class WebKit (CriOS) | PASS (latency) |
-| Inference health — same run | 8,436 inference calls / 7,211 pose returns / **0 inference errors** / 7,211 skeleton draws / overlay hits 50 / `POSES_OK` audits throughout (luma mean ≈ 132–159, source clock advancing ~1.05 s) | Tracking + overlay healthy end-to-end on the device | PASS |
-| Placement sensitivity | Only diagonal-90 measured | Other placements (diagonal-200, front-180, side-90) **NOT_MEASURED** | Not scored |
-| Rep-count — other v1 movements | push-up / hinge / lunge | **NOT_MEASURED** | Not scored |
-| Android Chrome | none | **NOT_MEASURED** — Android remains the spike's binding-constraint case (best published browser FPS), so this is the largest evidence gap | Not scored |
-| iPhone **Safari** | measured in **CriOS** (Chrome for iOS — WebKit underneath) | Safari itself **NOT_MEASURED**; CriOS is a reasonable WebKit proxy but not a Safari measurement | Not scored |
-| Session battery impact | iOS has no `navigator.getBattery()`; no pre/post run | **NOT_MEASURED** (device reports battery `n/a`) | Not scored |
+1. **Measurement evidence:** one counted real-device cell — iPhone Chrome
+   (CriOS) squat @ diagonal-90, 9/10 = 90%, with the metrics recorded below.
+2. **Delivery acceptance evidence:** two separate Android phones successfully
+   loaded the corrected same-origin MoveNet bundle and both reached green
+   RUNNING. This closes the HTTP 403 model-delivery incident, but it is not an
+   FPS, rep-count, placement, or battery measurement.
 
-**Gate conclusion:** the proposal's core de-risking claim now has
-first-party support — a real iPhone-browser device counted 9/10 real
-squats (90%) at the recommended placement with healthy FPS/latency,
-zero inference errors, and honest depth (minAngle 57°). The full
-acceptance matrix is **not** complete: Android Chrome, Safari, the other
-three v1 movements, three placements, and battery remain
-**NOT_MEASURED** and must not be represented as measured. These gaps are
-recorded for the Owner-side optional continuation; they are not
-backlog-blocking (the downstream camera work is independently gated on
-CP-04/TS-02 consent work, not on the remaining matrix). Product
-implementation remains unstarted and separately gated as before.
+### 11.1 Counted measurement cell
+
+| Metric | Evidence | Verdict |
+|---|---|---|
+| Rep-count reliability — squat @ diagonal-90, iPhone Chrome (CriOS 150, iOS 26), 10 squats | `results/iphone-squat-diagonal90-crios-2026-09-05.json`: **9/10 = 90%**, downs 9 / ups 9, minAngle 57°, avgConf 0.66, valid 770 / gated 188 | **PASS** for this cell |
+| FPS / inference latency — same run | p95 **33 ms** @ 15 fps config, WebGL, Lightning, ~13.5 live FPS, input 720×1280 | **PASS** for this cell |
+| Inference health — same run | 8,436 calls / 7,211 pose returns / 0 inference errors / 7,211 skeleton draws / `POSES_OK` | **PASS** for this cell |
+
+### 11.2 Final Android model-delivery acceptance
+
+On 2026-09-07 the Owner tested the corrected harness on **two separate Android
+phones**. Both devices:
+
+- loaded the bundled same-origin MoveNet model successfully;
+- reached the green **RUNNING** state; and
+- did not reproduce the prior HTTP 403 before-inference failure.
+
+**Acceptance result:** the model-delivery incident is **CLOSED**. This is an
+artifact delivery/load acceptance result, not a claim of Android FPS,
+rep-count accuracy, placement sensitivity, or battery performance.
+
+### 11.3 Remaining matrix (honestly NOT_MEASURED)
+
+| Cell/category | Status |
+|---|---|
+| Android FPS / inference latency | NOT_MEASURED — no exported timing run |
+| Android rep-count reliability | NOT_MEASURED — no exported trials |
+| Android placement sensitivity | NOT_MEASURED |
+| Push-up / hinge / lunge | NOT_MEASURED |
+| Diagonal-200 / front-180 / side-90 | NOT_MEASURED |
+| iPhone Safari | NOT_MEASURED — CriOS is a WebKit proxy, not Safari |
+| Session battery impact | NOT_MEASURED |
+
+The optional matrix continuation remains Owner-side work with zero backlog
+impact. No product implementation, camera wiring, or persistence decision is
+authorized by this closure.
 
 ## 12. Sources (accessed 2026-09-03)
 
@@ -307,12 +322,12 @@ implementation remains unstarted and separately gated as before.
 11. Web Platform constraints (cross-origin isolation / SharedArrayBuffer / WebGL2 baseline):
     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
 
-## 11. Related
+## 13. Related
 
 - `docs/architecture/CP-02-OBSERVATION-SIGNAL-MODEL.md` — the signal contract this spike validates movement coverage for
 - `docs/architecture/CP-01-COMPANION-ARCHITECTURE.md` — interventions G2–G4 consume the signals
 - `docs/architecture/TS-01-PRIVACY-SAFETY-ARCHITECTURE.md` — C1/C2 privacy posture (raw video never leaves the device)
 - `docs/architecture/MOBILE-READINESS-01.md` + `docs/adr/0005-mobile-readiness-guardrails.md` — web-first posture, deferred mobile triggers
 - `src/lib/movement/taxonomy.ts` (MG-02 patterns), `src/lib/exercise/catalog.ts` (canonical catalog), `src/lib/observation` (CP-02)
-- `docs/TASKS.md` — CP-03 queue entry (FINDINGS DELIVERED — AWAITING OWNER REVIEW)
+- `docs/TASKS.md` — CP-03 queue entry (delivery incident CLOSED; optional matrix cells remain NOT_MEASURED)
 - `docs/architecture/CP-03-MOVEMENT-OBSERVATION-OUTCOME.md` — product/architecture outcome persisted from this spike (2026-09-04): camera strictly OPT-IN (denial never blocks the workout; raw video stays on-device); pose tracking framed as a **Movement Observation system** (prescribed/observed/validated reps, ROM proxy, tempo/tempo drift, confidence, invalid-incomplete reps, unobservable/uncertain periods, timestamps, observation source — DEVICE_MEASURED/USER_REPORTED/UNKNOWN), never classifying measurement uncertainty as user performance failure; consent-bound longitudinal data pipeline (Prescription → Observation → Performance History → Personal Movement Profile → Adaptive Training); monetization/value-layer opportunity RECORDED but NOT evaluated (no pricing/paywall/tier chosen); CP-03 stays feasibility-only. Follow-ups CP-06/CP-07/MO-01 recorded NOT_YET in TASKS.md.

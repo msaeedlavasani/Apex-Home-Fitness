@@ -4,14 +4,17 @@
 > harness failed during real smoke testing and what was repaired. It changes
 > **no CP-03 product decision** (Approach A — MoveNet/TF.js, web-first,
 > fully on-device) and adds **no Companion camera/product functionality**.
-> The CP-03 real-device measurement gate remains **OPEN**.
+> The original harness repair is **CLOSED as an incident repair**. The broader
+> CP-03 measurement matrix remains separately scoped and must not be inferred
+> from model-load acceptance.
 
 - Task: TASK DELTA — CP-03 HARNESS DIAGNOSTIC & REPAIR (2026-09-04)
 - Repaired artifacts: `scripts/pose-measurement/index.html`,
   `scripts/pose-measurement/README.md` (+ automated check
   `scripts/pose-measurement/smoke.mjs`)
-- Status: harness **demonstrably ready for Owner real-device retesting**;
-  gate still open — earlier attempts produced **no valid measurements**.
+- Status: harness **demonstrably ready**; incident closure recorded after the
+  corrected bundle was accepted on two Android phones; earlier attempts
+  produced **no valid measurements**.
 
 ## 1. Observed failures (real smoke testing, pre-repair)
 
@@ -113,6 +116,15 @@ historical evidence only. The authoritative 2026-09-07 finding is the
 cross-device Android HTTP 403 on the tfhub→Kaggle delivery path; runtime now
 uses the pinned same-origin artifacts.
 
+## 5. Incident closure (2026-09-07)
+
+The later HTTP 403 model-delivery incident is recorded in
+`CP-03-MODEL-FETCH-CPU-FALLBACK.md`. After the official MoveNet artifacts were
+bundled same-origin, the Owner validated the updated harness on two separate
+Android phones; both loaded the model and reached green RUNNING. The delivery
+incident is closed. This does not close or expand the optional CP-03 accuracy,
+latency, placement, movement, or battery matrix.
+
 ## 5. Honest limitations
 
 - **No real webcam/human-in-frame verification was possible here** — the
@@ -125,9 +137,11 @@ uses the pinned same-origin artifacts.
   failing stage (first-frame vs black-luma vs inference) instead of a silent
   black view; the likely causes named in the error remedy are camera-in-use,
   macOS camera privacy, or a Safari/Chrome GPU-compositing glitch.
-- **Mac results do not satisfy the final Android/iPhone measurement gate**;
-  the gate stays open until §6 phones return real JSON exports + results
-  table.
+- Mac results do not establish Android/iPhone performance or rep accuracy.
+  However, the separate HTTP 403 **model-delivery incident is now closed**:
+  the corrected same-origin bundle was accepted on two Android phones with
+  the model loaded and green RUNNING. Broader measurement cells remain
+  NOT_MEASURED unless a JSON export exists.
 
 ## 6. Persistence
 

@@ -2,8 +2,10 @@
 
 **Scope:** research measurement harness only (`scripts/pose-measurement/`). No product
 code, no CP-03 product decisions changed, no threshold values changed.
-**Status:** harness repaired and re-verified (smoke **32/32**); the CP-03 real-device
-measurement gate remains **OPEN**. These iPhone trials are **not counted** toward the gate.
+**Status:** harness repaired and re-verified (historical smoke **32/32**). The
+later model-delivery incident was closed after same-origin artifact acceptance
+on two Android phones. These historical iPhone trials are **not counted** as
+additional measurements; unrun cells remain NOT_MEASURED.
 
 ## 1. The observation (first iPhone measurement export)
 
@@ -129,7 +131,7 @@ tests; lint 0 errors.
   trace.
 - `minAngle ≤ 95`, `downs ≈ 10`, `detected ≈ 10` → fix confirmed; proceed.
 
-## 6. Owner/human retest (CP-03 gate still OPEN — these trials are not counted)
+## 6. Owner/human retest (historical instructions; delivery incident now closed)
 
 1. `node scripts/pose-measurement/smoke.mjs` → expect **32 passed, 0 failed**.
 2. macOS sanity (any browser): serve `scripts/pose-measurement` on localhost,
@@ -145,8 +147,9 @@ tests; lint 0 errors.
 
 - The failing trials themselves prove nothing about squat depth or placement
   quality (v2 could not fail otherwise than 0 once a gate-flicker occurred).
-- H1/H2 remain open until a v3 export is measured on the real devices; the new
-  per-trial fields are exactly the discriminators (see §5).
+- H1/H2 were historical rep-trial hypotheses for the 2026-09-04 failed export;
+  no new Android rep-count claim is made by the later model-load acceptance.
+  Unrun rep trials remain NOT_MEASURED.
 - Session segments where the phone was covered / tab backgrounded (~145 s with
   `video.ct` frozen, `INPUT_NEAR_BLACK` runs) are setup artifacts, not trials;
   v3's trial start/end log entries make such windows unambiguous going forward.

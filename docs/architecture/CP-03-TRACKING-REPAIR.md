@@ -8,16 +8,19 @@
 > pose-bearing verification that now proves the pixel path works end-to-end.
 > Changes **no CP-03 product decision** (Approach A — MoveNet/TF.js, web-first,
 > fully on-device) and adds **no Companion camera/product functionality**. The
-> CP-03 real-device measurement gate remains **OPEN**; no trial from these
-> environments counts toward it.
+> original tracking incident is closed as a harness repair; later model
+> delivery acceptance is recorded separately. No trial from these environments
+> counts toward the broader optional measurement matrix.
 
 - Task: TASK DELTA — CP-03 REAL-HUMAN TRACKING FAILURE — MAC CROSS-BROWSER
   (2026-09-04)
 - Repaired artifacts: `scripts/pose-measurement/index.html`,
   `scripts/pose-measurement/smoke.mjs`, `scripts/pose-measurement/README.md`,
   + test fixture `scripts/pose-measurement/testdata/human.jpg`
-- Status: harness **demonstrably tracking-ready for Owner retest** (poses,
-  keypoints, overlay verified on real human pixels); gate still open.
+- Status: harness **demonstrably tracking-ready** (poses, keypoints, overlay
+  verified on real human pixels). The later model-delivery incident was
+  separately resolved and accepted on two Android phones; unrun performance
+  cells remain NOT_MEASURED.
 
 ## 1. Observed failures (real-human testing, post-repair #1)
 

@@ -23,9 +23,12 @@
 > `docs/architecture/CP-03-TRACKING-REPAIR.md`,
 > `docs/architecture/CP-03-REP-HEURISTIC-REPAIR.md`, and
 > `docs/architecture/CP-03-MODEL-FETCH-CPU-FALLBACK.md`. Smoke **48/48**.
-> **The CP-03 measurement gate remains OPEN pending physical Android retest**
-> of the corrected same-origin model delivery; no real-device results may be
-> inferred from earlier failed attempts.
+> **The HTTP 403 model-delivery incident is CLOSED** after authoritative
+> physical acceptance on two separate Android phones (2026-09-07): the bundled
+> same-origin model loaded and both harnesses reached green RUNNING. This
+> closes delivery acceptance only. The broader CP-03 matrix remains honest:
+> Android FPS/rep accuracy/placement/battery and other unrun cells are still
+> NOT_MEASURED.
 
 ## 1. What the gate measures
 
@@ -112,7 +115,9 @@ TF.js requested:
 `https://tfhub.dev/google/tfjs-model/movenet/singlepose/lightning/4/model.json?tfjs-format=file`
 
 The same 403 occurred on WebGL and manual CPU retry. This is a model-delivery
-failure before inference, not a backend-memory failure. TF.js 4.20.0 rewrites
+failure before inference, not a backend-memory failure. The corrected harness
+was subsequently accepted on two separate Android phones: the bundled model
+loaded and both reached green RUNNING. TF.js 4.20.0 rewrites
 that TF Hub URL through Kaggle and then signed Google Cloud Storage URLs; those
 redirect/protection steps are not reliable on the affected mobile clients.
 
@@ -205,18 +210,18 @@ alongside the trials — so a 0-match trial on the real devices now says *why*
 | iPhone (CriOS) | push-up | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
 | iPhone (CriOS) | hinge | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
 | iPhone (CriOS) | lunge | Lightning | 15 | diagonal-200 | 10 | — | NOT_MEASURED |  |  |  |
-| Android (Chrome) | all v1 movements | Lightning | 15 | all | 10 | — | NOT_MEASURED |  |  |  |
+| Android (Chrome) | model delivery acceptance (2 phones) | Lightning | n/a | n/a | n/a | model loaded + green RUNNING on both | ACCEPTED (delivery only) | — | — | — |
 | iPhone **Safari** | squat | Lightning | 15 | diagonal-90 | 10 | — | NOT_MEASURED (CriOS measured instead — WebKit proxy, not Safari) |  |  |  |
 
-**Status (2026-09-05): one cell MEASURED, all others honestly NOT_MEASURED.**
+**Status (2026-09-07): model-delivery acceptance CLOSED on two Android phones; one counted measurement cell MEASURED; all other performance/accuracy matrix cells honestly NOT_MEASURED.**
 Measured cell — iPhone Chrome (CriOS) squat @ diagonal-90, 10 real squats:
 **9/10 = 90%** — meets the proposed ≥ 90% rep-count criterion for this
 cell; minAngle **57°** (real depth, below the 95° down threshold),
 avgConf 0.66, p95 inference **33 ms** (under the ~66 ms bound), 8,436
 inference calls / 7,211 pose returns / **0 inference errors**, `POSES_OK`
 audits throughout. Evidence export:
-`results/iphone-squat-diagonal90-crios-2026-09-05.json`. Remaining cells
-(Android Chrome — the binding constraint; Safari; push-up/hinge/lunge;
+`results/iphone-squat-diagonal90-crios-2026-09-05.json`. Remaining performance cells
+(Android FPS/rep accuracy/placement; Safari; push-up/hinge/lunge;
 other placements; battery) are **NOT_MEASURED** and must not be inferred.
 The CP-03 review records these gaps honestly — no further Owner squat
 testing is requested; the remaining matrix is optional Owner-side
