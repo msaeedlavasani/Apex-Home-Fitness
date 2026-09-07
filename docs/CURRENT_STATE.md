@@ -14,15 +14,15 @@ CURRENT_DB_TYPE:                       SQLite (Prisma)
 CURRENT_DB_VOLUME:                     apexhomefit_prod_db:/data (owned 100:101)
 CURRENT_DB_MIGRATION_COUNT:            13
 CURRENT_MAINLINE_BASELINE_COMMIT:       4ada1dae2c3ee11ac208f6908cb3fab438842eb1 (PR #19 integration)
-ACTIVE_TASK:                           CP-05 Workout Observation integration — bounded CODE_NO_DEPLOY tranche; pending governed delivery.
-ACTIVE_TASK_PROFILE:                   CODE_NO_DEPLOY (manual USER_REPORTED observation bridge only; no camera/persistence/Production/legal change)
-AHF_EXECUTION_STATE:                   ACTIVE — Owner promoted CP-05 2026-09-07; CP-07 read-model bridge implemented; CP-04 camera runtime, MO-01, TS-02, and Production gates remain intact.
-ACTIVE_BRANCH:                         feat/cp-05-observation-session-integration
+ACTIVE_TASK:                           NONE — CP-05 bounded Workout Observation integration tranche CLOSED; full V2/camera/device-measured/Production scope remains gated.
+ACTIVE_TASK_PROFILE:                   N/A (no active task)
+AHF_EXECUTION_STATE:                   ACTIVE — CP-05 delivered 2026-09-07 as CODE_NO_DEPLOY manual USER_REPORTED observation bridge; CP-04 camera runtime, MO-01, TS-02, and Production gates remain intact.
+ACTIVE_BRANCH:                         N/A
 PREVIOUS_COMPLETED_TASK:               CP-06 Camera opt-in / consent UX + no-camera fallback (2026-09-06 CODE_NO_DEPLOY; PR #43 merged 0041cb9; Main CI PASS run 33991593333; branch retired local + remote verified; re-audit 2026-09-06 discovered and retired stray remote branches docs/cp-06-close-governance and docs/cp-06-manifest-fixes) (2026-09-05 CODE_NO_DEPLOY; Owner-authorized CP-04 camera integration + CP-06 consent UX tranche; src/lib/workout/consentEntity.ts + src/components/workout/CameraConsentBanner.tsx + src/components/workout/CameraTrackingIndicator.tsx + src/components/workout/WorkoutPlayer.tsx + src/app/[locale]/workout/page.tsx + src/messages/en.json + src/messages/fa.json; consent UX entity + UI surface only — no legal wording, no browser camera, no inference wiring, no persistence/retention; TS-02 / Production items still pending); prior completed task: CP-04 camera authorization architecture + first service-boundary tranche 2026-09-05/06 (CODE_NO_DEPLOY; ADR-0021 ACCEPTED; CP-04-COMPANION-CAMERA-ARCHITECTURE.md + src/services/cameraConsentService.ts + src/services/cameraService.ts); before that: TS-03 Account / data deletion 2026-09-05 (CODE_NO_DEPLOY, batch with CP-03 review) and CP-03 feasibility + measurement review 2026-09-05 (iPhone Chrome CriOS squat 9/10 = 90% PASS cell; matrix NOT_MEASURED recorded)
-NEXT_AUTHORIZED_TASK:                  CP-05 implementation delivery — bounded WorkoutPlayer USER_REPORTED observation bridge only; no camera/persistence/Production/legal work.
-NEXT_EXPECTED_BRANCH:                 feat/cp-05-observation-session-integration → PR/CI/merge lifecycle
-CURRENT_PHASE:                         CP-05 ACTIVE — WorkoutPlayer connected to CP-07 in-memory observation read-model for manual USER_REPORTED reps; CP-04 camera runtime, MO-01 persistence, TS-02 legal, and Production remain separately gated.
-LAST_UPDATED:                          2026-09-07 — Owner promoted CP-05. Bounded WorkoutPlayer observation bridge implemented; typecheck/lint PASS; no camera, DEVICE_MEASURED, persistence, UI redesign, Product deployment, legal, or unsupported movement-quality claims.
+NEXT_AUTHORIZED_TASK:                  **None autonomously executable** — CP-05 bounded tranche CLOSED; full camera/device-measured V2 integration requires CP-04 runtime/consent gates; persistence remains MO-01/TS-02 gated.
+NEXT_EXPECTED_BRANCH:                 N/A (next work requires Owner decision or separately promoted gated task)
+CURRENT_PHASE:                         CP-05 CLOSED — WorkoutPlayer connected to CP-07 in-memory read-model for manual USER_REPORTED reps; no camera/persistence/Production/legal change. CP-04 camera runtime, MO-01 persistence, TS-02 legal, and Production remain separately gated.
+LAST_UPDATED:                          2026-09-07 — CP-05 delivered/closed via PR #56 merge `d265174`; exact Main CI run `34160248294` (build `101860307782`, e2e `101861466037`) PASS; branch retired. Full suite 771/771, typecheck/lint PASS; no camera, DEVICE_MEASURED, persistence, UI redesign, Product deployment, legal, or unsupported movement-quality claims.
 ```
 
 ## Reading this manifest (pre-task gate)

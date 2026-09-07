@@ -744,7 +744,7 @@ code written.
 | PRODUCTION_SENSITIVITY | `RELEASE_ONLY` |
 | DB_SENSITIVITY | `NONE` |
 | ARCHITECTURE_GATE | `REQUIRED` |
-| STATUS | **IMPLEMENTED — bounded CP-05 CODE_NO_DEPLOY tranche, pending governed delivery.** WorkoutPlayer now emits an in-memory CP-07 observation snapshot from the existing manual USER_REPORTED rep control; no camera/MoveNet/DEVICE_MEASURED path, persistence/history, outcome mutation, legal wording, Production, or unsupported quality claims. Typecheck/lint PASS. Architecture record: `docs/architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`. |
+| STATUS | **DELIVERED / CLOSED 2026-09-07 — bounded CP-05 CODE_NO_DEPLOY tranche.** WorkoutPlayer emits an in-memory CP-07 observation snapshot from the existing manual USER_REPORTED rep control; no camera/MoveNet/DEVICE_MEASURED path, persistence/history, outcome mutation, legal wording, Production, or unsupported quality claims. Full suite **771/771**, typecheck/lint PASS. PR #56 merged `d265174`; exact merge Main CI run `34160248294` (build `101860307782`, e2e `101861466037`); branch retired local/remote. Architecture record: `docs/architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`. Full CP-05 V2/camera/device-measured/Production scope remains separately gated. |
 
 **Objective:** integrate the Companion's observation and adaptation signals
 into the Workout Experience V2 runtime — real-time guidance during the

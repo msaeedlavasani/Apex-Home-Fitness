@@ -1,6 +1,8 @@
 # CP-05 — Workout Observation Integration (bounded tranche)
 
-> **Status:** IMPLEMENTED — pending governed delivery
+> **Status:** CLOSED — delivered via PR #56 merge `d265174`
+> **Exact merge Main CI:** run `34160248294`; build `101860307782` PASS; e2e `101861466037` PASS
+> **Branch retirement:** `feat/cp-05-observation-session-integration` retired locally/remotely
 > **Authorization:** Owner promoted CP-05 on 2026-09-07
 > **Profile:** `CODE_NO_DEPLOY`; no persistence, Production, or legal change
 
@@ -61,3 +63,9 @@ callback is the clean integration boundary for future in-session guidance.
 - Runtime snapshot is in-memory and explicitly non-persisted.
 - Typecheck and lint pass.
 - Existing CP-02/CP-07 tests remain green.
+
+## 6. Closure boundary
+
+This tranche is closed. It is not a claim that the complete CP-05 Workout
+Experience V2, camera runtime, device-measured observation, persistence, or
+Production acceptance has been delivered. Those remain separately gated.
