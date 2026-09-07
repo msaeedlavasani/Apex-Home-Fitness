@@ -1,6 +1,6 @@
 # CP-07 — Movement Observation Runtime (v1)
 
-> **Status:** IMPLEMENTED — `CODE_NO_DEPLOY`, in-session only
+> **Status:** CLOSED — `CODE_NO_DEPLOY`, in-session only; delivered via PR #54 merge `a3e0522`
 > **Owner authorization:** promoted by Owner decision 2026-09-07
 > **Scope:** pure typed runtime recorder; no camera invocation, persistence, retention, Production, legal wording, or UI redesign
 
@@ -67,6 +67,9 @@ signals, and never synthesize missing counts.
 
 ## 5. Acceptance
 
+- PR #54 merged at `a3e0522`.
+- Exact merge Main CI run `34156003017`: build job `101847852171` PASS; e2e job `101848920111` PASS.
+- Branch `feat/cp-07-observation-runtime` retired locally and remotely; refs verified absent.
 - CP-02 tests remain green.
 - CP-07 runtime tests cover valid count/timing, fail-closed invalid input,
   explicit uncertainty, and set anchoring.
