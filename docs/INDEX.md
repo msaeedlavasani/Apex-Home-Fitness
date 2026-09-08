@@ -27,7 +27,7 @@
 | Architecture principles and accepted architecture decisions | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md), [`adr/README.md`](adr/README.md) |
 | Admin Auth V1 architecture decision | [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
 | Architecture stabilization status and remaining boundaries | [`architecture/ARCHITECTURE-STABILIZATION-PLAN.md`](architecture/ARCHITECTURE-STABILIZATION-PLAN.md) |
-| UI/accessibility | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) |
+| UI/accessibility and AHF Design Brain vNext P0 composition governance | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md), [`architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md`](architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md), [`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md) |
 | UI Conformance Gate (mandatory for `UI_CHANGED=YES` tasks) | [`governance/UI-CONFORMANCE-GATE.md`](governance/UI-CONFORMANCE-GATE.md) |
 | Report delivery contract (persisted / validated / delivered / path) | [`governance/REPORT-DELIVERY-CONTRACT.md`](governance/REPORT-DELIVERY-CONTRACT.md) |
 | AI/API contracts | [`AI_API.md`](AI_API.md) |
