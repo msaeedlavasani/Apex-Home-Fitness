@@ -1,67 +1,73 @@
-# AHF Adaptive Workout Canvas + Quiet Coach Prototype
+# AHF Adaptive Workout Canvas + Quiet Coach — Prototype V2
 
-> **Exploratory UX prototype only.** This directory is isolated from the Next.js
-> Product implementation, current `WorkoutPlayer`, persistence, camera services,
-> database, and Production routes. It is not a Product delivery.
+> **Exploratory UX prototype only.** V2 is an isolated static prototype. It does
+> not replace `WorkoutPlayer`, modify Product routes, access the camera, invoke
+> MoveNet, persist data, or change Production behavior.
 
 ## Run
 
-From the repository root:
+From repository root:
 
 ```bash
 python3 -m http.server 4177 --directory scripts/interactive-workout-prototype
 ```
 
-Open:
+Open `http://localhost:4177`, or use `http://<computer-LAN-IP>:4177` from a
+phone on the same network. The prototype uses simulated pose, camera, workout,
+and music data, so camera permission and HTTPS are not required.
 
-- Desktop: <http://localhost:4177>
-- Same-network phone: `http://<your-computer-LAN-IP>:4177`
+## V2 redesign focus
 
-HTTPS is not required because this prototype uses simulated camera/pose data and
-never requests camera permission. To expose it safely for a phone, use the
-existing temporary HTTPS testing approach; do not deploy this directory to
-Production.
+V1 was technically functional but rejected because it looked like a technical
+visualization harness and a dashboard containing a radial menu. V2 replaces the
+core composition rather than layering more UI on top:
 
-## Implemented interaction path
+- the workout canvas uses an animated, rounded human Mentor representation and
+  a spatially aligned Ghost movement with trails/glow, not primary stick figures;
+- the movement relationship is the hero; explanatory labels are subordinate;
+- Adaptive Compare reorganizes the canvas only after a meaningful correction
+  moment, then auto-collapses;
+- Rest is intentionally quiet with a designed ambient orbit and late preview;
+- Music is a full spatial mode with artwork-led focus and a real drag/rotate
+  rotary collection; it is not a two-column dashboard or a card grid;
+- artwork focus changes position, scale, opacity, tilt, and depth as the dial
+  rotates and settles;
+- Playlist Detail, Now Playing, Workout Mix, and audio ducking are progressive
+  disclosures rather than simultaneous utility cards;
+- portrait is the primary workout composition; landscape is deliberate rather
+  than a rotated portrait layout;
+- user-facing debug/prototype labels were removed from the active experience.
 
-1. Pre-workout → Start Workout
-2. Automatic Prepare → Work → Rest → Transition → next exercise
-3. Center-stage Mentor + simulated Ghost Skeleton
-4. Quiet Coach transient feedback
-5. Adaptive Compare auto-entry/collapse
-6. Pause / Resume, Skip, rep correction, End Workout
-7. Music Home with genuine drag/swipe rotary/orbital dial
-8. Playlist detail and simulated track playback
-9. Create Workout Mix and save it in prototype memory
-10. Now Playing with simulated Waze-like audio ducking preview
-11. Open Music during workout and return to the still-running session
-12. English/LTR and Persian/RTL toggle
-13. Light/Dark toggle
-14. Portrait-first responsive composition plus deliberate landscape layout
+## Main evaluation path
+
+1. Start from Pre-workout.
+2. Enter the immersive Workout canvas.
+3. Observe automatic Prepare → Work → Rest → Transition progression.
+4. Observe animated Mentor/Ghost relationship and transient coaching.
+5. Observe Adaptive Compare appear and collapse.
+6. Pause/Resume or open Music while the workout continues.
+7. Drag the Music orbital collection; tap focused artwork.
+8. Open Playlist Detail, Now Playing, or Create Mix.
+9. Preview Quiet Coach audio ducking.
+10. Return to the still-running workout.
+11. Evaluate EN/LTR, FA/RTL, Light/Dark, portrait, and landscape.
 
 ## Validation
 
-The local Playwright smoke path verifies:
-
-- portrait and landscape viewports;
-- English and Persian/RTL direction;
-- Light/Dark theme switch;
-- automatic workout screen transition;
-- pause/resume;
-- Music interruption and return-to-workout continuity;
-- orbital interaction path;
-- mix creation;
-- audio-ducking visual state.
-
-A timed flow check also verifies Prepare → Work → Rest and Adaptive Compare
-entry. The data is simulated and intentionally ephemeral.
+Local Playwright smoke validates portrait/landscape, EN/FA RTL, Light/Dark,
+workout start, automatic phase flow, pause/resume, Music interruption and
+return, orbital drag, Now Playing, and the corrected theme initialization.
+A timed flow check validates Prepare → Work → Rest and Compare entry.
 
 ## Deliberate limitations
 
-- No real camera or MoveNet integration.
-- No external music authentication or APIs.
-- No persistence, backend, database, retention, or analytics.
-- No final legal/product copy.
-- No replacement of `WorkoutPlayer`.
-- No claim that the simulated Ghost Skeleton or automatic rep progression is
+- no real camera or MoveNet;
+- no external music authentication/API;
+- no persistence/backend/database/retention/analytics;
+- no final legal/product copy;
+- no replacement of `WorkoutPlayer`;
+- no claim that simulated pose, rep progression, or coaching represents
   field-validated device behavior.
+
+V2 is ready for Owner UX evaluation only. It is not UX accepted and must not
+be promoted into Product implementation without a separate Owner decision.
