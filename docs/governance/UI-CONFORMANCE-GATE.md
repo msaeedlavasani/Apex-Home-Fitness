@@ -50,6 +50,17 @@ work.**
    `UI_CONFORMANCE_EVIDENCE` pointing to an existing on-disk evidence file
    (the task change report or a dedicated conformance record naming the
    discovered/reused/extended pieces).
+8. **Composition Map for material/specialized UI** — before implementation or
+   high-fidelity prototype work, record the semantic regions, visual anchor,
+   primary action, initial-viewport priority, grouping rationale, responsive
+   reflow, invariant anchor, persistent/contextual controls, and camera/body-safe
+   regions where relevant. Use the canonical P0 contract:
+   `docs/architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md`.
+9. **Prototype acceptance is separate from technical delivery** — a prototype
+   may pass CI and remain UX rejected. Record state/transition, layout-class,
+   locale/theme, accessibility, reduced-motion, hands-free, initial-viewport,
+   representative-device, and Owner visual-gate evidence before treating a
+   prototype as Product design authority.
 
 ## 3. Machine-enforced vs review-enforced
 

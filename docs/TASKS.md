@@ -19,12 +19,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — CP-03 HTTP 403 model-delivery incident CLOSED after two-phone Android physical acceptance; broader optional measurement cells remain honestly NOT_MEASURED; no unrelated work |
+| Active task | `NONE` — AHF Design Brain vNext P0 integration CLOSED; Workout Experience Specification is the next canonical design step but is not started; CP-05 physical acceptance remains an evidence gate |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | (none) |
 | State | `READY` — CP-03 model-delivery incident CLOSED; broader feasibility matrix remains partially NOT_MEASURED and optional; all unrelated work remains closed or gated |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | `NONE` for CP-03 incident; any broader CP-03 measurement continuation is optional Owner-side work and requires new exported evidence; no unrelated autonomous task is authorized |
+| Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; other gated items unchanged |
 
 ## Strategic basis

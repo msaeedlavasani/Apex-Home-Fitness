@@ -222,6 +222,115 @@ LTR and `vazirmatn` in RTL).
 
 ## 8. UI Completion Checklist
 
+## 8.1 AHF Design Brain vNext — P0 composition contract
+
+> **STATUS: APPROVED INTEGRATION — 2026-09-08**
+> Source proposal: `docs/architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md`.
+>
+> This section governs material or specialized UI work. It does not replace
+> the existing token, platform, typography, RTL, accessibility, or privacy
+> contracts below; it adds composition and acceptance discipline before code.
+
+### 8.1.1 Canonical reasoning model
+
+```text
+AHF Design System
+→ Experience State
+→ Layout Class
+→ Platform Adaptation
+→ Composition Map
+→ Prototype / Product Acceptance
+```
+
+- **Experience State** owns the state-dependent hierarchy and visible regions.
+- **Layout Class** owns available-space composition, not device product copies.
+- **Platform Adaptation** owns iOS safe areas/interaction idioms, Android
+  insets/interaction idioms, and Web/Desktop pointer/keyboard behavior.
+- **Composition Map** must exist before material UI/prototype implementation.
+
+### 8.1.2 Available-space layout classes
+
+The canonical classes are:
+
+- **Compact Portrait**
+- **Compact / Short Landscape**
+- **Medium**
+- **Expanded / Desktop**
+
+These are composition classes, not iPhone/Android/Desktop product variants.
+Use fluid spacing, intrinsic geometry, available block/inline space, and
+container queries only when composition or priority changes. Short landscape is
+first-class: primary content and the primary action remain in the initial
+viewport while supporting content reflows beside or below it. No-overflow alone
+is insufficient acceptance.
+
+### 8.1.3 Composition Map requirement
+
+Before implementation, the task evidence must define:
+
+- semantic regions;
+- primary visual anchor;
+- primary CTA/action;
+- initial-viewport priority;
+- grouping rationale;
+- responsive reflow for each applicable layout class;
+- invariant visual anchor;
+- persistent versus contextual controls;
+- camera/body-safe regions where camera or body overlays are relevant.
+
+Approved prose requirements are not approval of an improvised composition.
+Composition maps must be reviewed as part of the task’s UI Conformance evidence.
+
+### 8.1.4 Specialized session shell contract
+
+A specialized focused session may reduce or remove generic `AppShell` chrome
+when task focus requires it. Future Workout Experience work must use a
+specialized **FocusSessionShell** composition contract with these semantic
+owners:
+
+```text
+session utility/exit
+session state + exercise identity
+primary movement / mentor / camera surface
+contextual coach / compare layer
+compact HUD
+exception controls
+```
+
+Movement/session activity is the visual anchor. Exercise identity, phase/timer,
+camera/tracking status, coaching, and compare/correction state each have one
+semantic owner; duplicate status labels are non-conforming. This is a contract
+only — it does not implement or replace `WorkoutPlayer`.
+
+### 8.1.5 Component ownership and maturity
+
+Reusable patterns must be discoverable through the AHF component registry in
+`docs/architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md`. Each registry entry records:
+path, responsibility, contracts, consumers, maturity, evaluation evidence, and
+Prototype/Product status. Prototype-only patterns cannot become Product
+authority merely because CI passes.
+
+### 8.1.6 Prototype acceptance
+
+A high-fidelity prototype requires evidence for the applicable cases:
+
+- approved Composition Map and Experience State map;
+- state/transition behavior;
+- layout-class viewport matrix;
+- EN/FA and RTL/LTR;
+- Light/Dark;
+- reduced motion and accessibility;
+- camera/body collision review where relevant;
+- hands-free happy path and exception controls;
+- initial-viewport task visibility;
+- representative-device validation;
+- Owner visual/UX gate;
+- rejected findings and supersession linkage.
+
+A prototype may be technically delivered and UX rejected. UX rejection remains
+canonical until a subsequent Owner gate accepts the corrected direction.
+
+
 - [ ] tokenهای semantic موجود استفاده شده‌اند
 - [ ] مسیرهای `en` و `fa` بررسی شده‌اند
 - [ ] در viewportهای 360px به بالا overflow ناخواسته وجود ندارد

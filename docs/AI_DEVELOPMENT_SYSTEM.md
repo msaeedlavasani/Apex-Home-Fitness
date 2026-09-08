@@ -33,6 +33,7 @@
 |---|---|
 | مسیر محصول | `README.md`، `docs/product/PRODUCT-VISION.md` و `docs/HANDOFF.md` |
 | ویژن محصول (تمرین V2) | `docs/product/WORKOUT-EXPERIENCE-V2.md` (NOT YET IMPLEMENTED) |
+| AHF Design Brain vNext P0 composition governance | `docs/architecture/AHF-DESIGN-BRAIN-VNEXT-P0.md` + `docs/DESIGN_SYSTEM.md` §8.1 + `docs/governance/UI-CONFORMANCE-GATE.md` (CURRENT; no Product implementation authorization) |
 | کار اجرایی approved/active/blocked/next | `docs/TASKS.md` (تنها backlog اجرایی) |
 | جهت محصول و شواهد رقبا | `docs/TRANSFORMATION_ROADMAP.md` (advisory؛ غیر اجرایی) |
 | auth/OTP و Go-No-Go | `docs/OTP_LAUNCH_READINESS.md` |
