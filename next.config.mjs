@@ -71,7 +71,7 @@ const nextConfig = {
               "img-src 'self' data: blob: https://*.supabase.co https://commondatastorage.googleapis.com",
               "font-src 'self' data:",
               "media-src 'self' blob: https:",
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev https://${runtimeScriptHost}`,
+              `connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev https://${runtimeScriptHost}`,
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
