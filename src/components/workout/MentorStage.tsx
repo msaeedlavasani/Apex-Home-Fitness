@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {MENTOR_BONE_MAP, type BoneProjection, type MentorBoneKey, type VisualBounds} from './prototype/tracking';
 
 const MENTOR_URL = '/prototype-assets/AHF_Mentor_Squat.glb';
 
@@ -15,14 +16,32 @@ function StageFallback({label}: {label: string}) {
   );
 }
 
-export function MentorStage({paused}: {paused: boolean}) {
+export function MentorStage({
+  paused,
+  onBoneProjection,
+  onVisualBounds,
+}: {
+  paused: boolean;
+  onBoneProjection?: (points: BoneProjection) => void;
+  onVisualBounds?: (bounds: VisualBounds) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
+  const onBoneProjectionRef = useRef(onBoneProjection);
+  const onVisualBoundsRef = useRef(onVisualBounds);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
 
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
+
+  useEffect(() => {
+    onBoneProjectionRef.current = onBoneProjection;
+  }, [onBoneProjection]);
+
+  useEffect(() => {
+    onVisualBoundsRef.current = onVisualBounds;
+  }, [onVisualBounds]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,7 +60,7 @@ export function MentorStage({paused}: {paused: boolean}) {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor('#101419', 1);
+    renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -58,27 +77,130 @@ export function MentorStage({paused}: {paused: boolean}) {
     warmLight.position.set(0, 0.8, 1.6);
     scene.add(warmLight);
 
-    const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(0.7, 64),
-      new THREE.MeshStandardMaterial({color: '#242c32', roughness: 0.92, transparent: true, opacity: 0.8}),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.03;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
     let mixer: THREE.AnimationMixer | null = null;
+    let animationAction: THREE.AnimationAction | null = null;
     let model: THREE.Group | null = null;
     let normalizedModelPosition = new THREE.Vector3();
     let shouldNeutralizeRootDrift = false;
+    const mentorBones: Partial<Record<MentorBoneKey, THREE.Bone>> = {};
+    const projectedPosition = new THREE.Vector3();
+    const visualVertex = new THREE.Vector3();
+    const projectedVertex = new THREE.Vector3();
+    const visualCenterWorld = new THREE.Vector3();
+    const shiftedCenterWorld = new THREE.Vector3();
+    const shiftedVerticalCenterWorld = new THREE.Vector3();
+    const projectedCenterWorld = new THREE.Vector3();
+    const projectedShiftedCenterWorld = new THREE.Vector3();
+    const projectedShiftedVerticalCenterWorld = new THREE.Vector3();
     const mentorAnchor = new THREE.Group();
     mentorAnchor.name = 'MentorPresentationAnchor';
     scene.add(mentorAnchor);
+    const animatedFrameBounds = new THREE.Box3();
+    const animatedFrameVertexSets: THREE.Vector3[][] = [];
+    const cameraTarget = new THREE.Vector3();
+    const frameCorner = new THREE.Vector3();
+    const framePoint = new THREE.Vector3();
+    let hasAnimatedFrameBounds = false;
     let animationFrame = 0;
     let lastTime = performance.now();
     let disposed = false;
 
     const stage = canvas.parentElement;
+    const fitCameraToAnimatedEnvelope = () => {
+      if (!stage || !hasAnimatedFrameBounds) return;
+      const {width, height} = stage.getBoundingClientRect();
+      if (width <= 0 || height <= 0) return;
+
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+
+      const projectedBoundsAtDistance = (distance: number) => {
+        camera.position.set(0, cameraTarget.y, distance);
+        camera.lookAt(cameraTarget);
+        camera.updateMatrixWorld(true);
+        camera.updateProjectionMatrix();
+
+        let left = Infinity;
+        let right = -Infinity;
+        let top = Infinity;
+        let bottom = -Infinity;
+        if (animatedFrameVertexSets.length > 0) {
+          animatedFrameVertexSets.forEach((vertices) => {
+            vertices.forEach((vertex) => {
+              framePoint.copy(vertex).add(mentorAnchor.position).project(camera);
+              const screenX = (framePoint.x + 1) * 0.5 * width;
+              const screenY = (1 - framePoint.y) * 0.5 * height;
+              left = Math.min(left, screenX);
+              right = Math.max(right, screenX);
+              top = Math.min(top, screenY);
+              bottom = Math.max(bottom, screenY);
+            });
+          });
+        } else {
+          for (let x = 0; x <= 1; x += 1) {
+            for (let y = 0; y <= 1; y += 1) {
+              for (let z = 0; z <= 1; z += 1) {
+                frameCorner.set(
+                  x ? animatedFrameBounds.max.x : animatedFrameBounds.min.x,
+                  y ? animatedFrameBounds.max.y : animatedFrameBounds.min.y,
+                  z ? animatedFrameBounds.max.z : animatedFrameBounds.min.z,
+                ).project(camera);
+                const screenX = (frameCorner.x + 1) * 0.5 * width;
+                const screenY = (1 - frameCorner.y) * 0.5 * height;
+                left = Math.min(left, screenX);
+                right = Math.max(right, screenX);
+                top = Math.min(top, screenY);
+                bottom = Math.max(bottom, screenY);
+              }
+            }
+          }
+        }
+        return {left, right, top, bottom};
+      };
+
+      const horizontalSafeArea = 12;
+      const verticalSafeArea = 16;
+      const fitsSafeArea = (bounds: ReturnType<typeof projectedBoundsAtDistance>) =>
+        bounds.left >= horizontalSafeArea &&
+        bounds.right <= width - horizontalSafeArea &&
+        bounds.top >= verticalSafeArea &&
+        bounds.bottom <= height - verticalSafeArea;
+
+      let nearest = Math.max(0.1, animatedFrameBounds.max.z + mentorAnchor.position.z + 0.05);
+      let farthest = 20.0;
+      while (!fitsSafeArea(projectedBoundsAtDistance(farthest)) && farthest < 160) {
+        farthest *= 2;
+      }
+      for (let iteration = 0; iteration < 28; iteration += 1) {
+        const distance = (nearest + farthest) * 0.5;
+        if (fitsSafeArea(projectedBoundsAtDistance(distance))) farthest = distance;
+        else nearest = distance;
+      }
+
+      const isMobilePortrait = width <= 430 && height > width;
+      const requestedVerticalShiftPx = isMobilePortrait ? 12 : 0;
+      const fittedBounds = projectedBoundsAtDistance(farthest);
+      const maximumTopShiftPx = Math.max(0, fittedBounds.top - 12);
+      // Keep a small subpixel buffer for Safari rasterization at the lower
+      // edge; the product contract remains a minimum 6px clearance.
+      const maximumBottomShiftPx = Math.max(0, height - fittedBounds.bottom - 6.25);
+      const appliedVerticalShiftPx = Math.min(
+        requestedVerticalShiftPx,
+        maximumTopShiftPx,
+        maximumBottomShiftPx,
+      );
+      const worldUnitsPerPixel =
+        (2 * farthest * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))) / height;
+      const shiftedCameraTarget = frameCorner.copy(cameraTarget);
+      shiftedCameraTarget.y += appliedVerticalShiftPx * worldUnitsPerPixel;
+
+      camera.position.set(0, shiftedCameraTarget.y, farthest);
+      camera.lookAt(shiftedCameraTarget);
+      camera.near = Math.max(0.01, farthest * 0.01);
+      camera.far = Math.max(20, farthest * 4);
+      camera.updateProjectionMatrix();
+    };
+
     const resize = () => {
       if (!stage) return;
       const {width, height} = stage.getBoundingClientRect();
@@ -86,6 +208,7 @@ export function MentorStage({paused}: {paused: boolean}) {
       renderer.setSize(Math.round(width), Math.round(height), false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      fitCameraToAnimatedEnvelope();
     };
     // Observe the stable layout host, not the canvas. renderer.setSize mutates
     // the canvas bitmap dimensions; observing the canvas itself can create a
@@ -95,11 +218,151 @@ export function MentorStage({paused}: {paused: boolean}) {
     resize();
 
     const loader = new GLTFLoader();
+    const collectVisibleMeshBounds = (target: THREE.Box3, collectVertices?: THREE.Vector3[]) => {
+      if (!model) return target.makeEmpty();
+      target.makeEmpty();
+      model.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const position = object.geometry.getAttribute('position');
+        if (!position) return;
+        for (let index = 0; index < position.count; index += 1) {
+          const skinnedMesh = object instanceof THREE.SkinnedMesh ? object : null;
+          if (skinnedMesh) skinnedMesh.getVertexPosition(index, visualVertex);
+          else visualVertex.fromBufferAttribute(position, index);
+          projectedVertex.copy(visualVertex);
+          object.localToWorld(projectedVertex);
+          target.expandByPoint(projectedVertex);
+          collectVertices?.push(projectedVertex.clone());
+        }
+      });
+      return target;
+    };
+    const selectProjectedEnvelopeVertices = (vertices: THREE.Vector3[]) => {
+      if (vertices.length === 0) return [];
+
+      // The full mesh is collected for every sampled pose. These candidates
+      // preserve the vertices that can define the projected silhouette for
+      // each pose while keeping the responsive distance solve inexpensive.
+      const candidateVertices: THREE.Vector3[] = [];
+      // Perspective can change which mesh vertex is the silhouette extremum
+      // as distance changes. Keep extrema from several reference distances,
+      // then solve the final distance against every pose independently.
+      [1.8, 2.32, 4.0].forEach((distance) => {
+        camera.position.set(0, cameraTarget.y, distance);
+        camera.lookAt(cameraTarget);
+        camera.updateMatrixWorld(true);
+        camera.updateProjectionMatrix();
+        const projectedVertices = vertices.map((vertex) => {
+          framePoint.copy(vertex).add(mentorAnchor.position).project(camera);
+          return {vertex, screenX: framePoint.x, screenY: framePoint.y};
+        });
+        candidateVertices.push(
+          projectedVertices.reduce((best, item) => item.screenX < best.screenX ? item : best).vertex,
+          projectedVertices.reduce((best, item) => item.screenX > best.screenX ? item : best).vertex,
+          projectedVertices.reduce((best, item) => item.screenY < best.screenY ? item : best).vertex,
+          projectedVertices.reduce((best, item) => item.screenY > best.screenY ? item : best).vertex,
+        );
+      });
+      candidateVertices.push(
+        vertices.reduce((best, vertex) => vertex.z < best.z ? vertex : best),
+        vertices.reduce((best, vertex) => vertex.z > best.z ? vertex : best),
+      );
+      return Array.from(new Set(candidateVertices)).map((vertex) => vertex.clone());
+    };
+    const projectBonePositions = () => {
+      if (!stage || !model || !onBoneProjectionRef.current) return;
+      const {width, height} = stage.getBoundingClientRect();
+      if (width <= 0 || height <= 0) return;
+
+      const points: BoneProjection = {};
+      (Object.entries(MENTOR_BONE_MAP) as Array<[MentorBoneKey, string]>).forEach(([key]) => {
+        const bone = mentorBones[key];
+        if (!bone) return;
+        bone.getWorldPosition(projectedPosition);
+        projectedPosition.project(camera);
+        points[key] = {
+          x: (projectedPosition.x + 1) * 0.5 * width,
+          y: (1 - projectedPosition.y) * 0.5 * height,
+        };
+      });
+      const leftHip = points.hipLeft;
+      const rightHip = points.hipRight;
+      if (leftHip && rightHip) {
+        points.hipCenter = {
+          x: (leftHip.x + rightHip.x) * 0.5,
+          y: (leftHip.y + rightHip.y) * 0.5,
+        };
+      }
+      onBoneProjectionRef.current(points);
+    };
+
+    const projectVisualBounds = () => {
+      if (!stage || !model || !onVisualBoundsRef.current) return;
+      const {width, height} = stage.getBoundingClientRect();
+      if (width <= 0 || height <= 0) return;
+
+      let left = Infinity;
+      let right = -Infinity;
+      let top = Infinity;
+      let bottom = -Infinity;
+      const projectVertex = (object: THREE.Mesh, index: number) => {
+        const skinnedMesh = object instanceof THREE.SkinnedMesh ? object : null;
+        if (skinnedMesh) {
+          skinnedMesh.getVertexPosition(index, visualVertex);
+        } else {
+          const position = object.geometry.getAttribute('position');
+          if (!position) return;
+          visualVertex.fromBufferAttribute(position, index);
+        }
+        projectedVertex.copy(visualVertex);
+        object.localToWorld(projectedVertex);
+        projectedVertex.project(camera);
+        const screenX = (projectedVertex.x + 1) * 0.5 * width;
+        const screenY = (1 - projectedVertex.y) * 0.5 * height;
+        left = Math.min(left, screenX);
+        right = Math.max(right, screenX);
+        top = Math.min(top, screenY);
+        bottom = Math.max(bottom, screenY);
+      };
+      model.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const position = object.geometry.getAttribute('position');
+        if (!position) return;
+        for (let index = 0; index < position.count; index += 1) projectVertex(object, index);
+      });
+      if (!Number.isFinite(left) || !Number.isFinite(right)) return;
+      new THREE.Box3().setFromObject(model).getCenter(visualCenterWorld);
+      shiftedCenterWorld.copy(visualCenterWorld).x += 1;
+      shiftedVerticalCenterWorld.copy(visualCenterWorld).y += 1;
+      projectedCenterWorld.copy(visualCenterWorld).project(camera);
+      projectedShiftedCenterWorld.copy(shiftedCenterWorld).project(camera);
+      projectedShiftedVerticalCenterWorld.copy(shiftedVerticalCenterWorld).project(camera);
+      const pixelsPerWorldX =
+        (projectedShiftedCenterWorld.x - projectedCenterWorld.x) * 0.5 * width;
+      const pixelsPerWorldY =
+        (projectedShiftedVerticalCenterWorld.y - projectedCenterWorld.y) * -0.5 * height;
+      onVisualBoundsRef.current({
+        left,
+        right,
+        top,
+        bottom,
+        center: (left + right) * 0.5,
+        pixelsPerWorldX,
+        pixelsPerWorldY,
+      });
+    };
+
     loader.load(
       MENTOR_URL,
       (gltf) => {
         if (disposed) return;
         model = gltf.scene;
+        model.traverse((object) => {
+          if (!(object instanceof THREE.Bone)) return;
+          const match = (Object.entries(MENTOR_BONE_MAP) as Array<[MentorBoneKey, string]>)
+            .find(([, boneName]) => boneName === object.name);
+          if (match) mentorBones[match[0]] = object;
+        });
         // Frame the imported asset from its actual world-space bounds. The
         // source is authored around a skeleton root, so hard-coded camera
         // assumptions can leave the skinned mesh outside the portrait view.
@@ -107,7 +370,9 @@ export function MentorStage({paused}: {paused: boolean}) {
         const sourceBounds = new THREE.Box3().setFromObject(model);
         const sourceSize = sourceBounds.getSize(new THREE.Vector3());
         const sourceCenter = sourceBounds.getCenter(new THREE.Vector3());
-        const scale = 1.22 / Math.max(sourceSize.y, 0.01);
+        const scaleFactor = 1.08;
+        const baseScale = 1.22 / Math.max(sourceSize.y, 0.01);
+        const scale = baseScale * scaleFactor;
         model.scale.setScalar(scale);
         model.position.set(
           -sourceCenter.x * scale,
@@ -147,56 +412,73 @@ export function MentorStage({paused}: {paused: boolean}) {
         const previewAction = previewMixer && playableClip ? previewMixer.clipAction(playableClip) : null;
         const animatedBounds = new THREE.Box3();
         normalizedModelPosition = new THREE.Vector3(-sourceCenter.x * scale, model.position.y, -sourceCenter.z * scale);
+        animatedFrameVertexSets.length = 0;
+        const poseVertexSets: THREE.Vector3[][] = [];
         if (previewAction && previewMixer && playableClip) {
           previewAction.play();
-          const sampleCount = 16;
+          const sampleCount = 32;
           for (let index = 0; index <= sampleCount; index += 1) {
             previewMixer.setTime((playableClip.duration * index) / sampleCount);
             model.updateMatrixWorld(true);
-            animatedBounds.union(new THREE.Box3().setFromObject(model));
+            const poseBounds = new THREE.Box3();
+            const poseVertices: THREE.Vector3[] = [];
+            collectVisibleMeshBounds(poseBounds, poseVertices);
+            animatedBounds.union(poseBounds);
+            poseVertexSets.push(poseVertices);
           }
         } else {
-          animatedBounds.setFromObject(model);
+          const poseVertices: THREE.Vector3[] = [];
+          collectVisibleMeshBounds(animatedBounds, poseVertices);
+          poseVertexSets.push(poseVertices);
         }
         const animatedSize = animatedBounds.getSize(new THREE.Vector3());
         const animatedCenter = animatedBounds.getCenter(new THREE.Vector3());
+        // Keep the approved anchor and camera framing fixed while applying
+        // the requested presentation-only scale increase.
+        const framingAnimatedSize = animatedSize.clone().multiplyScalar(1 / scaleFactor);
+        const framingAnimatedCenter = animatedCenter.clone().multiplyScalar(1 / scaleFactor);
+        const framingAnimatedMinY = animatedBounds.min.y / scaleFactor;
         // Keep presentation centering on the stable outer anchor. Any
         // horizontal root-motion tracks are neutralized by restoring the
         // animated model's X/Z position after each mixer update.
-        const presentationCenterX = animatedCenter.x;
-        const presentationCenterZ = animatedCenter.z;
+        const presentationCenterX = framingAnimatedCenter.x;
+        const presentationCenterZ = framingAnimatedCenter.z;
         // The anchor is the sole horizontal/depth presentation transform. The
         // camera must look at that normalized space, otherwise applying the
         // bounds center to both anchor and camera causes a visible side drift.
-        const anchorVerticalOffset = animatedSize.y * 0.06;
+        const anchorVerticalOffset = framingAnimatedSize.y * 0.06;
         // The computed bounds are a reliable fit check, but they are not a
         // reliable visual composition target for this prototype: the imported
         // proportions leave the instructor reading low/right in the portrait
         // workout canvas. Keep the correction on the stable outer group so
         // animation/root tracks cannot overwrite the presentation choice.
-        const presentationOffset = new THREE.Vector3(-0.06, 0.26, 0);
+        // Deterministic visual-envelope correction: after measuring the
+        // animated standing/mid/deep bounds, the shared presentation was
+        // 3.7px right of center at 390px, with ~318.7px per world-X unit.
+        // This stable -0.012-unit correction is shared by every pose.
+        // The accepted 0.146 value placed the standing foot baseline at
+        // 595.9px. With the active projection (~318.7px per world-Y unit),
+        // -0.091 world-Y units moves it down about 29.0px to the 625px target.
+        // X/Z remain unchanged.
+        const presentationOffset = new THREE.Vector3(-0.002, 0.055, 0);
         mentorAnchor.position.set(
           -presentationCenterX + presentationOffset.x,
           anchorVerticalOffset + presentationOffset.y,
           -presentationCenterZ + presentationOffset.z,
         );
-        // Both outstretched hands and full height must fit. The vertical FOV
-        // determines height fit; the horizontal FOV (aspect-adjusted) limits
-        // the arm span in portrait mode. Use the stricter distance.
-        const framingMargin = 1.33;
-        const verticalFov = THREE.MathUtils.degToRad(camera.fov);
-        const horizontalFov = 2 * Math.atan(Math.tan(verticalFov * 0.5) * Math.max(camera.aspect, 0.01));
-        const distanceForHeight = (animatedSize.y * 0.5) / Math.tan(verticalFov * 0.5);
-        const distanceForWidth = (animatedSize.x * 0.5) / Math.tan(horizontalFov * 0.5);
-        const fitDistance = Math.max(distanceForHeight, distanceForWidth) * framingMargin;
-        const torsoTargetY = animatedBounds.min.y + animatedSize.y * 0.58;
-        const visualStageLift = animatedSize.y * 0.05;
-        const cameraTarget = new THREE.Vector3(0, torsoTargetY + visualStageLift, 0);
-        camera.position.set(0, cameraTarget.y, Math.max(fitDistance, 1.35));
+        const torsoTargetY = framingAnimatedMinY + framingAnimatedSize.y * 0.58;
+        const visualStageLift = framingAnimatedSize.y * 0.05;
+        cameraTarget.set(0, torsoTargetY + visualStageLift, 0);
+        // Use the current camera only to identify each pose's projected
+        // silhouette candidates. The actual fit below tests every pose
+        // independently at every candidate distance.
+        camera.position.set(0, cameraTarget.y, 2.32);
         camera.lookAt(cameraTarget);
-        camera.near = Math.max(0.01, fitDistance * 0.01);
-        camera.far = Math.max(20, fitDistance * 4);
         camera.updateProjectionMatrix();
+        animatedFrameVertexSets.push(...poseVertexSets.map(selectProjectedEnvelopeVertices));
+        animatedFrameBounds.copy(animatedBounds).translate(mentorAnchor.position);
+        hasAnimatedFrameBounds = true;
+        fitCameraToAnimatedEnvelope();
         previewAction?.stop();
         previewMixer?.stopAllAction();
         model.traverse((object) => {
@@ -212,10 +494,14 @@ export function MentorStage({paused}: {paused: boolean}) {
 
         if (gltf.animations.length > 0) {
           mixer = new THREE.AnimationMixer(model);
-          const action = mixer.clipAction(playableClip ?? gltf.animations[0]);
-          action.setLoop(THREE.LoopRepeat, Infinity);
-          action.play();
+          animationAction = mixer.clipAction(playableClip ?? gltf.animations[0]);
+          animationAction.setLoop(THREE.LoopRepeat, Infinity);
+          animationAction.paused = pausedRef.current;
+          animationAction.play();
         }
+        model.updateMatrixWorld(true);
+        projectBonePositions();
+        projectVisualBounds();
         setStatus('ready');
       },
       undefined,
@@ -226,12 +512,18 @@ export function MentorStage({paused}: {paused: boolean}) {
       if (disposed) return;
       const delta = Math.min((time - lastTime) / 1000, 0.05);
       lastTime = time;
-      if (!pausedRef.current) mixer?.update(delta);
+      if (animationAction) animationAction.paused = pausedRef.current;
+      mixer?.update(delta);
       // Mixer evaluation can reapply root translation tracks. Reassert the
       // stable presentation transform without touching joint rotations.
       if (model && shouldNeutralizeRootDrift) {
         model.position.x = normalizedModelPosition.x;
         model.position.z = normalizedModelPosition.z;
+      }
+      if (model) {
+        model.updateMatrixWorld(true);
+        projectBonePositions();
+        projectVisualBounds();
       }
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
