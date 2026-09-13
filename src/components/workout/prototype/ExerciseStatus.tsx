@@ -26,6 +26,7 @@ export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRem
   const nextPreview = state === 'REST_NEXT_PREVIEW';
   const transitionCountdown = state === 'TRANSITION_COUNTDOWN';
   const nextExercise = state === 'NEXT_EXERCISE';
+  const exerciseIntro = state === 'EXERCISE_INTRO';
   const start = state === 'START';
   const activeSet = state === 'WORK_NORMAL' || nextExercise;
   const activeSetLabel = `SET ${String(currentSet).padStart(2, '0')}`;
@@ -41,13 +42,13 @@ export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRem
         <h1 id="workout-title" className={upcomingContext ? 'workout-preview-exercise-name' : undefined}>
           {upcomingContext ? 'Bodyweight Squat' : 'Squat'}
         </h1>
-        {upcomingContext || start || state === 'REST_QUIET' ? null : <p className="workout-status-set">{activeSet ? activeSetLabel : 'Set 02'} <span>/ 03</span></p>}
+        {upcomingContext || start || state === 'REST_QUIET' || exerciseIntro ? null : <p className="workout-status-set">{activeSet ? activeSetLabel : 'Set 02'} <span>/ 03</span></p>}
       </div>
       <div
         className={`workout-reps-status${transitionCountdown ? ' workout-countdown-status' : ''}${activeSet ? ' workout-active-timer' : ''}`}
         style={activeSet ? {'--workout-timer-progress': `${timerProgress}deg`} as CSSProperties : undefined}
         aria-hidden={start ? 'true' : undefined}
-        aria-label={transitionCountdown ? `Starting in ${countdownValue}` : nextPreview ? 'Next set in 5 seconds' : state === 'REST_QUIET' ? '30 second rest' : activeSet ? 'Active set timer' : `${nextExercise ? '0' : '8'} of 12 repetitions`}
+        aria-label={exerciseIntro ? 'Exercise introduction' : transitionCountdown ? `Starting in ${countdownValue}` : nextPreview ? 'Next set in 5 seconds' : state === 'REST_QUIET' ? '30 second rest' : activeSet ? 'Active set timer' : `${nextExercise ? '0' : '8'} of 12 repetitions`}
       >
         {start ? null : transitionCountdown ? (
           <>
@@ -64,7 +65,7 @@ export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRem
             <span className="workout-status-eyebrow workout-rest-status-eyebrow">REST</span>
             <strong>{formatSeconds(restRemainingSeconds)}</strong>
           </>
-        ) : activeSet ? (
+        ) : exerciseIntro ? null : activeSet ? (
           <>
             <span className="workout-status-eyebrow">TIME</span>
             <strong>{formatSeconds(workSecondsRemaining)}</strong>

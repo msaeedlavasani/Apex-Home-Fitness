@@ -52,7 +52,7 @@ export function WorkoutExperienceShell({
   const [debugLayout, setDebugLayout] = useState(false);
   const [debugWorkout, setDebugWorkout] = useState(false);
   const stateConfig = getWorkoutPrototypeStateConfig(state);
-  const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
+  const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE' || state === 'EXERCISE_INTRO';
   const restState = state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
   const coachMessage = state === 'TRANSITION_COUNTDOWN'
     ? `Starting in ${countdownValue}`
@@ -87,7 +87,7 @@ export function WorkoutExperienceShell({
       {state === 'START' ? (
         <StartStage onPauseToggle={onPauseToggle} />
       ) : state === 'PREPARE' ? (
-        <PrepareStage onPauseToggle={onPauseToggle} onPrepareComplete={() => onStateChange('WORK_NORMAL')} />
+        <PrepareStage onPauseToggle={onPauseToggle} onPrepareComplete={() => onStateChange('EXERCISE_INTRO')} />
       ) : restState ? (
         <RestStage
           state={state}
@@ -118,7 +118,7 @@ export function WorkoutExperienceShell({
           </div>
 
           <div className="workout-zone workout-zone-controls" data-zone-label="ZONE E · CONTROLS">
-            <WorkoutControls state={state} onPauseToggle={onPauseToggle} />
+            <WorkoutControls state={state === 'EXERCISE_INTRO' ? 'PREPARE' : state} onPauseToggle={onPauseToggle} />
           </div>
         </>
       )}

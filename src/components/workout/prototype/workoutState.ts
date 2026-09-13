@@ -1,6 +1,7 @@
 export const WORKOUT_PROTOTYPE_STATES = [
   'START',
   'PREPARE',
+  'EXERCISE_INTRO',
   'WORK_NORMAL',
   'WORK_POSITIVE',
   'WORK_CORRECTION',
@@ -70,6 +71,10 @@ const STATE_CONFIG: Record<WorkoutPrototypeState, WorkoutPrototypeStateConfig> =
     skeletonVisible: false,
     mentorVisible: false,
     coachMessage: 'Get ready. Find your stance.',
+  },
+  EXERCISE_INTRO: {
+    ...UNTRACKED_MENTOR_CONFIG,
+    coachMessage: 'Chest tall. Drive through your heels.',
   },
   WORK_NORMAL: {
     ...TRACKED_MENTOR_CONFIG,

@@ -31,6 +31,7 @@ const MentorStage = dynamic(
 
 const REST_PHASE_DURATION_MS = 30_000;
 const WORK_SET_DURATION_MS = 30_000;
+const EXERCISE_INTRO_DURATION_MS = 2_000;
 const TRANSITION_COUNTDOWN_START_VALUE = 3;
 const TRANSITION_COUNTDOWN_DURATION_MS = 3_000;
 
@@ -60,6 +61,7 @@ export default function WorkoutPrototypePage() {
   const flowStartedAtRef = useRef<number | null>(null);
   const workDeadlineRef = useRef<number | null>(null);
   const workCompletionTimeoutRef = useRef<number | null>(null);
+  const exerciseIntroTimeoutRef = useRef<number | null>(null);
   const restDeadlineRef = useRef<number | null>(null);
   const transitionCountdownStartedAtRef = useRef<number | null>(null);
   const transitionCountdownHandoffTimeoutRef = useRef<number | null>(null);
@@ -171,7 +173,7 @@ export default function WorkoutPrototypePage() {
 
       const nextState = getPrototypeFlowState(elapsedMs);
       if (nextState !== workoutStateRef.current) {
-        if (nextState === 'NEXT_EXERCISE') {
+        if (nextState === 'WORK_NORMAL' && workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
           setCurrentSet((previousSet) => getNextWorkoutSetNumber(previousSet));
         }
         workoutStateRef.current = nextState;
@@ -287,7 +289,7 @@ export default function WorkoutPrototypePage() {
       transitionCountdownHandoffTimeoutRef.current = window.setTimeout(() => {
         transitionCountdownHandoffTimeoutRef.current = null;
         if (workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
-          transitionToStateRef.current('NEXT_EXERCISE');
+          transitionToStateRef.current('WORK_NORMAL');
         }
       }, Math.max(0, startedAt + 3_000 - Date.now()));
     }
@@ -314,6 +316,24 @@ export default function WorkoutPrototypePage() {
       if (transitionCountdownHandoffTimeoutRef.current !== null) {
         window.clearTimeout(transitionCountdownHandoffTimeoutRef.current);
         transitionCountdownHandoffTimeoutRef.current = null;
+      }
+    };
+  }, [prototypeFlowEnabled, workoutState]);
+
+  useEffect(() => {
+    if (prototypeFlowEnabled || workoutState !== 'EXERCISE_INTRO') return;
+
+    exerciseIntroTimeoutRef.current = window.setTimeout(() => {
+      exerciseIntroTimeoutRef.current = null;
+      if (workoutStateRef.current === 'EXERCISE_INTRO') {
+        transitionToStateRef.current('WORK_NORMAL');
+      }
+    }, EXERCISE_INTRO_DURATION_MS);
+
+    return () => {
+      if (exerciseIntroTimeoutRef.current !== null) {
+        window.clearTimeout(exerciseIntroTimeoutRef.current);
+        exerciseIntroTimeoutRef.current = null;
       }
     };
   }, [prototypeFlowEnabled, workoutState]);
@@ -380,7 +400,7 @@ export default function WorkoutPrototypePage() {
     const currentRestPhase = isRestPhaseState(workoutState);
     const nextRestPhase = isRestPhaseState(nextState);
 
-    if (nextState === 'NEXT_EXERCISE') {
+    if (nextState === 'WORK_NORMAL' && workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
       setCurrentSet((previousSet) => getNextWorkoutSetNumber(previousSet));
     }
 
@@ -477,6 +497,10 @@ export default function WorkoutPrototypePage() {
     flowElapsedMsRef.current = 0;
     flowStartedAtRef.current = null;
     clearManualWorkTimer();
+    if (exerciseIntroTimeoutRef.current !== null) {
+      window.clearTimeout(exerciseIntroTimeoutRef.current);
+      exerciseIntroTimeoutRef.current = null;
+    }
     restDeadlineRef.current = null;
     transitionCountdownStartedAtRef.current = null;
     pausedTimelineRef.current = null;
