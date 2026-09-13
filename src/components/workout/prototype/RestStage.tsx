@@ -9,6 +9,7 @@ interface RestStageProps {
   currentSet: WorkoutSetNumber;
   restRemainingSeconds: number;
   onPauseToggle: () => void;
+  debug?: boolean;
 }
 
 const REST_PHASE_SECONDS = 30;
@@ -17,13 +18,13 @@ function formatSetNumber(value: number) {
   return String(Math.max(1, Math.min(3, value))).padStart(2, '0');
 }
 
-export function RestStage({state, currentSet, restRemainingSeconds, onPauseToggle}: RestStageProps) {
+export function RestStage({state, currentSet, restRemainingSeconds, onPauseToggle, debug}: RestStageProps) {
   const nextSet = Math.min(3, currentSet + 1);
   const remaining = Math.max(0, Math.min(REST_PHASE_SECONDS, restRemainingSeconds));
   const progressDegrees = ((REST_PHASE_SECONDS - remaining) / REST_PHASE_SECONDS) * 360;
 
   return (
-    <section className="workout-rest-stage" data-layer="z5" data-workout-state={state} aria-label="Rest and recover">
+    <section className="workout-rest-stage" data-layer="z5" data-workout-state={state} data-debug-component={debug ? 'rest-stage' : undefined} aria-label="Rest and recover">
       <div className="workout-rest-stage-top">
         <SessionBar state={state} />
       </div>

@@ -1,6 +1,10 @@
-export function ExerciseIntroStage() {
+export function ExerciseIntroStage({debug}: {debug?: boolean}) {
   return (
-    <section className="workout-exercise-intro" aria-labelledby="workout-intro-title">
+    <section
+      className="workout-exercise-intro"
+      aria-labelledby="workout-intro-title"
+      data-debug-component={debug ? 'exercise-intro-stage' : undefined}
+    >
       <div className="workout-exercise-intro-copy">
         <p className="workout-exercise-intro-eyebrow">BODYWEIGHT</p>
         <h1 id="workout-intro-title">Squat</h1>

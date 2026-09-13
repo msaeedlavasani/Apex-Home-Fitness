@@ -7,6 +7,7 @@ interface ExerciseStatusProps {
   workSecondsRemaining: number;
   restRemainingSeconds: number;
   countdownValue: number;
+  debug?: boolean;
 }
 
 const WORK_SET_DURATION_SECONDS = 30;
@@ -15,11 +16,11 @@ function formatSeconds(value: number) {
   return `00:${String(Math.max(0, Math.min(59, value))).padStart(2, '0')}`;
 }
 
-export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRemainingSeconds, countdownValue}: ExerciseStatusProps) {
+export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRemainingSeconds, countdownValue, debug}: ExerciseStatusProps) {
 
   if (state === 'PREPARE') {
     return (
-      <section className="workout-exercise-status" data-layer="z5" data-workout-state={state} aria-hidden="true" />
+      <section className="workout-exercise-status" data-layer="z5" data-workout-state={state} data-debug-component={debug ? 'exercise-status' : undefined} aria-hidden="true" />
     );
   }
 
@@ -35,7 +36,7 @@ export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRem
     : 0;
 
   return (
-    <section className="workout-exercise-status" data-layer="z5" data-workout-state={state} aria-labelledby="workout-title">
+    <section className="workout-exercise-status" data-layer="z5" data-workout-state={state} data-debug-component={debug ? 'exercise-status' : undefined} aria-labelledby="workout-title">
       <div className="workout-exercise-copy">
         <p className="workout-status-eyebrow">{upcomingContext ? 'NEXT SET' : 'BODYWEIGHT'}</p>
         <h1 id="workout-title" className={upcomingContext ? 'workout-preview-exercise-name' : undefined}>
