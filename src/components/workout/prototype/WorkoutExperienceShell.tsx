@@ -7,6 +7,7 @@ import {ExerciseStatus} from './ExerciseStatus';
 import {MentorViewport} from './MentorViewport';
 import {QuietCoach} from './QuietCoach';
 import {PrepareStage} from './PrepareStage';
+import {RestStage} from './RestStage';
 import {SessionBar} from './SessionBar';
 import {StartStage} from './StartStage';
 import {WorkoutControls} from './WorkoutControls';
@@ -51,6 +52,7 @@ export function WorkoutExperienceShell({
   const [debugLayout, setDebugLayout] = useState(false);
   const [debugWorkout, setDebugWorkout] = useState(false);
   const stateConfig = getWorkoutPrototypeStateConfig(state);
+  const restState = state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
   const coachMessage = state === 'TRANSITION_COUNTDOWN'
     ? `Starting in ${countdownValue}`
     : stateConfig.coachMessage;
@@ -84,6 +86,13 @@ export function WorkoutExperienceShell({
         <StartStage onPauseToggle={onPauseToggle} />
       ) : state === 'PREPARE' ? (
         <PrepareStage onPauseToggle={onPauseToggle} onPrepareComplete={() => onStateChange('WORK_NORMAL')} />
+      ) : restState ? (
+        <RestStage
+          state={state}
+          currentSet={currentSet}
+          restRemainingSeconds={restRemainingSeconds}
+          onPauseToggle={onPauseToggle}
+        />
       ) : state === 'COMPLETE' ? (
         <CompleteStage onFinishWorkout={onFinishWorkout} onRepeatWorkout={onRepeatWorkout} />
       ) : (

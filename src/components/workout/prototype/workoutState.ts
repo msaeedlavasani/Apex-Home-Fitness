@@ -98,7 +98,9 @@ const STATE_CONFIG: Record<WorkoutPrototypeState, WorkoutPrototypeStateConfig> =
     coachMessage: 'Recover. Next set starts soon.',
   },
   REST_NEXT_PREVIEW: {
-    ...UNTRACKED_MENTOR_CONFIG,
+    trackingEnabled: false,
+    skeletonVisible: false,
+    mentorVisible: false,
     coachMessage: 'Bodyweight Squat',
   },
   TRANSITION_COUNTDOWN: {
