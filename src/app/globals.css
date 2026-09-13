@@ -688,13 +688,14 @@
     --exercise-status-height: clamp(82px, 11.1dvh, 94px);
     --quiet-coach-height: clamp(62px, 7.8dvh, 70px);
     --controls-height: clamp(92px, 12.3dvh, 104px);
-    position: relative;
+    position: fixed;
+    inset: 0;
     display: grid;
     grid-template-rows: var(--session-bar-height) var(--exercise-status-height) minmax(0, 1fr) var(--quiet-coach-height) var(--controls-height);
     width: min(100%, 430px);
     /* Prefer the live visual viewport, with stable fallbacks for older
        Safari builds that do not understand the newer viewport units. */
-    height: 100vh;
+    height: auto;
     min-height: 0;
     max-height: none;
     margin-inline: auto;
