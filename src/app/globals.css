@@ -668,6 +668,7 @@
     --workout-coral: #df8866;
     --workout-active-coral: #ef8a67;
     --workout-active-cyan: #73dce7;
+    --workout-active-cluster-lift: clamp(48px, 13vw, 54px);
     --workout-positive: #a4d8b8;
     --workout-positive-soft: rgba(164, 216, 184, 0.72);
     --workout-correction: #e1b27c;
@@ -1075,19 +1076,28 @@
   .workout-countdown-status strong.workout-countdown-value { margin-top: 3px; font-size: 2rem; font-weight: 500; letter-spacing: -0.04em; }
   .workout-active-timer {
     position: absolute;
-    top: calc(var(--workout-safe-top) + var(--session-bar-height) - 18px);
+    top: calc(var(--workout-safe-top) + var(--session-bar-height) - 18px - var(--workout-active-cluster-lift));
     left: 50%;
     display: block;
     width: var(--workout-active-timer-size);
     height: var(--workout-active-timer-size);
     padding: 0;
     border-radius: 50%;
-    background: conic-gradient(var(--workout-active-coral) 0deg var(--workout-timer-progress), rgba(245, 240, 233, 0.28) var(--workout-timer-progress) 360deg);
+    background: rgba(23, 18, 17, 0.5);
     box-shadow: 0 8px 20px rgba(12, 9, 8, 0.16);
     transform: translateX(-50%);
     text-align: center;
   }
-  .workout-active-timer::before { position: absolute; inset: 6px; z-index: 0; border-radius: 50%; background: rgba(23, 18, 17, 0.5); content: ''; }
+  .workout-active-timer::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 50%;
+    background: conic-gradient(var(--workout-active-coral) 0deg var(--workout-timer-progress), rgba(245, 240, 233, 0.28) var(--workout-timer-progress) 360deg);
+    content: '';
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  }
   .workout-active-timer .workout-status-eyebrow {
     position: absolute;
     z-index: 1;
@@ -1371,7 +1381,7 @@
 
   .workout-experience-shell[data-workout-state="WORK_NORMAL"] .tracking-status {
     position: fixed;
-    top: calc(var(--workout-safe-top) + var(--session-bar-height) + var(--workout-active-timer-size) - 6px);
+    top: calc(var(--workout-safe-top) + var(--session-bar-height) + var(--workout-active-timer-size) - 6px - var(--workout-active-cluster-lift));
     right: auto;
     left: 50%;
     border-color: color-mix(in srgb, var(--workout-active-cyan) 55%, transparent);
