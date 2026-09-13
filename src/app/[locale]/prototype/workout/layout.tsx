@@ -15,6 +15,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  other: {
+    // Next's appleWebApp.capable emits the generic mobile-web-app-capable
+    // tag. Keep the Apple-specific capability explicit for standalone iOS,
+    // where it gates the translucent status-bar treatment.
+    'apple-mobile-web-app-capable': 'yes',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
