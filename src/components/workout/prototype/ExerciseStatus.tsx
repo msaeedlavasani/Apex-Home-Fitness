@@ -1,4 +1,4 @@
-import {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState, type CSSProperties} from 'react';
 import type {WorkoutPrototypeState, WorkoutSetNumber} from './workoutState';
 
 interface ExerciseStatusProps {
@@ -92,6 +92,9 @@ export function ExerciseStatus({state, currentSet, restRemainingSeconds, countdo
   const activeSet = workNormal || nextExercise;
   const activeSetLabel = `SET ${String(currentSet).padStart(2, '0')}`;
   const upcomingContext = nextPreview || transitionCountdown;
+  const timerProgress = activeSet
+    ? ((WORK_SET_DURATION_SECONDS - workSecondsRemaining) / WORK_SET_DURATION_SECONDS) * 360
+    : 0;
 
   return (
     <section className="workout-exercise-status" data-layer="z5" data-workout-state={state} aria-labelledby="workout-title">
@@ -103,7 +106,8 @@ export function ExerciseStatus({state, currentSet, restRemainingSeconds, countdo
         {upcomingContext || start || state === 'REST_QUIET' ? null : <p className="workout-status-set">{activeSet ? activeSetLabel : 'Set 02'} <span>/ 03</span></p>}
       </div>
       <div
-        className={`workout-reps-status${transitionCountdown ? ' workout-countdown-status' : ''}`}
+        className={`workout-reps-status${transitionCountdown ? ' workout-countdown-status' : ''}${workNormal ? ' workout-active-timer' : ''}`}
+        style={workNormal ? {'--workout-timer-progress': `${timerProgress}deg`} as CSSProperties : undefined}
         aria-hidden={start ? 'true' : undefined}
         aria-label={transitionCountdown ? `Starting in ${countdownValue}` : nextPreview ? 'Next set in 5 seconds' : state === 'REST_QUIET' ? '30 second rest' : activeSet ? 'Active set timer' : `${nextExercise ? '0' : '8'} of 12 repetitions`}
       >
