@@ -4,10 +4,9 @@ import type {WorkoutPrototypeState} from './workoutState';
 interface WorkoutControlsProps {
   state: WorkoutPrototypeState;
   onPauseToggle: () => void;
-  onStartWorkout?: () => void;
 }
 
-export function WorkoutControls({state, onPauseToggle, onStartWorkout}: WorkoutControlsProps) {
+export function WorkoutControls({state, onPauseToggle}: WorkoutControlsProps) {
   const paused = state === 'PAUSED';
   const start = state === 'START';
   const prepare = state === 'PREPARE';
@@ -21,8 +20,9 @@ export function WorkoutControls({state, onPauseToggle, onStartWorkout}: WorkoutC
       {prepare ? <span className="workout-control-placeholder" aria-hidden="true" /> : <button
         className={`workout-control-button workout-control-button-primary${start ? ' workout-control-button-start' : ''}`}
         type="button"
+        data-start-workout-cta={start ? '' : undefined}
         aria-label={start ? 'Start workout' : paused ? 'Resume Mentor animation' : 'Pause Mentor animation'}
-        onClick={start ? onStartWorkout : onPauseToggle}
+        onClick={start ? undefined : onPauseToggle}
       >
         {start ? <Play size={18} strokeWidth={1.9} /> : paused ? <Play size={21} strokeWidth={1.7} /> : <Pause size={21} strokeWidth={1.7} />}
         <span>{start ? 'Start Workout' : paused ? 'Resume' : 'Pause'}</span>

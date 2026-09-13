@@ -2,7 +2,7 @@ import {SessionBar} from './SessionBar';
 import {WorkoutControls} from './WorkoutControls';
 import {PROTOTYPE_SESSION_SUMMARY} from './workoutSession';
 
-export function StartStage({onPauseToggle, onStartWorkout}: {onPauseToggle: () => void; onStartWorkout: () => void}) {
+export function StartStage({onPauseToggle}: {onPauseToggle: () => void}) {
   return (
     <section className="workout-start-stage" data-layer="z5" data-workout-state="START" aria-label="Start workout">
       <div className="workout-start-stage-top">
@@ -29,7 +29,7 @@ export function StartStage({onPauseToggle, onStartWorkout}: {onPauseToggle: () =
       </div>
 
       <div className="workout-start-stage-controls">
-        <WorkoutControls state="START" onPauseToggle={onPauseToggle} onStartWorkout={onStartWorkout} />
+        <WorkoutControls state="START" onPauseToggle={onPauseToggle} />
       </div>
     </section>
   );

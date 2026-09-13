@@ -24,7 +24,6 @@ interface WorkoutExperienceShellProps {
   onStateChange: (state: WorkoutPrototypeState) => void;
   onCurrentSetChange: (set: WorkoutSetNumber) => void;
   onPauseToggle: () => void;
-  onStartWorkout: () => void;
   onWorkTimerComplete: () => void;
   onFinishWorkout: () => void;
   onRepeatWorkout: () => void;
@@ -41,7 +40,6 @@ export function WorkoutExperienceShell({
   onStateChange,
   onCurrentSetChange,
   onPauseToggle,
-  onStartWorkout,
   onWorkTimerComplete,
   onFinishWorkout,
   onRepeatWorkout,
@@ -83,7 +81,7 @@ export function WorkoutExperienceShell({
       />
 
       {state === 'START' ? (
-        <StartStage onPauseToggle={onPauseToggle} onStartWorkout={onStartWorkout} />
+        <StartStage onPauseToggle={onPauseToggle} />
       ) : state === 'PREPARE' ? (
         <PrepareStage onPauseToggle={onPauseToggle} onPrepareComplete={() => onStateChange('WORK_NORMAL')} />
       ) : state === 'COMPLETE' ? (

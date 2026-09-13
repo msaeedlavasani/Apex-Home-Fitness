@@ -1,4 +1,5 @@
 import type {Metadata, Viewport} from 'next';
+import {START_WORKOUT_BRIDGE_SCRIPT} from '@/components/workout/prototype/startWorkoutBridge';
 
 /**
  * The workout prototype is the only immersive full-surface route. Keep its
@@ -21,5 +22,10 @@ export const metadata: Metadata = {
 };
 
 export default function WorkoutPrototypeLayout({children}: {children: React.ReactNode}) {
-  return children;
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{__html: START_WORKOUT_BRIDGE_SCRIPT}} />
+      {children}
+    </>
+  );
 }

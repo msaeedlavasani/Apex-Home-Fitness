@@ -6,6 +6,7 @@ import {useLocale} from 'next-intl';
 import {useRouter} from 'next/navigation';
 import {WorkoutExperienceShell} from '@/components/workout/prototype/WorkoutExperienceShell';
 import {getCountdownValue, getPrototypeFlowState, getRestRemainingSeconds} from '@/components/workout/prototype/prototypeFlow';
+import {START_WORKOUT_EVENT, START_WORKOUT_REQUEST_ATTRIBUTE} from '@/components/workout/prototype/startWorkoutBridge';
 import {
   getNextWorkoutSetNumber,
   isResumableWorkoutState,
@@ -288,6 +289,19 @@ export default function WorkoutPrototypePage() {
     transitionToState('PREPARE');
   }, [transitionToState]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const handleStartWorkoutRequest = () => {
+      root.removeAttribute(START_WORKOUT_REQUEST_ATTRIBUTE);
+      startWorkout();
+    };
+
+    window.addEventListener(START_WORKOUT_EVENT, handleStartWorkoutRequest);
+    if (root.hasAttribute(START_WORKOUT_REQUEST_ATTRIBUTE)) handleStartWorkoutRequest();
+
+    return () => window.removeEventListener(START_WORKOUT_EVENT, handleStartWorkoutRequest);
+  }, [startWorkout]);
+
   const togglePause = useCallback(() => {
     if (workoutState === 'PAUSED') {
       if (prototypeFlowEnabled) flowStartedAtRef.current = Date.now();
@@ -363,7 +377,6 @@ export default function WorkoutPrototypePage() {
       onStateChange={prototypeFlowEnabled ? handleStateChange : transitionToState}
       onCurrentSetChange={handleCurrentSetChange}
       onPauseToggle={togglePause}
-      onStartWorkout={startWorkout}
       onWorkTimerComplete={handleActiveSetTimerComplete}
       onFinishWorkout={handleFinishWorkout}
       onRepeatWorkout={handleRepeatWorkout}
