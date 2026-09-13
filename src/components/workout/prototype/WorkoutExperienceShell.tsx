@@ -3,6 +3,7 @@
 import {useEffect, useState, type ReactNode} from 'react';
 import {BackstageScene} from './BackstageScene';
 import {CompleteStage} from './CompleteStage';
+import {ExerciseIntroStage} from './ExerciseIntroStage';
 import {ExerciseStatus} from './ExerciseStatus';
 import {MentorViewport} from './MentorViewport';
 import {QuietCoach} from './QuietCoach';
@@ -52,7 +53,7 @@ export function WorkoutExperienceShell({
   const [debugLayout, setDebugLayout] = useState(false);
   const [debugWorkout, setDebugWorkout] = useState(false);
   const stateConfig = getWorkoutPrototypeStateConfig(state);
-  const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE' || state === 'EXERCISE_INTRO';
+  const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
   const restState = state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
   const coachMessage = state === 'TRANSITION_COUNTDOWN'
     ? `Starting in ${countdownValue}`
@@ -88,6 +89,15 @@ export function WorkoutExperienceShell({
         <StartStage onPauseToggle={onPauseToggle} />
       ) : state === 'PREPARE' ? (
         <PrepareStage onPauseToggle={onPauseToggle} onPrepareComplete={() => onStateChange('EXERCISE_INTRO')} />
+      ) : state === 'EXERCISE_INTRO' ? (
+        <>
+          <div className="workout-zone workout-zone-session" data-zone-label="ZONE A · SESSION BAR">
+            <SessionBar state={state} />
+          </div>
+          <div className="workout-zone workout-zone-status" data-zone-label="ZONE B · EXERCISE INTRO">
+            <ExerciseIntroStage />
+          </div>
+        </>
       ) : restState ? (
         <RestStage
           state={state}
@@ -118,7 +128,7 @@ export function WorkoutExperienceShell({
           </div>
 
           <div className="workout-zone workout-zone-controls" data-zone-label="ZONE E · CONTROLS">
-            <WorkoutControls state={state === 'EXERCISE_INTRO' ? 'PREPARE' : state} onPauseToggle={onPauseToggle} />
+            <WorkoutControls state={state} onPauseToggle={onPauseToggle} />
           </div>
         </>
       )}
