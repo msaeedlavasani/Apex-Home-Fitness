@@ -34,7 +34,6 @@ const WORK_SET_DURATION_MS = 30_000;
 const EXERCISE_INTRO_DURATION_MS = 3_000;
 const TRANSITION_COUNTDOWN_START_VALUE = 3;
 const TRANSITION_COUNTDOWN_DURATION_MS = 3_000;
-const PROTOTYPE_EXERCISE_ID = 'bodyweight-squat';
 
 type PausedTimelineSnapshot = {
   state: ResumableWorkoutState;
@@ -66,7 +65,6 @@ export default function WorkoutPrototypePage() {
   const restDeadlineRef = useRef<number | null>(null);
   const transitionCountdownStartedAtRef = useRef<number | null>(null);
   const transitionCountdownHandoffTimeoutRef = useRef<number | null>(null);
-  const introducedExerciseIdsRef = useRef<Set<string>>(new Set());
   const pausedTimelineRef = useRef<PausedTimelineSnapshot | null>(null);
   const handleActiveSetTimerCompleteRef = useRef<() => void>(() => {});
   const transitionToStateRef = useRef<(nextState: WorkoutPrototypeState) => void>(() => {});
@@ -124,7 +122,6 @@ export default function WorkoutPrototypePage() {
     flowElapsedMsRef.current = 0;
     flowStartedAtRef.current = Date.now();
     clearManualWorkTimer();
-    introducedExerciseIdsRef.current.clear();
     setFlowElapsedMs(0);
     setCurrentSet(1);
     workoutStateRef.current = 'PREPARE';
@@ -156,9 +153,6 @@ export default function WorkoutPrototypePage() {
       clearManualTransitionCountdown();
     }
     workoutStateRef.current = initialState;
-    if (initialState === 'EXERCISE_INTRO') {
-      introducedExerciseIdsRef.current.add(PROTOTYPE_EXERCISE_ID);
-    }
     setWorkoutState(initialState);
   }, [clearManualRestPhase, clearManualTransitionCountdown, resetPrototypeFlow, startManualRestPhase, startManualTransitionCountdown]);
 
@@ -177,14 +171,7 @@ export default function WorkoutPrototypePage() {
       flowStartedAtRef.current = Date.now();
       setFlowElapsedMs(elapsedMs);
 
-      const flowState = getPrototypeFlowState(elapsedMs);
-      const nextState = flowState === 'EXERCISE_INTRO'
-        && introducedExerciseIdsRef.current.has(PROTOTYPE_EXERCISE_ID)
-        ? 'WORK_NORMAL'
-        : flowState;
-      if (flowState === 'EXERCISE_INTRO') {
-        introducedExerciseIdsRef.current.add(PROTOTYPE_EXERCISE_ID);
-      }
+      const nextState = getPrototypeFlowState(elapsedMs);
       if (nextState !== workoutStateRef.current) {
         if (nextState === 'WORK_NORMAL' && workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
           setCurrentSet((previousSet) => getNextWorkoutSetNumber(previousSet));
@@ -410,34 +397,26 @@ export default function WorkoutPrototypePage() {
       return;
     }
 
-    const resolvedNextState = nextState === 'EXERCISE_INTRO'
-      && introducedExerciseIdsRef.current.has(PROTOTYPE_EXERCISE_ID)
-      ? 'WORK_NORMAL'
-      : nextState;
-    if (nextState === 'EXERCISE_INTRO') {
-      introducedExerciseIdsRef.current.add(PROTOTYPE_EXERCISE_ID);
-    }
-
     const currentRestPhase = isRestPhaseState(workoutState);
-    const nextRestPhase = isRestPhaseState(resolvedNextState);
+    const nextRestPhase = isRestPhaseState(nextState);
 
-    if (resolvedNextState === 'WORK_NORMAL' && workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
+    if (nextState === 'WORK_NORMAL' && workoutStateRef.current === 'TRANSITION_COUNTDOWN') {
       setCurrentSet((previousSet) => getNextWorkoutSetNumber(previousSet));
     }
 
     if (!prototypeFlowEnabled) {
       if (nextRestPhase && !currentRestPhase) startManualRestPhase();
-      if (!nextRestPhase && currentRestPhase && resolvedNextState !== 'PAUSED') clearManualRestPhase();
-      if (resolvedNextState === 'TRANSITION_COUNTDOWN' && workoutState !== 'TRANSITION_COUNTDOWN') {
+      if (!nextRestPhase && currentRestPhase && nextState !== 'PAUSED') clearManualRestPhase();
+      if (nextState === 'TRANSITION_COUNTDOWN' && workoutState !== 'TRANSITION_COUNTDOWN') {
         startManualTransitionCountdown();
       }
-      if (resolvedNextState !== 'TRANSITION_COUNTDOWN' && workoutState === 'TRANSITION_COUNTDOWN' && resolvedNextState !== 'PAUSED') {
+      if (nextState !== 'TRANSITION_COUNTDOWN' && workoutState === 'TRANSITION_COUNTDOWN' && nextState !== 'PAUSED') {
         clearManualTransitionCountdown();
       }
     }
 
-    workoutStateRef.current = resolvedNextState;
-    setWorkoutState(resolvedNextState);
+    workoutStateRef.current = nextState;
+    setWorkoutState(nextState);
   }, [clearManualRestPhase, clearManualTransitionCountdown, pauseTimeline, prototypeFlowEnabled, startManualRestPhase, startManualTransitionCountdown, workoutState]);
 
   transitionToStateRef.current = transitionToState;
@@ -495,15 +474,8 @@ export default function WorkoutPrototypePage() {
 
   const handleStateChange = useCallback((nextState: WorkoutPrototypeState) => {
     if (prototypeFlowEnabled) return;
-    const resolvedNextState = nextState === 'EXERCISE_INTRO'
-      && introducedExerciseIdsRef.current.has(PROTOTYPE_EXERCISE_ID)
-      ? 'WORK_NORMAL'
-      : nextState;
-    if (nextState === 'EXERCISE_INTRO') {
-      introducedExerciseIdsRef.current.add(PROTOTYPE_EXERCISE_ID);
-    }
-    workoutStateRef.current = resolvedNextState;
-    setWorkoutState(resolvedNextState);
+    workoutStateRef.current = nextState;
+    setWorkoutState(nextState);
   }, [prototypeFlowEnabled]);
 
   const handleCurrentSetChange = useCallback((nextSet: WorkoutSetNumber) => {
@@ -525,7 +497,6 @@ export default function WorkoutPrototypePage() {
     flowElapsedMsRef.current = 0;
     flowStartedAtRef.current = null;
     clearManualWorkTimer();
-    introducedExerciseIdsRef.current.clear();
     if (exerciseIntroTimeoutRef.current !== null) {
       window.clearTimeout(exerciseIntroTimeoutRef.current);
       exerciseIntroTimeoutRef.current = null;

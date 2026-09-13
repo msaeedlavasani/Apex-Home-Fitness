@@ -55,6 +55,9 @@ export function WorkoutExperienceShell({
   const stateConfig = getWorkoutPrototypeStateConfig(state);
   const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
   const restState = state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
+  const restPresentationState: 'REST_QUIET' | 'REST_NEXT_PREVIEW' = restState
+    ? state === 'REST_NEXT_PREVIEW' ? 'REST_QUIET' : state
+    : 'REST_QUIET';
   const coachMessage = state === 'TRANSITION_COUNTDOWN'
     ? `Starting in ${countdownValue}`
     : stateConfig.coachMessage;
@@ -100,7 +103,7 @@ export function WorkoutExperienceShell({
         </>
       ) : restState ? (
         <RestStage
-          state={state}
+          state={restPresentationState}
           currentSet={currentSet}
           restRemainingSeconds={restRemainingSeconds}
           onPauseToggle={onPauseToggle}
