@@ -432,6 +432,18 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* The immersive prototype owns its own full-surface backdrop. Keep the
+     document canvas on the same tone so iOS viewport transitions cannot
+     reveal a contrasting strip outside the stage. */
+  html:has(.workout-experience-shell),
+  body:has(.workout-experience-shell) {
+    background-color: #211b19;
+  }
+
+  body:has(.workout-experience-shell) {
+    overflow: hidden;
+  }
+
   body {
     /* Neutral tokens: iOS grouped background by default, M3 background
        on the material platform — flips automatically with .dark. */
@@ -661,6 +673,8 @@
     --workout-recovery: #d9c19a;
     --workout-recovery-soft: rgba(217, 193, 154, 0.66);
     --workout-rest: #d9bd91;
+    --workout-safe-top: max(8px, env(safe-area-inset-top));
+    --workout-safe-bottom: max(32px, env(safe-area-inset-bottom));
     --session-bar-height: clamp(70px, 9.7dvh, 82px);
     --exercise-status-height: clamp(82px, 11.1dvh, 94px);
     --quiet-coach-height: clamp(62px, 7.8dvh, 70px);
@@ -669,16 +683,26 @@
     display: grid;
     grid-template-rows: var(--session-bar-height) var(--exercise-status-height) minmax(0, 1fr) var(--quiet-coach-height) var(--controls-height);
     width: min(100%, 430px);
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    /* Prefer the live visual viewport, with stable fallbacks for older
+       Safari builds that do not understand the newer viewport units. */
+    height: 100vh;
+    min-height: 0;
+    max-height: none;
     margin-inline: auto;
     overflow: hidden;
     color: var(--workout-ink);
     background: #211b19;
     isolation: isolate;
-    padding-block: max(8px, env(safe-area-inset-top)) max(32px, env(safe-area-inset-bottom));
+    padding-block: var(--workout-safe-top) var(--workout-safe-bottom);
     padding-inline: 20px;
+  }
+
+  @supports (height: 100svh) {
+    .workout-experience-shell { height: 100svh; }
+  }
+
+  @supports (height: 100dvh) {
+    .workout-experience-shell { height: 100dvh; }
   }
   .workout-zone,
   .workout-mentor-viewport {
@@ -1033,8 +1057,8 @@
   .workout-experience-shell[data-workout-state="PREPARE"] .workout-mentor-viewport { background: transparent; }
   .workout-start-stage { position: absolute; z-index: 5; inset: 0; pointer-events: none; }
   .workout-start-stage::after { position: absolute; z-index: -1; inset: 0; background: linear-gradient(180deg, rgba(13, 10, 9, 0.08), transparent 38%, rgba(13, 10, 9, 0.2)); content: ''; pointer-events: none; }
-  .workout-start-stage-top { position: absolute; top: max(8px, env(safe-area-inset-top)); right: 20px; left: 20px; height: var(--session-bar-height); pointer-events: auto; }
-  .workout-start-content { position: absolute; top: calc(max(8px, env(safe-area-inset-top)) + var(--session-bar-height) + 48px); right: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .workout-start-stage-top { position: absolute; top: var(--workout-safe-top); right: 20px; left: 20px; height: var(--session-bar-height); pointer-events: auto; }
+  .workout-start-content { position: absolute; top: calc(var(--workout-safe-top) + var(--session-bar-height) + 48px); right: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .workout-start-hero { display: grid; justify-items: center; }
   .workout-start-hero h1 { display: grid; margin: 0; color: var(--workout-ink); font-size: clamp(2.7rem, 12.5vw, 3.5rem); font-weight: 500; letter-spacing: -0.055em; line-height: 0.9; text-shadow: 0 4px 22px rgba(16, 11, 9, 0.3); }
   .workout-start-summary { margin: 18px 0 0; color: var(--workout-ink); font-size: 0.72rem; letter-spacing: 0.09em; line-height: 1; }
@@ -1050,14 +1074,14 @@
   .workout-start-message { display: grid; gap: 9px; margin-top: 68px; }
   .workout-start-message h2 { margin: 0; color: var(--workout-ink); font-size: 1.28rem; font-weight: 500; letter-spacing: 0.02em; line-height: 1; }
   .workout-start-message p { margin: 0; color: var(--workout-muted); font-size: 0.86rem; line-height: 1.2; }
-  .workout-start-stage-controls { position: absolute; right: 20px; bottom: max(32px, env(safe-area-inset-bottom)); left: 20px; height: var(--controls-height); pointer-events: auto; }
+  .workout-start-stage-controls { position: absolute; right: 20px; bottom: var(--workout-safe-bottom); left: 20px; height: var(--controls-height); pointer-events: auto; }
   .workout-start-stage-controls .workout-controls { padding-block: 0; }
   .workout-prepare-stage { position: absolute; z-index: 5; inset: 0; pointer-events: none; }
-  .workout-prepare-stage-top { position: absolute; top: max(8px, env(safe-area-inset-top)); right: 20px; left: 20px; height: var(--session-bar-height); pointer-events: auto; }
-  .workout-prepare-stage-controls { position: absolute; right: 20px; bottom: max(32px, env(safe-area-inset-bottom)); left: 20px; height: var(--controls-height); pointer-events: auto; }
+  .workout-prepare-stage-top { position: absolute; top: var(--workout-safe-top); right: 20px; left: 20px; height: var(--session-bar-height); pointer-events: auto; }
+  .workout-prepare-stage-controls { position: absolute; right: 20px; bottom: var(--workout-safe-bottom); left: 20px; height: var(--controls-height); pointer-events: auto; }
   .workout-prepare-stage-controls .workout-controls { padding-block: 0; }
   .workout-complete-stage { position: absolute; z-index: 5; inset: 0; pointer-events: none; }
-  .workout-complete-content { position: absolute; inset: max(30px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; text-align: center; }
+  .workout-complete-content { position: absolute; inset: var(--workout-safe-top) 20px var(--workout-safe-bottom); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; text-align: center; }
   .workout-complete-heading { display: grid; justify-items: center; }
   .workout-complete-kicker { color: var(--workout-coral); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; line-height: 1; }
   .workout-complete-heading h1 { margin: 14px 0 0; color: var(--workout-ink); font-size: clamp(1.25rem, 5.8vw, 1.6rem); font-weight: 700; letter-spacing: 0.12em; line-height: 1; }
@@ -1084,7 +1108,7 @@
   .workout-complete-repeat { border: 1px solid rgba(245, 240, 233, 0.2); color: var(--workout-muted); background: rgba(245, 240, 233, 0.06); }
   .workout-complete-finish:hover { background: #e37b51; }
   .workout-complete-repeat:hover { color: var(--workout-ink); background: rgba(245, 240, 233, 0.1); }
-  .workout-prepare-content { position: absolute; z-index: 4; inset: calc(max(8px, env(safe-area-inset-top)) + var(--session-bar-height) + 12px) 20px calc(max(32px, env(safe-area-inset-bottom)) + var(--controls-height) + 10px); display: flex; flex-direction: column; align-items: center; overflow: hidden; padding: 20px 0 0; text-align: center; }
+  .workout-prepare-content { position: absolute; z-index: 4; inset: calc(var(--workout-safe-top) + var(--session-bar-height) + 12px) 20px calc(var(--workout-safe-bottom) + var(--controls-height) + 10px); display: flex; flex-direction: column; align-items: center; overflow: hidden; padding: 20px 0 0; text-align: center; }
   .workout-prepare-heading { display: flex; flex: 0 0 auto; flex-direction: column; align-items: center; }
   .workout-prepare-kicker { color: var(--workout-coral); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.24em; line-height: 1; }
   .workout-prepare-first-up { margin-top: 12px; color: var(--workout-muted); font-size: 1.28rem; line-height: 1; }
@@ -1205,7 +1229,7 @@
   .workout-state-debug-control {
     position: fixed;
     z-index: 100;
-    top: max(10px, env(safe-area-inset-top));
+    top: var(--workout-safe-top);
     left: 50%;
     width: min(260px, calc(100vw - 20px));
     padding: 7px 9px;
