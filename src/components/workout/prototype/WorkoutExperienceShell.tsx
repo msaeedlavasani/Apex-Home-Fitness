@@ -25,7 +25,7 @@ interface WorkoutExperienceShellProps {
   onStateChange: (state: WorkoutPrototypeState) => void;
   onCurrentSetChange: (set: WorkoutSetNumber) => void;
   onPauseToggle: () => void;
-  onWorkTimerComplete: () => void;
+  workSecondsRemaining: number;
   onFinishWorkout: () => void;
   onRepeatWorkout: () => void;
   prototypeFlowEnabled: boolean;
@@ -41,7 +41,7 @@ export function WorkoutExperienceShell({
   onStateChange,
   onCurrentSetChange,
   onPauseToggle,
-  onWorkTimerComplete,
+  workSecondsRemaining,
   onFinishWorkout,
   onRepeatWorkout,
   prototypeFlowEnabled,
@@ -105,9 +105,9 @@ export function WorkoutExperienceShell({
             <ExerciseStatus
               state={state}
               currentSet={currentSet}
+              workSecondsRemaining={workSecondsRemaining}
               restRemainingSeconds={restRemainingSeconds}
               countdownValue={countdownValue}
-              onWorkTimerComplete={onWorkTimerComplete}
             />
           </div>
 

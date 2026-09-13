@@ -1,12 +1,12 @@
-import {useEffect, useLayoutEffect, useRef, useState, type CSSProperties} from 'react';
+import type {CSSProperties} from 'react';
 import type {WorkoutPrototypeState, WorkoutSetNumber} from './workoutState';
 
 interface ExerciseStatusProps {
   state: WorkoutPrototypeState;
   currentSet: WorkoutSetNumber;
+  workSecondsRemaining: number;
   restRemainingSeconds: number;
   countdownValue: number;
-  onWorkTimerComplete: () => void;
 }
 
 const WORK_SET_DURATION_SECONDS = 30;
@@ -15,68 +15,7 @@ function formatSeconds(value: number) {
   return `00:${String(Math.max(0, Math.min(59, value))).padStart(2, '0')}`;
 }
 
-export function ExerciseStatus({state, currentSet, restRemainingSeconds, countdownValue, onWorkTimerComplete}: ExerciseStatusProps) {
-  const [workSecondsRemaining, setWorkSecondsRemaining] = useState(WORK_SET_DURATION_SECONDS);
-  const workDeadlineRef = useRef<number | null>(null);
-  const workCompletionTimeoutRef = useRef<number | null>(null);
-  const onWorkTimerCompleteRef = useRef(onWorkTimerComplete);
-  onWorkTimerCompleteRef.current = onWorkTimerComplete;
-
-  useLayoutEffect(() => {
-    const activeSet = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
-    if (!activeSet) {
-      workDeadlineRef.current = null;
-      if (workCompletionTimeoutRef.current !== null) {
-        window.clearTimeout(workCompletionTimeoutRef.current);
-        workCompletionTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    setWorkSecondsRemaining(WORK_SET_DURATION_SECONDS);
-    const deadline = Date.now() + WORK_SET_DURATION_SECONDS * 1000;
-    workDeadlineRef.current = deadline;
-
-    workCompletionTimeoutRef.current = window.setTimeout(() => {
-      workCompletionTimeoutRef.current = null;
-      if (workDeadlineRef.current === deadline) {
-        onWorkTimerCompleteRef.current();
-      }
-    }, WORK_SET_DURATION_SECONDS * 1000 + 500);
-
-    return () => {
-      if (workDeadlineRef.current === deadline) workDeadlineRef.current = null;
-      if (workCompletionTimeoutRef.current !== null) {
-        window.clearTimeout(workCompletionTimeoutRef.current);
-        workCompletionTimeoutRef.current = null;
-      }
-    };
-  }, [state]);
-
-  useEffect(() => {
-    const activeSet = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
-    if (!activeSet) return;
-
-    let timer = 0;
-    const updateTimer = () => {
-      const deadline = workDeadlineRef.current;
-      if (deadline === null) return;
-
-      const remainingSeconds = Math.max(0, Math.min(
-        WORK_SET_DURATION_SECONDS,
-        Math.ceil((deadline - Date.now()) / 1000),
-      ));
-      setWorkSecondsRemaining(remainingSeconds);
-      if (remainingSeconds === 0) {
-        window.clearInterval(timer);
-      }
-    };
-
-    updateTimer();
-    timer = window.setInterval(updateTimer, 100);
-
-    return () => window.clearInterval(timer);
-  }, [currentSet, state]);
+export function ExerciseStatus({state, currentSet, workSecondsRemaining, restRemainingSeconds, countdownValue}: ExerciseStatusProps) {
 
   if (state === 'PREPARE') {
     return (

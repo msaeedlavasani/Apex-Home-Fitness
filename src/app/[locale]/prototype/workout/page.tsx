@@ -30,10 +30,22 @@ const MentorStage = dynamic(
   );
 
 const REST_PHASE_DURATION_MS = 30_000;
+const WORK_SET_DURATION_MS = 30_000;
 const TRANSITION_COUNTDOWN_START_VALUE = 3;
+const TRANSITION_COUNTDOWN_DURATION_MS = 3_000;
+
+type PausedTimelineSnapshot = {
+  state: ResumableWorkoutState;
+  currentSet: WorkoutSetNumber;
+  remainingMs: number | null;
+};
 
 function isRestPhaseState(state: WorkoutPrototypeState) {
   return state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
+}
+
+function isActiveSetState(state: WorkoutPrototypeState) {
+  return state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
 }
 
 export default function WorkoutPrototypePage() {
@@ -43,14 +55,18 @@ export default function WorkoutPrototypePage() {
   const [prototypeFlowEnabled, setPrototypeFlowEnabled] = useState(false);
   const [flowElapsedMs, setFlowElapsedMs] = useState(0);
   const [currentSet, setCurrentSet] = useState<WorkoutSetNumber>(1);
-  const previousResumableStateRef = useRef<ResumableWorkoutState>('WORK_NORMAL');
   const workoutStateRef = useRef<WorkoutPrototypeState>('START');
   const flowElapsedMsRef = useRef(0);
   const flowStartedAtRef = useRef<number | null>(null);
+  const workDeadlineRef = useRef<number | null>(null);
+  const workCompletionTimeoutRef = useRef<number | null>(null);
   const restDeadlineRef = useRef<number | null>(null);
   const transitionCountdownStartedAtRef = useRef<number | null>(null);
   const transitionCountdownHandoffTimeoutRef = useRef<number | null>(null);
+  const pausedTimelineRef = useRef<PausedTimelineSnapshot | null>(null);
+  const handleActiveSetTimerCompleteRef = useRef<() => void>(() => {});
   const transitionToStateRef = useRef<(nextState: WorkoutPrototypeState) => void>(() => {});
+  const [manualWorkRemainingSeconds, setManualWorkRemainingSeconds] = useState(30);
   const [manualRestRemainingSeconds, setManualRestRemainingSeconds] = useState(30);
   const [manualTransitionCountdownValue, setManualTransitionCountdownValue] = useState(TRANSITION_COUNTDOWN_START_VALUE);
 
@@ -61,9 +77,10 @@ export default function WorkoutPrototypePage() {
     return flowElapsedMsRef.current + (Date.now() - flowStartedAtRef.current);
   }, []);
 
-  const startManualRestPhase = useCallback(() => {
-    restDeadlineRef.current = Date.now() + REST_PHASE_DURATION_MS;
-    setManualRestRemainingSeconds(30);
+  const startManualRestPhase = useCallback((remainingMs = REST_PHASE_DURATION_MS) => {
+    const clampedRemainingMs = Math.max(0, Math.min(REST_PHASE_DURATION_MS, remainingMs));
+    restDeadlineRef.current = Date.now() + clampedRemainingMs;
+    setManualRestRemainingSeconds(Math.ceil(clampedRemainingMs / 1_000));
   }, []);
 
   const clearManualRestPhase = useCallback(() => {
@@ -71,10 +88,14 @@ export default function WorkoutPrototypePage() {
     setManualRestRemainingSeconds(30);
   }, []);
 
-  const startManualTransitionCountdown = useCallback(() => {
-    const startedAt = Date.now();
+  const startManualTransitionCountdown = useCallback((remainingMs = TRANSITION_COUNTDOWN_DURATION_MS) => {
+    const clampedRemainingMs = Math.max(0, Math.min(TRANSITION_COUNTDOWN_DURATION_MS, remainingMs));
+    const startedAt = Date.now() - (TRANSITION_COUNTDOWN_DURATION_MS - clampedRemainingMs);
     transitionCountdownStartedAtRef.current = startedAt;
-    setManualTransitionCountdownValue(TRANSITION_COUNTDOWN_START_VALUE);
+    setManualTransitionCountdownValue(Math.max(1, Math.min(
+      TRANSITION_COUNTDOWN_START_VALUE,
+      Math.ceil(clampedRemainingMs / 1_000),
+    )));
   }, []);
 
   const clearManualTransitionCountdown = useCallback(() => {
@@ -86,15 +107,24 @@ export default function WorkoutPrototypePage() {
     }
   }, []);
 
+  const clearManualWorkTimer = useCallback(() => {
+    workDeadlineRef.current = null;
+    setManualWorkRemainingSeconds(WORK_SET_DURATION_MS / 1_000);
+    if (workCompletionTimeoutRef.current !== null) {
+      window.clearTimeout(workCompletionTimeoutRef.current);
+      workCompletionTimeoutRef.current = null;
+    }
+  }, []);
+
   const resetPrototypeFlow = useCallback(() => {
     flowElapsedMsRef.current = 0;
     flowStartedAtRef.current = Date.now();
+    clearManualWorkTimer();
     setFlowElapsedMs(0);
     setCurrentSet(1);
-    previousResumableStateRef.current = 'PREPARE';
     workoutStateRef.current = 'PREPARE';
     setWorkoutState('PREPARE');
-  }, []);
+  }, [clearManualWorkTimer]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -120,7 +150,6 @@ export default function WorkoutPrototypePage() {
     } else {
       clearManualTransitionCountdown();
     }
-    previousResumableStateRef.current = isResumableWorkoutState(initialState) ? initialState : 'WORK_NORMAL';
     workoutStateRef.current = initialState;
     setWorkoutState(initialState);
   }, [clearManualRestPhase, clearManualTransitionCountdown, resetPrototypeFlow, startManualRestPhase, startManualTransitionCountdown]);
@@ -155,6 +184,43 @@ export default function WorkoutPrototypePage() {
       flowStartedAtRef.current = null;
     };
   }, [prototypeFlowEnabled, readFlowElapsedMs]);
+
+  useEffect(() => {
+    const activeSet = workoutState === 'WORK_NORMAL' || workoutState === 'NEXT_EXERCISE';
+    if (!activeSet) {
+      clearManualWorkTimer();
+      return;
+    }
+
+    const deadline = workDeadlineRef.current ?? Date.now() + WORK_SET_DURATION_MS;
+    workDeadlineRef.current = deadline;
+
+    const updateWorkTimer = () => {
+      const remainingSeconds = Math.max(0, Math.min(
+        WORK_SET_DURATION_MS / 1_000,
+        Math.ceil((deadline - Date.now()) / 1_000),
+      ));
+      setManualWorkRemainingSeconds(remainingSeconds);
+    };
+
+    updateWorkTimer();
+    workCompletionTimeoutRef.current = window.setTimeout(() => {
+      workCompletionTimeoutRef.current = null;
+      if (workDeadlineRef.current === deadline) {
+        handleActiveSetTimerCompleteRef.current();
+      }
+    }, Math.max(0, deadline - Date.now()) + 500);
+
+    const timer = window.setInterval(updateWorkTimer, 100);
+    return () => {
+      window.clearInterval(timer);
+      if (workDeadlineRef.current === deadline) workDeadlineRef.current = null;
+      if (workCompletionTimeoutRef.current !== null) {
+        window.clearTimeout(workCompletionTimeoutRef.current);
+        workCompletionTimeoutRef.current = null;
+      }
+    };
+  }, [clearManualWorkTimer, currentSet, workoutState]);
 
   useEffect(() => {
     if (prototypeFlowEnabled) return;
@@ -252,15 +318,67 @@ export default function WorkoutPrototypePage() {
     };
   }, [prototypeFlowEnabled, workoutState]);
 
+  const pauseTimeline = useCallback(() => {
+    const state = workoutStateRef.current;
+    const snapshot: PausedTimelineSnapshot = {
+      state: isResumableWorkoutState(state) ? state : 'WORK_NORMAL',
+      currentSet,
+      remainingMs: null,
+    };
+
+    if (isActiveSetState(state)) {
+      snapshot.remainingMs = workDeadlineRef.current === null
+        ? manualWorkRemainingSeconds * 1_000
+        : Math.max(0, workDeadlineRef.current - Date.now());
+      setManualWorkRemainingSeconds(Math.ceil(snapshot.remainingMs / 1_000));
+      workDeadlineRef.current = null;
+      if (workCompletionTimeoutRef.current !== null) {
+        window.clearTimeout(workCompletionTimeoutRef.current);
+        workCompletionTimeoutRef.current = null;
+      }
+    } else if (isRestPhaseState(state)) {
+      snapshot.remainingMs = restDeadlineRef.current === null
+        ? manualRestRemainingSeconds * 1_000
+        : Math.max(0, restDeadlineRef.current - Date.now());
+      setManualRestRemainingSeconds(Math.ceil(snapshot.remainingMs / 1_000));
+      restDeadlineRef.current = null;
+    } else if (state === 'TRANSITION_COUNTDOWN') {
+      const startedAt = transitionCountdownStartedAtRef.current;
+      snapshot.remainingMs = startedAt === null
+        ? manualTransitionCountdownValue * 1_000
+        : Math.max(0, startedAt + TRANSITION_COUNTDOWN_DURATION_MS - Date.now());
+      transitionCountdownStartedAtRef.current = null;
+      if (transitionCountdownHandoffTimeoutRef.current !== null) {
+        window.clearTimeout(transitionCountdownHandoffTimeoutRef.current);
+        transitionCountdownHandoffTimeoutRef.current = null;
+      }
+      setManualTransitionCountdownValue(Math.max(1, Math.min(
+        TRANSITION_COUNTDOWN_START_VALUE,
+        Math.ceil(snapshot.remainingMs / 1_000),
+      )));
+    }
+
+    pausedTimelineRef.current = snapshot;
+
+    if (prototypeFlowEnabled) {
+      const elapsedMs = readFlowElapsedMs();
+      flowElapsedMsRef.current = elapsedMs;
+      flowStartedAtRef.current = null;
+      setFlowElapsedMs(elapsedMs);
+    }
+
+    workoutStateRef.current = 'PAUSED';
+    setWorkoutState('PAUSED');
+  }, [currentSet, manualRestRemainingSeconds, manualTransitionCountdownValue, manualWorkRemainingSeconds, prototypeFlowEnabled, readFlowElapsedMs]);
+
   const transitionToState = useCallback((nextState: WorkoutPrototypeState) => {
+    if (nextState === 'PAUSED' && workoutState !== 'PAUSED') {
+      pauseTimeline();
+      return;
+    }
+
     const currentRestPhase = isRestPhaseState(workoutState);
     const nextRestPhase = isRestPhaseState(nextState);
-
-    if (nextState === 'PAUSED') {
-      previousResumableStateRef.current = isResumableWorkoutState(workoutState)
-        ? workoutState
-        : 'WORK_NORMAL';
-    }
 
     if (nextState === 'NEXT_EXERCISE') {
       setCurrentSet((previousSet) => getNextWorkoutSetNumber(previousSet));
@@ -279,7 +397,7 @@ export default function WorkoutPrototypePage() {
 
     workoutStateRef.current = nextState;
     setWorkoutState(nextState);
-  }, [clearManualRestPhase, clearManualTransitionCountdown, prototypeFlowEnabled, startManualRestPhase, startManualTransitionCountdown, workoutState]);
+  }, [clearManualRestPhase, clearManualTransitionCountdown, pauseTimeline, prototypeFlowEnabled, startManualRestPhase, startManualTransitionCountdown, workoutState]);
 
   transitionToStateRef.current = transitionToState;
 
@@ -303,26 +421,36 @@ export default function WorkoutPrototypePage() {
   }, [startWorkout]);
 
   const togglePause = useCallback(() => {
-    if (workoutState === 'PAUSED') {
-      if (prototypeFlowEnabled) flowStartedAtRef.current = Date.now();
-      const resumableState = previousResumableStateRef.current;
-      workoutStateRef.current = resumableState;
-      setWorkoutState(resumableState);
+    if (workoutStateRef.current === 'PAUSED') {
+      const snapshot = pausedTimelineRef.current;
+      if (!snapshot) return;
+
+      pausedTimelineRef.current = null;
+      setCurrentSet(snapshot.currentSet);
+
+      if (prototypeFlowEnabled) {
+        flowStartedAtRef.current = Date.now();
+        workoutStateRef.current = snapshot.state;
+        setWorkoutState(snapshot.state);
+        return;
+      }
+
+      if (isActiveSetState(snapshot.state) && snapshot.remainingMs !== null) {
+        workDeadlineRef.current = Date.now() + snapshot.remainingMs;
+        setManualWorkRemainingSeconds(Math.ceil(snapshot.remainingMs / 1_000));
+      } else if (isRestPhaseState(snapshot.state) && snapshot.remainingMs !== null) {
+        startManualRestPhase(snapshot.remainingMs);
+      } else if (snapshot.state === 'TRANSITION_COUNTDOWN' && snapshot.remainingMs !== null) {
+        startManualTransitionCountdown(snapshot.remainingMs);
+      }
+
+      workoutStateRef.current = snapshot.state;
+      setWorkoutState(snapshot.state);
       return;
     }
 
-    if (prototypeFlowEnabled) {
-      const elapsedMs = readFlowElapsedMs();
-      flowElapsedMsRef.current = elapsedMs;
-      flowStartedAtRef.current = null;
-      setFlowElapsedMs(elapsedMs);
-    }
-    previousResumableStateRef.current = isResumableWorkoutState(workoutState)
-      ? workoutState
-      : 'WORK_NORMAL';
-    workoutStateRef.current = 'PAUSED';
-    setWorkoutState('PAUSED');
-  }, [prototypeFlowEnabled, readFlowElapsedMs, workoutState]);
+    pauseTimeline();
+  }, [pauseTimeline, prototypeFlowEnabled, startManualRestPhase, startManualTransitionCountdown]);
 
   const handleStateChange = useCallback((nextState: WorkoutPrototypeState) => {
     if (prototypeFlowEnabled) return;
@@ -339,6 +467,8 @@ export default function WorkoutPrototypePage() {
     transitionToState(currentSet < 3 ? 'REST_QUIET' : 'COMPLETE');
   }, [currentSet, prototypeFlowEnabled, transitionToState]);
 
+  handleActiveSetTimerCompleteRef.current = handleActiveSetTimerComplete;
+
   const handleFinishWorkout = useCallback(() => {
     router.push(`/${locale}/dashboard`);
   }, [locale, router]);
@@ -346,8 +476,10 @@ export default function WorkoutPrototypePage() {
   const handleRepeatWorkout = useCallback(() => {
     flowElapsedMsRef.current = 0;
     flowStartedAtRef.current = null;
+    clearManualWorkTimer();
     restDeadlineRef.current = null;
     transitionCountdownStartedAtRef.current = null;
+    pausedTimelineRef.current = null;
     if (transitionCountdownHandoffTimeoutRef.current !== null) {
       window.clearTimeout(transitionCountdownHandoffTimeoutRef.current);
       transitionCountdownHandoffTimeoutRef.current = null;
@@ -356,10 +488,9 @@ export default function WorkoutPrototypePage() {
     setManualRestRemainingSeconds(30);
     setManualTransitionCountdownValue(TRANSITION_COUNTDOWN_START_VALUE);
     setCurrentSet(1);
-    previousResumableStateRef.current = 'WORK_NORMAL';
     workoutStateRef.current = 'START';
     setWorkoutState('START');
-  }, []);
+  }, [clearManualWorkTimer]);
 
   const restRemainingSeconds = workoutState === 'REST_QUIET'
     ? prototypeFlowEnabled ? getRestRemainingSeconds(flowElapsedMs) : manualRestRemainingSeconds
@@ -377,11 +508,11 @@ export default function WorkoutPrototypePage() {
       onStateChange={prototypeFlowEnabled ? handleStateChange : transitionToState}
       onCurrentSetChange={handleCurrentSetChange}
       onPauseToggle={togglePause}
-      onWorkTimerComplete={handleActiveSetTimerComplete}
       onFinishWorkout={handleFinishWorkout}
       onRepeatWorkout={handleRepeatWorkout}
       prototypeFlowEnabled={prototypeFlowEnabled}
       flowElapsedMs={flowElapsedMs}
+      workSecondsRemaining={manualWorkRemainingSeconds}
       restRemainingSeconds={restRemainingSeconds}
       countdownValue={countdownValue}
       mentorRenderer={(onBoneProjection, onVisualBounds) => (
