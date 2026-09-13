@@ -52,6 +52,7 @@ export function WorkoutExperienceShell({
   const [debugLayout, setDebugLayout] = useState(false);
   const [debugWorkout, setDebugWorkout] = useState(false);
   const stateConfig = getWorkoutPrototypeStateConfig(state);
+  const activeWorkPresentation = state === 'WORK_NORMAL' || state === 'NEXT_EXERCISE';
   const restState = state === 'REST_QUIET' || state === 'REST_NEXT_PREVIEW';
   const coachMessage = state === 'TRANSITION_COUNTDOWN'
     ? `Starting in ${countdownValue}`
@@ -69,6 +70,7 @@ export function WorkoutExperienceShell({
       data-debug-layout={debugLayout ? 'true' : 'false'}
       data-prototype-flow={prototypeFlowEnabled ? 'true' : 'false'}
       data-workout-state={state}
+      data-active-presentation={activeWorkPresentation ? 'WORK_NORMAL' : undefined}
       data-current-set={currentSet}
       data-flow-elapsed-ms={Math.round(flowElapsedMs)}
       aria-label="AHF Active Workout"
