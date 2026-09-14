@@ -19,9 +19,9 @@
 
 | Field | Value |
 |---|---|
-| Active task | `SPECKIT-ADOPTION-01` — Spec Kit brownfield adoption Stages 0–3 + SQLite→PostgreSQL trigger runbook (docs-only; OWNER-AUTHORIZED 2026-09-14 via `governance/OWNER_DECISION_GATE.md`: D1 APPROVED Option A, D4 APPROVED Option A; **Stage 4 NOT authorized**) |
+| Active task | `NONE` — **SPECKIT-ADOPTION-01 DELIVERED / CLOSED 2026-09-14** (PR #64 rebase-merged; POST_MERGE_MAIN_SHA `f1883c9c21a0c274a26f01478f07e1a5a330546e`; post-merge Main CI PASS run `34796009161` — build+e2e; adoption branch retired per BRANCHING_POLICY §J); **D2 — Stage-4 pilot authorization remains the pending owner gate** |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `docs/spec-kit-adoption-stage-0` (based on `origin/main` `ff1202c6`) |
+| Branch | (none) — `docs/spec-kit-adoption-stage-0` retired (local + remote verified) after closure integration per §J |
 | State | `ACTIVE` — documentation/`.specify/` Markdown scaffolding only; no source, dependency, schema, Docker, CI, or Production change authorized |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
@@ -1025,7 +1025,7 @@ deleted — they are deferred until P0–P3 foundations are established.
 | `rtl-layout.spec.ts` test debt | **RESOLVED** — FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01) |
 | Signed-in Production recheck (standing) | **RETAINED** — operator-held credential required; not a backlog task |
 
-### SPECKIT-ADOPTION-01 — Spec Kit brownfield adoption Stages 0–3 + PostgreSQL trigger runbook (docs-only) — **ACTIVE (OWNER-AUTHORIZED 2026-09-14)**
+### SPECKIT-ADOPTION-01 — Spec Kit brownfield adoption Stages 0–3 + PostgreSQL trigger runbook (docs-only) — **DELIVERED / CLOSED 2026-09-14**
 
 | Field | Value |
 |---|---|
@@ -1043,6 +1043,10 @@ deleted — they are deferred until P0–P3 foundations are established.
 **Explicitly NOT authorized by this task:** Stage 4 activities (Workout Experience Specification pilot, prototype promotion, `MentorStage.tsx`/three/CSP changes), Stage 5–6 (friction review, default adoption, `governance-runtime.mjs` extension), any source/dependency/lockfile/schema/Docker/CI/Production change, runtime migration (D5 resolved: keep Node 22), quiz TS port (D6: WHEN-TOUCHED).
 
 **Acceptance:** per-stage `npm run governance:check` PASS; Stage-2 contradiction review with zero unresolved authority contradictions; `git diff origin/main` limited to authorized documentation + `.specify/` Markdown; close-out report per `AI_CHANGE_TEMPLATE.md`.
+
+**Close-out (2026-09-14):** Stages 0–3 + D4 integrated into `main` via **PR #64** (merge method: rebase — linear-history policy; 4 commits preserved). `PRE_MERGE_MAIN_SHA = ff1202c6…` → `POST_MERGE_MAIN_SHA = f1883c9c21a0c274a26f01478f07e1a5a330546e`. Pre-merge PR CI PASS on synthetic merge `7c4caadb…` (build+e2e, run `34795223105`); post-merge **Main CI PASS on exact merge SHA** (run `34796009161`, jobs `103829124543`/`103829931628` — build+e2e success). Content-identity proof: `git diff origin/main ⇄ 86bf499` empty; `git range-diff ff1202c6..86bf499 ff1202c6..main` = 1:1 identical patches. Delivered: audit/design/brief/gate records (Stage 0), `.specify/templates/` + `docs/specs/README.md` (Stage 1), `.specify/constitution.md` + contradiction review (Stage 2), `docs/CURRENT_SYSTEM_BASELINE.md` (Stage 3), `docs/architecture/DB-MIGRATION-TRIGGERS.md` (D4). Branch `docs/spec-kit-adoption-stage-0` retired (local + remote verified) per §J with the rebase-equivalence ancestry proof recorded above; cleanup branch `docs/close-spec-kit-adoption` retired identically after its own integration.
+
+**Preserved statuses (unchanged by closure):** CONSTITUTION: `PROPOSED / NON-BINDING` (owner ratification still required) · D2: `UNDECIDED / OWNER GATE` · STAGE 4: `NOT STARTED / NOT AUTHORIZED` · POSTGRES MIGRATION: `NOT AUTHORIZED` (runbook is trigger-only) · NODE: Node 22 retained (D5 resolved).
 
 ---
 
@@ -1165,10 +1169,10 @@ applies before workflow continuation.
 ## Execution state
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
-2026-09-01. **ACTIVE_TASK: `SPECKIT-ADOPTION-01` (docs-only; OWNER-AUTHORIZED
-2026-09-14 — see P4 Mission Queue). NEXT_AUTHORIZED_TASK: NONE pending D2
-(Stage-4 Spec Kit pilot authorization); Workout Experience Specification
-remains NOT started.**
+2026-09-01. **ACTIVE_TASK: NONE — SPECKIT-ADOPTION-01 DELIVERED / CLOSED
+2026-09-14 (PR #64; main `f1883c9`; Main CI PASS run 34796009161).
+NEXT_AUTHORIZED_TASK: NONE pending D2 (Stage-4 Spec Kit pilot authorization);
+Workout Experience Specification remains NOT started.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
 begun, and backlog priority is NOT permission to start. The queue becomes
