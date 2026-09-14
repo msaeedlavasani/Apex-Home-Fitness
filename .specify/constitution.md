@@ -1,6 +1,6 @@
 # AHF Constitution — Spec Kit Router
 
-> **STATUS: PROPOSED / NON-BINDING / OWNER RATIFICATION REQUIRED (Stage 2 of SPECKIT-ADOPTION-01, 2026-09-14)**
+> **STATUS: RATIFIED (PARTIAL) 2026-09-14 — §2 CONFIRMED routing + §3 P1/P3 ratified (Stage 6, owner-authorized); §3 P2/P4 remain CANDIDATE / NON-BINDING (exact owner gates recorded below)**
 >
 > This document is a **router, not an authority**. It points at the existing
 > canonical rules so any agent or model gets one entry point into AHF's
@@ -56,10 +56,16 @@
 
 | # | Proposed rule | Rationale / evidence | Conflict check |
 |---|---|---|---|
-| P1 | **Spec-first for STANDARD/CRITICAL work**: qualifying tasks carry a `docs/specs/NNNN-slug/spec.md` (thin for STANDARD; full for CRITICAL) linked from their `TASKS.md` entry before implementation | [`docs/governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](../docs/governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md) §5–6; gap: no repeatable spec workflow today | None found — complements `AGENTS.md` PLAN mode; TASKS.md remains the only backlog |
-| P2 | **Identity-seam discipline**: supabase-js imports remain confined to the audited file list; `userId` is treated as an opaque string everywhere else; new consumers require an architecture note | Audit §5 C-1, §9 E-2; Principle-12 accepted evaluation need (ARCHITECTURE-PRINCIPLES §12) | Consistent with Principle 12; adds a concrete guard, does not pre-empt the deferred evaluation. (File list = 2 wrapper modules + 9 consumer files; see corrected audit §3.3.) |
-| P3 | **Prototype isolation**: prototype code stays inside its `prototype/` namespace and routes until it receives spec treatment; shared-namespace or CSP-affecting promotion requires the STANDARD/CRITICAL flow | DEV `prototype/workout-layout-blueprint` precedent recorded in the adopted design (isolated namespace + `WORKOUT-PROTOTYPE-VIEWPORT-CONFORMANCE.md` on DEV) vs shared-surface additions (`MentorStage.tsx`, `three`, CSP `blob:` — DEV-only, not verifiable on MAIN) | Consistent with AGENTS.md §3/§6; does not judge the prototype itself (product decision pending, D2-adjacent) |
-| P4 | **New runtime dependency governance**: a new runtime dependency requires a documented unmet requirement in the existing allowlist/audit pattern (KIT-FIRST precedent) and a minimal-surface justification | Existing machine pattern (`governance-runtime.mjs` MUI allowlist); DEV `three` adoption is the live case | Extends an existing owner-reviewed pattern; no new machinery |
+| P1 | **Spec-first for STANDARD/CRITICAL work**: qualifying tasks carry a `docs/specs/NNNN-slug/spec.md` (thin for STANDARD; full for CRITICAL) linked from their `TASKS.md` entry before implementation | [`docs/governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](../docs/governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md) §5–6; gap: no repeatable spec workflow today | **RATIFIED 2026-09-14 (Stage 6)** — the owner-authorized Development Admission Gate (`docs/governance/DEVELOPMENT-ADMISSION.md`) makes spec-first machine-enforced; no conflict found by adoption review or pilot |
+| P2 | **Identity-seam discipline**: supabase-js imports remain confined to the audited file list; `userId` is treated as an opaque string everywhere else; new consumers require an architecture note | Audit §5 C-1, §9 E-2; Principle-12 accepted evaluation need (ARCHITECTURE-PRINCIPLES §12) | **STILL CANDIDATE — owner gate open:** the owner has not explicitly ratified the supabase-js confinement rule; ties into the deferred Principle-12 evaluation. (File list = 2 wrapper modules + 9 consumer files; see corrected audit §3.3.) |
+| P3 | **Prototype isolation**: prototype code stays inside its `prototype/` namespace and routes until it receives spec treatment; shared-namespace or CSP-affecting promotion requires the STANDARD/CRITICAL flow | DEV `prototype/workout-layout-blueprint` precedent recorded in the adopted design (isolated namespace + `WORKOUT-PROTOTYPE-VIEWPORT-CONFORMANCE.md` on DEV) vs shared-surface additions (`MentorStage.tsx`, `three`, CSP `blob:` — DEV-only, not verifiable on MAIN) | **RATIFIED 2026-09-14 (Stage 6)** — owner deltas repeatedly reinforced the boundary (“spec drives implementation; implementation does not define product intent”; prototype = evidence only); validated by the completed pilot |
+| P4 | **New runtime dependency governance**: a new runtime dependency requires a documented unmet requirement in the existing allowlist/audit pattern (KIT-FIRST precedent) and a minimal-surface justification | Existing machine pattern (`governance-runtime.mjs` MUI allowlist); DEV `three` adoption is the live case | **STILL CANDIDATE — owner gate open:** the general rule has not been explicitly ratified by the owner; the `three`/DEV case remains undecided (D2-adjacent) |
+
+## 3.1 Ratification record (2026-09-14, Stage 6)
+
+- **Ratified:** the §2 CONFIRMED routing (verified 0 contradictions / 0 duplicated authority by the Stage-2 adoption review and re-validated during the Stage-4 pilot) and §3 **P1 (spec-first)** + **P3 (prototype isolation)**. Basis: the Stage-6 owner authorization explicitly mandates the spec/admission gate for STANDARD/CRITICAL work (P1), and the owner decision deltas repeatedly reinforced the prototype-evidence boundary validated by the completed pilot (P3).
+- **Not ratified (explicit owner gates remain):** §3 **P2 (identity-seam)** — ties into the deferred Principle-12 evaluation; **P4 (dependency governance)** — the general rule was never owner-ratified and the live `three` case is undecided.
+- **Effect:** P1/P3 are binding product/engineering rules from 2026-09-14; P2/P4 remain proposals (visible, referenced, but non-binding) until the Owner explicitly ratifies them.
 
 ## 4. Precedence and amendment
 

@@ -59,6 +59,10 @@ Spec-first and clarify are new process expectations (CANDIDATE rules in
 alter machine task-profile behavior. Any machine-enforcement of spec artifacts
 is a separately authorized Stage-6 tooling task and is NOT active.
 
+## Admission gate (Stage 6)
+
+Spec-first is now **machine-enforced**: a STANDARD/CRITICAL implementation task may not begin until its admission record (`docs/admissions/<TASK_ID>.admission.json`) passes the Development Admission Gate — see [`../governance/DEVELOPMENT-ADMISSION.md`](../governance/DEVELOPMENT-ADMISSION.md) and `npm run admission:check` / `npm run admission:test`.
+
 ## Templates
 
 - [`../../.specify/templates/spec-template.md`](../../.specify/templates/spec-template.md)

@@ -132,13 +132,110 @@ function checkUi(target = 'src') {
     }
   }
 }
+/**
+ * Development Admission Gate (Stage 6, 2026-09-14).
+ *
+ * Fail-closed admission validation for STANDARD / CRITICAL implementation work:
+ * no STANDARD/CRITICAL implementation may begin unless its controlling spec
+ * exists, is READY, carries no blocking owner decisions, has the required
+ * architecture/work-package preparation (CRITICAL), and is explicitly
+ * implementation-authorized. LIGHT records only declare an isolated local scope
+ * (anything else must be reclassified).
+ *
+ * Commands:
+ *   admission <file>    validate ONE record; prints ADMISSION_GRANTED (exit 0),
+ *                       ADMISSION_DENIED: <reason> (exit 1 — structurally valid
+ *                       but gates unmet, e.g. awaiting owner authorization), or
+ *                       ADMISSION_INVALID: <reason> (exit 1, malformed record).
+ *   admissions [dir]    bulk STRUCTURAL validation of every *.admission.json in
+ *                       dir (default docs/admissions). Used by CI: any INVALID
+ *                       record fails the run. DENIED records are valid task states
+ *                       (e.g. spec READY but implementation not yet authorized) and
+ *                       do not fail CI.
+ *
+ * See docs/governance/DEVELOPMENT-ADMISSION.md for the contract.
+ */
+function admissionInvalid(reason) { const e = new Error(`ADMISSION_INVALID: ${reason}`); e.kind = 'INVALID'; throw e; }
+function admissionDenied(reason) { const e = new Error(`ADMISSION_DENIED: ${reason}`); e.kind = 'DENIED'; throw e; }
+function admissionRequireString(value, field) { if (typeof value !== 'string' || !value.trim()) admissionInvalid(`missing required field: ${field}`); }
+function admissionRequireEnum(value, field, values) { admissionRequireString(value, field); if (!values.includes(value)) admissionInvalid(`${field} must be one of ${values.join('|')}`); }
+function admissionRequireExistingRepoFile(value, field) { admissionRequireString(value, field); if (!fs.existsSync(path.resolve(root, value))) admissionInvalid(`${field} points to a missing file: ${value}`); }
+function validateAdmission(record) {
+  admissionRequireString(record.TASK_ID, 'TASK_ID');
+  admissionRequireEnum(record.TASK_CLASS, 'TASK_CLASS', ['LIGHT', 'STANDARD', 'CRITICAL']);
+  admissionRequireString(record.SCOPE_SUMMARY, 'SCOPE_SUMMARY');
+
+  if (record.TASK_CLASS === 'LIGHT') {
+    // LIGHT is only for isolated, low-risk, local changes. Anything shared,
+    // cross-module or architectural must be reclassified before it can proceed.
+    admissionRequireEnum(record.LIGHT_SCOPE, 'LIGHT_SCOPE', ['ISOLATED_LOCAL', 'CROSS_MODULE_OR_SHARED']);
+    if (record.LIGHT_SCOPE !== 'ISOLATED_LOCAL') admissionDenied('RECLASSIFICATION_REQUIRED — LIGHT scope violation: shared/cross-module change must run STANDARD/CRITICAL admission');
+    if (record.SPEC_REQUIRED === 'YES') admissionInvalid('LIGHT cannot declare SPEC_REQUIRED=YES — reclassify to STANDARD/CRITICAL');
+    return `ADMISSION_GRANTED ${record.TASK_ID} (LIGHT, isolated local scope)`;
+  }
+
+  // STANDARD / CRITICAL: specification admission is mandatory and fail-closed.
+  admissionRequireEnum(record.SPEC_REQUIRED, 'SPEC_REQUIRED', ['YES', 'NO']);
+  if (record.SPEC_REQUIRED !== 'YES') admissionInvalid('STANDARD/CRITICAL cannot waive SPEC_REQUIRED');
+  admissionRequireEnum(record.SPEC_FIND_BEFORE_CREATE, 'SPEC_FIND_BEFORE_CREATE', ['REUSED_EXISTING_SPEC', 'EVOLVED_EXISTING_SPEC', 'NEW_SPEC_JUSTIFIED']);
+  if (record.SPEC_FIND_BEFORE_CREATE === 'NEW_SPEC_JUSTIFIED') admissionRequireString(record.NEW_SPEC_JUSTIFICATION, 'NEW_SPEC_JUSTIFICATION');
+  admissionRequireString(record.SPEC_PATH, 'SPEC_PATH');
+  if (!/^docs\/specs\/[^/]+\/spec\.md$/.test(record.SPEC_PATH)) admissionInvalid(`SPEC_PATH must point at a docs/specs/<dir>/spec.md contract (got: ${record.SPEC_PATH}) — prototype files, docs and code are not specifications`);
+  admissionRequireExistingRepoFile(record.SPEC_PATH, 'SPEC_PATH');
+  admissionRequireEnum(record.SPEC_STATUS, 'SPEC_STATUS', ['READY', 'NOT_READY']);
+  if (record.SPEC_STATUS !== 'READY') admissionDenied('SPEC_NOT_READY — controlling specification is not READY');
+  admissionRequireString(record.BLOCKING_OWNER_DECISIONS, 'BLOCKING_OWNER_DECISIONS');
+  if (record.BLOCKING_OWNER_DECISIONS !== 'NONE') admissionDenied(`BLOCKING_OWNER_DECISIONS remain: ${record.BLOCKING_OWNER_DECISIONS}`);
+  admissionRequireEnum(record.IMPLEMENTATION_AUTHORIZATION, 'IMPLEMENTATION_AUTHORIZATION', ['NOT_AUTHORIZED', 'OWNER_AUTHORIZED']);
+  if (record.IMPLEMENTATION_AUTHORIZATION === 'NOT_AUTHORIZED') admissionDenied('IMPLEMENTATION_NOT_AUTHORIZED — specification readiness is not implementation authorization');
+  admissionRequireString(record.AUTHORIZATION_SOURCE, 'AUTHORIZATION_SOURCE');
+
+  if (record.TASK_CLASS === 'CRITICAL') {
+    admissionRequireEnum(record.ARCHITECTURE_PLAN_REQUIRED, 'ARCHITECTURE_PLAN_REQUIRED', ['YES', 'NO']);
+    if (record.ARCHITECTURE_PLAN_REQUIRED !== 'YES') admissionInvalid('CRITICAL requires ARCHITECTURE_PLAN_REQUIRED=YES');
+    admissionRequireExistingRepoFile(record.ARCHITECTURE_PLAN_PATH, 'ARCHITECTURE_PLAN_PATH');
+    admissionRequireEnum(record.ARCHITECTURE_PLAN_STATUS, 'ARCHITECTURE_PLAN_STATUS', ['READY', 'NOT_READY']);
+    if (record.ARCHITECTURE_PLAN_STATUS !== 'READY') admissionDenied('ARCHITECTURE_PLAN_NOT_READY');
+    admissionRequireEnum(record.WORK_PACKAGES_STATUS, 'WORK_PACKAGES_STATUS', ['READY', 'NOT_READY']);
+    if (record.WORK_PACKAGES_STATUS !== 'READY') admissionDenied('WORK_PACKAGES_NOT_READY');
+    admissionRequireEnum(record.DEPENDENCY_ANALYSIS_STATUS, 'DEPENDENCY_ANALYSIS_STATUS', ['READY', 'NOT_READY']);
+    if (record.DEPENDENCY_ANALYSIS_STATUS !== 'READY') admissionDenied('DEPENDENCY_ANALYSIS_NOT_READY');
+  }
+  return `ADMISSION_GRANTED ${record.TASK_ID} (${record.TASK_CLASS})`;
+}
+function checkAdmission(file) {
+  let record;
+  try { record = readJson(file); } catch { fail(`ADMISSION_INVALID: unreadable JSON: ${file}`); return; }
+  try { console.log(validateAdmission(record)); } catch (err) { fail(String(err.message || err)); }
+}
+function checkAdmissions(dir) {
+  const target = path.resolve(root, dir || 'docs/admissions');
+  if (!fs.existsSync(target)) { console.log(`ADMISSIONS_PASS 0 records (directory absent: ${dir || 'docs/admissions'})`); return; }
+  const files = fs.readdirSync(target).filter((f) => f.endsWith('.admission.json')).sort();
+  let granted = 0, denied = 0;
+  for (const f of files) {
+    const file = path.join(target, f);
+    let record;
+    try { record = readJson(file); } catch { fail(`ADMISSION_INVALID: unreadable JSON: ${file}`); continue; }
+    try {
+      console.log(validateAdmission(record)); granted += 1;
+    } catch (err) {
+      if (err && err.kind === 'DENIED') { denied += 1; console.log(`ADMISSION_DENIED ${f}: ${String(err.message).replace('ADMISSION_DENIED: ', '')}`); }
+      else { fail(String(err.message || err)); }
+    }
+  }
+  console.log(`ADMISSIONS_PASS ${files.length} records (granted: ${granted}, denied: ${denied})`);
+}
+
 const [command, arg] = process.argv.slice(2);
 if (command === 'profile') checkProfile(arg);
 else if (command === 'report') checkReport(arg);
 else if (command === 'receipt') checkReceipt(arg);
 else if (command === 'ui') checkUi(arg);
+else if (command === 'admission') checkAdmission(arg);
+else if (command === 'admissions') checkAdmissions(arg);
 else if (command === 'docs') {
   const index = fs.readFileSync(path.join(root, 'docs/INDEX.md'), 'utf8');
   for (const file of ['AGENTS.md', 'docs/governance/DOCUMENTATION-GOVERNANCE.md', 'docs/AI_CHANGE_TEMPLATE.md', 'docs/PITFALL_GUARDRAILS.md']) if (!index.includes(file.replace('docs/', ''))) fail(`INDEX missing governance route: ${file}`);
-} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | receipt <JSON> | docs | ui [TARGET]'); }
+} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | receipt <JSON> | docs | ui [TARGET] | admission <JSON> | admissions [DIR]'); }
 if (!process.exitCode) console.log('GOVERNANCE_PASS');
