@@ -83,6 +83,8 @@
 | Change-report contract | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) |
 | Runtime governance tooling | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md), [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) |
 | Supporting autonomous-development workflow | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) |
+| Architecture & scale-readiness audit + Spec Kit decision brief (AUDIT RECORD — not an architecture decision; placed 2026-09-14) | [`architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md`](architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md), [`architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md`](architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md) |
+| Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md) |
 
 ## Historical evidence
 
