@@ -19,13 +19,14 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — **SPECKIT-ADOPTION-01 DELIVERED / CLOSED 2026-09-14** (PR #64 rebase-merged; POST_MERGE_MAIN_SHA `f1883c9c21a0c274a26f01478f07e1a5a330546e`; post-merge Main CI PASS run `34796009161` — build+e2e; adoption branch retired per BRANCHING_POLICY §J); **D2 — Stage-4 pilot authorization remains the pending owner gate** |
+| Active task | `SPECKIT-PILOT-01` — Workout Experience Specification (Stage 4 Spec Kit pilot; **SPEC/DESIGN ONLY**; OWNER-AUTHORIZED 2026-09-14 via **D2 APPROVED** — implementation **NOT authorized**) |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | (none) — `docs/spec-kit-adoption-stage-0` retired (local + remote verified) after closure integration per §J |
+| Branch | `docs/workout-experience-spec-pilot` (based on `origin/main` `80b6eb5`) |
+| State | `ACTIVE` — specification/design docs only; no source, dependency, schema, Docker, CI, or Production change authorized |
 | State | `ACTIVE` — documentation/`.specify/` Markdown scaffolding only; no source, dependency, schema, Docker, CI, or Production change authorized |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
-| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **D2 — Stage-4 Spec Kit pilot authorization**; other gated items unchanged |
+| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **workout pilot blocking UNKNOWN decisions (spec §16 U-1…U-13)**; other gated items unchanged |
 
 ## Strategic basis
 
@@ -1048,6 +1049,25 @@ deleted — they are deferred until P0–P3 foundations are established.
 
 **Preserved statuses (unchanged by closure):** CONSTITUTION: `PROPOSED / NON-BINDING` (owner ratification still required) · D2: `UNDECIDED / OWNER GATE` · STAGE 4: `NOT STARTED / NOT AUTHORIZED` · POSTGRES MIGRATION: `NOT AUTHORIZED` (runbook is trigger-only) · NODE: Node 22 retained (D5 resolved).
 
+### SPECKIT-PILOT-01 — Workout Experience Specification (Stage 4 Spec Kit pilot, SPEC/DESIGN ONLY) — **ACTIVE (OWNER-AUTHORIZED 2026-09-14, D2 APPROVED)**
+
+| Field | Value |
+|---|---|
+| PRIORITY | P2 (Companion / experience surface — pilot) |
+| DEPENDENCIES | SPECKIT-ADOPTION-01 (CLOSED); CP-05 (physical acceptance open, not required for spec) |
+| AUTONOMOUS_ELIGIBILITY | `READY` — spec/design ONLY (D2 boundary); implementation, prototype promotion, and technology selection NOT authorized |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `NONE` (this task) |
+| DB_SENSITIVITY | `NONE` (this task; a future execution-metadata change would be `SCHEMA_AND_DATA`) |
+| ARCHITECTURE_GATE | `REQUIRED` for the future implementation (session-core contract + media architecture), not for this spec/design pilot |
+| OWNER_DECISION_GATE | D2 APPROVED 2026-09-14 (pilot selection; spec/design boundary) — blocking UNKNOWN items listed in spec §16 |
+
+**Authorized scope (this task):** produce the Workout Experience specification pilot — `docs/specs/0001-workout-experience/spec.md` (+ `plan.md` design outline, + `tasks.md` prospective decomposition, all non-executable). Independent consistency review required; pilot assessment recorded.
+
+**Explicitly NOT authorized:** any implementation, session-core/phase-contract change, media/TTS pipeline, schema/DB change, prototype promotion (`MentorStage.tsx`, `three`, CSP `blob:`), Stage 4 implementation branch, Production work.
+
+**Artifacts:** [`specs/0001-workout-experience/spec.md`](specs/0001-workout-experience/spec.md), [`plan.md`](specs/0001-workout-experience/plan.md), [`tasks.md`](specs/0001-workout-experience/tasks.md).
+
 ---
 
 ## Autonomous batch readiness
@@ -1169,10 +1189,11 @@ applies before workflow continuation.
 ## Execution state
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
-2026-09-01. **ACTIVE_TASK: NONE — SPECKIT-ADOPTION-01 DELIVERED / CLOSED
-2026-09-14 (PR #64; main `f1883c9`; Main CI PASS run 34796009161).
-NEXT_AUTHORIZED_TASK: NONE pending D2 (Stage-4 Spec Kit pilot authorization);
-Workout Experience Specification remains NOT started.**
+2026-09-01. **ACTIVE_TASK: `SPECKIT-PILOT-01` (Workout Experience Specification;
+SPEC/DESIGN ONLY; OWNER-AUTHORIZED 2026-09-14 via D2 APPROVED — implementation
+NOT authorized). NEXT_AUTHORIZED_TASK: NONE pending owner resolution of the
+pilot's blocking UNKNOWN decisions (spec §16) and explicit implementation
+authorization.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
 begun, and backlog priority is NOT permission to start. The queue becomes

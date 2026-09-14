@@ -22,7 +22,7 @@ PREVIOUS_COMPLETED_TASK:               CP-06 Camera opt-in / consent UX + no-cam
 NEXT_AUTHORIZED_TASK:                  Workout Experience Specification after AHF Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work.
 NEXT_EXPECTED_BRANCH:                 N/A (audit/governance contract integrated; no Product implementation started)
 CURRENT_PHASE:                         AHF DESIGN BRAIN VNEXT P0 INTEGRATED — composition/layout/maturity/prototype governance canonical; CP-05 physical acceptance remains open; no Product implementation authorized by this contract alone.
-LAST_UPDATED:                          2026-09-14 — SPECKIT-ADOPTION-01 lifecycle closure: Spec Kit brownfield adoption Stages 0–3 + D4 integrated via PR #64 (rebase; POST_MERGE_MAIN_SHA f1883c9c21a0c274a26f01478f07e1a5a330546e); post-merge Main CI PASS (run 34796009161); docs-only, no Product/UI/Production runtime mutation; adoption branch retired per §J. D2 (Stage-4 pilot) remains the next owner gate.
+LAST_UPDATED:                          2026-09-14 — Stage 4 Spec Kit pilot ACTIVE (D2 APPROVED): Workout Experience Specification authored under `docs/specs/0001-workout-experience/` (spec/design only; implementation NOT authorized); D2 recorded in `docs/governance/OWNER_DECISION_GATE.md`. Docs-only; no Product/UI/Production runtime mutation.
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,8 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **D2 APPROVED — Stage 4 Spec Kit pilot ACTIVE (2026-09-14, docs-only).** The Workout Experience Specification is the first official Stage 4 pilot: `docs/specs/0001-workout-experience/` (`spec.md` + design `plan.md` + prospective non-executable `tasks.md`). Authorization boundary: spec/design only — **implementation NOT authorized**; DEV prototype (`prototype/workout-layout-blueprint`) inspected read-only as EVIDENCE only; constitution remains PROPOSED/NON-BINDING; blocking owner decisions enumerated in spec §16. Task `SPECKIT-PILOT-01`.
 
 - **SPECKIT-ADOPTION-01 CLOSED (2026-09-14, docs-only).** Spec Kit brownfield adoption Stages 0–3 + D4 delivered and integrated: PR #64 (rebase) → main `f1883c9c21a0c274a26f01478f07e1a5a330546e`; post-merge Main CI PASS (run `34796009161`, build+e2e). Delivered: adoption/audit records, `.specify/` templates + proposed by-reference constitution (still PROPOSED / NON-BINDING — owner ratification pending), `docs/CURRENT_SYSTEM_BASELINE.md`, `docs/architecture/DB-MIGRATION-TRIGGERS.md` (PREPARED runbook — migration NOT authorized). Adoption branch retired per BRANCHING_POLICY §J (range-diff 1:1 patch-equivalence + tree-identity proof recorded in `docs/TASKS.md` close-out). **D2 (Stage-4 pilot) and Stage 4 remain untouched — next owner gate.**
 
