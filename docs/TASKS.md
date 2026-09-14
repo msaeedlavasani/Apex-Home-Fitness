@@ -19,7 +19,7 @@
 
 | Field | Value |
 |---|---|
-| Active task | `SPECKIT-PILOT-01` — Workout Experience Specification (Stage 4 Spec Kit pilot; **SPEC/DESIGN ONLY**; OWNER-AUTHORIZED 2026-09-14 via **D2 APPROVED** — implementation **NOT authorized**) |
+| Active task | `SPECKIT-PILOT-01` — Workout Experience Specification (Stage 4 Spec Kit pilot; **SPEC/DESIGN ONLY**; **SPEC FINALIZED — SPEC_READINESS=READY, blocking product decisions 0**; awaiting owner merge review of PR #66; implementation **NOT authorized**) |
 | Profile | `CODE_NO_DEPLOY` |
 | Branch | `docs/workout-experience-spec-pilot` (based on `origin/main` `80b6eb5`) |
 | State | `ACTIVE` — specification/design docs only; no source, dependency, schema, Docker, CI, or Production change authorized |
@@ -1049,7 +1049,7 @@ deleted — they are deferred until P0–P3 foundations are established.
 
 **Preserved statuses (unchanged by closure):** CONSTITUTION: `PROPOSED / NON-BINDING` (owner ratification still required) · D2: `UNDECIDED / OWNER GATE` · STAGE 4: `NOT STARTED / NOT AUTHORIZED` · POSTGRES MIGRATION: `NOT AUTHORIZED` (runbook is trigger-only) · NODE: Node 22 retained (D5 resolved).
 
-### SPECKIT-PILOT-01 — Workout Experience Specification (Stage 4 Spec Kit pilot, SPEC/DESIGN ONLY) — **ACTIVE (OWNER-AUTHORIZED 2026-09-14, D2 APPROVED)**
+### SPECKIT-PILOT-01 — Workout Experience Specification (Stage 4 Spec Kit pilot, SPEC/DESIGN ONLY) — **ACTIVE — SPEC FINALIZED (awaiting owner merge review)**
 
 | Field | Value |
 |---|---|
@@ -1067,6 +1067,8 @@ deleted — they are deferred until P0–P3 foundations are established.
 **Explicitly NOT authorized:** any implementation, session-core/phase-contract change, media/TTS pipeline, schema/DB change, prototype promotion (`MentorStage.tsx`, `three`, CSP `blob:`), Stage 4 implementation branch, Production work.
 
 **Artifacts:** [`specs/0001-workout-experience/spec.md`](specs/0001-workout-experience/spec.md), [`plan.md`](specs/0001-workout-experience/plan.md), [`tasks.md`](specs/0001-workout-experience/tasks.md).
+
+**Finalization record (2026-09-14):** all accumulated owner product decisions (U-1 · HOLD · U-2 · U-3 · U-4 · U-5 · U-12 · v1 functional audio · U-7 deferred · modular composition) integrated into the spec; `SPEC_READINESS = READY`; `REMAINING_BLOCKING_PRODUCT_DECISIONS = NONE`; deferred items recorded as non-authorizing. PR #66 updated for owner merge review (not merged); implementation still NOT authorized.
 
 ---
 
@@ -1190,9 +1192,9 @@ applies before workflow continuation.
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
 2026-09-01. **ACTIVE_TASK: `SPECKIT-PILOT-01` (Workout Experience Specification;
-SPEC/DESIGN ONLY; OWNER-AUTHORIZED 2026-09-14 via D2 APPROVED — implementation
-NOT authorized). NEXT_AUTHORIZED_TASK: NONE pending owner resolution of the
-pilot's blocking UNKNOWN decisions (spec §16) and explicit implementation
+SPEC/DESIGN ONLY; SPEC FINALIZED — SPEC_READINESS=READY, blocking product
+decisions 0; awaiting owner merge review of PR #66 — implementation NOT
+authorized). NEXT_AUTHORIZED_TASK: NONE pending explicit owner implementation
 authorization.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been

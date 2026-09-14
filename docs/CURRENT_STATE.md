@@ -22,7 +22,7 @@ PREVIOUS_COMPLETED_TASK:               CP-06 Camera opt-in / consent UX + no-cam
 NEXT_AUTHORIZED_TASK:                  Workout Experience Specification after AHF Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work.
 NEXT_EXPECTED_BRANCH:                 N/A (audit/governance contract integrated; no Product implementation started)
 CURRENT_PHASE:                         AHF DESIGN BRAIN VNEXT P0 INTEGRATED — composition/layout/maturity/prototype governance canonical; CP-05 physical acceptance remains open; no Product implementation authorized by this contract alone.
-LAST_UPDATED:                          2026-09-14 — Stage 4 Spec Kit pilot ACTIVE (D2 APPROVED): Workout Experience Specification authored under `docs/specs/0001-workout-experience/` (spec/design only; implementation NOT authorized); D2 recorded in `docs/governance/OWNER_DECISION_GATE.md`. Docs-only; no Product/UI/Production runtime mutation.
+LAST_UPDATED:                          2026-09-14 — Workout Experience Stage 4 pilot product-decision phase COMPLETE: spec finalized (SPEC_READINESS=READY; REMAINING_BLOCKING_PRODUCT_DECISIONS=NONE); all accumulated owner decisions integrated; PR #66 updated for owner merge review (not merged). Docs-only; no Product/UI/Production runtime mutation; implementation NOT authorized.
 ```
 
 ## Reading this manifest (pre-task gate)
@@ -97,6 +97,8 @@ Then compare `ACTUAL_REMOTE_MAIN_HEAD` with `CURRENT_MAINLINE_BASELINE_COMMIT`:
   main site sets icons in `src/app/[locale]/layout.tsx`.
 
 ## Notes
+
+- **Workout Experience spec FINALIZED — product decision phase complete (2026-09-14, docs-only).** `SPEC_READINESS = READY`; `REMAINING_BLOCKING_PRODUCT_DECISIONS = NONE`. All accumulated owner decisions integrated into `docs/specs/0001-workout-experience/` (dual prescription modes + identity≠prescription · HOLD via TIME_BASED + distinct coaching semantics · modular composition with orchestration ownership · Exercise Block · Intro/REST/Next-Exercise lifecycle · ONE mode-aware WORK_SET/progress · progression policy AUTO/CONFIRMATION_REQUIRED · v1 control set + Do-Later/Skip-Today + three outcome states · mentor moving-demo + degraded mode + fidelity · accessibility contract + reduced motion · functional audio cues with Voice/TTS deferred). Deferred items are explicitly non-authorizing. PR #66 updated for owner merge review (not merged); **implementation NOT authorized** (expected CRITICAL-class when authorized). Record: `docs/governance/OWNER_DECISION_GATE.md`.
 
 - **D2 APPROVED — Stage 4 Spec Kit pilot ACTIVE (2026-09-14, docs-only).** The Workout Experience Specification is the first official Stage 4 pilot: `docs/specs/0001-workout-experience/` (`spec.md` + design `plan.md` + prospective non-executable `tasks.md`). Authorization boundary: spec/design only — **implementation NOT authorized**; DEV prototype (`prototype/workout-layout-blueprint`) inspected read-only as EVIDENCE only; constitution remains PROPOSED/NON-BINDING; blocking owner decisions enumerated in spec §16. Task `SPECKIT-PILOT-01`.
 

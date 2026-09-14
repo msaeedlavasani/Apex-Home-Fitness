@@ -1,6 +1,6 @@
 # OWNER_DECISION_GATE — AHF Architecture Audit + Spec Kit Adoption
 
-`STATUS: DECISION RECORD — D1/D4/D5 DECIDED 2026-09-14; D2 PENDING; D3 DEFERRED; D6 SAFE_TO_DEFER`
+`STATUS: DECISION RECORD — D1/D4/D5 DECIDED 2026-09-14; D2 DECIDED 2026-09-14 (Stage-4 pilot product-decision phase COMPLETE); D3 DEFERRED; D6 SAFE_TO_DEFER`
 > **Provenance:** placed into the repository 2026-09-14 via `docs/spec-kit-adoption-stage-0` (Stage 0 of the approved migration). Original gate text below is preserved unmodified; decision outcomes are recorded in the block immediately following this header.
 
 ## Owner decision record (2026-09-14)
@@ -8,7 +8,15 @@
 | Decision | Status | Outcome |
 |---|---|---|
 | **D1 — Adopt Spec Kit brownfield design + authorize Stages 0–3** | **DECIDED / APPROVED — OPTION A** | Thin/by-reference design adopted; Stages 0–3 authorized autonomously; **Stage 4 NOT authorized** |
-| **D2 — Stage-4 pilot vehicle** | **DECIDED / APPROVED 2026-09-14** | Workout Experience Specification selected as the FIRST official Stage 4 Spec Kit pilot. Authorization boundary: specification / clarification / design-plan / task decomposition / independent review / pilot evaluation **only — implementation NOT AUTHORIZED**. Pilot spec: [`../specs/0001-workout-experience/spec.md`](../specs/0001-workout-experience/spec.md) (task `SPECKIT-PILOT-01`) |
+| **D2 — Stage-4 pilot vehicle** | **DECIDED / APPROVED 2026-09-14 — PRODUCT DECISION PHASE COMPLETE** | Workout Experience Specification is the first official Stage 4 Spec Kit pilot. Authorization boundary: specification / clarification / design-plan / task decomposition / independent review / pilot evaluation **only — implementation NOT AUTHORIZED**. **Owner product-decision phase COMPLETE: `SPEC_READINESS = READY`; `REMAINING_BLOCKING_PRODUCT_DECISIONS = NONE`** (all accumulated owner deltas — U-1 · HOLD · U-2 · U-3 · U-4 · U-5 · U-12 · v1 audio · U-7 · modularity — integrated into the spec; deferred items are explicitly non-authorizing). Pilot spec: [`../specs/0001-workout-experience/spec.md`](../specs/0001-workout-experience/spec.md) (task `SPECKIT-PILOT-01`; PR #66 awaiting owner merge review) |
+
+### Stage 4 pilot — product decision phase complete (2026-09-14)
+
+- **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.
+- **`REMAINING_BLOCKING_PRODUCT_DECISIONS = NONE`.**
+- **Implementation: NOT authorized.** Any implementation requires a separate explicit owner authorization and is expected **CRITICAL**-class.
+- **Constitution: unchanged** — remains `PROPOSED / NON-BINDING` (no ratification by this record).
+- **PR #66** carries the finalized spec for owner merge review (not merged).
 | **D3 — Supabase / Principle-12 evaluation scheduling** | **DEFERRED (NON-BLOCKING)** | No Supabase migration or architectural change |
 | **D4 — SQLite→PostgreSQL trigger runbook** | **DECIDED / APPROVED — OPTION A** | Runbook authored now as docs-only artifact ([`../architecture/DB-MIGRATION-TRIGGERS.md`](../architecture/DB-MIGRATION-TRIGGERS.md)); migration itself NOT authorized |
 | **D5 — Node/Bun runtime** | **RESOLVED — KEEP NODE 22 / TRIGGER-BASED REVISIT** | No runtime migration; revisit only on documented evidence triggers (audit §8) |
