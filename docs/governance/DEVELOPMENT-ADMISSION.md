@@ -111,6 +111,16 @@ npm run admission:test    # scenario tests (A–H) proving fail-closed behaviour
 
 Templates: `scripts/admission.example.json`. Scenario coverage: `tests/admission-runtime.test.mjs`.
 
+## 11.1 Trust boundary (CHECK A–E model)
+
+The gate is only as strong as its provenance rules. The audit-verified boundary:
+
+- **CHECK A — missing record:** executable (code-class) tasks cannot file their governance artifacts without a GRANTED admission record. `TASK_PROFILE ∈ {CODE_NO_DEPLOY, PRODUCTION_BOUND, DB_CHANGE, HOTFIX, RELEASE}` receipts (task start) and reports (close-out) **fail closed** unless `ADMISSION_PATH` points at a valid, GRANTED, TASK_ID-matching record. Exempt profiles: `DOCS_ONLY` (docs work), `AUDIT` (read-only), `INCIDENT` (urgent incident response must not be blocked by spec admission).
+- **CHECK B — authorization provenance:** `IMPLEMENTATION_AUTHORIZATION = OWNER_AUTHORIZED` requires `AUTHORIZATION_SOURCE` to be an **existing repository artifact from the canonical owner-authorization set** (`docs/TASKS.md` or `docs/governance/OWNER_DECISION_GATE.md`) **that actually references the TASK_ID**. An agent cannot make a CRITICAL task admissible by editing its own admission JSON: the provenance check denies records whose source is missing, non-canonical, or does not name the task. **Trust root:** canonical artifacts change only through Owner-reviewed/merged PRs.
+- **CHECK C — readiness provenance:** `SPEC_STATUS = READY` / `BLOCKING_OWNER_DECISIONS = NONE` must match the controlling spec's own machine markers (`SPEC_READINESS: READY` / `BLOCKING_OWNER_DECISIONS: NONE` — fenced block in the spec header). Missing/unparseable markers → INVALID; mismatch → DENIED.
+- **CHECK D — preparation ownership:** CRITICAL preparation artifacts (`ARCHITECTURE_PLAN_PATH`, `WORK_PACKAGES_PATH`, optional `DEPENDENCY_ANALYSIS_PATH`) must **exist and live in the same spec directory** as the controlling spec (no cross-directory ownership, no meaningless strings).
+- **Residual boundary (documented):** a task that files NO governance artifacts at all is outside machine reach; that gap is closed by the documented pre-task gate + close-out report contract and review — not by this validator.
+
 ## 12. Workout Experience handoff status (as of this gate)
 
 | Field | Value |

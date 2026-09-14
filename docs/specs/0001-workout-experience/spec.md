@@ -9,6 +9,14 @@
 | TASKS.md entry | [`../../TASKS.md`](../../TASKS.md) → `SPECKIT-PILOT-01` |
 | Date | 2026-09-14 · Baseline: main `80b6eb5` · Prototype evidence: DEV `prototype/workout-layout-blueprint` @ `a62a7ce` |
 
+```yaml
+SPEC_READINESS: READY
+BLOCKING_OWNER_DECISIONS: NONE
+```
+
+(The fenced block above is the machine-readable admission marker consumed by
+`scripts/governance-runtime.mjs admission` — trust-boundary CHECK C.)
+
 Labels: **CONFIRMED** (binding — owner decision or canonical authority) · **EXISTING** (implementation evidence only; never a source of intent, DOCUMENTATION-GOVERNANCE §2.6) · **DEFERRED** (explicitly non-blocking, non-authorizing — see §16).
 
 **REMAINING_BLOCKING_PRODUCT_DECISIONS: NONE.**

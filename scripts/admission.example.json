@@ -12,6 +12,7 @@
   "ARCHITECTURE_PLAN_REQUIRED": "YES",
   "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
   "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
   "WORK_PACKAGES_STATUS": "READY",
   "DEPENDENCY_ANALYSIS_STATUS": "READY"
 }
