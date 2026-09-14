@@ -191,6 +191,28 @@ Source: `prototype/workout-layout-blueprint` @ `a62a7ce` (19 commits ahead of `f
 
 **Prototype/product boundary:** the prototype is evidence of *exploration*, not of product intent. Per constitution candidate rule P3, prototype code remains isolated until spec treatment (this document) and owner authorization; promotion of `MentorStage.tsx`, the `three` dependency, or the CSP change requires the STANDARD/CRITICAL flow.
 
+### 14.1 Prototype / product gap table (REQUIREMENT → CURRENT PROTOTYPE → GAP → ACTION)
+
+One of the key pilot outputs: where each confirmed/candidate requirement stands against the observed prototype. Gaps are identified, **not fixed**.
+
+| Requirement | Current prototype | Gap | Action |
+|---|---|---|---|
+| FR-2 (UI renders, does not sequence) | Prototype page owns sequencing locally (elapsed-time scripted) | **ARCHITECTURE_REVIEW_REQUIRED** — session-core contract extension | Future T-1 (CRITICAL when authorized) |
+| FR-6 (one-tap auto-advance) | Scripted demo; no real program/timeline | **IMPLEMENTATION_GAP** | Future T-1/T-5 after owner decisions |
+| FR-7 (rest next-up preview) | REST_NEXT_PREVIEW demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-7 |
+| FR-8 (countdown) | TRANSITION_COUNTDOWN demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-8 |
+| FR-9 (pause/resume) | Pause in prototype + shipped player | NONE (exists; extended semantics pending U-4) | U-4 |
+| FR-10 (completion state) | CompleteStage demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-10 |
+| FR-11 (fa/en + RTL) | Prototype copy EN-only, hard-coded | **DESIGN_GAP** | T-2 localization work |
+| FR-12 (self-hosted media integrity) | GLB under `public/prototype-assets/` + new `three` dep | **OWNER_DECISION_REQUIRED** (U-5/U-6) + architecture review for dep/CSP | Spec treatment before any promotion |
+| Mentor contract (§9) | MentorStage (Three.js + GLB, fallback) | **OWNER_DECISION_REQUIRED** (U-5) | Resolve U-5 |
+| Quiet feedback (§4) | QuietCoach (EN-only, tracking-tied cues) | **OWNER_DECISION_REQUIRED** (observation features remain gated CP-04/05) | Confirm cue scope |
+| Mobile viewport/safe-area | Conformance doc + svh/dvh/safe-area implementation | NONE (evidence; real-device validation NOT claimed) | Adopt pattern in T-2 |
+| Analytics (§13) | No telemetry in prototype | **DESIGN_GAP** | U-9 |
+| Offline/reconnect (FR-3/FR-4) | Not exercised by the scripted demo | **IMPLEMENTATION_GAP** (prototype) — existing contract already ships | Reuse existing offline contract; T-5 |
+
+Gap tally: NONE 5 · DESIGN_GAP 2 · IMPLEMENTATION_GAP 3 · OWNER_DECISION_REQUIRED 3 · ARCHITECTURE_REVIEW_REQUIRED 1 (13 rows total).
+
 ## 15. Explicit non-requirements (prototype behaviors NOT promoted)
 
 - The scripted demo flow and its fixed durations are **not** a requirement.
