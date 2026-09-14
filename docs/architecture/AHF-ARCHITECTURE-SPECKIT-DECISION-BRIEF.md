@@ -8,7 +8,7 @@ Refs: MAIN `ff1202c6` · DEV `prototype/workout-layout-blueprint` @ `a62a7ce` (1
 
 ## What is healthy (keep, protect)
 
-- Layered architecture with verified direction (pages → components → services → lib → infra); DB access concentrated in 10 files; supabase-js confined to 9 files; AI provider behind resolver + deterministic fallback; pure session core with React adapter; offline outbox with idempotent sync and tested conflict policy.
+- Layered architecture with verified direction (pages → components → services → lib → infra); DB access concentrated in 10 files; supabase-js confined to 9 consumer files behind 2 wrapper modules; AI provider behind resolver + deterministic fallback; pure session core with React adapter; offline outbox with idempotent sync and tested conflict policy.
 - Governance machinery most repos of this size never have: 21 ADRs, machine-validated task profiles (`governance-runtime.mjs`), authority hierarchy with Find-Before-Create, one executable backlog, release gateway with fail-closed exact-SHA deploys and verified rollback, targeted-vs-nightly CI split.
 - Security posture: strict CSP with per-origin justifications, digest-pinned images, immutable-build rules, privacy-by-default (raw video never leaves device; non-persistence default for camera signals).
 

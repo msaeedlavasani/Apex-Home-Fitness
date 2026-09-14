@@ -84,8 +84,9 @@
 | Runtime governance tooling | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md), [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) |
 | Supporting autonomous-development workflow | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) |
 | Architecture & scale-readiness audit + Spec Kit decision brief (AUDIT RECORD — not an architecture decision; placed 2026-09-14) | [`architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md`](architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md), [`architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md`](architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md) |
-| Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md) |
+| Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record + Stage-2 contradiction review | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md), [`governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md`](governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md) |
 | Forward-looking feature specs + Spec Kit scaffolding contract (STAGE 1; no feature specs yet) | [`specs/README.md`](specs/README.md), [`../.specify/templates/`](../.specify/templates/) |
+| Spec Kit constitution — PROPOSED / NON-BINDING router (STAGE 2; owner ratification required) | [`../.specify/constitution.md`](../.specify/constitution.md) |
 
 ## Historical evidence
 

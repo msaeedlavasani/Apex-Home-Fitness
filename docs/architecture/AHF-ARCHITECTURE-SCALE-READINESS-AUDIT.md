@@ -78,7 +78,7 @@ DEV delta summary (34 files, +3200/−1): new route `src/app/[locale]/prototype/
 2. **Supabase** (identity + storage + one Postgres table): auth (phone OTP, SMS.ir provider in live mode; `src/lib/auth/smsIrProvider.ts`, explicit mock for dev/CI that "never mints sessions" — `src/lib/auth/mockOtpService.ts`, `src/middleware.ts` header comment), session cookies via `@supabase/ssr`, private `avatars` Storage bucket (`src/services/avatarStorage.ts`), and `public.workout_exercise_logs` with RLS (client-side upserts of offline outbox — `supabase/migrations/0001_workout_exercise_logs.sql`, `src/services/syncService.ts`).
 3. **Client (browser)**: Dexie/IndexedDB — `activePrograms`, `workoutStates` (snapshot versioning + LWW+monotonic-merge conflict policy, `src/lib/offline/conflictPolicy.ts`, `snapshotVersion.ts`), `exerciseLogs` durable outbox (attempt-capped). `syncService.ts` drains the outbox to Supabase when online; classification of retryable vs permanent sync errors.
 
-**Identity contract (cross-plane)**: `Prisma User.id == Supabase auth user.id` — documented in `src/lib/offline/db.ts` and `src/services/syncService.ts`, implemented in `src/services/userService.ts` (`syncUserWithSupabase`). supabase-js imports are confined to exactly 9 src files (verified by grep): `ProfileView.tsx`, `account/delete/route.ts`, `quizAuth.ts`, `supabase.ts`, `supabase-server.ts`, `middleware.ts`, `accountDeletionService.ts`, `avatarStorage.ts`, `phoneSessionService.ts`, `syncService.ts`, `userService.ts`.
+**Identity contract (cross-plane)**: `Prisma User.id == Supabase auth user.id` — documented in `src/lib/offline/db.ts` and `src/services/syncService.ts`, implemented in `src/services/userService.ts` (`syncUserWithSupabase`). supabase-js imports are confined to exactly 11 src files (verified by grep): 2 wrapper modules (`src/lib/supabase.ts`, `src/lib/supabase-server.ts`) + 9 consumer files — `ProfileView.tsx`, `account/delete/route.ts`, `quizAuth.ts`, `middleware.ts`, `accountDeletionService.ts`, `avatarStorage.ts`, `phoneSessionService.ts`, `syncService.ts`, `userService.ts`.
 
 ### 3.4 Domain logic
 
@@ -336,7 +336,7 @@ Risk of unnecessary migration here is concrete: each of the above has documented
 
 1. Write the **SQLite→Postgres trigger runbook** (docs-only): trigger conditions, provider-switch steps, gateway `db_change` interplay, backup/restore rehearsal. (This audit provides the skeleton.)
 2. Add "**before second instance**" checklist item: activate `RATE_LIMIT_STORE=redis` (config-only).
-3. Add an **identity-seam rule** to `AGENTS.md` §4 or ARCHITECTURE-PRINCIPLES: supabase-js imports remain confined to the 9-file list; additions require an architecture note. (Owner approval needed — it is a governance change.)
+3. Add an **identity-seam rule** to `AGENTS.md` §4 or ARCHITECTURE-PRINCIPLES: supabase-js imports remain confined to the audited file list (2 wrapper modules + 9 consumer files); additions require an architecture note. (Owner approval needed — it is a governance change.)
 4. Decide the **analytics persistence** insertion before the growth-measurement phase (small route-level change later).
 5. Capture **Supabase plan facts** (tier, limits, region) into `docs/ENVIRONMENT_CONTRACT.md` — currently UNKNOWN in-repo; owner-provided.
 6. Rehearse **SQLite backup/restore** on the volume (release policy already demands verified backups before deploys; make the rehearsal a recorded checkpoint).

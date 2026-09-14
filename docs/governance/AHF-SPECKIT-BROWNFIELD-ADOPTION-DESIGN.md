@@ -71,18 +71,18 @@ The constitution is a **router document** (by-reference) plus a small set of Spe
 | 8 | Explicit public vs internal module boundaries | `ARCHITECTURE-PRINCIPLES.md` §10 | **CONFIRMED** |
 | 9 | Documentation with change; status headers; supersession | `DOCUMENTATION-GOVERNANCE.md` §2.3/2.4/2.7 | **CONFIRMED** |
 | 10 | Production safety: task complete only at verified checkpoint; real-browser acceptance | `RELEASE_POLICY.md` RULE 1/6/7 | **CONFIRMED** |
-| 11 | No silent behavior change; fail-closed over fail-open | `RELEASE_POLICY.md` §T; AI fallback design (`provider.ts`); privacy posture (TS-01) | **CONFIRMED** |
+| 11 | No silent behavior change; fail-closed over fail-open | RELEASE_POLICY RULE 4 + FEATURE_TO_PRODUCTION §T; AI fallback design (`provider.ts`); privacy posture (TS-01) | **CONFIRMED** |
 | 12 | Testing proportionality (targeted verification over repeated full E2E) | `docs/CI.md`; ci.yml/ci-full-e2e.yml split | **CONFIRMED** |
 | 13 | Deployment identity (immutable builds, exact-SHA, build-time config distinction) | `RELEASE_POLICY.md` RULE 4/5 | **CONFIRMED** |
 | 14 | Privacy/safety boundaries (raw video never leaves device; fitness-not-medical; DATA-ONLY media) | TS-01/ADR-0014, ADR-0021, MG-04 gate | **CONFIRMED** |
 | 15 | Localization (en/fa parity; RTL; movement-domain keys per MG-07) | `AGENTS.md` §4/§6; ADR-0010 | **CONFIRMED** |
 | 16 | Accessibility & mobile-first behavior (360px, keyboard, reduced motion; mobile posture declaration) | `AGENTS.md` §6; ADR-0005 | **CONFIRMED** |
-| 17 | Evidence-before-migration; no synthetic-benchmark migrations; unknown stays unknown | Task brief; `AGENTS.md` §1 UNKNOWN label | **CONFIRMED** (as working rule) |
+| 17 | Evidence-before-migration; unknown stays unknown (no migration on synthetic benchmarks alone — working rule) | Task brief; `AGENTS.md` §1 UNKNOWN label; audit §8E runtime-revisit triggers | **CONFIRMED** (as working rule) |
 | 18 | Owner escalation at genuine gates (product, tradeoff, irreversible risk) | `AGENTS.md` EXECUTE mode; governance §2.12 | **CONFIRMED** |
 | 19 | Spec-first for STANDARD/CRITICAL changes (new — Spec Kit specific) | this design | **CANDIDATE** (needs owner ratification) |
 | 20 | Identity-seam discipline: supabase-js confined to the audit's 9-file list; userId opaque outside it (new) | audit §5 C-1; Principle 12 | **CANDIDATE** |
 | 21 | Prototype isolation: prototype code stays in `prototype/` namespace until spec treatment (new; DEV branch precedent) | DEV delta; `WORKOUT-PROTOTYPE-VIEWPORT-CONFORMANCE.md` | **CANDIDATE** |
-| 22 | State ownership: client state in Dexie via offline contracts; no new localStorage/IndexedDB without KV contract | ADR-0005 rule 2 | **CONFIRMED** (already binding) |
+| 22 | State ownership: client state in Dexie via offline contracts; no new localStorage/IndexedDB without KV contract | ADR-0005 Decision item 1, guardrail 2 (= ARCHITECTURE-PRINCIPLES §13.2) | **CONFIRMED** (already binding) |
 | 23 | Dependency boundaries: no new runtime dependency without profile + governance note | KIT-FIRST/MUI allowlist pattern; `governance-runtime.mjs` | **CANDIDATE** (generalize the existing pattern) |
 | 24 | Security boundaries: CSP relaxation requires documented justification per origin | `next.config.mjs` CSP comments | **CONFIRMED** (pattern exists) |
 
