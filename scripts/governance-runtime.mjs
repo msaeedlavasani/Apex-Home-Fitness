@@ -37,12 +37,38 @@ const MUI_ALLOWLIST = ['src/components/providers/MuiProvider.tsx', 'src/lib/ui/m
 const UI_GATE_DOCS = ['docs/governance/UI-CONFORMANCE-GATE.md', 'docs/governance/REPORT-DELIVERY-CONTRACT.md'];
 
 function fail(message) { console.error(`GOVERNANCE_FAIL: ${message}`); process.exitCode = 1; }
+
+// --- Development Admission Gate linkage (Stage 6, trust-boundary CHECK A) ---
+// Executable (code-class) tasks MUST carry a GRANTED admission record; its
+// absence fails the receipt (task start) and the report (task close-out).
+// Exempt profiles: DOCS_ONLY (docs work), AUDIT (read-only), INCIDENT
+// (urgent incident response must not be blocked by spec admission).
+const ADMISSION_REQUIRED_PROFILES = ['CODE_NO_DEPLOY', 'PRODUCTION_BOUND', 'DB_CHANGE', 'HOTFIX', 'RELEASE'];
+function checkAdmissionLinkage(record, kind) {
+  if (!ADMISSION_REQUIRED_PROFILES.includes(record.TASK_PROFILE || record.TASK_TYPE)) return;
+  if (typeof record.ADMISSION_PATH !== 'string' || !record.ADMISSION_PATH.trim())
+    fail(`${kind}: ADMISSION_PATH is required for ${record.TASK_PROFILE || record.TASK_TYPE} work (STANDARD/CRITICAL executable tasks must pass the Development Admission Gate — see docs/governance/DEVELOPMENT-ADMISSION.md)`);
+  else {
+    const file = path.resolve(root, record.ADMISSION_PATH);
+    if (!fs.existsSync(file)) fail(`${kind}: ADMISSION_PATH points to a missing admission record: ${record.ADMISSION_PATH}`);
+    else {
+      let adm;
+      try { adm = readJson(file); } catch { fail(`${kind}: unreadable admission record: ${record.ADMISSION_PATH}`); }
+      if (adm) {
+        try { validateAdmission(adm); } catch (err) { fail(`${kind}: ADMISSION_GATE: ${String(err.message || err)}`); }
+        if (process.exitCode !== 1 && adm.TASK_ID !== record.TASK_ID)
+          fail(`${kind}: admission record TASK_ID mismatch: ${adm.TASK_ID} != ${record.TASK_ID}`);
+      }
+    }
+  }
+}
 function readJson(file) { return JSON.parse(fs.readFileSync(path.resolve(file), 'utf8')); }
 function checkProfile(profile) {
   const config = profiles[profile];
   if (!config) { fail(`unknown TASK_PROFILE: ${profile}`); return; }
   for (const file of config.requiredDocs) if (!fs.existsSync(path.join(root, file))) fail(`required governance document missing: ${file}`);
 }
+
 function checkEnum(report, field, values) {
   if (!values.includes(report[field])) fail(`${field} must be one of ${values.join('|')}`);
 }
@@ -54,6 +80,7 @@ function checkReport(file) {
   if (!['YES', 'NO'].includes(report.NEXT_ACTION_AUTONOMOUS)) fail('NEXT_ACTION_AUTONOMOUS must be YES or NO');
   if (!['YES', 'NO'].includes(report.HUMAN_DECISION_REQUIRED)) fail('HUMAN_DECISION_REQUIRED must be YES or NO');
   if (report.TASK_STATUS === 'CLOSED' && (report.CURRENT_STATE !== 'CLOSED' || report.NEXT_STATE !== 'NONE')) fail('CLOSED report must have CURRENT_STATE=CLOSED and NEXT_STATE=NONE');
+  checkAdmissionLinkage(report, 'REPORT');
   if (report.PRODUCTION_BOUND === 'NO' && report.PRODUCTION_DEPLOYED !== 'NO' && report.PRODUCTION_DEPLOYED !== 'N/A') fail('non-production task cannot be deployed');
   // --- UI Conformance Gate (machine-enforced part) ---
   checkEnum(report, 'UI_CHANGED', enums.UI_CHANGED);
@@ -95,6 +122,7 @@ function checkReceipt(file) {
   const receipt = readJson(file);
   if (!receipt.TASK_ID || !receipt.TASK_PROFILE || !Array.isArray(receipt.READ_FILES) || receipt.READ_FILES.length === 0) fail('context receipt requires TASK_ID, TASK_PROFILE, and READ_FILES');
   checkProfile(receipt.TASK_PROFILE);
+  checkAdmissionLinkage(receipt, 'RECEIPT');
   for (const filePath of receipt.READ_FILES ?? []) if (!fs.existsSync(path.resolve(filePath))) fail(`receipt references missing file: ${filePath}`);
 }
 /**
@@ -182,22 +210,64 @@ function validateAdmission(record) {
   admissionRequireString(record.SPEC_PATH, 'SPEC_PATH');
   if (!/^docs\/specs\/[^/]+\/spec\.md$/.test(record.SPEC_PATH)) admissionInvalid(`SPEC_PATH must point at a docs/specs/<dir>/spec.md contract (got: ${record.SPEC_PATH}) — prototype files, docs and code are not specifications`);
   admissionRequireExistingRepoFile(record.SPEC_PATH, 'SPEC_PATH');
+  // Canonical spec cross-check (trust-boundary CHECK C): readiness/blocking must
+  // match the controlling spec's own machine markers, not the record's claim.
+  const specContent = fs.readFileSync(path.resolve(root, record.SPEC_PATH), 'utf8');
+  const specMarker = (key) => { const m = specContent.match(new RegExp('^' + key + ':\\s*(.+)$', 'm')); return m ? m[1].trim() : null; };
+  const specReadiness = specMarker('SPEC_READINESS');
+  if (!specReadiness || !['READY', 'NOT_READY'].includes(specReadiness)) admissionInvalid('controlling spec lacks a canonical `SPEC_READINESS: READY|NOT_READY` marker');
+  if (specReadiness !== 'READY') admissionDenied('SPEC_NOT_READY — controlling spec marker is NOT_READY');
+  const specBlocking = specMarker('BLOCKING_OWNER_DECISIONS');
+  if (specBlocking === null) admissionInvalid('controlling spec lacks a canonical `BLOCKING_OWNER_DECISIONS:` marker');
+  if (specBlocking !== 'NONE') admissionDenied(`BLOCKING_OWNER_DECISIONS mismatch: canonical spec marker is "${specBlocking}"`);
   admissionRequireEnum(record.SPEC_STATUS, 'SPEC_STATUS', ['READY', 'NOT_READY']);
   if (record.SPEC_STATUS !== 'READY') admissionDenied('SPEC_NOT_READY — controlling specification is not READY');
   admissionRequireString(record.BLOCKING_OWNER_DECISIONS, 'BLOCKING_OWNER_DECISIONS');
   if (record.BLOCKING_OWNER_DECISIONS !== 'NONE') admissionDenied(`BLOCKING_OWNER_DECISIONS remain: ${record.BLOCKING_OWNER_DECISIONS}`);
   admissionRequireEnum(record.IMPLEMENTATION_AUTHORIZATION, 'IMPLEMENTATION_AUTHORIZATION', ['NOT_AUTHORIZED', 'OWNER_AUTHORIZED']);
   if (record.IMPLEMENTATION_AUTHORIZATION === 'NOT_AUTHORIZED') admissionDenied('IMPLEMENTATION_NOT_AUTHORIZED — specification readiness is not implementation authorization');
+  // Canonical authorization linkage (trust-boundary CHECK B): the source must be
+  // an EXISTING repository artifact that names this task. The trust root is the
+  // Owner-reviewed merge of that artifact — an agent cannot conjure it by
+  // editing its own admission JSON.
+  // Canonical authorization provenance (trust-boundary CHECK B): the source
+  // must be the class-specific canonical owner-authorization artifact AND it
+  // must actually reference the TASK_ID. TASKS.md is the canonical task
+  // authority for STANDARD work; OWNER_DECISION_GATE.md is the canonical owner
+  // decision record for CRITICAL work. A mere mention of the TASK_ID in an
+  // unrelated context (e.g. a handoff record) does NOT authorize.
+  const CANONICAL_TASK_AUTH = 'docs/TASKS.md';
+  const CANONICAL_GATE_AUTH = 'docs/governance/OWNER_DECISION_GATE.md';
   admissionRequireString(record.AUTHORIZATION_SOURCE, 'AUTHORIZATION_SOURCE');
+  if (record.TASK_CLASS === 'STANDARD') {
+    if (record.AUTHORIZATION_SOURCE !== CANONICAL_TASK_AUTH) admissionInvalid(`STANDARD AUTHORIZATION_SOURCE must be ${CANONICAL_TASK_AUTH} (the canonical owner-authorized task record)`);
+    if (!fs.readFileSync(path.resolve(root, CANONICAL_TASK_AUTH), 'utf8').includes(record.TASK_ID)) admissionDenied(`AUTHORIZATION_PROVENANCE_FAILURE — ${CANONICAL_TASK_AUTH} does not reference TASK_ID ${record.TASK_ID}`);
+  } else {
+    if (record.AUTHORIZATION_SOURCE !== CANONICAL_GATE_AUTH) admissionInvalid(`CRITICAL AUTHORIZATION_SOURCE must be ${CANONICAL_GATE_AUTH} (the canonical owner decision record)`);
+    if (!fs.readFileSync(path.resolve(root, CANONICAL_GATE_AUTH), 'utf8').includes(record.TASK_ID)) admissionDenied(`AUTHORIZATION_PROVENANCE_FAILURE — ${CANONICAL_GATE_AUTH} does not reference TASK_ID ${record.TASK_ID}`);
+  }
 
   if (record.TASK_CLASS === 'CRITICAL') {
     admissionRequireEnum(record.ARCHITECTURE_PLAN_REQUIRED, 'ARCHITECTURE_PLAN_REQUIRED', ['YES', 'NO']);
     if (record.ARCHITECTURE_PLAN_REQUIRED !== 'YES') admissionInvalid('CRITICAL requires ARCHITECTURE_PLAN_REQUIRED=YES');
+    admissionRequireString(record.ARCHITECTURE_PLAN_PATH, 'ARCHITECTURE_PLAN_PATH');
+    if (path.posix.dirname(record.ARCHITECTURE_PLAN_PATH) !== path.posix.dirname(record.SPEC_PATH)) admissionInvalid('ARCHITECTURE_PLAN_PATH must live in the controlling spec directory (ownership/consistency)');
     admissionRequireExistingRepoFile(record.ARCHITECTURE_PLAN_PATH, 'ARCHITECTURE_PLAN_PATH');
     admissionRequireEnum(record.ARCHITECTURE_PLAN_STATUS, 'ARCHITECTURE_PLAN_STATUS', ['READY', 'NOT_READY']);
     if (record.ARCHITECTURE_PLAN_STATUS !== 'READY') admissionDenied('ARCHITECTURE_PLAN_NOT_READY');
+    // Ownership/consistency (trust-boundary CHECK D): preparation artifacts
+    // must live in the SAME spec directory as the controlling spec.
+    const specDir = path.posix.dirname(record.SPEC_PATH);
+    admissionRequireString(record.WORK_PACKAGES_PATH, 'WORK_PACKAGES_PATH');
+    if (path.posix.dirname(record.WORK_PACKAGES_PATH) !== specDir) admissionInvalid('WORK_PACKAGES_PATH must live in the controlling spec directory (ownership/consistency)');
+    admissionRequireExistingRepoFile(record.WORK_PACKAGES_PATH, 'WORK_PACKAGES_PATH');
     admissionRequireEnum(record.WORK_PACKAGES_STATUS, 'WORK_PACKAGES_STATUS', ['READY', 'NOT_READY']);
     if (record.WORK_PACKAGES_STATUS !== 'READY') admissionDenied('WORK_PACKAGES_NOT_READY');
+    if (record.DEPENDENCY_ANALYSIS_PATH !== undefined) {
+      admissionRequireString(record.DEPENDENCY_ANALYSIS_PATH, 'DEPENDENCY_ANALYSIS_PATH');
+      if (path.posix.dirname(record.DEPENDENCY_ANALYSIS_PATH) !== specDir) admissionInvalid('DEPENDENCY_ANALYSIS_PATH must live in the controlling spec directory (ownership/consistency)');
+      admissionRequireExistingRepoFile(record.DEPENDENCY_ANALYSIS_PATH, 'DEPENDENCY_ANALYSIS_PATH');
+    }
     admissionRequireEnum(record.DEPENDENCY_ANALYSIS_STATUS, 'DEPENDENCY_ANALYSIS_STATUS', ['READY', 'NOT_READY']);
     if (record.DEPENDENCY_ANALYSIS_STATUS !== 'READY') admissionDenied('DEPENDENCY_ANALYSIS_NOT_READY');
   }
