@@ -8,7 +8,7 @@
 | Decision | Status | Outcome |
 |---|---|---|
 | **D1 — Adopt Spec Kit brownfield design + authorize Stages 0–3** | **DECIDED / APPROVED — OPTION A** | Thin/by-reference design adopted; Stages 0–3 authorized autonomously; **Stage 4 NOT authorized** |
-| **D2 — Stage-4 pilot vehicle** | **NOT YET DECIDED** | Pilot must not start; Workout Experience Specification remains pending separate owner authorization |
+| **D2 — Stage-4 pilot vehicle** | **DECIDED / APPROVED 2026-09-14** | Workout Experience Specification selected as the FIRST official Stage 4 Spec Kit pilot. Authorization boundary: specification / clarification / design-plan / task decomposition / independent review / pilot evaluation **only — implementation NOT AUTHORIZED**. Pilot spec: [`../specs/0001-workout-experience/spec.md`](../specs/0001-workout-experience/spec.md) (task `SPECKIT-PILOT-01`) |
 | **D3 — Supabase / Principle-12 evaluation scheduling** | **DEFERRED (NON-BLOCKING)** | No Supabase migration or architectural change |
 | **D4 — SQLite→PostgreSQL trigger runbook** | **DECIDED / APPROVED — OPTION A** | Runbook authored now as docs-only artifact ([`../architecture/DB-MIGRATION-TRIGGERS.md`](../architecture/DB-MIGRATION-TRIGGERS.md)); migration itself NOT authorized |
 | **D5 — Node/Bun runtime** | **RESOLVED — KEEP NODE 22 / TRIGGER-BASED REVISIT** | No runtime migration; revisit only on documented evidence triggers (audit §8) |
