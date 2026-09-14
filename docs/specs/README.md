@@ -36,7 +36,9 @@ it does not replace any existing authority.
 ```text
 docs/specs/
   NNNN-slug/          # one directory per feature (NNNN = zero-padded sequence)
-    spec.md           # required (STANDARD and CRITICAL)
+    spec.md           # required (STANDARD and CRITICAL); linked FROM the
+                      #   authoring TASKS.md entry (spec template field
+                      #   `TASKS.md entry`)
     plan.md           # CRITICAL only (optional appendix for STANDARD)
     tasks.md          # CRITICAL only; linked FROM docs/TASKS.md
 ```
