@@ -65,11 +65,17 @@ jobs:
     - name: Governance validation
       run: npm run governance:check
 
+    - name: Admission gate validation
+      run: npm run admission:check
+
     - name: Guardrail self-tests
       run: npm run guardrail:test
 
     - name: Governance runtime tests
       run: npm run governance:test
+
+    - name: Admission gate tests
+      run: npm run admission:test
 
     - name: Gateway daemon + db-operation tests
       run: npm run test:gateway

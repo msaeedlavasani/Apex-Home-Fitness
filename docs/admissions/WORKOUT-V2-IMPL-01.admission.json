@@ -1,0 +1,17 @@
+{
+  "TASK_ID": "WORKOUT-V2-IMPL-01",
+  "TASK_CLASS": "CRITICAL",
+  "SCOPE_SUMMARY": "Workout Experience v2 implementation admission record — consumes the finalized canonical specification docs/specs/0001-workout-experience/spec.md. Current state per the Stage-6 handoff contract: specification READY, implementation NOT authorized.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "NOT_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "N/A — awaiting a separate explicit owner implementation authorization (expected CRITICAL-class); spec readiness alone does not authorize implementation",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}
