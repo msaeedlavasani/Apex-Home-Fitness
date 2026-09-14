@@ -2,274 +2,344 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `PROPOSED` — Stage 4 Spec Kit pilot (D2 APPROVED 2026-09-14; spec/design only) |
-| SPEC_CLASS | `STANDARD` (work class — docs-only pilot; §0.1) · pilot artifact set is owner-mandated CRITICAL-shaped (§0.2) |
+| STATUS | `FINALIZED — awaiting owner merge review` (product decision phase complete; implementation NOT authorized) |
+| SPEC_CLASS | `STANDARD` (docs-only artifact; the eventual implementation is expected to be CRITICAL — see §0.1) |
 | TASK_PROFILE | `CODE_NO_DEPLOY` |
-| OWNER_GATE | D2 **APPROVED** 2026-09-14 — pilot selection + spec/design boundary; implementation **NOT authorized** |
+| OWNER_GATE | **D2 APPROVED** (2026-09-14) + owner product-decision phase **COMPLETE** — `SPEC_READINESS = READY`, remaining blocking product decisions = **NONE**; implementation **NOT authorized** |
 | TASKS.md entry | [`../../TASKS.md`](../../TASKS.md) → `SPECKIT-PILOT-01` |
 | Date | 2026-09-14 · Baseline: main `80b6eb5` · Prototype evidence: DEV `prototype/workout-layout-blueprint` @ `a62a7ce` |
 
-Labels: **CONFIRMED** (binding through a canonical owner — cited) · **CANDIDATE** (product direction; not yet owner-confirmed for this surface) · **UNKNOWN** (owner decision required) · **EXISTING** (implementation evidence only — records what exists today; never a source of intent, per DOCUMENTATION-GOVERNANCE §2.6).
+Labels: **CONFIRMED** (binding — owner decision or canonical authority) · **EXISTING** (implementation evidence only; never a source of intent, DOCUMENTATION-GOVERNANCE §2.6) · **DEFERRED** (explicitly non-blocking, non-authorizing — see §16).
+
+**REMAINING_BLOCKING_PRODUCT_DECISIONS: NONE.**
+
+## 0.1 Classification rationale
+
+`STANDARD` for this artifact (specification/design documentation only — no source, schema, security-boundary, dependency, or deployment change). The **implementation** task is expected to be **CRITICAL**: it will touch the session-core contract (ADR-0002 boundary), the media/presentation boundary (MG-07), and possibly observation wiring.
+
+## 0.2 Artifact set & template mapping
+
+Owner-mandated pilot artifact set (`spec.md` + `plan.md` + prospective `tasks.md` + `pilot-assessment.md`), recorded as an owner-driven exception to the standing directory contract (`docs/specs/README.md` reserves `plan.md`/`tasks.md` to CRITICAL work). Template mapping: CURRENT_STATE_EVIDENCE → §1, §14, §19 · PRODUCT_REQUIREMENTS → §5 · NON_GOALS → §3, §15 · ACCEPTANCE_CRITERIA → §17 · ARCHITECTURE_IMPACT → §2 + plan §2–§3 · SECURITY_PRIVACY_IMPACT → §12 · LOCALIZATION_IMPACT → §8 · TESTING_REQUIREMENTS → plan §5 · ROLLBACK → plan §6 · HANDOFF → end. Open questions were **resolved** by owner decisions (see §19) and are no longer carried as unknowns.
 
 ---
 
-## 0.1 Classification rationale (Step 2)
-
-`STANDARD`, not `CRITICAL`: this pilot is specification/design documentation only — no source, schema, security-boundary, dependency, or deployment change is performed or authorized. It does not meet any CRITICAL trigger (auth/AI behavior/security, schema/DB, deployment/topology, cross-plane data). **Note for a future implementation task:** actual implementation will very likely touch the session-core contract (ADR-0002 boundary), media/asset architecture (MG-07), and possibly observation wiring — that task must re-classify and is expected to be **CRITICAL**.
-
-## 0.2 Pilot artifact set & template mapping (owner-mandated)
-
-The owner's D2 task explicitly authorized, for this pilot: specification, clarification, design/plan, task decomposition, independent review, and pilot evaluation. Accordingly this pilot emits the full artifact set (`spec.md` + `plan.md` + prospective `tasks.md` + `pilot-assessment.md`) although the standing contract (`docs/specs/README.md`) reserves `plan.md`/`tasks.md` to CRITICAL-class work — and the owner mandated an expanded section set (§1–§19 here). Both deviations are owner-driven, recorded, and pilot-scoped; neither changes standing governance. The size deviation (229 lines vs the ≤ ~150-line STANDARD guidance) is recorded as a pilot finding in `pilot-assessment.md`.
-
-Template mapping (Stage-1 `spec-template.md` → this pilot):
-
-| Template section | Found in |
-|---|---|
-| CURRENT_STATE_EVIDENCE | §1, §14, §19 |
-| PRODUCT_REQUIREMENTS | §5 |
-| NON_GOALS | §3, §15 |
-| OPEN_QUESTIONS | §16 |
-| ACCEPTANCE_CRITERIA | §17 |
-| ARCHITECTURE_IMPACT | §2 + [`plan.md`](./plan.md) §2–§3 |
-| SECURITY_PRIVACY_IMPACT | §12 |
-| LOCALIZATION_IMPACT | §8 |
-| TESTING_REQUIREMENTS | [`plan.md`](./plan.md) §5 |
-| ROLLBACK | [`plan.md`](./plan.md) §6 |
-| HANDOFF | §HANDOFF (end) |
-
 ## 1. Problem / user need
 
-CONFIRMED — The current `/workout` route behaves like a *Workout Logger*: the user reads an exercise name, must already know how to perform it, counts repetitions, taps controls, and returns attention to the screen repeatedly. Beginners are the hardest-hit audience (`docs/product/PRODUCT-VISION.md` §3: users "do not know what to do, how to do it safely, or how to stay consistent"; V2 §1).
+**CONFIRMED.** The current `/workout` route behaves like a *Workout Logger*: the user reads an exercise name, must already know how to perform it, counts repetitions, taps controls, and repeatedly returns attention to the screen. Beginners are the hardest-hit audience (`docs/product/PRODUCT-VISION.md` §3).
 
-CONFIRMED — Canonical product principles that frame the fix: "Guided and beginner-first — Show, don't just tell" and "Hands-free by default — minimum interaction during exercise (V2 goal)" (`PRODUCT-VISION.md` §4).
+**CONFIRMED.** Canonical product principles framing the fix: “Guided and beginner-first — Show, don’t just tell” and “Hands-free by default — minimum interaction during exercise” (`PRODUCT-VISION.md` §4).
 
-## 2. Scope
+## 2. Scope and product model
 
-CONFIRMED — This specification defines the *product behavior* of the guided workout execution surface (the evolution of today's `/workout` experience), independent of generator and independent of renderer technology (ARCHITECTURE-PRINCIPLES §8 source-independence; V2 §7/§25; ADR-0001 governs exercise identity, not this separation).
+**CONFIRMED — scope.** This specification defines the *product behavior* of the guided workout execution surface (the evolution of today’s `/workout` experience), independent of the program generator and independent of any renderer (ARCHITECTURE-PRINCIPLES §8, V2 §25).
 
-CANDIDATE — The experience becomes a **Guided Workout Player** over an executable **Session Timeline** (`PREPARE → WORK → REST → … → TRANSITION → … → COMPLETE`), where the application owns sequencing, timing, sets, rests, transitions, countdowns, guidance, progress and completion, and the user primarily exercises (V2 §3–§5).
+**CONFIRMED — the session is a composition, not a fixed timeline.** Workout Experience is an ordered composition of independently defined experience capabilities/modules. V1 conceptual vocabulary (product/architectural concepts — **not** mandated code structures):
+
+`START` · `PREPARING` · `EXERCISE_INTRO` · `WORK_SET` · `REST` · `EXERCISE_TRANSITION` · `COMPLETE`
+
+**CONFIRMED — orchestration owns composition.** The session/orchestration layer owns: module applicability · sequencing · transitions · Exercise Block ordering · session-level actions · completion eligibility. Individual modules own only their local behavior. **No module may become a hidden global workout state machine.** A session is resolved from: the workout prescription · the active exercise · the current session state · future authorized session rules.
+
+**CONFIRMED — Exercise Block.** An exercise is representable as a reusable composition:
+
+```
+EXERCISE_INTRO → WORK_SET → REST → WORK_SET → REST → WORK_SET   (illustrative only)
+```
+
+This illustration must not imply exactly 3 sets, mandatory REST after every set, one execution mode, a fixed rep target, a fixed time target, or a fixed rest duration. The actual composition is derived from the **resolved prescription**.
+
+**CONFIRMED — extensibility.** Future modules (`WARMUP`, `COOLDOWN`, `EQUIPMENT_SETUP`, `HYDRATION`, `ASSESSMENT`, `RECOVERY`) must be addable without redesigning the experience. They are **FUTURE EXAMPLES ONLY — NOT AUTHORIZED FOR V1**.
 
 ## 3. Non-goals
 
-CONFIRMED (non-goals by boundary):
-- No program-generation change (generator stays source-independent; V2 §7, PRODUCT-VISION §4).
-- No camera/pose feature authorization — observation remains gated (CP-04/CP-05/TS-02; ADR-0021).
-- No implementation in this pilot (D2 boundary; this document only).
-- No media pipeline, TTS/voice pipeline, or schema change authorized here (V2 Part 8 scope guards).
+- No program-generation change (generator stays source-independent).
+- No camera/pose feature authorization — observation remains gated (CP-04/CP-05; TS-02; ADR-0021).
+- No implementation in this artifact.
+- No renderer, animation format, asset pipeline, or tracking-technology selection.
+- No schema/storage, event, persistence, or analytics representation decisions.
+- The §2 future module examples are **not** v1 scope.
 
-CANDIDATE (proposed non-goals, pending owner confirmation):
-- No social/challenges surface in this experience.
-- No desktop-first redesign — mobile-first behavior is the baseline (ADR-0005).
+## 4. Experience intent
 
-## 4. User experience intent
+**CONFIRMED.** Bilingual (fa/en, RTL parity), mobile-first, offline-tolerant, accessible per `docs/DESIGN_SYSTEM.md` and ADR-0005.
 
-CONFIRMED — Bilingual (fa/en, RTL parity), mobile-first, offline-tolerant, accessible per `docs/DESIGN_SYSTEM.md` and ADR-0005 (min viewport 360px, reduced motion, keyboard, touch targets, contrast).
+**CONFIRMED — mobile posture: `WEB-SPECIFIC`** (browser-presentation experience; no native equivalent claimed; no new client storage beyond the existing offline contract) — ADR-0005 guardrail 3 / PRINCIPLES §13.3.
 
-CONFIRMED (binding declaration, ADR-0005 guardrail 3 / PRINCIPLES §13.3) — **Mobile posture: `WEB-SPECIFIC`.** The guided player is a browser-presentation experience (timers, safe-area/viewport behavior, optional WebGL/media); no native equivalent is claimed, and no new client storage beyond the existing offline contract is introduced.
+**CONFIRMED — “One tap to start. Minimum interaction until finish.”** After `Start Workout`, the session advances automatically; the user is not required to operate the app between ordinary sets.
 
-CANDIDATE — "One tap to start. Minimum interaction until finish." After `Start Workout`, the session advances automatically through sets/rests/transitions with countdowns, and the user is not required to operate the app between sets (V2 §2, §4).
+**CONFIRMED — Mentor-centered presentation.** The intended **normal** v1 experience includes a **moving/animated exercise demonstration** as part of the Mentor-centered active workout experience. Guided motion is part of the primary experience, not an optional decorative enhancement. `MOVING DEMONSTRATION != 3D REQUIREMENT` (§5.7).
 
-CANDIDATE — Visual guidance accompanies each exercise ("show, don't just tell"): an animated/looping demonstration and/or a 3D mentor figure (see §9), with the exercise identity (name, set number, work/rest timers) always legible (V2 §4, §12, §24).
+**CONFIRMED — mode-aware progress.** One conceptual progress capability whose presentation follows the active prescription mode (§5.4).
 
-CANDIDATE — Quiet, low-noise feedback during work: short cues rather than constant instructions (CP-01 Companion architecture — silence-by-default / value-over-noise posture, [`docs/architecture/CP-01-COMPANION-ARCHITECTURE.md`](../architecture/CP-01-COMPANION-ARCHITECTURE.md); prototype QuietCoach messaging is OBSERVED ONLY).
+**CONFIRMED — quiet, low-noise feedback** (CP-01 companion posture; prototype cue copy is EXISTING evidence only).
 
-## 5. Functional requirements
+## 5. Requirements
 
-Numbered with source labels.
-
-| ID | Requirement | Label | Source |
-|---|---|---|---|
-| FR-1 | A workout session executes as an ordered timeline of phases derived from the user's program for the day | CANDIDATE | V2 §5/§6 |
-| FR-2 | The UI renders current session state; it does not own sequencing logic | CONFIRMED (architecture rule) | ADR-0002; ARCHITECTURE-PRINCIPLES §13.4; V2 §5/§6 |
-| FR-3 | Session resumes correctly after page refresh / lost connection (no lost progress) | EXISTING (implementation evidence) + CONFIRMED (offline contract) | offline persistence contract (ADR-0005 guardrail 2; S-05 snapshot versioning) — evidence: `src/lib/offline/*` |
-| FR-4 | Workout remains playable offline (program cached; completed sets queued) | CONFIRMED | PRODUCT-VISION §4 (offline-first) — evidence: `src/services/syncService.ts` |
-| FR-5 | Exercise identity display uses canonical identity where resolvable; display names stay display-only | CONFIRMED | ADR-0001; ARCHITECTURE-PRINCIPLES §7 |
-| FR-6 | One-tap start; automatic advancement through sets/rests/transitions (no per-set Start button under normal conditions) | CANDIDATE | V2 §2/§4/§13 |
-| FR-7 | Rest phase shows the next-up exercise/set preview | CANDIDATE | V2 §4/§15; prototype REST_NEXT_PREVIEW (OBSERVED ONLY) |
-| FR-8 | Countdown (3-2-1 style) precedes configured phase starts | CANDIDATE | V2 §17; prototype TRANSITION_COUNTDOWN (OBSERVED ONLY) |
-| FR-9 | Pause/resume available without breaking accumulated timing | EXISTING (implementation evidence: pause implemented) + CANDIDATE (extended semantics) | current engine pause; V2 §21 |
-| FR-10 | Session completion summary/state exists at the end of the timeline | CANDIDATE | V2 §8 COMPLETE; prototype CompleteStage (OBSERVED ONLY) |
-| FR-11 | Both locales render the full experience (copy, numerals, direction) | CONFIRMED | AGENTS.md §4; ADR-0010; DESIGN_SYSTEM |
-| FR-12 | Exercise demonstration media is self-hosted with content-integrity rules; no third-party CDN for product media | CONFIRMED (contract) | MG-07 (`docs/architecture/MG-07-LOCALIZATION-MEDIA.md`); ADR-0010 |
-| FR-13 | Rep-based vs timed vs hold execution semantics are explicit per exercise | UNKNOWN | V2 Open Questions §1/§14 |
-| FR-14 | Skip / extend-rest / reduce-rest / restart-set / exit semantics | UNKNOWN | V2 Open Questions §4; V2 §20 |
-| FR-15 | Voice/audio coach | UNKNOWN | V2 §18; Open Questions §2 (visual/audio/both) |
-| FR-16 | Focus Mode (screen wake / fullscreen / orientation) | UNKNOWN | V2 §11; Part 5 constraint (no wake/fullscreen handling today) |
-
-> Code paths above appear as **implementation evidence only**; requirements cite their canonical owner. Code does not define intent (DOCUMENTATION-GOVERNANCE §2.6).
-
-## 6. State behavior (behavior-level state model)
-
-Classification of the states the experience *may* need. None is derived from prototype code alone.
-
-| State | Label | Note |
+| ID | Requirement | Label |
 |---|---|---|
-| Initial loading | CANDIDATE | Program fetch + media/mentor initialization |
-| Ready (pre-start) | EXISTING (implementation evidence) | Current player has a ready/start state |
-| Active set (work) | CANDIDATE | Core of V2 timeline; engine extension required |
-| Paused | EXISTING (implementation evidence) | Engine pause implemented |
-| Rest | CANDIDATE | V2 §15; observed prototype REST_QUIET/PREVIEW |
-| Exercise transition | CANDIDATE | V2 §16 |
-| Countdown | CANDIDATE | V2 §17 |
-| Workout completed | CANDIDATE | V2 §8 |
-| Mentor unavailable / degraded presentation | UNKNOWN | Fallback requirement not yet owner-confirmed (§9) |
-| Asset load failure | UNKNOWN | Same as above; prototype shows a fallback pattern |
-| Offline / reconnect | EXISTING + CONFIRMED (offline contract) + CANDIDATE (UX surface) | Offline snapshots + sync outbox exist today |
+| FR-1 | A session executes as an ordered composition of experience modules derived from the resolved prescription for the day | CONFIRMED |
+| FR-2 | The UI renders session state; it does not own sequencing — orchestration owns applicability/sequencing/transitions | CONFIRMED |
+| FR-3 | Session resumes correctly after page refresh / lost connection (no lost progress) | EXISTING + CONFIRMED (offline contract: ADR-0005 guardrail 2; S-05) |
+| FR-4 | Workout remains playable offline (program cached; completed sets queued) | CONFIRMED (PRODUCT-VISION §4) |
+| FR-5 | Exercise identity display uses canonical identity where resolvable; display names stay display-only | CONFIRMED (ADR-0001; PRINCIPLES §7) |
+| FR-6 | One-tap start; automatic progression through sets/rests/transitions | CONFIRMED |
+| FR-7 | “Next Exercise” preview appears **only** for an actual upcoming **different** exercise identity | CONFIRMED |
+| FR-8 | A countdown may precede applicable module starts (placement and values per §16) | CONFIRMED (placement) |
+| FR-9 | Pause/resume preserves the current session position and continues the same execution context | CONFIRMED |
+| FR-10 | `COMPLETE` is reached only when the composed session is fully resolved (no unresolved deferred blocks) | CONFIRMED |
+| FR-11 | Both locales render the full experience (copy, numerals, direction) | CONFIRMED |
+| FR-12 | Exercise demonstration media is self-hosted with content-integrity rules; no third-party CDN for product media (when media is introduced) | CONFIRMED (MG-07; ADR-0010) |
+| FR-13 | Execution mode is explicit on the **resolved prescription** (`REP_BASED` \| `TIME_BASED`); the UI must not infer it from arbitrary values | CONFIRMED |
+| FR-14 | A moving/animated demonstration is part of the intended normal v1 experience; **no** renderer/3D/format/pipeline/tracking mandate | CONFIRMED |
+| FR-15 | Degraded mode keeps the workout fully usable when the demonstration cannot load/render (§5.7) | CONFIRMED |
+| FR-16 | Functional audio cues are allowed/intended; audio is supplementary (never the only source of essential information) | CONFIRMED |
+| FR-17 | The v1 session controls are exactly the set in §5.6 | CONFIRMED |
+
+### 5.1 Prescription semantics (execution mode)
+
+**CONFIRMED.** Exactly **two first-class v1 execution modes: `REP_BASED` and `TIME_BASED`.** Neither is deprecated, and neither is modelled as a workaround for the other.
+
+**CONFIRMED.** `EXERCISE IDENTITY != WORKOUT PRESCRIPTION`. An exercise defines *what movement it is*; a workout/program prescription defines *how it is prescribed in that context*. The same exercise may be prescribed differently in different contexts (exercise type, program, user readiness/experience, future authorized personalization): e.g. Squat — 10 reps, **or** Squat — 40 seconds.
+
+**CONFIRMED.** The **resolved prescription must carry explicit execution semantics before the session consumes it**; the UI must not infer mode from arbitrary values.
+
+**CONFIRMED — source independence.** AI-generated and rules-generated prescriptions must ultimately **resolve into the same canonical prescription semantics**; provenance must not create incompatible execution semantics.
+
+**CONFIRMED — HOLD.** HOLD is **not** a third first-class execution mode in v1. A static hold (e.g. Plank) may use `TIME_BASED` with **distinct movement/coaching semantics** indicating position maintenance rather than repetitions. **Execution mode and movement/coaching semantics are separate concerns.** No schema field for HOLD is mandated. *Revisit only if future evidence proves static holds require a fundamentally different session lifecycle that `TIME_BASED` cannot express.*
+
+### 5.2 Modular composition (see §2)
+
+**CONFIRMED.** Composition + orchestration ownership + Exercise Block + extensibility, as stated in §2. No global assumptions: no module may globally assume one exercise, three sets, one execution mode, fixed rest/prepare/countdown durations, fixed exercise order, Intro between every set, or Next-Exercise after every rest.
+
+### 5.3 Exercise Intro / REST / Next Exercise
+
+**CONFIRMED.** `EXERCISE_INTRO` belongs to the **Exercise Block lifecycle**: it occurs **once when entering a new exercise identity, before its first work set**. Additional sets of the **same** exercise do **not** re-run Intro.
+
+**CONFIRMED.** `REST` is an **independent** experience capability. REST does **not** own Intro, exercise identity, permanent workout order, or Next-Exercise semantics.
+
+**CONFIRMED.** “Next Exercise” means an **actual change of exercise identity**. Moving from Set 1 to Set 2 of Squat is **not** Next Exercise. Same-exercise flow: `WORK_SET → REST → applicable countdown/transition → NEXT WORK_SET` (without re-introduction or Next-Exercise context).
+
+### 5.4 WORK_SET and progress modularity
+
+**CONFIRMED.** `WORK_SET` is **one conceptual capability** supporting `REP_BASED` **or** `TIME_BASED`. Two separate Workout Experience architectures for the two modes are explicitly **not** created.
+
+**CONFIRMED.** Progress is **one conceptual reusable capability** with mode-aware presentation: `REP_BASED` → target/completed reps (e.g. `6 / 10`); `TIME_BASED` → remaining/elapsed prescribed time (e.g. `40 → 39 → … → 0`). Unit/presentation changes; the conceptual role does not. Unrelated parallel progress systems are not created unless later evidence proves necessity.
+
+### 5.5 Progression policy
+
+**CONFIRMED.** `AUTO-ADVANCE` is the **default** when the next applicable module can safely begin without user intervention. It is **not an absolute global rule**: an applicable transition may require explicit user confirmation when the prescription/session context requires it — conceptually `AUTO` **or** `CONFIRMATION_REQUIRED`. No schema representation is mandated.
+
+**CONFIRMED.** Within the **same exercise**, normal set/rest progression minimizes interaction: no repeated READY/NEXT/CONTINUE between ordinary sets unless a future authorized prescription/session rule requires it. REST remains interruptible via `SKIP REST`.
+
+**CONFIRMED.** **Exercise boundaries are semantically different** and provide the user a reasonable opportunity to act on the upcoming/current Exercise Block (§5.6).
+
+### 5.6 Session controls, actions and outcome semantics (v1)
+
+**CONFIRMED — control set.**
+
+- **In v1:** `PAUSE / RESUME` · `EXIT WORKOUT` · `SKIP REST` · `RESTART CURRENT SET` · `DO EXERCISE LATER` · `SKIP EXERCISE FOR THIS SESSION`.
+- **Not required for v1:** `SKIP SET` · `EXTEND REST` · `REDUCE REST`. (SKIP REST already provides intentional early rest ending.) These excluded controls must not reappear elsewhere in the artifacts.
+
+**CONFIRMED — `DO EXERCISE LATER` (first-class v1).** The user may defer the current Exercise Block without removing it from the workout. Prescription order `Squat → Push-up → Plank` may become current-session execution `Push-up → Plank → Squat`. This is **current-session execution order only** and **does not mutate the canonical prescription**. A deferred block is **OUTSTANDING** — **not** completed and **not** skipped. **Before normal `COMPLETE`, every deferred Exercise Block must be surfaced again**, resolved as `PERFORM NOW` **or** `SKIP FOR THIS SESSION`. No silent completion may occur while unresolved deferred blocks remain.
+
+**CONFIRMED — `SKIP EXERCISE FOR THIS SESSION` (first-class v1).** The user may intentionally omit an Exercise Block from the **current** session (many situational reasons). **The product must not require disclosure of a medical reason.** Skipping means: not completed · not failed · no longer outstanding in the current session · workout may continue · canonical prescription unchanged. Session-only decision.
+
+**CONFIRMED — outcome distinction.** The product preserves three distinct session outcomes: `COMPLETED` · `OUTSTANDING / DEFERRED` · `SKIPPED FOR THIS SESSION`. Persistence/event/analytics representation is not decided here (§16).
+
+**CONFIRMED — control semantics.**
+- `RESTART CURRENT SET`: restarts **only the active `WORK_SET`** from its beginning (TIME_BASED: restart current-set timer/progress; REP_BASED: restart current-set progress). Does not restart previous completed sets; does not mutate the prescription. Accidental-action protection is a later UX detail.
+- `SKIP REST`: ends **only the current REST** early and follows normal orchestration. It must **not** mean skip set / skip exercise / skip next exercise.
+- `PAUSE / RESUME`: preserves current session position and continues the same execution context. (Prototype pause/deadline behavior is EXISTING evidence.) Persistence across app restart is **not** resolved here (§16).
+- `EXIT WORKOUT`: **distinct from normal `COMPLETE`**. Resume-after-exit, partial persistence, analytics, and resume granularity are **not** defined here (§16).
+
+**CONFIRMED — modularity of controls.** Every control operates through orchestration: `DO LATER` and `SKIP FOR THIS SESSION` act on an Exercise Block; `SKIP REST` on the current REST module; `RESTART CURRENT SET` on the current `WORK_SET`; `PAUSE/RESUME` on current session execution; `EXIT` on the Workout Session lifecycle. No control may create unrelated exercise-specific branching across modules.
+
+### 5.7 Mentor / guided motion (U-5)
+
+**CONFIRMED.** A moving/animated demonstration is part of the **intended normal v1 experience** (Mentor-centered). **No mandate** for Three.js, 3D, a renderer, an animation format, an asset pipeline, or a tracking technology — those remain implementation/design decisions.
+
+**CONFIRMED — fidelity contract.** `RECOGNISABLE AND INSTRUCTIVE` — the demonstration must communicate the intended exercise clearly enough to function as guidance. Photorealism is not required. Exact visual fidelity/asset acceptance thresholds are evaluated against the eventual implementation candidate.
+
+**CONFIRMED — failure / degraded mode.** Failure or unavailability of the moving demonstration must **not** make the workout unusable. The active workout remains operational, preserving at least: exercise identity · static exercise visual/poster where available · essential coaching/exercise cue · current set/progress state · `REP_BASED`/`TIME_BASED` progress · required session controls. The fallback is a **DEGRADED/FAILURE MODE — not the intended normal v1 experience**.
+
+**CONFIRMED — reduced motion.** Reduced-motion preferences must **not** make the workout incomprehensible: non-essential animation/motion is reduced or removed where appropriate, while **essential exercise understanding and progress/timing information remain available**; the user must never depend on animation alone. Exact rendering strategy is deferred (§16).
+
+**CONFIRMED — presentation capability boundary.** Mentor/demo is a **presentation capability** that reacts to authoritative session state; it must not own sequencing, progression, completion, or Exercise Block ordering.
+
+### 5.8 Accessibility (U-12)
+
+**CONFIRMED.** The existing AHF accessibility baseline applies to Workout Experience **from v1**; timed/countdown phases and session-level controls **extend** it rather than deferring accessibility. The contract requires:
+
+- active timers/countdowns have an accessible **non-animation-only** representation;
+- essential workout information is **not audio-only** and **not motion-only**;
+- session controls have accessible interaction semantics;
+- **reduced-motion** preference is respected (without removing essential understanding);
+- contrast/readability baseline remains applicable;
+- the existing **mobile-width** accessibility baseline remains applicable.
+
+ARIA implementation, announcement frequency, focus management, screen-reader copy, and component mechanics are deferred design/implementation decisions (§16).
+
+### 5.9 Audio (v1 functional cues) and voice coaching
+
+**CONFIRMED.** v1 is **not strictly visual-only**: short **functional audio cues** are allowed/intended for useful workout events — e.g. countdown cue · start-of-set cue · end-of-set cue · rest-ending cue (category examples, not exact sound design).
+
+**CONFIRMED — audio accessibility.** Audio is **supplementary**; no essential information may exist **only** in audio; every essential audio cue must correspond to an understandable visual or otherwise accessible state; the experience remains usable **without hearing**. **No new audio settings system is invented**; if an existing AHF global preference governs audio, reference it.
+
+**CONFIRMED — capability boundary.** Audio cues are supporting capabilities that react to session state; they must not own progression.
+
+**CONFIRMED — Voice/TTS.** A spoken Voice Coach / TTS system is **NOT REQUIRED FOR V1** (`NON_BLOCKING_DEFERRED`). Functional audio cues and Voice/TTS coaching are **separate capabilities**. (Future voice coaching is not prohibited.)
+
+## 6. Module/state behavior
+
+| Concept | Label | Note |
+|---|---|---|
+| Initial loading / PREPARING | CONFIRMED (module) | Presented before the first exercise; exact duration DEFERRED |
+| Exercise intro | CONFIRMED | Exercise-lifecycle; once per new identity (§5.3) |
+| Active work set (`WORK_SET`) | CONFIRMED | Mode-aware (`REP_BASED`/`TIME_BASED`); progress per §5.4 |
+| Paused | CONFIRMED | Preserves position; resume continues context |
+| Rest | CONFIRMED | Independent module; skippable via `SKIP REST` |
+| Exercise transition | CONFIRMED | Exercise-boundary module; distinct from same-exercise set flow |
+| Exercise boundary decision point | CONFIRMED | Opportunity to act: DO LATER / SKIP FOR THIS SESSION |
+| Completed | CONFIRMED | Reached only when all blocks resolved (incl. deferred) |
+| Deferred / outstanding block | CONFIRMED | Must be re-surfaced before COMPLETE |
+| Skipped for this session | CONFIRMED | Session-only; not completed, not failed |
+| Mentor unavailable / degraded | CONFIRMED | Degraded mode per §5.7 |
+| Asset load failure | CONFIRMED | Degraded mode per §5.7 |
+| Offline / reconnect | EXISTING + CONFIRMED (offline contract) | Snapshots + sync outbox exist today |
 
 ## 7. Error / fallback behavior
 
-CONFIRMED — Existing resilience contracts stay: no silent behavior change; fail-closed over fail-open (RELEASE_POLICY RULE 4; constitution C11); offline must not lose completed work (existing conflict policy).
+**CONFIRMED.** Existing resilience contracts remain: no silent behavior change; fail-closed over fail-open (RELEASE_POLICY RULE 4; constitution C11); offline must not lose completed work (existing conflict policy).
 
-CANDIDATE — If demonstration media or the 3D mentor fails to load, the workout remains fully playable with a text/identity fallback presentation (PRODUCT-VISION "guided" principle; observed prototype fallback pattern — *observed, not confirmed as requirement*).
+**CONFIRMED — degraded presentation.** When the moving demonstration cannot load/render, the workout continues in degraded mode (§5.7) — usable, with identity, cue, progress and controls preserved.
 
-UNKNOWN — Whether the mentor is required at all in v1, and what constitutes an acceptable fallback (§9, §11).
+**CONFIRMED.** No silent completion while unresolved deferred blocks remain (§5.6).
 
 ## 8. Localization expectations
 
-CONFIRMED — Full fa/en parity, RTL correctness, Persian-safe content, localized numerals/timers per DESIGN_SYSTEM; movement localization keys per MG-07 (ADR-0010).
+**CONFIRMED.** Full fa/en parity, RTL correctness, Persian-safe content, localized numerals/timers per DESIGN_SYSTEM; movement localization keys per MG-07 (ADR-0010).
 
-CANDIDATE — Cue/coach copy is keyed and localized (observed prototype copy is EN-only prototype text — **OBSERVED ONLY**).
+**CONFIRMED.** Cue/coach copy is keyed and localized. (Prototype copy is EN-only prototype text — EXISTING only.)
 
-## 9. 3D Mentor contract (renderer-agnostic)
-
-CONFIRMED — Technology is NOT part of the product contract: no renderer/framework is mandated by this spec (V2 Part 8: media technology not selected; D2 authorizes no technology choice).
+## 9. Mentor contract (renderer-agnostic)
 
 | Aspect | Label | Statement |
 |---|---|---|
-| Purpose | CANDIDATE | A visual demonstration/companion of the movement — instructional + motivational; exact role mix UNKNOWN |
-| Centrality | CANDIDATE | Likely a central visual element (V2 §10/§12 direction; observed prototype composition) |
-| Visibility rules | UNKNOWN | When it must/must not show |
-| Behavior when it cannot load | UNKNOWN | Requirement is NOT confirmed; recommendation: workout must remain usable (see §7) |
-| Usability without mentor | UNKNOWN | Owner decision required before implementation |
-| Sync with exercise timing/state | UNKNOWN | Whether pose/animation synchronization is required |
-| Fidelity (pilot vs production) | UNKNOWN | Observed prototype fidelity is for exploration only (OBSERVED ONLY) |
-| Mobile framing | CONFIRMED (constraints) + UNKNOWN (mentor-specific) | Safe-area/viewport rules apply (ADR-0005; DEV conformance doc — prototype-scoped evidence); mentor framing UNKNOWN |
-| Interaction | UNKNOWN | Any expected user interaction with the mentor is undefined |
+| Role | CONFIRMED | Visual center of the active workout experience; demonstration/companion of the movement |
+| Centrality | CONFIRMED | Primary visual anchor of the active experience; exercise identity and coaching cue remain visible but secondary |
+| Moving demonstration | CONFIRMED | Part of the intended normal v1 experience |
+| Rendering medium (3D/2D/format/pipeline) | DEFERRED | No mandate; implementation/design decision (§16) |
+| Sync with exercise timing/state | DEFERRED | Not resolved |
+| Interaction expectations | DEFERRED | Not specified |
+| Failure handling | CONFIRMED | Degraded mode, workout remains usable (§5.7) |
+| Fidelity | CONFIRMED | Recognisable and instructive; no photorealism; thresholds vs candidate |
+| Mobile framing | CONFIRMED (constraints) | Safe-area/viewport rules apply (ADR-0005); mentor-specific framing per implementation |
 
 ## 10. Accessibility expectations
 
-CONFIRMED — DESIGN_SYSTEM + AGENTS.md §6 rules: reduced motion honored, keyboard operability, contrast, 360px minimum, touch-target sizes, safe-area handling.
+Per §5.8 (contract) and §16 (deferred mechanics).
 
-CANDIDATE — Animated mentor/media must respect reduced-motion (provide static alternative) — extension of the confirmed rule to the new surface.
+## 11. Performance constraints
 
-UNKNOWN — Any additional requirements for timed audio cues / screen-reader announcement of phase changes (owner/product decision).
-
-## 11. Performance constraints (where confirmed)
-
-CONFIRMED — No runtime changes in this pilot; current performance contracts unchanged. Targeted verification policy applies (CI.md); real-browser acceptance is required for browser-facing changes (RELEASE_POLICY RULE 6/7).
-
-UNKNOWN — A concrete performance budget for the guided player (3D/asset load time, memory, low-end device floor, offline cache size) is not documented and is an owner/engineering decision.
+**CONFIRMED (contract-level).** No runtime changes in this artifact; existing verification policy applies (CI.md); real-browser acceptance required for browser-facing changes (RELEASE_POLICY RULE 6/7). Exact performance budget and low-end-device floor are DEFERRED (§16).
 
 ## 12. Security / privacy impact
 
-CONFIRMED — No new data collection in this spec. Existing boundaries apply: camera/pose is consent-gated, on-device, non-persistent by default, and NOT authorized by this pilot (TS-01; ADR-0014/0021; CP-04/CP-06). "Raw video never leaves the device" remains binding.
+**CONFIRMED.** No new data collection in this specification. Camera/pose remains consent-gated, on-device, non-persistent by default, and **not authorized** here (TS-01; ADR-0014/0021). “Raw video never leaves the device” remains binding. Future integration of observation signals (CP-02) into the experience is a separate CRITICAL-class change.
 
-CANDIDATE — If future work integrates observation signals (CP-02) into the experience, that is a separate CRITICAL-class change with its own spec and gates.
+## 13. Analytics / observability expectations
 
-## 13. Analytics / observability expectations (if confirmed)
+**CONFIRMED.** Existing first-party analytics route is log-only (`/api/analytics/events`); no persistence table. Event/analytics representation — including for deferred/skipped blocks and partial sessions — is **DEFERRED** (§16).
 
-CONFIRMED — Existing first-party analytics route exists but is log-only (`/api/analytics/events`); no persistence table.
+## 14. Prototype evidence (DEV — EXISTING ONLY, never a requirement)
 
-UNKNOWN — Which session-level events the guided experience should emit (phase transitions? abandonments?), and whether the known blind spot (partial/abandoned workouts invisible because analytics see only completed sessions — V2 Part 5) should be closed. Owner/product decision.
+Source: `prototype/workout-layout-blueprint` @ `a62a7ce`. The shipped `/workout` route is **untouched** by DEV (0 files changed) — the prototype is additive.
 
-## 14. Prototype evidence (DEV — OBSERVED ONLY, never a requirement)
-
-Source: `prototype/workout-layout-blueprint` @ `a62a7ce` (19 commits ahead of `ff1202c6`; rebase-incomparable SHAs, content-based inspection). The shipped `/workout` route is **untouched** by DEV (0 files changed) — the prototype is additive.
-
-| Evidence | Observed behavior | Confidence | Product-approved? |
+| Evidence | Observed | Confidence | Status |
 |---|---|---|---|
-| `/[locale]/prototype/workout` route | Isolated prototype surface with its own layout | HIGH | Experimental only |
-| `prototypeFlow.ts` | **Scripted demo timeline** (fixed durations: PREPARE 3s, EXERCISE_INTRO 3s, work segments, REST 25s + preview 5s, transition countdown 3s) — driven by elapsed time, **not** by a real program/session engine | HIGH | Experimental harness |
-| `workoutState.ts` | State vocabulary: START, PREPARE, EXERCISE_INTRO, WORK_NORMAL, WORK_POSITIVE, WORK_CORRECTION, TRACKING_LOST, REST_QUIET, REST_NEXT_PREVIEW, TRANSITION_COUNTDOWN, COMPLETE | HIGH | Experimental |
-| `QuietCoach.tsx` | Feedback surface with cues (READY / GOOD FORM / ADJUST FORM / TRACKING LOST / REST / NEXT UP / GET READY) tied to tracking states | HIGH | Experimental (EN-only copy) |
-| `MentorStage.tsx` (shared dir) + `MentorViewport.tsx` | Three.js r180 + GLTFLoader loads `/prototype-assets/AHF_Mentor_Squat.glb`; dynamic `ssr:false`; statuses loading/ready/failed; `StageFallback` (`role="status"`); 15-bone projection feeding a tracking overlay | HIGH | Experimental; renderer choice NOT a requirement |
-| `tracking.ts`, `MovementFeedbackOverlay`, `TrackingSkeletonOverlay` | Mentor skeleton projection used for overlay alignment with observed tracking states | HIGH | Experimental |
-| `startWorkoutBridge.ts` | Capture-phase click bridge → custom event (iOS standalone first-tap workaround) | HIGH | Experimental |
-| `docs/architecture/WORKOUT-PROTOTYPE-VIEWPORT-CONFORMANCE.md` (DEV) | Shell uses `vh→svh→dvh`, safe-area vars, no page scroll, standalone status-bar handling | HIGH | Prototype-scoped; real-iPhone validation NOT claimed |
-| `package.json` `three@^0.180.0`; `next.config.mjs` CSP `connect-src += blob:`; `.gitignore += /.tmp/` | Prototype required a runtime dependency and a CSP relaxation | HIGH | NOT approved for main |
-| Rest-timing debug instrumentation (REST_TIMING_TRACE, `?restTimingDebug=1`) | Diagnostic logging; observed uncommitted earlier, since removed by owner | HIGH | Diagnostic only |
+| `/[locale]/prototype/workout` route | Isolated prototype surface | HIGH | Experimental |
+| `prototypeFlow.ts` | Scripted demo timeline (fixed durations) — **not** a prescription-driven engine | HIGH | EXISTING |
+| `workoutState.ts` | State vocabulary incl. PREPARE / INTRO / WORK_* / REST_* / TRANSITION / COMPLETE | HIGH | EXISTING (names not canonical) |
+| `QuietCoach.tsx` | Feedback cues tied to tracking states | HIGH | EXISTING (EN-only) |
+| `MentorStage.tsx` + `MentorViewport.tsx` | Three.js + GLB, lazy `ssr:false`, loading/ready/failed, fallback, 15-bone projection | HIGH | EXISTING (medium NOT mandated) |
+| `tracking.ts`, overlays | Skeleton projection feeding a tracking overlay | HIGH | EXISTING (observation gated) |
+| `startWorkoutBridge.ts` | iOS standalone first-tap workaround | HIGH | EXISTING |
+| Viewport conformance doc (DEV) | `vh→svh→dvh`, safe-area vars, no page scroll; real-iPhone validation NOT claimed | HIGH | EXISTING |
+| `three@^0.180.0`, CSP `connect-src += blob:`, `.gitignore += /.tmp/` | Prototype-only dependency + CSP relaxation | HIGH | NOT approved for main |
+| START tap reliability | Multi-tester reports of unreliable/broken START | HIGH | **ACCEPTANCE / IMPLEMENTATION FINDING** |
+| Legacy end-of-rest preview | Confusing; does not reliably match intended same-exercise set flow | HIGH | **ACCEPTANCE / IMPLEMENTATION FINDING** |
 
-**Prototype/product boundary:** the prototype is evidence of *exploration*, not of product intent. Per constitution candidate rule P3, prototype code remains isolated until spec treatment (this document) and owner authorization; promotion of `MentorStage.tsx`, the `three` dependency, or the CSP change requires the STANDARD/CRITICAL flow.
+Valid implementation evidence to preserve (per owner): state-machine experimentation · deadline-based timing · pause/resume · persistent Mentor lifecycle · set progression · REST mechanics · locale routing · beta isolation · prior real-device findings. Presentation choices are **not** promoted to product requirements.
 
-### 14.1 Prototype / product gap table (REQUIREMENT → CURRENT PROTOTYPE → GAP → ACTION)
-
-One of the key pilot outputs: where each confirmed/candidate requirement stands against the observed prototype. Gaps are identified, **not fixed**.
+### 14.1 Prototype / product gap table
 
 | Requirement | Current prototype | Gap | Action |
 |---|---|---|---|
-| FR-2 (UI renders, does not sequence) | Prototype page owns sequencing locally (elapsed-time scripted) | **ARCHITECTURE_REVIEW_REQUIRED** — session-core contract extension | Future T-1 (CRITICAL when authorized) |
-| FR-6 (one-tap auto-advance) | Scripted demo; no real program/timeline | **IMPLEMENTATION_GAP** | Future T-1/T-5 after owner decisions |
-| FR-7 (rest next-up preview) | REST_NEXT_PREVIEW demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-7 |
-| FR-8 (countdown) | TRANSITION_COUNTDOWN demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-8 |
-| FR-9 (pause/resume) | Pause in prototype + shipped player | NONE (exists; extended semantics pending U-4) | U-4 |
-| FR-10 (completion state) | CompleteStage demonstrated | NONE (demonstrated; still CANDIDATE) | Owner confirm FR-10 |
-| FR-11 (fa/en + RTL) | Prototype copy EN-only, hard-coded | **DESIGN_GAP** | T-2 localization work |
-| FR-12 (self-hosted media integrity) | GLB under `public/prototype-assets/` + new `three` dep | **OWNER_DECISION_REQUIRED** (U-5/U-6) + architecture review for dep/CSP | Spec treatment before any promotion |
-| Mentor contract (§9) | MentorStage (Three.js + GLB, fallback) | **OWNER_DECISION_REQUIRED** (U-5) | Resolve U-5 |
-| Quiet feedback (§4) | QuietCoach (EN-only, tracking-tied cues) | **OWNER_DECISION_REQUIRED** (observation features remain gated CP-04/05) | Confirm cue scope |
-| Mobile viewport/safe-area | Conformance doc + svh/dvh/safe-area implementation | NONE (evidence; real-device validation NOT claimed) | Adopt pattern in T-2 |
-| Analytics (§13) | No telemetry in prototype | **DESIGN_GAP** | U-9 |
-| Offline/reconnect (FR-3/FR-4) | Not exercised by the scripted demo | **IMPLEMENTATION_GAP** (prototype) — existing contract already ships | Reuse existing offline contract; T-5 |
+| Prescription modes | Single fixed timed demo flow; no prescription | IMPLEMENTATION_GAP | Resolved product contract (§5.1); implementation later |
+| Modular composition | Page-owned scripted flow | ARCHITECTURE_REVIEW_REQUIRED | Session-contract extension (CRITICAL when authorized) |
+| Intro ownership | Intro once per demo run | NONE | Contract resolved (§5.3) |
+| REST independence | Legacy `REST_NEXT_PREVIEW` naming | IMPLEMENTATION_GAP (naming/semantics) | Conform implementation to contract (§5.3) |
+| Same-exercise set flow | Legacy preview confuses | ACCEPTANCE FINDING | Implementation must conform (§5.3) |
+| Mode-aware progress | Timed-only presentation | IMPLEMENTATION_GAP | One progress capability (§5.4) |
+| Progression policy | Fully scripted | IMPLEMENTATION_GAP | Contract resolved (§5.5) |
+| v1 controls | Partial (pause/resume; start bridge) | IMPLEMENTATION_GAP | Contract resolved (§5.6) |
+| Deferred/skipped outcomes | Absent | IMPLEMENTATION_GAP | Contract resolved (§5.6) |
+| Mentor motion + fallback | Three.js demo + fallback label | NONE (pattern) / OWNER_DECISION CLOSED | Contract resolved (§5.7); medium deferred |
+| Accessibility (timed/audio) | Not addressed | DESIGN_GAP | Contract resolved (§5.8) |
+| Functional audio cues | None (synthesized cues only in shipped player) | DESIGN_GAP | Contract resolved (§5.9) |
+| Localization | EN-only prototype copy | DESIGN_GAP | Localization in implementation |
+| Analytics | None in prototype | DEFERRED | §16 |
 
-Gap tally: NONE 5 · DESIGN_GAP 2 · IMPLEMENTATION_GAP 3 · OWNER_DECISION_REQUIRED 3 · ARCHITECTURE_REVIEW_REQUIRED 1 (13 rows total).
+## 15. Explicit non-requirements (prototype × do-not-promote)
 
-## 15. Explicit non-requirements (prototype behaviors NOT promoted)
+Not canonical merely because the prototype has it: fixed timings · exactly three sets · single-exercise assumption · `TIME_BASED`-only assumption · `REST_NEXT_PREVIEW` naming · “Next Exercise” = next set · Intro inside REST · Three.js · 3D · specific media implementation · pixel-perfect prototype layout. The START/REST findings are **acceptance findings**, not architecture.
 
-- The scripted demo flow and its fixed durations are **not** a requirement.
-- The prototype state vocabulary (incl. WORK_POSITIVE/WORK_CORRECTION/TRACKING_LOST) is **not** a requirement — it reflects prototype exploration of tracking-driven feedback; whether tracking-driven feedback belongs in v1 is an owner decision (and observation features remain gated).
-- Three.js, GLB asset format, bone projection, the CSP `blob:` relaxation, and the iOS click bridge are **implementation details of the prototype**, not requirements.
-- EN-only prototype copy is **not** the localization requirement.
-- The prototype's visual fidelity is **not** a production acceptance bar.
+## 16. Deferred / non-authorizing items
 
-## 16. Unknown owner decisions (blocking before implementation)
+All items below are **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**. None blocks spec readiness, and none is authorized by this document.
 
-| ID | Question | Why it blocks |
-|---|---|---|
-| U-1 | Execution types per exercise (TIMED / REP_BASED / HOLD) and who owns the data | Engine + program contract shape |
-| U-2 | Timing defaults (PREPARE / REST / TRANSITION) and countdown policy | Core behavior |
-| U-3 | Auto-advance exceptions (equipment setup, position change, injury check) | Core behavior + safety |
-| U-4 | Controls semantics (skip, extend/reduce rest, restart set, exit, resume granularity, accidental-skip handling) | Core behavior |
-| U-5 | Is the 3D mentor required in v1? Centrality? Acceptable fallback when unavailable? Fidelity bar? | Single largest scope/tech decision |
-| U-6 | Demonstration media strategy (Lottie/WebM/MP4/SVG/GIF/mixed), preload/offline caching policy | Media architecture + assets |
-| U-7 | Voice/audio coach: none/visual-only/both; TTS pipeline or not | Audio architecture |
-| U-8 | Performance budget and low-end device floor | Acceptance criteria |
-| U-9 | Analytics scope for partial/abandoned sessions | Observability |
-| U-10 | Focus Mode (screen wake/fullscreen/orientation) in scope for v1? | Platform behavior |
-| U-11 | Offline pre-cache policy for demonstration media (precache all / on-first-use / stream) | Storage budget + UX |
-| U-12 | Accessibility additions for timed/audio phases | Compliance |
-| U-13 | Rep-based conversion for Beginner Mode (safety thresholds) | Safety-critical product rule |
+PREPARE numeric default · REST numeric default · countdown numeric default/length · exact audio cue design · `EXERCISE_TRANSITION` vs “recovery” distinction · demonstration media format / preload strategy · Voice/TTS coaching · performance budget / low-end-device floor · analytics representation (incl. deferred/skipped blocks, partial sessions) · Focus Mode (screen wake/fullscreen/orientation; not in v1) · offline media pre-cache · **REP↔TIME automatic conversion thresholds — safety gate: automatic conversion must NOT be enabled until its thresholds/policy are separately resolved** · pause/exit persistence mechanics · accidental-action protection · exact labels/layout · reduced-motion implementation · ARIA/focus/announcement implementation · audio settings mechanics · prescription storage/schema · session outcome/event representation · orchestration implementation · state-machine library · exact component structure · renderer / animation format / asset pipeline · tracking technology.
 
-## 17. Acceptance criteria (for a future implementation task — not this pilot)
+**REMAINING_BLOCKING_PRODUCT_DECISIONS: NONE.**
 
-- AC-1 (CANDIDATE): A beginner can complete a full workout with a single start interaction and no mandatory mid-set UI operation, verified in a real browser on a 360px-wide viewport, in both locales.
-- AC-2 (CONFIRMED-contract): Refresh/connection loss mid-session loses no completed work; the session resumes per the existing snapshot contract.
-- AC-3 (CANDIDATE): Every phase change is announced visually and (if in scope) audibly per the resolved U-decisions.
-- AC-4 (UNKNOWN): Mentor/media failure does not block workout completion — pending U-5.
-- AC-5 (CONFIRMED-contract): No new data leaves the device without an explicit purpose/retention decision; camera remains unrequired.
-- AC-6 (CONFIRMED-contract): Both `/en` and `/fa` render correctly (RTL) with localized copy and numerals.
+## 17. Acceptance criteria (for the future implementation task)
 
-## 18. Out of scope (implementation details deliberately not specified)
+- **AC-1** A beginner completes a full workout with a single start interaction and no mandatory mid-set operation, verified in a real browser at 360px width, in both locales.
+- **AC-2** Refresh/connection loss mid-session loses no completed work; the session resumes per the existing snapshot contract.
+- **AC-3** Execution mode comes from the resolved prescription; the UI never infers it from values.
+- **AC-4** `WORK_SET` handles both modes through one capability; progress is mode-aware.
+- **AC-5** Intro runs once per new exercise identity and never between same-exercise sets; “Next Exercise” appears only on identity change.
+- **AC-6** Same-exercise progression is automatic/minimum-interaction; `CONFIRMATION_REQUIRED` is possible only when prescription/session context requires it.
+- **AC-7** All six v1 controls behave per §5.6; `SKIP SET`/`EXTEND REST`/`REDUCE REST` are absent.
+- **AC-8** Deferring an exercise does not mutate the prescription; a deferred block is re-surfaced before completion and resolved as perform-now or skip; no silent completion.
+- **AC-9** Skipping an exercise marks it neither completed nor failed and does not fail the workout.
+- **AC-10** With the demonstration unavailable, the workout remains fully usable (identity, cue, progress, controls).
+- **AC-11** Reduced-motion never removes essential understanding; timers have a non-animation-only representation.
+- **AC-12** No essential information is audio-only or motion-only; the experience is usable without hearing.
+- **AC-13** No new data leaves the device without an explicit purpose/retention decision; the camera remains unrequired.
+- **AC-14** Both `/en` and `/fa` render correctly (RTL) with localized copy and numerals.
 
-Renderer/framework choice · anim file format · exact GLB/asset pipeline · component structure · engine internals · API contracts · schema changes · CSP details · iOS bridge mechanics — all deferred to the future implementation task, inside the boundaries of `plan.md`.
+## 18. Out of scope (implementation details deliberately unspecified)
+
+Renderer/framework/format · asset pipeline · component structure · orchestration implementation · state-machine library · schema/storage/event representation · CSP details · exact ARIA/copy/focus mechanics · exact numeric defaults — all deferred (§16).
 
 ## 19. Traceability
 
 | Source | Role |
 |---|---|
-| `docs/product/PRODUCT-VISION.md` | CONFIRMED product principles |
-| `docs/product/WORKOUT-EXPERIENCE-V2.md` + `-OPEN-QUESTIONS.md` | CANDIDATE direction + UNKNOWN items |
-| ADR-0001, ADR-0002, ADR-0005, ADR-0010, ADR-0014, ADR-0021 | CONFIRMED architecture rules |
-| `docs/architecture/ARCHITECTURE-PRINCIPLES.md` §13.4, §7 | CONFIRMED rules |
+| **Owner product-decision deltas (2026-09-14: U-1 · HOLD · U-2 · U-3 · U-4 · U-5 · U-12 · v1 audio · U-7 · modularity)** | **Authoritative product input for this specification** |
+| [`../../governance/OWNER_DECISION_GATE.md`](../../governance/OWNER_DECISION_GATE.md) | D2 approval + decision-phase record |
+| `docs/product/PRODUCT-VISION.md` | Canonical product principles |
+| `docs/product/WORKOUT-EXPERIENCE-V2.md` + `-OPEN-QUESTIONS.md` | Original registered direction (open questions now resolved by owner decisions) |
+| ADR-0001 · ADR-0002 · ADR-0005 · ADR-0010 · ADR-0014 · ADR-0021 | CONFIRMED architecture rules |
+| `docs/architecture/ARCHITECTURE-PRINCIPLES.md` §7/§8/§13.3/§13.4 | CONFIRMED rules |
 | `docs/architecture/MG-07-LOCALIZATION-MEDIA.md` | CONFIRMED media/localization contract |
-| `docs/CURRENT_SYSTEM_BASELINE.md` | observed system facts |
-| DEV `prototype/workout-layout-blueprint` @ `a62a7ce` | OBSERVED prototype evidence (never a requirement) |
-| `docs/governance/OWNER_DECISION_GATE.md` | D2 APPROVED (spec/design boundary) |
+| `docs/CURRENT_SYSTEM_BASELINE.md` · DEV `prototype/workout-layout-blueprint` @ `a62a7ce` | Observed facts / EXISTING evidence (never requirements) |
 
 ## HANDOFF
 
 | Field | Value |
 |---|---|
-| CURRENT_STATUS | `SPEC_DRAFTED` (pilot) — awaiting owner review |
-| NEXT_ACTION | Owner reviews this spec + `plan.md` gaps + resolves blocking UNKNOWN owner decisions (U-5, U-1, U-2 are the highest-leverage) |
-| NEXT_ACTION_AUTONOMOUS | `NO` — implementation not authorized; owner decisions required |
-| BLOCKERS | UNKNOWN owner decisions §16 (implementation-blocking) |
+| CURRENT_STATUS | `SPEC_FINALIZED` — awaiting owner merge review |
+| NEXT_ACTION | Owner merges PR #66 (or requests changes); any implementation requires a **separate** explicit authorization and is expected CRITICAL-class |
+| NEXT_ACTION_AUTONOMOUS | `NO` |
+| BLOCKERS | None (blocking product decisions = 0; deferred items are non-authorizing) |
