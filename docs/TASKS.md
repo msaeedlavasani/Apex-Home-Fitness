@@ -19,10 +19,10 @@
 
 | Field | Value |
 |---|---|
-| Active task | `SPECKIT-STAGE6-01` — Spec Kit Development Admission Gate / Stage 6 governance integration (**GOVERNANCE/DEVELOPMENT-CONTROL-PLANE ONLY**; owner-authorized 2026-09-14; implementation NOT authorized) |
+| Active task | `NONE` — **SPECKIT-STAGE6-01 DELIVERED / CLOSED 2026-09-14** (Development Admission Gate; PR #68 rebase-merged; main `172f7c8619eef88b18a9f04fd2d26edc429a2e9e`; post-main CI PASS run `34896218478`; Admission Gate ACTIVE ON MAIN; trust-boundary checks A–D PASS; Stage-6 branch retired per §J) |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | `governance/spec-kit-admission-gate` (based on `origin/main` `49ea5cc`) |
-| State | `ACTIVE — READY_FOR_OWNER_MERGE_REVIEW` — governance/docs/validator changes only; no source/runtime/dependency/DB/Docker/Production change authorized |
+| Branch | (none) — `governance/spec-kit-admission-gate` retired per BRANCHING_POLICY §J after merge |
+| State | `CLOSED` — Admission Gate active on main; STANDARD/CRITICAL work subject to admission enforcement; implementation NOT authorized |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Stage-6 admission-gate PR merge review**; other gated items unchanged |
@@ -1071,7 +1071,7 @@ deleted — they are deferred until P0–P3 foundations are established.
 
 **Closure record (2026-09-14):** SPECIFICATION COMPLETE — **implementation NOT started / NOT authorized**. PR #66 rebase-merged into `main` → `24a09d4b42d52f9b3f6961c0cb7833209adabca3` (pre-rebase PR head `c6e3236ccf66c5ab5e47677aa1b060c5c31aefa8`); post-merge Main CI PASS run `34844015916` (build + e2e); source branch `docs/workout-experience-spec-pilot` retired per BRANCHING_POLICY §J (rebase SHA-rewriting: equivalence proven by range-diff 1:1 + tree identity vs the merged tree). `SPEC_READINESS = READY`; `REMAINING_BLOCKING_PRODUCT_DECISIONS = NONE`. Any implementation requires a NEW explicit owner authorization (expected CRITICAL-class).
 
-### SPECKIT-STAGE6-01 — Spec Kit Development Admission Gate / Stage 6 governance integration — **ACTIVE — READY_FOR_OWNER_MERGE_REVIEW**
+### SPECKIT-STAGE6-01 — Spec Kit Development Admission Gate / Stage 6 governance integration — **DELIVERED / CLOSED 2026-09-14**
 
 | Field | Value |
 |---|---|
@@ -1087,6 +1087,8 @@ deleted — they are deferred until P0–P3 foundations are established.
 **Delivered:** Development Admission Contract (`docs/governance/DEVELOPMENT-ADMISSION.md`); machine-enforced admission validation in `scripts/governance-runtime.mjs` (`admission` / `admissions` commands, fail-closed) + `npm run admission:check` / `admission:test` + CI wiring; scenario tests A–H (`tests/admission-runtime.test.mjs`); Workout V2 handoff admission record (`docs/admissions/WORKOUT-V2-IMPL-01.admission.json` — DENIED by design); constitution partially ratified (§3 P1/P3; P2/P4 remain CANDIDATE); specs/README + INDEX routing.
 
 **Explicitly NOT authorized / done:** Workout V2 implementation, session-engine/mentor/prescription runtime work, schema/DB changes, renderer/dependency selection, constitution ratification beyond P1/P3, production deployment.
+
+**Closure record (2026-09-14):** DELIVERED / CLOSED — **implementation NOT started / NOT authorized**. PR #68 rebase-merged into `main` → `172f7c8619eef88b18a9f04fd2d26edc429a2e9e` (reviewed head `fc1ff2e2dd5fd29ee3c270c95c60056e383f30c3`); post-merge Main CI PASS run `34896218478` (build + e2e, including the new Admission gate validation/tests steps); trust-boundary audit PASSED (CHECK A–D); admission tests 37/37 PASS; **Admission Gate ACTIVE ON MAIN** — STANDARD/CRITICAL work now subject to admission enforcement; source branch `governance/spec-kit-admission-gate` retired per BRANCHING_POLICY §J (rebase equivalence: range-diff 1:1 + tree identity). Workout V2 remains: PRODUCT READY · SPEC READY · BLOCKING NONE · IMPLEMENTATION NOT AUTHORIZED · ADMISSION DENIED BY DESIGN.
 
 ---
 
@@ -1209,11 +1211,12 @@ applies before workflow continuation.
 ## Execution state
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
-2026-09-01. **ACTIVE_TASK: `SPECKIT-STAGE6-01` (Spec Kit Development Admission
-Gate — governance/docs/validator changes only; READY_FOR_OWNER_MERGE_REVIEW).
-NEXT_AUTHORIZED_TASK: NONE pending owner merge review of the Stage-6 PR; any
-Workout V2 implementation additionally requires a new explicit owner
-implementation authorization (spec READY, blocking decisions 0).**
+2026-09-01. **ACTIVE_TASK: NONE — SPECKIT-STAGE6-01 DELIVERED / CLOSED
+2026-09-14 (Development Admission Gate active on main; main `172f7c8`; Main CI
+PASS run 34896218478). NEXT_AUTHORIZED_TASK: NONE — Workout Experience remains
+PRODUCT READY / SPEC READY / IMPLEMENTATION NOT AUTHORIZED (admission DENIED
+by design); any V2 implementation requires a new explicit owner
+implementation-admission authorization (CRITICAL-class).**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
 begun, and backlog priority is NOT permission to start. The queue becomes
