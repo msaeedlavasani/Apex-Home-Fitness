@@ -87,6 +87,8 @@
 | Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record + Stage-2 contradiction review | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md), [`governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md`](governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md) |
 | Forward-looking feature specs + Spec Kit scaffolding contract (STAGE 1; no feature specs yet) | [`specs/README.md`](specs/README.md), [`../.specify/templates/`](../.specify/templates/) |
 | Spec Kit constitution — PROPOSED / NON-BINDING router (STAGE 2; owner ratification required) | [`../.specify/constitution.md`](../.specify/constitution.md) |
+| Current-system baseline snapshot (bounded; four-label vocabulary) | [`CURRENT_SYSTEM_BASELINE.md`](CURRENT_SYSTEM_BASELINE.md) |
+| SQLite→PostgreSQL migration triggers / runbook (PREPARED — MIGRATION NOT AUTHORIZED; D4) | [`architecture/DB-MIGRATION-TRIGGERS.md`](architecture/DB-MIGRATION-TRIGGERS.md) |
 
 ## Historical evidence
 
