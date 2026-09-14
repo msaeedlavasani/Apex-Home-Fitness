@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — AHF Design Brain vNext P0 integration CLOSED; Workout Experience Specification is the next canonical design step but is not started; CP-05 physical acceptance remains an evidence gate |
+| Active task | `SPECKIT-ADOPTION-01` — Spec Kit brownfield adoption Stages 0–3 + SQLite→PostgreSQL trigger runbook (docs-only; OWNER-AUTHORIZED 2026-09-14 via `governance/OWNER_DECISION_GATE.md`: D1 APPROVED Option A, D4 APPROVED Option A; **Stage 4 NOT authorized**) |
 | Profile | `CODE_NO_DEPLOY` |
-| Branch | (none) |
-| State | `READY` — CP-03 model-delivery incident CLOSED; broader feasibility matrix remains partially NOT_MEASURED and optional; all unrelated work remains closed or gated |
+| Branch | `docs/spec-kit-adoption-stage-0` (based on `origin/main` `ff1202c6`) |
+| State | `ACTIVE` — documentation/`.specify/` Markdown scaffolding only; no source, dependency, schema, Docker, CI, or Production change authorized |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
 | Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
-| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; other gated items unchanged |
+| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **D2 — Stage-4 Spec Kit pilot authorization**; other gated items unchanged |
 
 ## Strategic basis
 
@@ -1025,6 +1025,25 @@ deleted — they are deferred until P0–P3 foundations are established.
 | `rtl-layout.spec.ts` test debt | **RESOLVED** — FIXED + VERIFIED in STABILIZATION BATCH S06+S05 (2026-09-01) |
 | Signed-in Production recheck (standing) | **RETAINED** — operator-held credential required; not a backlog task |
 
+### SPECKIT-ADOPTION-01 — Spec Kit brownfield adoption Stages 0–3 + PostgreSQL trigger runbook (docs-only) — **ACTIVE (OWNER-AUTHORIZED 2026-09-14)**
+
+| Field | Value |
+|---|---|
+| PRIORITY | P4 (supporting governance/process work) |
+| DEPENDENCIES | NONE — audit + adoption design complete and recorded |
+| AUTONOMOUS_ELIGIBILITY | `READY` — Stages 0–3 + D4 runbook ONLY (Owner decision D1 APPROVED Option A, D4 APPROVED Option A, D5 RESOLVED; `governance/OWNER_DECISION_GATE.md`); Stage 4 pilot, Stage 5 friction review, and Stage 6 tooling remain NOT authorized |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `NONE` |
+| DB_SENSITIVITY | `NONE` — the D4 runbook is documentation only; no schema/DB change authorized |
+| ARCHITECTURE_GATE | `NONE` — adoption shape approved via D1 (thin/by-reference; existing authority remains authoritative) |
+| OWNER_DECISION_GATE | D2 (Stage-4 pilot vehicle) pending — blocks Stage 4 only |
+
+**Authorized scope:** Stage 0 — place the four audit/adoption records (`docs/architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md`, `docs/architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md`, `governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`, `governance/OWNER_DECISION_GATE.md`) + INDEX/TASKS registration. Stage 1 — `.specify/templates/` (spec/plan/tasks) + `docs/specs/README.md`. Stage 2 — `.specify/constitution.md` (PROPOSED / NON-BINDING, by-reference) + independent contradiction review. Stage 3 — `docs/CURRENT_SYSTEM_BASELINE.md` (bounded snapshot). D4 — `docs/architecture/DB-MIGRATION-TRIGGERS.md` (PREPARED RUNBOOK — MIGRATION NOT AUTHORIZED). Delivery: four independently revertible commits on `docs/spec-kit-adoption-stage-0`; push without merge; integration via PR + exact-SHA Main CI per canonical policy.
+
+**Explicitly NOT authorized by this task:** Stage 4 activities (Workout Experience Specification pilot, prototype promotion, `MentorStage.tsx`/three/CSP changes), Stage 5–6 (friction review, default adoption, `governance-runtime.mjs` extension), any source/dependency/lockfile/schema/Docker/CI/Production change, runtime migration (D5 resolved: keep Node 22), quiz TS port (D6: WHEN-TOUCHED).
+
+**Acceptance:** per-stage `npm run governance:check` PASS; Stage-2 contradiction review with zero unresolved authority contradictions; `git diff origin/main` limited to authorized documentation + `.specify/` Markdown; close-out report per `AI_CHANGE_TEMPLATE.md`.
+
 ---
 
 ## Autonomous batch readiness
@@ -1146,7 +1165,10 @@ applies before workflow continuation.
 ## Execution state
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
-2026-09-01. **ACTIVE_TASK: NONE. NEXT_AUTHORIZED_TASK: NONE.**
+2026-09-01. **ACTIVE_TASK: `SPECKIT-ADOPTION-01` (docs-only; OWNER-AUTHORIZED
+2026-09-14 — see P4 Mission Queue). NEXT_AUTHORIZED_TASK: NONE pending D2
+(Stage-4 Spec Kit pilot authorization); Workout Experience Specification
+remains NOT started.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
 begun, and backlog priority is NOT permission to start. The queue becomes
