@@ -181,6 +181,23 @@
       "sunday": "Sunday"
     }
   },
+  "WorkoutV2": {
+    "shellLabel": "Guided workout",
+    "sessionLive": "Session running",
+    "start": {
+      "title": "Start workout",
+      "hint": "One tap to start. Minimum interaction until finish."
+    },
+    "preparing": {
+      "label": "Getting ready",
+      "announcement": "Starting in {seconds} seconds",
+      "workingTowards": "First: {exercise}"
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume"
+    }
+  },
   "WorkoutPlayer": {
     "phase": {
       "ready": "Ready",

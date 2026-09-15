@@ -181,6 +181,23 @@
       "sunday": "یکشنبه"
     }
   },
+  "WorkoutV2": {
+    "shellLabel": "تمرین هدایت‌شده",
+    "sessionLive": "جلسه در حال اجراست",
+    "start": {
+      "title": "شروع تمرین",
+      "hint": "با یک لمس شروع کن. تا پایان حداقل تعامل."
+    },
+    "preparing": {
+      "label": "آماده‌سازی",
+      "announcement": "شروع در {seconds} ثانیه",
+      "workingTowards": "نخست: {exercise}"
+    },
+    "actions": {
+      "pause": "توقف",
+      "resume": "ادامه"
+    }
+  },
   "WorkoutPlayer": {
     "phase": {
       "ready": "آماده",
