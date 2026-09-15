@@ -1,7 +1,7 @@
 {
   "TASK_ID": "WORKOUT-V2-IMPL-01",
   "TASK_CLASS": "CRITICAL",
-  "SCOPE_SUMMARY": "Workout Experience v2 implementation admission record — consumes the finalized canonical specification docs/specs/0001-workout-experience/spec.md. Current state per the Stage-6 handoff contract: specification READY, implementation NOT authorized.",
+  "SCOPE_SUMMARY": "Workout Experience v2 implementation admission record — consumes the finalized canonical specification docs/specs/0001-workout-experience/spec.md, the implementation-ready architecture (plan.md), the dependency analysis (dependencies.md), and the modular work-package decomposition (tasks.md). Preparation status: specification READY; architecture READY; dependency analysis READY; work packages READY. Current state: specification/planning complete, implementation NOT authorized.",
   "SPEC_REQUIRED": "YES",
   "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
   "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
@@ -14,5 +14,6 @@
   "ARCHITECTURE_PLAN_STATUS": "READY",
   "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
   "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0001-workout-experience/dependencies.md",
   "DEPENDENCY_ANALYSIS_STATUS": "READY"
 }

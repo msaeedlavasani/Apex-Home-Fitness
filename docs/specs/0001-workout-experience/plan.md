@@ -1,74 +1,189 @@
-# PLAN 0001 — Workout Experience (Guided Workout Player)
+# PLAN 0001 — Workout Experience (Guided Workout Player) — V2 Implementation Architecture
 
 | Field | Value |
 |---|---|
-| STATUS | `FINALIZED (design outline)` — owner-mandated pilot artifact set; implementation NOT authorized |
-| SPEC | [`spec.md`](./spec.md) |
-| TASK_PROFILE | `CODE_NO_DEPLOY` (this document) — the eventual implementation is expected **CRITICAL** |
-| Date | 2026-09-14 · Baseline: main `80b6eb5` |
+| STATUS | `READY — implementation-ready architecture (CRITICAL admission preparation)` |
+| SPEC | [`spec.md`](./spec.md) — the controlling product contract (SPEC_READINESS: READY; BLOCKING_OWNER_DECISIONS: NONE) |
+| TASK | `WORKOUT-V2-IMPL-01` — CRITICAL implementation-admission preparation |
+| TASK_PROFILE | `PRODUCTION_BOUND` (implementation, once authorized) |
+| IMPLEMENTATION | **NOT AUTHORIZED** — this plan prepares admission only (see §19 non-goals and HANDOFF) |
+| Date | 2026-09-15 · Baseline: main `897e376` (fresh canonical main; V1 prototype branches are evidence only — §14) |
 
-Boundaries and reversible choices only. No source code, no technology mandate, no schema change. Where technology is undecided (media medium, mentor implementation, audio), an abstraction boundary is preserved and the choice is deferred.
+This plan **prepares** the implementation architecture for the whole Workout Experience before any code is written. It invents no product semantics: every rule below derives from `spec.md`. Where the spec is silent, this plan proposes an **implementation decision** and labels it as such.
 
-## 1. Approach
+## 1. System context (current architecture, evidence-based)
 
-Extend, don’t replace (AGENTS.md §3). The existing pure session core (`src/lib/workout/sessionCore.ts`, ADR-0002) and its React adapter stay the execution foundation. The product contract now requires **modular composition** (START · PREPARING · EXERCISE_INTRO · WORK_SET · REST · EXERCISE_TRANSITION · COMPLETE) with an **orchestration layer** owning sequencing/applicability/transitions/block ordering/session actions — richer than today’s fixed phase set and global `autoAdvance`. That contract extension is the heart of the future implementation and the reason it is CRITICAL-class.
+From [`../../CURRENT_SYSTEM_BASELINE.md`](../../CURRENT_SYSTEM_BASELINE.md) and the current codebase:
 
-Mobile posture for this experience: `WEB-SPECIFIC` (browser-presentation surface; no native equivalent claimed; no new client storage) — ADR-0005 guardrail 3.
+- Next.js App Router; **pure session core** `src/lib/workout/sessionCore.ts` (ADR-0002) + thin React adapter `src/components/workout/useWorkoutEngine.ts` + `WorkoutPlayer.tsx` on `/[locale]/workout`.
+- The core today has a **fixed phase set** (`READY/EXERCISING/RESTING/COMPLETED`) and a global `autoAdvance` boolean; there is **no orchestration layer** and **no modular composition**.
+- Offline snapshots (`src/lib/offline/*`, S-05 versioned snapshots) and conflict policy already exist.
+- Program data arrives via the normalized program contract + `programSchedule` enrichment; Prisma/SQLite server plane; `exerciseId` identity (ADR-0001).
+- Localization (fa/en), platform kit, DESIGN_SYSTEM, ADR-0005 mobile guardrails, TS-01 privacy posture are binding.
 
-## 2. Invariants that must not break
+**Consequence:** V2 needs a real contract extension of the pure core + a new orchestration boundary. That is why the implementation is CRITICAL-class.
 
-- Session transitions only through the pure session core, never the adapter (ADR-0002; PRINCIPLES §13.4).
-- Source independence: both generators resolve into the **same canonical prescription semantics** (PRINCIPLES §8; spec §5.1).
-- Identity ≠ prescription (owner decision U-1). Exercise identity remains canonical (ADR-0001). *Exercise semantics ≠ execution mode.*
-- Offline contract: snapshots remain versioned/backward-compatible; completed work never regresses (S-05; `src/lib/offline/*`).
-- One-way dependency direction (PRINCIPLES §4).
-- Media/localization contracts (MG-07; ADR-0010).
-- Privacy: no new data collection; camera gated and optional (TS-01; ADR-0014/0021).
-- Playability in degraded mode when the moving demonstration is unavailable (spec §5.7).
-- No control or module owns global behaviour; orchestration is authoritative (spec §2/§5.6).
-- Explicitly **not** in v1: `SKIP SET`, `EXTEND REST`, `REDUCE REST`, Voice/TTS, the future module examples.
+## 2. Binding rules carried from the spec (must survive in every work package)
 
-## 3. Proposed boundaries (architecture level)
+Modular composition with orchestration authority · `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION` · two first-class prescription modes as **one** `WORK_SET` capability · one mode-aware progress capability · Intro once per new exercise identity · REST owns no Intro/Next-Exercise/identity/order · Next-Exercise = identity change only · auto-advance default with `CONFIRMATION_REQUIRED` permitted · the six v1 controls only · deferral never mutates the prescription and must resurface before `COMPLETE` · skipped ≠ completed ≠ failed · moving demonstration in the normal experience with **no renderer/3D/format/pipeline mandate** and a usable degraded mode · one accessibility contract for timers/controls · functional audio cues supplementary · Voice/TTS deferred · no silent behavior change (RELEASE_POLICY RULE 4).
 
-| Boundary | Responsibility | Keep separable from | Notes |
-|---|---|---|---|
-| Experience shell | Full-surface presentation, safe-area/viewport contract, locale/RTL framing | Session logic | Mobile-first; inherits prototype viewport lessons (EXISTING evidence) |
-| Orchestration/session layer | Module applicability · sequencing · transitions · Exercise Block ordering · session actions · completion eligibility | UI components | Contract-first change (CRITICAL) |
-| Session timeline core | Module/phase semantics + progression policy (`AUTO` / `CONFIRMATION_REQUIRED`) | UI | Additive to ADR-0002 core |
-| Prescription resolution boundary | Resolves the workout prescription (incl. explicit execution mode) into blocks/sets | Generator internals; UI | Same canonical semantics for AI and rules |
-| WORK_SET + progress capability | One capability; mode-aware presentation (`REP_BASED` / `TIME_BASED`) | Component internals | No parallel progress systems |
-| Mentor presentation boundary | Moving demonstration when available; capability detection; degraded mode | Session logic; asset delivery | Renderer-agnostic; lazy; no Three.js mandate |
-| Demonstration media boundary | Assets + caching policy | Component internals | MG-07 manifest; format deferred |
-| Session-action boundary | PAUSE/RESUME · EXIT · SKIP REST · RESTART CURRENT SET · DO LATER · SKIP FOR THIS SESSION | Module internals | Acts on blocks/modules via orchestration |
-| Outcome boundary | COMPLETED · OUTSTANDING/DEFERRED · SKIPPED FOR THIS SESSION | Module internals | Product-level distinction; representation deferred |
-| Audio boundary | Functional cues (supplementary) | Session logic | Voice/TTS deferred; no new settings system |
-| Localization boundary | fa/en keys, numerals, RTL | Copy strings | MG-07 key structure |
-| Offline/persistence boundary | Snapshot + outbox | Experience shell | Existing contract, additive evolution only |
+**Explicit architecture non-goals:** TIME_BASED-only execution · global three-set or single-exercise assumptions · prototype timing constants as defaults · `REST_NEXT_PREVIEW` semantics · next-set-as-Next-Exercise · Intro inside REST · Three.js/3D/renderer/asset-format/tracking mandates · prototype state names as canonical vocabulary · pixel-perfect prototype layout · the legacy unreliable START interaction · the confusing same-exercise rest preview behavior.
 
-## 4. Data/session contract considerations (no schema change here)
+## 3. Shared V2 architecture
 
-- Module/phase semantics + progression policy must be **additive** to `SessionState`/`SessionCommand`/`SessionEffect` with safe defaults (PRINCIPLES §9). Snapshot `snapshotVersion` remains the backward-compatibility precedent.
-- The resolved prescription must carry explicit execution semantics before the session consumes it; **where** that lives (schema / `ProgramExercise` / generated-plan payload / enrichment output / another contract) is a deferred implementation decision (spec §16).
-- Session outcome states (completed / deferred / skipped) need a product-level distinction; their persistence/event representation is deferred.
-- Identity: display names stay display-only; canonical `exerciseId` where resolvable (ADR-0001).
+**Workout Session = Resolved Prescription + Session Orchestration + Composed Experience Modules.**
 
-## 5. Testing strategy (for the future implementation task)
+Implementation boundaries (mapped to the current codebase — **not** one component per product module):
 
-Targeted-first per `docs/CI.md`: session-core unit/contract tests + golden-trace updates + effect-boundary tests; targeted E2E on the workout route in both locales; real-browser acceptance at 360px (RELEASE_POLICY RULE 6/7); degraded-mode and reduced-motion assertions; control-semantics tests (incl. defer/skip outcome states). Full E2E stays on the nightly lane unless the release path requires it.
+| Layer | Implementation boundary (proposed) | Owns |
+|---|---|---|
+| **Session core (contract extension)** | `src/lib/workout/sessionCore.ts` evolved additively: module/phase vocabulary + progression policy (`AUTO` \| `CONFIRMATION_REQUIRED`) | Pure state transitions; no I/O, no React |
+| **Orchestration** | New pure module `src/lib/workout/orchestration.ts` (orchestrator contract) + adapter wiring in `useWorkoutEngine` | Applicability · module order · active exercise · set/rest progression · transitions · deferred/skipped resolution · completion eligibility · session actions |
+| **Experience presentation** | `src/components/workout/experience/*` (shell + stage components) | Rendering current state; per-module local behavior only |
+| **Mentor presentation** | Boundary component (lazy, capability-detected) | Demonstration + degraded presentation |
+| **Progress** | ONE mode-aware progress component | Display of prescription/session state |
+| **Audio cues** | Small cue capability reacting to state | Supplementary cues only |
+| **Controls** | Control surface dispatching orchestration actions | No progression logic |
 
-## 6. Reversibility
+Rules: presentation never sequences; no module owns global progression; no competing mini state machines; one source of progression truth (orchestration). Product module names (START/PREPARING/EXERCISE_INTRO/WORK_SET/REST/EXERCISE_TRANSITION/COMPLETE) are **concepts**, not a required file/component inventory.
 
-Every boundary can be adopted independently; none requires a schema change to introduce. Media/mentor/audio remain behind interfaces so technology choices can change without touching session logic. Rollback for the future implementation: feature flag or page-level rollback (existing patterns) plus the standard release rollback (RELEASE_POLICY).
+## 4. Prescription contract
 
-## 7. Deferred (non-authorizing)
+- `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION`: identity says *what movement*; the prescription says *how it is prescribed here*.
+- Execution semantics are **explicit on the resolved prescription** before the session consumes it: `executionMode ∈ {REP_BASED, TIME_BASED}` + targets (reps or seconds) + set count + rest per prescription.
+- **One capability**: `WORK_SET` renders/executes either mode; progress unit follows the mode.
+- HOLD is **not** a third mode in v1; a static hold is `TIME_BASED` with distinct movement/coaching semantics.
+- **Source independence:** AI, rules, and future authorized adaptation must all resolve into this **same canonical prescription contract**; provenance must not change execution semantics.
+- **Storage of the mode remains an implementation decision** (spec §16) — this plan deliberately does **not** select a schema. **WP-03** may propose an additive representation (existing `ProgramExercise`/enrichment surfaces first) inside its **DB_CHANGE** gate if a schema change proves necessary; no other work package may touch the prescription data representation.
+- **No hardcoded per-exercise modes**; no invented policy that chooses between modes (that policy is future authorization).
 
-The full deferred list lives in spec §16 — including numeric defaults, media format, Voice/TTS, performance budget, analytics representation, Focus Mode, offline pre-cache, conversion thresholds (safety-gated), persistence mechanics, ARIA/focus/copy, and all schema/renderer/implementation selections.
+## 5. Session orchestration contract
+
+Owns: session lifecycle · composed module order · active exercise · **set progression** · **rest progression** · exercise transition · deferred exercises · skipped-for-session exercises · completion eligibility · pause/resume · exit boundary · auto vs confirmation-required transitions.
+
+Session states (implementation view): `LOADING → READY → (PREPARING) → [exercise blocks…] → COMPLETE_ELIGIBLE → COMPLETE`, with orthogonal flags: `PAUSED`, `EXITED`, deferred set, skipped set.
+
+- `COMPLETE` is reachable **only** when no unresolved deferred block remains.
+- Pause preserves position and execution context; exit is distinct from complete.
+- Confirmation gates are orchestration/prescription-applicability rules — never module-owned branches.
+
+## 6. Exercise Block contract
+
+An **Exercise Block** is composed from the resolved prescription:
+
+```
+EXERCISE_INTRO (once, new identity) → WORK_SET × N (prescription-driven) → REST / EXERCISE_TRANSITION (prescription-driven)
+```
+
+Rules: Intro once before the first set of a new identity; additional sets never repeat Intro; “Next Exercise” only on identity change; set count, execution mode and targets all come from the prescription.
+
+## 7. Session controls (v1 boundary)
+
+In v1: `PAUSE/RESUME` · `EXIT WORKOUT` · `SKIP REST` · `RESTART CURRENT SET` · `DO EXERCISE LATER` · `SKIP EXERCISE FOR THIS SESSION`. Not v1: `SKIP SET`, `EXTEND REST`, `REDUCE REST`.
+
+Proposed representation: controls dispatch **orchestration actions**; `DO LATER` maintains a **session-scoped deferred list** (execution order only — never written back to the prescription); deferred blocks must be resurfaced before completion and resolved as perform-now or skip-this-session; `SKIP FOR THIS SESSION` removes the block from outstanding work without marking completed/failed; `RESTART CURRENT SET` restarts only the active set; `SKIP REST` ends only the current rest.
+
+## 8. Mentor presentation boundary
+
+Mentor/demo is a **consumer** of session state and must never own orchestration. The normal v1 target is a moving/animated, Mentor-centered demonstration; the architecture must **not mandate** Three.js, 3D, a renderer, an asset format, or tracking technology. Required: capability detection, a **degraded mode** preserving identity/static visual where available/essential cue/set-progress state/mode-aware progress/controls, and **recognisable-and-instructive** fidelity.
+
+## 9. Progress contract
+
+One mode-aware progress capability: `REP_BASED` → `completed/target` (e.g. `6 / 10`); `TIME_BASED` → `remaining/elapsed` (e.g. `40 → 0`). It displays state; it never owns progression. No parallel per-mode progress subsystems.
+
+## 10. Audio / accessibility boundary
+
+Functional audio cues (countdown, start, end, rest-ending) are **supplementary**; no essential state may be audio-only or motion-only; the accessibility baseline (non-animation-only timers, reduced motion, accessible controls, contrast, mobile width) is part of the stage acceptance criteria. Voice/TTS stays deferred.
+
+## 11. Ownership rules (one owner per responsibility)
+
+| Responsibility | Sole owner |
+|---|---|
+| State transitions | session core (pure) |
+| Sequencing/applicability/order/completion | orchestration |
+| Rendering current state | presentation modules |
+| Prescription semantics | resolved prescription contract |
+| Deferred/skipped session state | orchestration (session-scoped) |
+| Canonical prescription data | untouched by any control |
+
+No duplicated progression logic; no module-level progression forks.
+
+## 12. Data/state flow
+
+```
+program (identity + prescription fields)
+   → resolved prescription (explicit executionMode + targets + sets + rest)
+      → orchestration (module order, active block, set/rest state, deferred/skipped, completion)
+         → presentation (shell + module views), mentor (demo/degraded), progress (mode-aware), audio (cues)
+            → user controls → orchestration actions (never prescription writes)
+```
+
+## 13. Failure / degraded behavior
+
+Demo/renderer failure → degraded presentation, workout fully usable; asset failure → same; no silent completion with unresolved deferred blocks; offline resume keeps the existing snapshot contract.
+
+**Rollback:** every work package lands behind stage-level reversibility (feature flag or page-level rollback); the shipped V1 player remains the operational fallback until a stage freezes; release-level rollback follows `docs/RELEASE_POLICY.md`.
+
+## 14. V1 branch evidence policy (read-only audit, 2026-09-15)
+
+| Branch | Facts | Classification |
+|---|---|---|
+| `prototype/workout-layout-blueprint` | 19 commits ahead / **12 behind main**; 58 files vs main; contains the richest exploration (intro experience, unified set presentation, rest preview fix, 3D mentor, viewport conformance doc) | **REUSABLE_IMPLEMENTATION_EVIDENCE / DIAGNOSTIC_EVIDENCE / USEFUL_ASSET** — selectively, re-expressed against current contracts. **Never a V2 baseline** (missing 12 commits of governance/spec artifacts) |
+| `prototype/ahf-3d-mentor-baseline` | 1 commit; **ancestor of blueprint**; 33 files | **USEFUL_ASSET / DIAGNOSTIC_EVIDENCE** (superseded by blueprint for exploration) |
+| `diagnostic/b2-3b-rest-handoff` | 18 commits; blueprint + intro components + gated runtime handoff diagnostics (debug overlay + shell tracing) | **DIAGNOSTIC_EVIDENCE** (instrumentation; do not ship) |
+
+Per-difference classification rule for the implementation task: `CANONICAL_REQUIREMENT` (already in spec), `REUSABLE_IMPLEMENTATION_EVIDENCE` (concept/mechanics re-implementable against contracts), `USEFUL_ASSET` (e.g. the mentor GLB, viewport conformance findings), `DIAGNOSTIC_EVIDENCE` (bugs found: START unreliability, same-exercise rest preview confusion), `LEGACY_BEHAVIOR_DO_NOT_COPY` (§2 list), `CONFLICT_WITH_CURRENT_SPEC` (any prototype state/behavior contradicting the spec), `UNKNOWN_REQUIRING_REVIEW`.
+
+**V1 evidence worth reusing (validated against the spec):** session/state concepts (re-expressed, not copied) · deadline-based timing · pause/resume timeline preservation (an existing core behavior) · persistent mentor lifecycle · set progression & rest mechanics (as concepts) · locale routing · prototype isolation · real-device findings (START reliability, rest-preview confusion, viewport behavior) · the mentor GLB asset and the viewport/safe-area conformance findings.
+
+## 15. Migration strategy (V1 evidence → V2)
+
+1. V2 is built **cleanly on fresh main** after authorization; the prototype branches are **read-only evidence**.
+2. Promotion of any concrete artifact (e.g. the mentor GLB, a viewport CSS pattern) requires an explicit note in the work package that owns it, with the classification above.
+3. Prototype state names, timing constants, TIME_BASED-only assumptions, `REST_NEXT_PREVIEW`, THREE.js/3D mandates, and pixel-perfect layout are **explicitly excluded**.
+4. The legacy START interaction is treated as a **known acceptance risk** — redesigned and explicitly tested (§17), never inherited.
+5. The same-exercise rest preview behavior is **not** carried forward; the spec’s set/rest/next-exercise rules govern.
+
+## 16. Testing strategy (per `docs/CI.md` targeted-first policy)
+
+| Layer | Used by |
+|---|---|
+| typecheck/lint/static | every WP |
+| unit | pure modules (prescription resolution, orchestration, progress) |
+| session-core contract/golden traces | WP-01/02 (`tests/session-golden-trace.test.tsx` pattern) |
+| integration (adapter/orchestration wiring) | WP-02/03 |
+| contract tests | prescription + module contracts |
+| targeted UI tests + mobile viewport (360px) | stage WPs |
+| real-iPhone Owner acceptance | stage freezes that present on-device behavior (START especially) |
+| broader E2E | release/integration boundaries only (nightly lane) |
+
+Full E2E after every small work package is **not** required (governance).
+
+## 17. START readiness (first slice)
+
+`START_DEPENDENCIES`: session-core contract extension (module/phase vocabulary) + orchestration skeleton (lifecycle, `READY → PREPARING`, start action) + experience shell (viewport/safe-area contract) + START stage component + locale-ready copy keys.
+`START_SHARED_CONTRACTS`: session-core state/command/effect additions · orchestration action interface (`start`, `pause`, `resume`) · presentation view-model shape.
+`START_ALLOWED_SCOPE`: `START` + `PREPARING` presentation; start/pause/resume actions; safe-area/viewport shell; fa/en copy; reduced-motion-safe static presentation.
+`START_PROHIBITED_SCOPE`: `WORK_SET` execution, REST, transitions, deferral/skip, mentor implementation, schema changes, renderer/dependency choices, any control beyond start/pause/resume.
+`START_TESTS`: unit (start/pause/resume transitions), orchestration contract tests, targeted UI test on both locales at 360px, real-iPhone tap/interactivity acceptance (the legacy reliability risk **must be explicitly verified**, not assumed).
+`START_REAL_DEVICE_ACCEPTANCE`: **required** (Owner).
+`START_FREEZE_CRITERIA`: accepted against the shared V2 architecture (orchestration authority, no module-owned progression), fa/en + reduced motion verified, real-device START reliability evidenced, snapshot/resume intact.
+
+## 18. Staged validation path (acceptance order, not a global model)
+
+`START → PREPARING → EXERCISE_INTRO/DEMO → SET 1 → REST 1 → SET 2 → REST 2 → SET 3 → ENDING/COMPLETE` is the **walkthrough** used to accept stages; it must not be encoded as a global workout model (no fixed three sets, no single-exercise assumption).
+
+Loop per stage: contract → implement stage → targeted verification → real-iPhone acceptance where required → **freeze the accepted boundary** → next stage. A freeze stabilizes the accepted boundary against the shared architecture; it never authorizes an independent architecture.
+
+## 19. Non-goals (this plan)
+
+No product semantics beyond the spec · no implementation · no V2 branch creation · no schema/storage decision · no renderer/dependency choice · no Voice/TTS · no observation/camera integration (separately gated) · no prototype branch merge/rebase.
 
 ## HANDOFF
 
 | Field | Value |
 |---|---|
-| CURRENT_STATUS | `FINALIZED (outline)` |
-| NEXT_ACTION | Owner merges PR #66; implementation requires separate explicit authorization |
+| CURRENT_STATUS | `READY — implementation-ready architecture; admission NOT granted` |
+| NEXT_ACTION | Owner reviews the CRITICAL implementation-admission package (PR) and authorizes or rejects `WORKOUT-V2-IMPL-01` implementation |
 | NEXT_ACTION_AUTONOMOUS | `NO` |
-| BLOCKERS | None |
+| BLOCKERS | Owner implementation authorization (admission DENIED by design until then) |

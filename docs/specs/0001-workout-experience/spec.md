@@ -27,7 +27,7 @@ Labels: **CONFIRMED** (binding — owner decision or canonical authority) · **E
 
 ## 0.2 Artifact set & template mapping
 
-Owner-mandated pilot artifact set (`spec.md` + `plan.md` + prospective `tasks.md` + `pilot-assessment.md`), recorded as an owner-driven exception to the standing directory contract (`docs/specs/README.md` reserves `plan.md`/`tasks.md` to CRITICAL work). Template mapping: CURRENT_STATE_EVIDENCE → §1, §14, §19 · PRODUCT_REQUIREMENTS → §5 · NON_GOALS → §3, §15 · ACCEPTANCE_CRITERIA → §17 · ARCHITECTURE_IMPACT → §2 + plan §2–§3 · SECURITY_PRIVACY_IMPACT → §12 · LOCALIZATION_IMPACT → §8 · TESTING_REQUIREMENTS → plan §5 · ROLLBACK → plan §6 · HANDOFF → end. Open questions were **resolved** by owner decisions (see §19) and are no longer carried as unknowns.
+Owner-mandated pilot artifact set (`spec.md` + `plan.md` + prospective `tasks.md` + `pilot-assessment.md`), recorded as an owner-driven exception to the standing directory contract (`docs/specs/README.md` reserves `plan.md`/`tasks.md` to CRITICAL work). Template mapping: CURRENT_STATE_EVIDENCE → §1, §14, §19 · PRODUCT_REQUIREMENTS → §5 · NON_GOALS → §3, §15 · ACCEPTANCE_CRITERIA → §17 · ARCHITECTURE_IMPACT → §2 + plan §2–§3 · SECURITY_PRIVACY_IMPACT → §12 · LOCALIZATION_IMPACT → §8 · TESTING_REQUIREMENTS → plan §16 · ROLLBACK → plan §13 · HANDOFF → end. Open questions were **resolved** by owner decisions (see §19) and are no longer carried as unknowns.
 
 ---
 
