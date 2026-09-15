@@ -181,6 +181,52 @@
       "sunday": "یکشنبه"
     }
   },
+  "WorkoutV2": {
+    "shellLabel": "تمرین هدایت‌شده",
+    "sessionLive": "جلسه در حال اجراست",
+    "start": {
+      "eyebrow": "تمرین امروز",
+      "titleFallback": "تمرین شما",
+      "copy": "جلسه‌ات آماده است. با سرعت خودت ادامه بده.",
+      "cta": "شروع تمرین"
+    },
+    "preparing": {
+      "workoutContext": "تمرین امروز",
+      "sessionStructure": "{exercises} حرکت · {sets} ست",
+      "label": "آماده شو",
+      "firstUp": "نخستین حرکت",
+      "readinessMessage": "آماده شروع شو",
+      "readinessGuidance": "فضایت را آماده کن و جایت را بگیر.",
+      "announcement": "شروع در {seconds} ثانیه",
+      "secondsUnit": "ثانیه"
+    },
+    "readiness": {
+      "clearSpaceTitle": "فضای آزاد",
+      "clearSpaceDetail": "مطمئن شو فضای کافی داری.",
+      "goodPostureTitle": "قامت درست",
+      "goodPostureDetail": "صاف و ریلکس بایست."
+    },
+    "actions": {
+      "pause": "توقف",
+      "resume": "ادامه",
+      "musicOn": "قطع صدای موسیقی تمرین",
+      "musicOff": "پخش موسیقی تمرین",
+      "more": "بیشتر"
+    },
+    "exerciseDetails": {
+      "title": "جزئیات حرکت",
+      "close": "بستن",
+      "fields": {
+        "exercise": "حرکت",
+        "prescription": "برنامه تمرینی",
+        "mode": "شیوه اجرا"
+      },
+      "mode": {
+        "repetitionBased": "بر پایه تکرار",
+        "timeBased": "بر پایه زمان"
+      }
+    }
+  },
   "WorkoutPlayer": {
     "phase": {
       "ready": "آماده",
