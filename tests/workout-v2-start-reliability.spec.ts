@@ -1,146 +1,151 @@
-import {expect, test} from '@playwright/test';
+import {expect, test, type Page} from '@playwright/test';
 
 /**
- * Workout V2 first-slice targeted E2E — WORKOUT-V2-IMPL-01 (START+PREPARING).
- *
- * Targeted per docs/CI.md (not wired into the default `test:e2e:smoke`
- * selection; runnable via `npx playwright test tests/workout-v2-start-reliability.spec.ts`).
- *
- * START interaction reliability is an explicit acceptance concern (the legacy
- * prototype's START tap could fail/unreliably trigger on real iPhone; spec
- * §14/§15). Automated coverage here asserts the interaction semantics a
- * native button must satisfy (including touch-event activation at mobile
- * viewport); the Owner real-iPhone acceptance remains a separate gate.
- *
- * Runs against the additive review surface `/[locale]/workout/v2` (the
- * shipped `/workout` route is untouched). In CI the app runs in open mode
- * (auth not armed) with the localized sample-plan fallback, so this spec is
- * self-contained; with auth armed, sign in before running.
+ * Targeted browser coverage for WORKOUT-V2-IMPL-01. The review surface is
+ * additive (`/[locale]/workout/v2`); production `/workout` is intentionally
+ * outside this suite and remains untouched.
  */
 
-test.describe('Workout V2 first slice — START + PREPARING (en)', () => {
+async function startPreparing(page: Page) {
+  const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+  await expect(start).toBeVisible();
+  await start.tap();
+  await expect(page.getByText('Prepare', {exact: true})).toBeVisible();
+  await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
+  return start;
+}
+
+test.describe('Workout V2 first slice — START + PREPARING', () => {
   test.use({viewport: {width: 360, height: 740}, hasTouch: true});
 
   test('renders START on the Backstage shell and starts reliably on a single tap', async ({page}) => {
     await page.goto('/en/workout/v2');
-    const start = page.getByRole('button', {name: 'Start workout'});
+    const start = await startPreparing(page);
 
-    await expect(start).toBeVisible();
-    // The Backstage environment renders behind the shell (static still image).
     await expect(page.locator('[data-workout-v2-backstage] img').first()).toBeAttached();
-
-    // Single native tap — the exact interaction that was unreliable in the
-    // legacy prototype.
-    await start.tap();
-
-    // START → PREPARING through the single orchestration authority.
-    await expect(page.getByText('Getting ready')).toBeVisible();
-    await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
-    // The START control is gone after the transition (no re-entry path).
     await expect(start).toHaveCount(0);
+    await expect(page.getByRole('button', {name: 'More', exact: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: /workout music/i})).toBeVisible();
   });
 
   test('rapid duplicate taps remain a single transition (no double-fire)', async ({page}) => {
     await page.goto('/en/workout/v2');
-    const start = page.getByRole('button', {name: 'Start workout'});
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
     await expect(start).toBeVisible();
 
-    // Fire three clicks in the SAME task (before any re-render can unmount
-    // the control) — the harshest duplicate-input scenario. The idempotent
-    // authority must accept exactly one transition.
-    await page.evaluate(() => {
-      const button = document.querySelector('[data-workout-v2-start]') as HTMLButtonElement | null;
-      if (!button) throw new Error('START control missing');
-      button.click();
-      button.click();
-      button.click();
+    await start.evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
     });
 
-    await expect(page.getByText('Getting ready')).toBeVisible();
+    await expect(page.getByText('Prepare', {exact: true})).toBeVisible();
     await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
-    // The control is gone after the single transition (no re-entry path).
-    await expect(start).toHaveCount(0);
+    await expect(page.getByRole('button', {name: 'Start Workout', exact: true})).toHaveCount(0);
   });
 
   test('START responds to touch events at mobile viewport (tap target present)', async ({page}) => {
     await page.goto('/en/workout/v2');
-    const start = page.getByRole('button', {name: 'Start workout'});
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
     await expect(start).toBeVisible();
-    // Full-width CTA inside the viewport (thumb-reachable, no overflow).
     const box = await start.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.width).toBeGreaterThan(240);
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(360);
   });
-});
 
-test.describe('Workout V2 first slice — PREPARING presentation', () => {
-  test.use({viewport: {width: 360, height: 740}, hasTouch: true});
-
-  test('countdown advances as text and freezes while paused, then completes (en)', async ({page}) => {
+  test('More opens real exercise details and pauses/resumes the same countdown', async ({page}) => {
     await page.goto('/en/workout/v2');
-    const start = page.getByRole('button', {name: 'Start workout'});
-    await start.tap();
+    await startPreparing(page);
 
     const countdown = page.locator('[data-workout-v2-countdown]');
-    await expect(countdown).toHaveText('5');
-    await expect(page.locator('[role="status"][aria-live="polite"]')).toHaveCount(1);
+    await page.getByRole('button', {name: 'More', exact: true}).tap();
+    const dialog = page.getByRole('dialog', {name: 'Exercise Details'});
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Squat');
+    await expect(dialog).toContainText('10');
 
-    await page.getByRole('button', {name: 'Pause'}).tap();
-    await expect(page.getByRole('button', {name: 'Resume'})).toBeVisible();
+    await page.waitForTimeout(1_500);
     await expect(countdown).toHaveText('5');
 
-    await page.getByRole('button', {name: 'Resume'}).tap();
+    await dialog.getByRole('button', {name: 'Close', exact: true}).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(countdown).toHaveText('5');
     await expect(countdown).not.toHaveText('5', {timeout: 4_000});
   });
 });
 
-test.describe('Workout V2 first slice — Persian (fa, RTL)', () => {
-  test.use({viewport: {width: 360, height: 740}, hasTouch: true});
+test.describe('Workout V2 first slice — locale and theme controls', () => {
+  test.use({viewport: {width: 390, height: 844}, hasTouch: true});
 
-  test('renders RTL Persian START and starts into PREPARING', async ({page}) => {
-    await page.goto('/fa/workout/v2');
+  test('language control swaps EN ↔ FA on the review route', async ({page}) => {
+    await page.goto('/en/workout/v2');
+    await expect(page.getByRole('radio', {name: 'Switch to Persian'})).toBeVisible();
+    await page.getByRole('radio', {name: 'Switch to Persian'}).click();
+    await page.waitForURL('**/fa/workout/v2');
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByRole('button', {name: 'شروع تمرین', exact: true})).toBeVisible();
 
-    const start = page.getByRole('button', {name: 'شروع تمرین'});
-    await expect(start).toBeVisible();
-    await start.tap();
+    await page.getByRole('radio', {name: 'تغییر به انگلیسی'}).click();
+    await page.waitForURL('**/en/workout/v2');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    await expect(page.getByRole('button', {name: 'Start Workout', exact: true})).toBeVisible();
+  });
 
-    await expect(page.getByText('آماده‌سازی')).toBeVisible();
-    await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
-    await expect(page.getByRole('button', {name: 'توقف'})).toBeVisible();
+  test('theme control cycles light → dark → system without changing geometry', async ({page}) => {
+    await page.emulateMedia({colorScheme: 'light'});
+    await page.goto('/en/workout/v2');
+    const shell = page.locator('[data-workout-v2-shell]');
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    const before = await start.boundingBox();
+    expect(before).not.toBeNull();
+
+    const theme = page.getByRole('button', {name: 'Light', exact: true});
+    await theme.click();
+    await expect(page.locator('html')).not.toHaveClass(/dark/);
+    await expect(page.getByRole('button', {name: 'Dark', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Dark', exact: true}).click();
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.getByRole('button', {name: 'System', exact: true}).click();
+    await expect(page.locator('html')).not.toHaveClass(/dark/);
+
+    const after = await start.boundingBox();
+    expect(after).not.toBeNull();
+    expect(after!.x).toBeCloseTo(before!.x, 0);
+    expect(after!.y).toBeCloseTo(before!.y, 0);
+    expect(after!.width).toBeCloseTo(before!.width, 0);
+    expect(after!.height).toBeCloseTo(before!.height, 0);
+    await expect(shell).toBeVisible();
   });
 });
 
-test.describe('Workout V2 first slice — Backstage visual family', () => {
+test.describe('Workout V2 first slice — Backstage family and RTL', () => {
   test.use({hasTouch: true});
 
-  test('backdrop renders without distortion and swaps by density boundary', async ({page}) => {
-    // Mobile viewport serves the mobile composition family.
+  test('backdrop uses mobile and desktop purpose-built assets without distortion', async ({page}) => {
     await page.setViewportSize({width: 360, height: 740});
     await page.goto('/en/workout/v2');
     const img = page.locator('[data-workout-v2-backstage] img').first();
     await expect(img).toBeAttached();
-    expect(await img.getAttribute('src')).toContain('/backstage/workout/backstage-');
+    expect(await img.getAttribute('src')).toContain('backstage-');
+    expect(await img.getAttribute('src')).toContain('mobile');
+    await expect(img).toHaveClass(/object-cover/);
 
-    // Desktop viewport serves the desktop composition family (same identity).
     await page.setViewportSize({width: 1280, height: 800});
-    await expect
-      .poll(async () => await img.evaluate((node: HTMLImageElement) => node.getAttribute('src')))
-      .toContain('desktop');
+    await expect.poll(async () => await img.getAttribute('src')).toContain('desktop');
   });
 
-  test('backstage assets carry no baked-in UI text (environment only)', async ({page}) => {
-    // The approved references are environment-only; the shell renders all
-    // product UI as application-layer text. Assert the visible UI strings
-    // are DOM text (not part of the image) by checking the CTA is real DOM.
+  test('Persian START and PREPARING preserve RTL semantics', async ({page}) => {
     await page.setViewportSize({width: 360, height: 740});
-    await page.goto('/en/workout/v2');
-    const start = page.getByRole('button', {name: 'Start workout'});
-    await expect(start).toBeVisible();
-    const tagName = await start.evaluate((node) => node.tagName);
-    expect(tagName).toBe('BUTTON');
+    await page.goto('/fa/workout/v2');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByRole('button', {name: 'شروع تمرین', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'شروع تمرین', exact: true}).tap();
+    await expect(page.getByText('آماده شو', {exact: true})).toBeVisible();
+    await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
+    await expect(page.getByRole('button', {name: 'بیشتر', exact: true})).toBeVisible();
   });
 });

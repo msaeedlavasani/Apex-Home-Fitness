@@ -1,19 +1,19 @@
 /**
  * WP-04/WP-05 first-slice UI tests (repository Node test environment —
- * react-test-renderer, no DOM; next-intl wiring is covered by the targeted
- * Playwright spec, per docs/CI.md layering).
+ * react-test-renderer, no DOM; next-intl/provider wiring is covered by the
+ * targeted Playwright spec, per docs/CI.md layering).
  *
- * Covers the plan §17 START_TESTS layers that are automatable here:
- *   - adapter + authority integration: a single START fires exactly one
- *     orchestration transition; rapid duplicate starts stay single-transition
- *     (the legacy START reliability concern, asserted where it belongs);
- *   - presentation renders view-model state and dispatches orchestration
- *     actions — NO presentation-owned sequencing (stages receive copy as
- *     props and hold zero state);
- *   - fa/en copy parity of the WorkoutV2 namespace (regression guard on the
- *     messages files themselves);
- *   - accessible interaction semantics for the START control and the
- *     PREPARING live region (non-animation-only timer);
+ * Covers the consolidated delta layers automatable here:
+ *   - START reliability: a single activation fires exactly one orchestration
+ *     transition; same-tick duplicates stay single-transition; the CTA
+ *     unmounts after the transition (no re-entry path);
+ *   - presentation renders view-model state and dispatches REAL functions —
+ *     no presentation-owned sequencing, no dead handlers;
+ *   - PREPARING product state: resolved exercise name, real-data dial arc
+ *     (remaining/total of the authoritative countdown), ONE polite live
+ *     region, Sound/More dispatch the functions the shell owns;
+ *   - canonical CTA semantics (native button, xl height class, focus ring);
+ *   - fa/en copy parity of the WorkoutV2 namespace;
  *   - reduced-motion convention (CSS-gated class; essential text remains).
  */
 import assert from 'node:assert/strict';
@@ -25,6 +25,8 @@ import TestRenderer, {act} from 'react-test-renderer';
 import {StartStage} from '../src/components/workout/experience/StartStage';
 import {PreparingStage} from '../src/components/workout/experience/PreparingStage';
 import {useWorkoutSession} from '../src/components/workout/useWorkoutSession';
+import {deriveReadinessTips} from '../src/components/workout/experience/readiness';
+import {PREPARING_DURATION_SECONDS} from '../src/lib/workout/orchestration';
 import type {SessionViewModel} from '../src/lib/workout/sessionV2Contracts';
 import type {SessionExercise} from '../src/lib/workout/sessionContracts';
 
@@ -32,24 +34,43 @@ const PLAN: SessionExercise[] = [
   {id: 's1', name: 'اسکوات', sets: 3, reps: 10, restSeconds: 30},
 ];
 
+const TIPS = deriveReadinessTips({
+  clearSpaceTitle: 'Clear space',
+  clearSpaceDetail: 'Make sure you have enough room.',
+  goodPostureTitle: 'Good posture',
+  goodPostureDetail: 'Stand tall and relaxed.',
+});
+
 const COPY = {
   en: {
-    label: 'Start workout',
-    hint: 'One tap to start. Minimum interaction until finish.',
-    preparingLabel: 'Getting ready',
+    eyebrow: "Today's Workout",
+    title: 'Full Body Strength',
+    copy: 'Your session is ready. Follow along at your pace.',
+    cta: 'Start Workout',
+    preparingLabel: 'Prepare',
+    firstUp: 'First up',
+    readinessMessage: 'Get ready to start',
+    readinessGuidance: 'Find your space and get into position.',
     announcement: (seconds: number) => `Starting in ${seconds} seconds`,
-    towards: 'First: Squat',
-    pause: 'Pause',
-    resume: 'Resume',
+    secondsUnit: 'Seconds',
+    musicOn: 'Mute workout music',
+    musicOff: 'Play workout music',
+    more: 'More',
   },
   fa: {
-    label: 'شروع تمرین',
-    hint: 'با یک لمس شروع کن. تا پایان حداقل تعامل.',
-    preparingLabel: 'آماده‌سازی',
+    eyebrow: 'تمرین امروز',
+    title: 'قدرت تمام بدن',
+    copy: 'جلسه‌ات آماده است. با سرعت خودت ادامه بده.',
+    cta: 'شروع تمرین',
+    preparingLabel: 'آماده شو',
+    firstUp: 'نخستین حرکت',
+    readinessMessage: 'آماده شروع شو',
+    readinessGuidance: 'فضایت را آماده کن و جایت را بگیر.',
     announcement: (seconds: number) => `شروع در ${seconds} ثانیه`,
-    towards: 'نخست: اسکوات',
-    pause: 'توقف',
-    resume: 'ادامه',
+    secondsUnit: 'ثانیه',
+    musicOn: 'قطع صدای موسیقی تمرین',
+    musicOff: 'پخش موسیقی تمرین',
+    more: 'بیشتر',
   },
 } as const;
 
@@ -69,23 +90,39 @@ function Harness({locale, now, onStarted, probe}: HarnessProps) {
     if (effect.kind === 'SESSION_STARTED') onStarted?.();
   }});
   probe(session);
-  const {viewModel, startSession, pause, resume} = session;
+  const {viewModel, startSession} = session;
   const copy = COPY[locale];
   return (
     <div>
       {viewModel.activeModule === 'START' && (
-        <StartStage viewModel={viewModel} label={copy.label} hint={copy.hint} onStart={startSession} />
+        <StartStage
+          viewModel={viewModel}
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          copy={copy.copy}
+          ctaLabel={copy.cta}
+          onStart={startSession}
+        />
       )}
       {viewModel.activeModule === 'PREPARING' && (
         <PreparingStage
           viewModel={viewModel}
+          workoutContext={copy.eyebrow}
+          sessionStructure="1 Exercise · 3 Sets"
           label={copy.preparingLabel}
+          firstUp={copy.firstUp}
+          readinessMessage={copy.readinessMessage}
+          readinessGuidance={copy.readinessGuidance}
           announcement={copy.announcement(viewModel.preparingSecondsRemaining ?? 0)}
-          pauseLabel={copy.pause}
-          resumeLabel={copy.resume}
-          workingTowardsLabel={copy.towards}
-          onPause={pause}
-          onResume={resume}
+          secondsUnit={copy.secondsUnit}
+          countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+          musicOnLabel={copy.musicOn}
+          musicOffLabel={copy.musicOff}
+          moreLabel={copy.more}
+          tips={TIPS}
+          onToggleMusic={() => {}}
+          musicPlaying={false}
+          onMore={() => {}}
         />
       )}
     </div>
@@ -141,6 +178,23 @@ after(() => {
   for (const harness of activeHarnesses) harness.unmount();
 });
 
+const PREPARING_MODULES = {START: 'DONE', PREPARING: 'ACTIVE', EXERCISE_INTRO: 'PENDING', WORK_SET: 'PENDING', REST: 'PENDING', EXERCISE_TRANSITION: 'PENDING', COMPLETE: 'PENDING'} as const;
+
+function preparingViewModel(seconds: number, exerciseName: string | null = 'Squat'): SessionViewModel {
+  return {
+    lifecycle: 'PREPARING',
+    activeModule: 'PREPARING',
+    modules: {...PREPARING_MODULES},
+    activeExercise: exerciseName
+      ? {exercise: {id: 'x1', name: exerciseName, sets: 3, reps: 10, restSeconds: 30}, executionMode: 'REP_BASED', targetReps: 10, targetSeconds: null, setCount: 3, restSeconds: 30}
+      : null,
+    activeExerciseIndex: exerciseName ? 0 : null,
+    preparingSecondsRemaining: seconds,
+    executionElapsedSeconds: 0,
+    pausedFromModule: null,
+  };
+}
+
 function startViewModel(overrides: Partial<SessionViewModel> = {}): SessionViewModel {
   return {
     lifecycle: 'READY_TO_START',
@@ -167,7 +221,7 @@ test('single START click performs exactly one orchestration start transition', (
     button.props.onClick();
   });
   assert.equal(h.startedCount(), 1, 'exactly one SESSION_STARTED effect');
-  assert.ok(h.renderer.root.findByProps({'data-workout-v2-pause': true}), 'PREPARING presented after START');
+  assert.ok(h.renderer.root.findByProps({'data-workout-v2-countdown': ''}), 'PREPARING presented after START');
 });
 
 test('rapid duplicate START clicks stay a single transition (no double-fire)', () => {
@@ -179,8 +233,7 @@ test('rapid duplicate START clicks stay a single transition (no double-fire)', (
     button.props.onClick();
   });
   assert.equal(h.startedCount(), 1, 'idempotent authority + single-fire presentation');
-  const pauseControl = h.renderer.root.findByProps({'data-workout-v2-pause': true});
-  assert.ok(pauseControl, 'session is in PREPARING, not restarted');
+  assert.ok(h.renderer.root.findByProps({'data-workout-v2-countdown': ''}), 'session is in PREPARING, not restarted');
   assert.equal(h.session().viewModel.lifecycle, 'PREPARING');
 });
 
@@ -200,43 +253,49 @@ test('START CTA unmounts after the transition — no second re-entry path exists
 
 test('fa locale renders the Persian START and PREPARING copy', () => {
   const h = mountHarness('fa');
-  assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.label}).length > 0);
-  assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.hint}).length > 0);
+  assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.cta}).length > 0);
   act(() => {
     h.renderer.root.findByProps({'data-workout-v2-start': true}).props.onClick();
   });
   assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.preparingLabel}).length > 0);
-  assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.pause}).length > 0);
+  assert.ok(h.renderer.root.findAllByProps({children: COPY.fa.more}).length > 0);
 });
 
 test('en locale renders the English START and PREPARING copy', () => {
   const h = mountHarness('en');
-  assert.ok(h.renderer.root.findAllByProps({children: COPY.en.label}).length > 0);
+  assert.ok(h.renderer.root.findAllByProps({children: COPY.en.cta}).length > 0);
   act(() => {
     h.renderer.root.findByProps({'data-workout-v2-start': true}).props.onClick();
   });
-  assert.ok(h.renderer.root.findAllByProps({children: COPY.en.preparingLabel}).length > 0);
+  assert.ok(h.renderer.root.findAllByProps({children: COPY.en.readinessMessage}).length > 0);
 });
 
 // ---------------------------------------------------------------------------
 // Accessibility baseline for the interactive controls
 // ---------------------------------------------------------------------------
 
-test('START control: native button semantics, focus ring, touch target class', () => {
+test('START control: canonical CTA semantics (native button, xl height, focus ring)', () => {
   const h = mountHarness('en');
-  const button = h.renderer.root.findByProps({'data-workout-v2-start': true});
-  assert.equal(button.type, 'button');
+  const button = h.renderer.root.findAllByType('button').find((node) => node.props['data-workout-v2-start'] === true);
+  assert.ok(button, 'canonical Button renders a native button element');
   assert.equal(button.props.type, 'button');
   assert.match(String(button.props.className), /focus-visible:ring-2/);
-  assert.match(String(button.props.className), /touch-manipulation/);
-  assert.match(String(button.props.className), /min-h-14/);
+  assert.match(String(button.props.className), /h-14/, 'canonical xl = 56px CTA height');
+  assert.doesNotMatch(String(button.props.className), /bg-gradient/, 'no CTA gradient');
 });
 
 test('START disabled (aria-disabled) when no exercise is resolvable', () => {
   let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => {
     renderer = TestRenderer.create(
-      <StartStage viewModel={startViewModel({activeExercise: null})} label={COPY.en.label} hint={COPY.en.hint} onStart={() => {}} />,
+      <StartStage
+        viewModel={startViewModel({activeExercise: null})}
+        eyebrow={COPY.en.eyebrow}
+        title={COPY.en.title}
+        copy={COPY.en.copy}
+        ctaLabel={COPY.en.cta}
+        onStart={() => {}}
+      />,
     );
   });
   const button = renderer!.root.findByProps({'data-workout-v2-start': true});
@@ -249,18 +308,23 @@ test('PREPARING timer is text with exactly one polite live region (non-animation
   act(() => {
     renderer = TestRenderer.create(
       <PreparingStage
-        viewModel={startViewModel({
-          lifecycle: 'PREPARING', activeModule: 'PREPARING',
-          modules: {START: 'DONE', PREPARING: 'ACTIVE', EXERCISE_INTRO: 'PENDING', WORK_SET: 'PENDING', REST: 'PENDING', EXERCISE_TRANSITION: 'PENDING', COMPLETE: 'PENDING'},
-          activeExercise: null, activeExerciseIndex: 0, preparingSecondsRemaining: 5, pausedFromModule: null,
-        })}
+        viewModel={preparingViewModel(5)}
+        workoutContext={COPY.en.eyebrow}
+        sessionStructure="1 Exercise · 3 Sets"
         label={COPY.en.preparingLabel}
+        firstUp={COPY.en.firstUp}
+        readinessMessage={COPY.en.readinessMessage}
+        readinessGuidance={COPY.en.readinessGuidance}
         announcement={COPY.en.announcement(5)}
-        pauseLabel={COPY.en.pause}
-        resumeLabel={COPY.en.resume}
-        workingTowardsLabel={COPY.en.towards}
-        onPause={() => {}}
-        onResume={() => {}}
+        secondsUnit={COPY.en.secondsUnit}
+        countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+        musicOnLabel={COPY.en.musicOn}
+        musicOffLabel={COPY.en.musicOff}
+        moreLabel={COPY.en.more}
+        tips={TIPS}
+        onToggleMusic={() => {}}
+        musicPlaying={false}
+        onMore={() => {}}
       />,
     );
   });
@@ -272,32 +336,112 @@ test('PREPARING timer is text with exactly one polite live region (non-animation
   assert.equal(sentence.props.children, COPY.en.announcement(5));
 });
 
-test('PREPARING pause/resume dispatch orchestration actions only (no local sequencing)', () => {
-  let dispatched: 'pause' | 'resume' | null = null;
+test('PREPARING countdown dial arc is REAL data: remaining/total of the authoritative countdown', () => {
+  const renderAt = (seconds: number) => {
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PreparingStage
+          viewModel={preparingViewModel(seconds)}
+          workoutContext={COPY.en.eyebrow}
+          sessionStructure="1 Exercise · 3 Sets"
+          label={COPY.en.preparingLabel}
+          firstUp={COPY.en.firstUp}
+          readinessMessage={COPY.en.readinessMessage}
+          readinessGuidance={COPY.en.readinessGuidance}
+          announcement={COPY.en.announcement(seconds)}
+          secondsUnit={COPY.en.secondsUnit}
+          countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+          musicOnLabel={COPY.en.musicOn}
+          musicOffLabel={COPY.en.musicOff}
+          moreLabel={COPY.en.more}
+          tips={TIPS}
+          onToggleMusic={() => {}}
+          musicPlaying={false}
+          onMore={() => {}}
+        />,
+      );
+    });
+    return renderer!.root.findByProps({'data-workout-v2-countdown-arc': ''});
+  };
+  const R = 46;
+  const C = 2 * Math.PI * R;
+  assert.equal(renderAt(5).props.strokeDashoffset, 0, 'full remaining → full arc');
+  assert.equal(renderAt(2).props.strokeDashoffset, C * (3 / 5), '2 of 5 remaining → 3/5 depleted');
+  assert.equal(renderAt(2).props['strokeDasharray'], C);
+});
+
+test('PREPARING renders the RESOLVED exercise name (no hardcoded fixture)', () => {
   let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => {
     renderer = TestRenderer.create(
       <PreparingStage
-        viewModel={startViewModel({
-          lifecycle: 'PREPARING', activeModule: 'PREPARING',
-          modules: {START: 'DONE', PREPARING: 'ACTIVE', EXERCISE_INTRO: 'PENDING', WORK_SET: 'PENDING', REST: 'PENDING', EXERCISE_TRANSITION: 'PENDING', COMPLETE: 'PENDING'},
-          activeExercise: null, activeExerciseIndex: 0, preparingSecondsRemaining: 3, pausedFromModule: null,
-        })}
-        label={COPY.en.preparingLabel}
-        announcement={COPY.en.announcement(3)}
-        pauseLabel={COPY.en.pause}
-        resumeLabel={COPY.en.resume}
-        workingTowardsLabel={COPY.en.towards}
-        onPause={() => { dispatched = 'pause'; }}
-        onResume={() => { dispatched = 'resume'; }}
+        viewModel={preparingViewModel(4, 'درازنشست')}
+        workoutContext={COPY.fa.eyebrow}
+        sessionStructure="۲ حرکت · ۶ ست"
+        label={COPY.fa.preparingLabel}
+        firstUp={COPY.fa.firstUp}
+        readinessMessage={COPY.fa.readinessMessage}
+        readinessGuidance={COPY.fa.readinessGuidance}
+        announcement={COPY.fa.announcement(4)}
+        secondsUnit={COPY.fa.secondsUnit}
+        countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+        musicOnLabel={COPY.fa.musicOn}
+        musicOffLabel={COPY.fa.musicOff}
+        moreLabel={COPY.fa.more}
+        tips={TIPS}
+        onToggleMusic={() => {}}
+        musicPlaying={false}
+        onMore={() => {}}
       />,
     );
   });
-  const control = renderer!.root.findByProps({'data-workout-v2-pause': true});
+  assert.ok(renderer!.root.findAllByProps({children: 'درازنشست'}).length > 0, 'resolved name rendered');
+});
+
+test('PREPARING secondary controls dispatch REAL functions (Sound, More) — no dead controls', () => {
+  let toggled: 'music' | 'more' | null = null;
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => {
-    control.props.onClick();
+    renderer = TestRenderer.create(
+      <PreparingStage
+        viewModel={preparingViewModel(3)}
+        workoutContext={COPY.en.eyebrow}
+        sessionStructure="1 Exercise · 3 Sets"
+        label={COPY.en.preparingLabel}
+        firstUp={COPY.en.firstUp}
+        readinessMessage={COPY.en.readinessMessage}
+        readinessGuidance={COPY.en.readinessGuidance}
+        announcement={COPY.en.announcement(3)}
+        secondsUnit={COPY.en.secondsUnit}
+        countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+        musicOnLabel={COPY.en.musicOn}
+        musicOffLabel={COPY.en.musicOff}
+        moreLabel={COPY.en.more}
+        tips={TIPS}
+        onToggleMusic={() => {
+          toggled = 'music';
+        }}
+        musicPlaying={false}
+        onMore={() => {
+          toggled = 'more';
+        }}
+      />,
+    );
   });
-  assert.equal(dispatched, 'pause');
+  const sound = renderer!.root.findByProps({'data-workout-v2-sound': true});
+  assert.equal(sound.props['aria-pressed'], false, 'Sound exposes REAL playback state');
+  assert.equal(sound.props['aria-label'], COPY.en.musicOff, 'localized state label (not icon alone)');
+  act(() => {
+    sound.props.onClick();
+  });
+  assert.equal(toggled, 'music');
+
+  const more = renderer!.root.findByProps({'data-workout-v2-more': true});
+  act(() => {
+    more.props.onClick();
+  });
+  assert.equal(toggled, 'more');
 });
 
 // ---------------------------------------------------------------------------

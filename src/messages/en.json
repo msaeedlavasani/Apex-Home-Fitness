@@ -185,17 +185,46 @@
     "shellLabel": "Guided workout",
     "sessionLive": "Session running",
     "start": {
-      "title": "Start workout",
-      "hint": "One tap to start. Minimum interaction until finish."
+      "eyebrow": "Today's Workout",
+      "titleFallback": "Your Workout",
+      "copy": "Your session is ready. Follow along at your pace.",
+      "cta": "Start Workout"
     },
     "preparing": {
-      "label": "Getting ready",
+      "workoutContext": "Today's Workout",
+      "sessionStructure": "{exercises, plural, one {# Exercise · {sets} Sets} other {# Exercises · {sets} Sets}}",
+      "label": "Prepare",
+      "firstUp": "First up",
+      "readinessMessage": "Get ready to start",
+      "readinessGuidance": "Find your space and get into position.",
       "announcement": "Starting in {seconds} seconds",
-      "workingTowards": "First: {exercise}"
+      "secondsUnit": "Seconds"
+    },
+    "readiness": {
+      "clearSpaceTitle": "Clear space",
+      "clearSpaceDetail": "Make sure you have enough room.",
+      "goodPostureTitle": "Good posture",
+      "goodPostureDetail": "Stand tall and relaxed."
     },
     "actions": {
       "pause": "Pause",
-      "resume": "Resume"
+      "resume": "Resume",
+      "musicOn": "Mute workout music",
+      "musicOff": "Play workout music",
+      "more": "More"
+    },
+    "exerciseDetails": {
+      "title": "Exercise Details",
+      "close": "Close",
+      "fields": {
+        "exercise": "Exercise",
+        "prescription": "Prescription",
+        "mode": "Mode"
+      },
+      "mode": {
+        "repetitionBased": "Repetition based",
+        "timeBased": "Time based"
+      }
     }
   },
   "WorkoutPlayer": {

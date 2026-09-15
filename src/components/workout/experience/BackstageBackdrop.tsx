@@ -3,7 +3,6 @@
 import React from 'react';
 import {useEffect, useState} from 'react';
 import {cn} from '@/lib/cn';
-import {useReducedMotion} from '@/hooks/useReducedMotion';
 import {
   BACKSTAGE_ASSETS,
   BACKSTAGE_DENSITY_QUERY,

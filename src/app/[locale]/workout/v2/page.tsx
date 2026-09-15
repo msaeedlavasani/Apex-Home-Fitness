@@ -1,9 +1,8 @@
 'use client';
 
-import {useLocale, useTranslations} from 'next-intl';
+import {useTranslations} from 'next-intl';
 import {useSearchParams} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
-import {AppShell} from '@/components/layout/AppShell';
 import {ExperienceShell} from '@/components/workout/experience/ExperienceShell';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
@@ -62,26 +61,27 @@ function generatedExercisesForShell(
 
 /**
  * Workout V2 review surface (`/[locale]/workout/v2`) — WORKOUT-V2-IMPL-01
- * FIRST SLICE (START + PREPARING on the V2 architecture).
+ * first slice on the frozen design delta.
  *
- * This page is ADDITIVE review surface for the Owner's staged/real-device
- * acceptance. The shipped `/[locale]/workout` route and the V1 player are
- * UNTOUCHED operational fallback (plan §13) and remain the default product
- * surface until V2 stages freeze.
+ * ROUTE ADAPTER (delta §2): this page is the only prototype/review-specific
+ * layer — plan loading, day selection and rest-day copy live HERE, while the
+ * ExperienceShell/stages stay route-independent, fixture-independent and
+ * promotion-ready. The shipped `/[locale]/workout` route and the V1 player
+ * are UNTOUCHED operational fallback (plan §13).
  *
- * Plan loading mirrors the shipped page exactly: generated program for the
- * selected day (canonical identity via the S02-D1 seam) with the localized
- * sample-plan fallback when no program exists — so the slice is reviewable
- * in both locales, in CI (open mode) and on device, without any backend or
- * schema change. Rest-day handling stays with the shipped surface; this
- * slice has no WORK_SET/REST presentation to host a rest day.
+ * COMPOSITION (delta §7): the shell renders on a bare full-viewport surface
+ * (100vw/100dvh) with NO app chrome — AppShell would impose platform chrome
+ * and require an unauthorized back/exit control (§19: no real exit behavior
+ * is authorized, so none is exposed). Plan loading mirrors the shipped page
+ * exactly: generated program for the selected day with the localized
+ * sample-plan fallback when no program exists, so the slice is reviewable in
+ * both locales, in CI (open mode) and on device. Rest days render the
+ * localized rest notice on the same bare surface.
  */
 export default function WorkoutV2Page() {
-  const locale = useLocale();
-  const searchParams = useSearchParams();
-  const tNav = useTranslations('Nav');
   const tDashboard = useTranslations('Dashboard');
   const tLibrary = useTranslations('Library');
+  const searchParams = useSearchParams();
   const selectedDay = validWeekday(searchParams.get('day')) ?? validWeekday(
     ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()],
   );
@@ -132,31 +132,31 @@ export default function WorkoutV2Page() {
   // localized sample plan otherwise (never an empty plan).
   const exercises: SessionExercise[] = program ? generatedExercises : fallbackExercises;
 
+  // START hero workout context: the resolved workout title for the day
+  // (generated plan label or the localized fallback plan name — resolved
+  // data, never a hardcoded fixture).
   const subtitle = program && selectedDay
     ? tDashboard('workouts.generated')
     : tDashboard(`workouts.${fallbackKey}`);
 
   return (
-    <AppShell
-      title={`${tNav('workout')} · V2`}
-      subtitle={subtitle}
-      backHref={`/${locale}/dashboard`}
-    >
-      <div className="mx-auto w-full max-w-md px-4 sm:max-w-lg md:max-w-xl">
-        {programLoading ? (
-          <p role="status" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
+    <main data-workout-v2-surface="" className="h-[100dvh] w-full overflow-hidden bg-[color:var(--app-background)]">
+      {programLoading ? (
+        <div className="flex h-full items-center justify-center px-4">
+          <p role="status" className="text-sm text-[color:var(--apex-text-secondary)]">
             {tDashboard('loading')}
           </p>
-        ) : null}
-        {exercises.length === 0 ? (
-          <section className="card-surface w-full p-6 text-center text-[color:var(--apex-text)]" aria-label={tDashboard('summaryRest')}>
-            <h1 className="text-xl font-bold">{tDashboard('summaryRest')}</h1>
+        </div>
+      ) : exercises.length === 0 ? (
+        <div className="flex h-full items-center justify-center px-4 text-center">
+          <div>
+            <h1 className="text-xl font-bold text-[color:var(--apex-text)]">{tDashboard('summaryRest')}</h1>
             <p className="mt-2 text-sm text-[color:var(--apex-text-secondary)]">{tDashboard('summaryRestDesc')}</p>
-          </section>
-        ) : (
-          <ExperienceShell exercises={exercises} />
-        )}
-      </div>
-    </AppShell>
+          </div>
+        </div>
+      ) : (
+        <ExperienceShell exercises={exercises} sessionTitle={subtitle} />
+      )}
+    </main>
   );
 }
