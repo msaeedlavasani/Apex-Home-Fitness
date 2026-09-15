@@ -19,13 +19,13 @@
 
 | Field | Value |
 |---|---|
-| Active task | `NONE` — **SPECKIT-STAGE6-01 DELIVERED / CLOSED 2026-09-14** (Development Admission Gate; PR #68 rebase-merged; main `172f7c8619eef88b18a9f04fd2d26edc429a2e9e`; post-main CI PASS run `34896218478`; Admission Gate ACTIVE ON MAIN; trust-boundary checks A–D PASS; Stage-6 branch retired per §J) |
-| Profile | `CODE_NO_DEPLOY` |
-| Branch | (none) — `governance/spec-kit-admission-gate` retired per BRANCHING_POLICY §J after merge |
-| State | `CLOSED` — Admission Gate active on main; STANDARD/CRITICAL work subject to admission enforcement; implementation NOT authorized |
+| Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; execution **staged** — first executable slice: `START + PREPARING` + minimum DAG dependencies) |
+| Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
+| Branch | (none yet) — the execution agent creates `workout/v2-implementation` from fresh main at slice start |
+| State | `AUTHORIZED — implementation may begin`; later slices stay pending their dependencies/verification/freeze sequence |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | Workout Experience Specification after Design Brain vNext P0 approval; not started by this task. CP-05 physical acceptance remains separate evidence work; no Product implementation is authorized by the design-brain contract alone |
-| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Stage-6 admission-gate PR merge review**; other gated items unchanged |
+| Next authorized task | `WORKOUT-V2-IMPL-01` first slice — `START + PREPARING` (+ minimum DAG dependencies), per the owner authorization of 2026-09-15 |
+| Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 ## Strategic basis
 
@@ -1090,6 +1090,26 @@ deleted — they are deferred until P0–P3 foundations are established.
 
 **Closure record (2026-09-14):** DELIVERED / CLOSED — **implementation NOT started / NOT authorized**. PR #68 rebase-merged into `main` → `172f7c8619eef88b18a9f04fd2d26edc429a2e9e` (reviewed head `fc1ff2e2dd5fd29ee3c270c95c60056e383f30c3`); post-merge Main CI PASS run `34896218478` (build + e2e, including the new Admission gate validation/tests steps); trust-boundary audit PASSED (CHECK A–D); admission tests 37/37 PASS; **Admission Gate ACTIVE ON MAIN** — STANDARD/CRITICAL work now subject to admission enforcement; source branch `governance/spec-kit-admission-gate` retired per BRANCHING_POLICY §J (rebase equivalence: range-diff 1:1 + tree identity). Workout V2 remains: PRODUCT READY · SPEC READY · BLOCKING NONE · IMPLEMENTATION NOT AUTHORIZED · ADMISSION DENIED BY DESIGN.
 
+### WORKOUT-V2-IMPL-01 — Workout Experience V2 implementation (CRITICAL) — **AUTHORIZED 2026-09-15 — FIRST SLICE ACTIVE**
+
+| Field | Value |
+|---|---|
+| PRIORITY | P1 (core product experience) |
+| DEPENDENCIES | Spec Kit Stage 6 admission gate (ACTIVE on main); CRITICAL preparation merged (PR #70 → main `b79585be80782b7d8ec7f410346e2b826eb50df1`) |
+| AUTONOMOUS_ELIGIBILITY | `READY` for the **first slice only** — `START + PREPARING` plus the minimum shared-architecture dependencies required by the approved DAG (WP-01 session-core contract extension · WP-02 orchestration layer · WP-04 experience shell) |
+| PARALLEL_SAFETY | `SERIAL_ONLY` |
+| PRODUCTION_SENSITIVITY | `YES when release-bound` — release applies remain gated per RELEASE_POLICY |
+| DB_SENSITIVITY | `SCHEMA_AND_DATA` only if WP-03 opens its own DB_CHANGE gate |
+| ARCHITECTURE_GATE | `REQUIRED` (session-contract change; ADR-0002 follow-on expected at convergence) |
+| OWNER_DECISION_GATE | **AUTHORIZED 2026-09-15** — canonical record: `docs/governance/OWNER_DECISION_GATE.md` (`WORKOUT-V2-IMPL-01`) |
+| Admission | `docs/admissions/WORKOUT-V2-IMPL-01.admission.json` → `ADMISSION_GRANTED` |
+
+**Authorized scope:** implementation may **begin**; execution remains **staged**. First executable slice: `START + PREPARING` (plan §17) plus only the minimum DAG dependencies (WP-01 · WP-02 · WP-04). **Later slices are NOT activated**: `WORK_SET` + mode-aware progress, REST/EXERCISE_TRANSITION/Exercise-Block lifecycle, controls + outcomes, mentor boundary + degraded mode, functional audio + accessibility, convergence/release remain governed by their dependencies → targeted verification → stage acceptance → freeze sequence.
+
+**Canonical artifacts:** [`spec.md`](specs/0001-workout-experience/spec.md) · [`plan.md`](specs/0001-workout-experience/plan.md) · [`dependencies.md`](specs/0001-workout-experience/dependencies.md) · [`tasks.md`](specs/0001-workout-experience/tasks.md). The spec-local `tasks.md` remains the **non-executable** prepared decomposition; THIS entry is the executable authority.
+
+**Explicitly NOT authorized by this entry:** later slices (as listed above), production deployment, prototype-branch merges/reuse without a work package's explicit classification, schema changes outside WP-03's gate, observation/camera integration (separately gated).
+
 ---
 
 ## Autonomous batch readiness
@@ -1211,12 +1231,12 @@ applies before workflow continuation.
 ## Execution state
 
 **AHF_EXECUTION_STATE: ACTIVE** — the Owner lifted the AHF execution freeze on
-2026-09-01. **ACTIVE_TASK: NONE — SPECKIT-STAGE6-01 DELIVERED / CLOSED
-2026-09-14 (Development Admission Gate active on main; main `172f7c8`; Main CI
-PASS run 34896218478). NEXT_AUTHORIZED_TASK: NONE — Workout Experience remains
-PRODUCT READY / SPEC READY / IMPLEMENTATION NOT AUTHORIZED (admission DENIED
-by design); any V2 implementation requires a new explicit owner
-implementation-admission authorization (CRITICAL-class).**
+2026-09-01. **ACTIVE_TASK: `WORKOUT-V2-IMPL-01` (Workout Experience V2
+implementation; CRITICAL; OWNER-AUTHORIZED 2026-09-15; admission
+ADMISSION_GRANTED; first executable slice = START + PREPARING + minimum DAG
+dependencies). NEXT_AUTHORIZED_TASK: later V2 slices remain NOT activated —
+each requires its dependencies, targeted verification, stage acceptance and
+freeze.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
 begun, and backlog priority is NOT permission to start. The queue becomes

@@ -207,12 +207,18 @@ test('CHECK D — dependency analysis reference must exist when present', () => 
   assert.throws(() => run('admission', file), /ADMISSION_INVALID: DEPENDENCY_ANALYSIS_PATH points to a missing file/);
 });
 
-// --- SCENARIO H — WORKOUT V2 handoff state ---
-test('SCENARIO H — WORKOUT V2 (spec READY, implementation NOT authorized) fails closed', () => {
+// --- SCENARIO H — WORKOUT V2 canonical state ---
+test('SCENARIO H — WORKOUT V2 canonical record is GRANTED (owner-authorized 2026-09-15)', () => {
   const record = JSON.parse(fs.readFileSync(path.join(root, 'docs/admissions/WORKOUT-V2-IMPL-01.admission.json'), 'utf8'));
   assert.equal(record.SPEC_STATUS, 'READY');
   assert.equal(record.BLOCKING_OWNER_DECISIONS, 'NONE');
-  assert.equal(record.IMPLEMENTATION_AUTHORIZATION, 'NOT_AUTHORIZED');
+  assert.equal(record.IMPLEMENTATION_AUTHORIZATION, 'OWNER_AUTHORIZED');
+  assert.equal(record.AUTHORIZATION_SOURCE, 'docs/governance/OWNER_DECISION_GATE.md');
+  assert.match(run('admission', recordFile(record)), /ADMISSION_GRANTED WORKOUT-V2-IMPL-01/);
+});
+test('SCENARIO H1 — the same CRITICAL shape WITHOUT authorization still fails closed', () => {
+  const record = JSON.parse(fs.readFileSync(path.join(root, 'docs/admissions/WORKOUT-V2-IMPL-01.admission.json'), 'utf8'));
+  record.IMPLEMENTATION_AUTHORIZATION = 'NOT_AUTHORIZED';
   assert.throws(() => run('admission', recordFile(record)), /ADMISSION_DENIED: IMPLEMENTATION_NOT_AUTHORIZED/);
 });
 test('SCENARIO H2 — WORKOUT V2: TASKS.md mention does not authorize a CRITICAL task', () => {
@@ -251,9 +257,8 @@ test('CHECK A — CRITICAL profile without an admission record fails closed', ()
   assert.throws(() => run('receipt', file), /RECEIPT: ADMISSION_PATH is required for PRODUCTION_BOUND work/);
 });
 test('CHECK A — receipt pointing at a DENIED admission record fails closed', () => {
-  const v2 = JSON.parse(fs.readFileSync(path.join(root, 'docs/admissions/WORKOUT-V2-IMPL-01.admission.json'), 'utf8'));
-  const adm = recordFile(v2);
-  const file = recordFile({ TASK_ID: v2.TASK_ID, TASK_PROFILE: 'PRODUCTION_BOUND', ADMISSION_PATH: adm, READ_FILES: ['AGENTS.md'] });
+  const adm = recordFile(baseCritical({ TASK_ID: SEEDED_TASK_ID, IMPLEMENTATION_AUTHORIZATION: 'NOT_AUTHORIZED' }));
+  const file = recordFile({ TASK_ID: SEEDED_TASK_ID, TASK_PROFILE: 'PRODUCTION_BOUND', ADMISSION_PATH: adm, READ_FILES: ['AGENTS.md'] });
   assert.throws(() => run('receipt', file), /RECEIPT: ADMISSION_GATE: ADMISSION_DENIED: IMPLEMENTATION_NOT_AUTHORIZED/);
 });
 test('CHECK A — admission record TASK_ID must match the receipt TASK_ID', () => {
@@ -271,10 +276,10 @@ test('CHECK A — CRITICAL report without an admission record fails closed (clos
 });
 
 // --- bulk structural validation (CI lane) ---
-test('admissions bulk: valid records pass and DENIED records do not fail the repo check', () => {
+test('admissions bulk: valid records pass and GRANTED records do not fail the repo check', () => {
   const out = run('admissions', 'docs/admissions');
   assert.match(out, /ADMISSIONS_PASS \d+ records/);
-  assert.match(out, /denied: 1/); // WORKOUT-V2-IMPL-01 (spec READY, implementation NOT authorized)
+  assert.match(out, /granted: 1/); // WORKOUT-V2-IMPL-01 (owner-authorized 2026-09-15)
 });
 test('admissions bulk: malformed record fails closed', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'admissions-'));
