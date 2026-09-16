@@ -16,6 +16,7 @@ import {
 } from '@/lib/programSchedule';
 import {
   SAMPLE_WORKOUT_EXERCISES,
+  resolveWorkoutKeyForDate,
   toWorkoutExercises,
 } from '@/lib/workout/samplePlan';
 
@@ -36,15 +37,6 @@ const V2_FALLBACK_EXERCISE_SUBSTITUTION: Record<string, string> = {
   // pushUps → squat: the Owner-designated representative movement.
   pushUps: 'squat',
 };
-
-/**
- * V2 prototype/Owner-review representative session: the delta fixes the
- * review identity to "کالیستنیک بالاتنه" (upperBody) leading with the Squat
- * (5 exercises · 17 sets), so the fallback resolves to that session on ANY
- * review day instead of drifting with the weekday (the shipped /workout
- * page keeps date-based resolution). Scoped to this route only.
- */
-const V2_FALLBACK_WORKOUT_KEY = 'upperBody';
 
 type CurrentProgramResponse = {
   program: {
@@ -135,10 +127,11 @@ export default function WorkoutV2Page() {
     };
   }, []);
 
-  // V2 prototype: deterministic Owner-review session (see
-  // V2_FALLBACK_WORKOUT_KEY) — the date-based resolution stays on the
-  // shipped /workout route.
-  const fallbackKey = V2_FALLBACK_WORKOUT_KEY;
+  // Date-based fallback selection — the EXISTING semantics, identical to
+  // the shipped /workout route (delta correction: the temporary forced
+  // `upperBody` review override was removed; no deterministic session
+  // freeze remains on this route).
+  const fallbackKey = useMemo(() => resolveWorkoutKeyForDate(new Date()), []);
   const fallbackExercises = useMemo<SessionExercise[]>(
     () => toWorkoutExercises(
       (SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? []).map((exercise) => (
