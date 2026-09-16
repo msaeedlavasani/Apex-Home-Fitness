@@ -198,20 +198,26 @@
       "readinessMessage": "آماده شروع شو",
       "readinessGuidance": "فضایت را آماده کن و جایت را بگیر.",
       "announcement": "شروع در {seconds} ثانیه",
-      "secondsUnit": "ثانیه"
+      "secondsUnit": "ثانیه",
+      "bodyweight": "وزن بدن"
     },
     "readiness": {
       "clearSpaceTitle": "فضای آزاد",
       "clearSpaceDetail": "مطمئن شو فضای کافی داری.",
       "goodPostureTitle": "قامت درست",
-      "goodPostureDetail": "صاف و ریلکس بایست."
+      "goodPostureDetail": "صاف و ریلکس بایست.",
+      "noEquipmentTitle": "بدون تجهیزات",
+      "noEquipmentDetail": "این حرکت با وزن بدن انجام می‌شود."
     },
     "actions": {
       "pause": "توقف",
       "resume": "ادامه",
       "musicOn": "قطع صدای موسیقی تمرین",
       "musicOff": "پخش موسیقی تمرین",
-      "more": "بیشتر"
+      "musicOnShort": "صدا",
+      "musicOffShort": "صدا",
+      "more": "بیشتر",
+      "exit": "خروج از تمرین"
     },
     "exerciseDetails": {
       "title": "جزئیات حرکت",

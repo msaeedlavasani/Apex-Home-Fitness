@@ -4,8 +4,6 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {cn} from '@/lib/cn';
 import {useTranslations} from 'next-intl';
 import {BrandIcon} from '@/components/layout/BrandIcon';
-import {LanguageSwitcher} from '@/components/layout/LanguageSwitcher';
-import {ThemeToggle} from '@/components/layout/ThemeToggle';
 import {useTheme} from '@/components/providers/ThemeProvider';
 import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
 import {PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
@@ -23,31 +21,36 @@ import {BackstageBackdrop} from './BackstageBackdrop';
 import {ExerciseDetailsSheet} from './ExerciseDetailsSheet';
 import {StartStage} from './StartStage';
 import {PreparingStage} from './PreparingStage';
+import {
+  WorkoutV2ExitControl,
+  WorkoutV2LanguageControl,
+  WorkoutV2ThemeControl,
+} from './ShellControls';
 
 /**
- * ExperienceShell (WP-04) — the full-surface V2 experience shell for the
- * authorized first slice, conformed to the FROZEN START/PREPARING
- * compositions (consolidated delta §6–§21 + frozen reference family).
+ * ExperienceShell (WP-04) — the full-surface V2 experience shell,
+ * conformed to the OWNER VISUAL CORRECTION (WORKOUT-V2-IMPL-01: the four
+ * Start/Preparing Dark references are the geometry authority).
+ *
+ * TOP SHELL (correction §5): [Brand] …… [Language] | [Theme] | [Exit] —
+ * three compact 44px circular controls of one design family in the trailing
+ * corner (visually secondary, never dominant; no giant navigation capsule).
+ * Direction mirrors logically under RTL. The controls are the two-state
+ * owner overrides (§4.1 Language FA⇄EN single-tap, §4.2 Theme Dark⇄Light,
+ * SYSTEM never offered on this surface) and the restored Exit (§4.3) with
+ * REAL navigation semantics through the existing product routing — see
+ * `ShellControls.tsx`.
  *
  * COMPOSITION LAW (§9): 100vw/100dvh surface, safe areas, mobile gutter 16px
- * / sm+ 24px, ONE central composition axis (`START_AXIS_X = 50vw` — the
- * shell centers content, so hero and CTA resolve to viewport center;
- * asymmetric Backstage objects never shift UI). The top bar and the details
- * sheet are overlays, not primary layout.
- *
- * TOP CONTROLS (§9/§10/§11): [Brand] … [Language][Theme] — the canonical
- * ThemeToggle (light → dark → system through the canonical ThemeProvider
- * persistence) and the canonical LanguageSwitcher (real EN⇄FA locale switch
- * through the application's existing next-intl routing — §13; Owner-
- * authorized addition absent from the reference images, §11/§48). NO Exit
- * control is rendered: no exit semantics are authorized (§26 — do not
- * expose dead exit despite the X in the references).
+ * / sm+ 24px, ONE central composition axis — the shell centers content, so
+ * hero and CTA resolve to the viewport center; asymmetric Backstage objects
+ * never shift UI. The top bar and the details sheet are overlays, not
+ * primary layout.
  *
  * OWNERSHIP (plan §3/§11): this shell is a CONSUMER of the orchestration
  * view-model. It dispatches start/pause/resume through the adapter and
- * renders stage components — it NEVER sequences (no module ordering, no
- * timers of its own, no progression logic). PREPARING presentation is fully
- * text-rendered (non-animation-only, spec §5.8).
+ * renders stage components — it NEVER sequences. PREPARING presentation is
+ * fully text-rendered (non-animation-only, spec §5.8).
  *
  * MUSIC (§28–§33): the session-layer music controller is created ONCE per
  * session (lazy, ref-stable) and survives countdown ticks, theme switches,
@@ -58,17 +61,16 @@ import {PreparingStage} from './PreparingStage';
  * MORE (§34–§40): opens the real Exercise Details surface. Opening reuses
  * the EXISTING pause authority so the PREPARING countdown cannot finish
  * silently while the user reads (§39); closing resumes the preserved
- * remaining time — no reset, no second timer. Music/theme/prescription are
- * untouched by open/close (§40).
+ * remaining time — no reset, no second timer.
  *
- * THEME (§8): Dark/Light differ ONLY via canonical tokens + the purpose-
- * built Backstage asset + the environment-focus treatment — never geometry.
+ * THEME (§8 + correction §17): Dark/Light differ ONLY via canonical tokens
+ * + the purpose-built Backstage asset + the environment-focus treatment —
+ * never geometry (THEME_VARIANT = TRANSFORMATION, NOT REGENERATION).
  *
- * Reduced motion: stage swaps and the per-second keyed swap use the
- * existing `animate-phase-enter` convention (transform/opacity only,
- * CSS-gated under `prefers-reduced-motion`); the countdown arc transition
- * is explicitly `motion-reduce:transition-none`; the PREPARING depth veil
- * is an opacity transition carrying no information. The backdrop is static.
+ * PREPARING depth (correction §14): a mild veil recedes the environment so
+ * the foreground UI becomes primary — no blur, no modal backdrop, UI stays
+ * sharp. Reduced motion: the veil is an opacity transition carrying no
+ * information; stage swaps use the CSS-gated `animate-phase-enter`.
  */
 
 export interface ExperienceShellProps {
@@ -109,17 +111,33 @@ export function ExperienceShell({
     return {exercises: exercises.length, sets: setCount};
   }, [exercises]);
 
-  // Readiness guidance — generic localized guidance only (no invented
-  // prescription data; equipment omitted until the canonical model carries it).
+  // Prescription context for the restored pill (correction §11): derived
+  // from the RESOLVED exercise — the canonical plan contract carries no
+  // equipment field, so a resolved exercise IS bodyweight by data. The
+  // localized label comes from the message layer; the CONDITION is real
+  // resolved data. Omitted (never faked) when no exercise is resolved.
+  const prescriptionContext = useMemo(() => {
+    if (!viewModel.activeExercise) return null;
+    return t('preparing.bodyweight');
+  }, [viewModel.activeExercise, t]);
+
+  // Readiness guidance — two generic tips + the prescription-derived third
+  // row (correction §13: THREE items for the bodyweight fixture, driven by
+  // the resolved prescription, never a hardcoded count).
   const tips = useMemo(
     () =>
-      deriveReadinessTips({
-        clearSpaceTitle: t('readiness.clearSpaceTitle'),
-        clearSpaceDetail: t('readiness.clearSpaceDetail'),
-        goodPostureTitle: t('readiness.goodPostureTitle'),
-        goodPostureDetail: t('readiness.goodPostureDetail'),
-      }),
-    [t],
+      deriveReadinessTips(
+        {
+          clearSpaceTitle: t('readiness.clearSpaceTitle'),
+          clearSpaceDetail: t('readiness.clearSpaceDetail'),
+          goodPostureTitle: t('readiness.goodPostureTitle'),
+          goodPostureDetail: t('readiness.goodPostureDetail'),
+          noEquipmentTitle: t('readiness.noEquipmentTitle'),
+          noEquipmentDetail: t('readiness.noEquipmentDetail'),
+        },
+        viewModel.activeExercise,
+      ),
+    [t, viewModel.activeExercise],
   );
 
   // ---- Music (session-owned, single instance, §28–§33) -------------------
@@ -191,15 +209,14 @@ export function ExperienceShell({
   const stageKey = `${viewModel.lifecycle}-${activeModule ?? 'none'}`;
   const preparing = activeModule === 'PREPARING';
 
-  // §21: restrained depth treatment — the environment recedes while
-  // PREPARING presents readiness information. Brightness veil only (no
-  // blur, no UI blur, no fake modal backdrop); opacity transition carries
-  // no information.
+  // PREPARING depth treatment (correction §14): a MILD veil recedes the
+  // environment — the UI stays sharp, no blur, no modal surface. This is
+  // the START↔PREPARING focus delta the references show.
   const veilStyle = useMemo(
     () =>
       theme === 'dark'
-        ? {background: 'rgb(0 0 0 / 0.28)'}
-        : {background: 'rgb(255 255 255 / 0.14)'},
+        ? {background: 'rgb(0 0 0 / 0.38)'}
+        : {background: 'rgb(255 255 255 / 0.2)'},
     [theme],
   );
 
@@ -219,7 +236,8 @@ export function ExperienceShell({
       )}
     >
       <BackstageBackdrop theme={theme} />
-      {/* PREPARING depth veil (§21) — environment recedes, UI stays sharp. */}
+      {/* PREPARING depth veil (correction §14) — environment recedes mildly,
+          UI stays sharp. No blur anywhere; nothing informational moves. */}
       <div
         aria-hidden="true"
         style={veilStyle}
@@ -229,16 +247,20 @@ export function ExperienceShell({
         )}
       />
 
-      {/* TOP — [Brand] … [Language][Theme] (§9/§10/§11). No Exit (§26). */}
+      {/* TOP SHELL (correction §5): [Brand] …… [Language] | [Theme] | [Exit] —
+          compact corner controls, one design family, no dominating capsule.
+          RTL mirrors naturally through flexbox row direction. */}
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <BrandIcon size="h-9 w-9" iconClass="h-5 w-5" wordmark />
         <div
           data-workout-v2-top-controls=""
-          className="flex items-center gap-1.5 rounded-full border border-[color:var(--apex-border)] bg-[color:var(--apex-surface)]/70 p-1 shadow-sm sm:gap-2"
+          className="flex items-center gap-2"
         >
-          <LanguageSwitcher className="border-0 bg-transparent p-0 shadow-none" />
+          <WorkoutV2LanguageControl />
           <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
-          <ThemeToggle className="flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-[color:var(--apex-text)] transition-colors hover:bg-[color:var(--apex-fill)]" />
+          <WorkoutV2ThemeControl />
+          <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
+          <WorkoutV2ExitControl />
         </div>
       </header>
 
@@ -272,9 +294,10 @@ export function ExperienceShell({
             announcement={t('preparing.announcement', {seconds: viewModel.preparingSecondsRemaining ?? 0})}
             secondsUnit={t('preparing.secondsUnit')}
             countdownTotalSeconds={PREPARING_DURATION_SECONDS}
-            musicOnLabel={t('actions.musicOn')}
-            musicOffLabel={t('actions.musicOff')}
+            musicOnLabel={t('actions.musicOnShort')}
+            musicOffLabel={t('actions.musicOffShort')}
             moreLabel={t('actions.more')}
+            prescriptionContext={prescriptionContext}
             tips={tips}
             onToggleMusic={handleToggleMusic}
             musicPlaying={musicPlaying}

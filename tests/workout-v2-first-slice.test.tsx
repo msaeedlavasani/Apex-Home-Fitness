@@ -34,12 +34,26 @@ const PLAN: SessionExercise[] = [
   {id: 's1', name: 'اسکوات', sets: 3, reps: 10, restSeconds: 30},
 ];
 
-const TIPS = deriveReadinessTips({
-  clearSpaceTitle: 'Clear space',
-  clearSpaceDetail: 'Make sure you have enough room.',
-  goodPostureTitle: 'Good posture',
-  goodPostureDetail: 'Stand tall and relaxed.',
-});
+const TIPS = deriveReadinessTips(
+  {
+    clearSpaceTitle: 'Clear space',
+    clearSpaceDetail: 'Make sure you have enough room.',
+    goodPostureTitle: 'Good posture',
+    goodPostureDetail: 'Stand tall and relaxed.',
+    noEquipmentTitle: 'No equipment',
+    noEquipmentDetail: 'This is a bodyweight exercise.',
+  },
+  // Resolved bodyweight prescription (the canonical plan contract has no
+  // equipment field) — drives the prescription-derived third guidance row.
+  {
+    exercise: {id: 'x1', name: 'Squat', sets: 3, reps: 10, restSeconds: 30},
+    executionMode: 'REP_BASED',
+    targetReps: 10,
+    targetSeconds: null,
+    setCount: 3,
+    restSeconds: 30,
+  },
+);
 
 const COPY = {
   en: {
@@ -53,9 +67,10 @@ const COPY = {
     readinessGuidance: 'Find your space and get into position.',
     announcement: (seconds: number) => `Starting in ${seconds} seconds`,
     secondsUnit: 'Seconds',
-    musicOn: 'Mute workout music',
-    musicOff: 'Play workout music',
+    musicOn: 'Sound',
+    musicOff: 'Sound',
     more: 'More',
+    prescription: 'Bodyweight',
   },
   fa: {
     eyebrow: 'تمرین امروز',
@@ -68,9 +83,10 @@ const COPY = {
     readinessGuidance: 'فضایت را آماده کن و جایت را بگیر.',
     announcement: (seconds: number) => `شروع در ${seconds} ثانیه`,
     secondsUnit: 'ثانیه',
-    musicOn: 'قطع صدای موسیقی تمرین',
-    musicOff: 'پخش موسیقی تمرین',
+    musicOn: 'صدا',
+    musicOff: 'صدا',
     more: 'بیشتر',
+    prescription: 'وزن بدن',
   },
 } as const;
 
@@ -119,6 +135,7 @@ function Harness({locale, now, onStarted, probe}: HarnessProps) {
           musicOnLabel={copy.musicOn}
           musicOffLabel={copy.musicOff}
           moreLabel={copy.more}
+          prescriptionContext={copy.prescription}
           tips={TIPS}
           onToggleMusic={() => {}}
           musicPlaying={false}
@@ -321,6 +338,7 @@ test('PREPARING timer is text with exactly one polite live region (non-animation
         musicOnLabel={COPY.en.musicOn}
         musicOffLabel={COPY.en.musicOff}
         moreLabel={COPY.en.more}
+        prescriptionContext={COPY.en.prescription}
         tips={TIPS}
         onToggleMusic={() => {}}
         musicPlaying={false}
@@ -355,6 +373,7 @@ test('PREPARING countdown dial arc is REAL data: remaining/total of the authorit
           musicOnLabel={COPY.en.musicOn}
           musicOffLabel={COPY.en.musicOff}
           moreLabel={COPY.en.more}
+          prescriptionContext={COPY.en.prescription}
           tips={TIPS}
           onToggleMusic={() => {}}
           musicPlaying={false}
@@ -389,6 +408,7 @@ test('PREPARING renders the RESOLVED exercise name (no hardcoded fixture)', () =
         musicOnLabel={COPY.fa.musicOn}
         musicOffLabel={COPY.fa.musicOff}
         moreLabel={COPY.fa.more}
+        prescriptionContext={COPY.fa.prescription}
         tips={TIPS}
         onToggleMusic={() => {}}
         musicPlaying={false}
@@ -397,6 +417,110 @@ test('PREPARING renders the RESOLVED exercise name (no hardcoded fixture)', () =
     );
   });
   assert.ok(renderer!.root.findAllByProps({children: 'درازنشست'}).length > 0, 'resolved name rendered');
+});
+
+// ---------------------------------------------------------------------------
+// OWNER VISUAL CORRECTION contract (correction §10–§16)
+// ---------------------------------------------------------------------------
+
+test('guidance card derives THREE prescription-driven tips for the bodyweight fixture', () => {
+  assert.equal(TIPS.length, 3, 'reference requires 3 rows/columns for bodyweight');
+  assert.deepEqual(
+    TIPS.map((tip) => tip.title),
+    ['Clear space', 'Good posture', 'No equipment'],
+    'third item is the prescription-derived equipment row (not hardcoded count)',
+  );
+  // No prescription → no fabricated equipment row (data-driven, never faked).
+  const withoutPrescription = deriveReadinessTips({
+    clearSpaceTitle: 'Clear space',
+    clearSpaceDetail: 'Make sure you have enough room.',
+    goodPostureTitle: 'Good posture',
+    goodPostureDetail: 'Stand tall and relaxed.',
+    noEquipmentTitle: 'No equipment',
+    noEquipmentDetail: 'This is a bodyweight exercise.',
+  });
+  assert.equal(withoutPrescription.length, 2);
+});
+
+test('countdown number + unit share ONE in-flow centered stack inside the ring (geometry law)', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => {
+    renderer = TestRenderer.create(
+      <PreparingStage
+        viewModel={preparingViewModel(5)}
+        workoutContext={COPY.en.eyebrow}
+        sessionStructure="1 Exercise · 3 Sets"
+        label={COPY.en.preparingLabel}
+        firstUp={COPY.en.firstUp}
+        readinessMessage={COPY.en.readinessMessage}
+        readinessGuidance={COPY.en.readinessGuidance}
+        announcement={COPY.en.announcement(5)}
+        secondsUnit={COPY.en.secondsUnit}
+        countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+        musicOnLabel={COPY.en.musicOn}
+        musicOffLabel={COPY.en.musicOff}
+        moreLabel={COPY.en.more}
+        prescriptionContext={COPY.en.prescription}
+        tips={TIPS}
+        onToggleMusic={() => {}}
+        musicPlaying={false}
+        onMore={() => {}}
+      />,
+    );
+  });
+  // The dial wraps the stack; the number + unit are IN FLOW inside it —
+  // no absolutely-positioned label exists to collide with the stroke.
+  const dial = renderer!.root.findByProps({'data-workout-v2-countdown-dial': ''});
+  const dialChildren = Array.isArray(dial.props.children) ? dial.props.children : [dial.props.children];
+  const stack = dialChildren.find(
+    (child: {props?: {className?: string}}) =>
+      typeof child === 'object' && String(child.props?.className ?? '').includes('flex-col'),
+  );
+  assert.ok(stack, 'number + unit render as ONE centered flex stack');
+  assert.doesNotMatch(String(stack.props.className), /absolute/, 'stack must not be absolutely positioned');
+  // Inner content box (44px usable after the 6px stroke on the 56px viewBox
+  // inner radius) comfortably holds the 9px unit label with margin.
+  const countdown = renderer!.root.findByProps({'data-workout-v2-countdown': ''});
+  assert.match(String(countdown.props.className), /leading-none|tabular-nums/);
+});
+
+test('PREPARING renders the resolved prescription context pill (§11) and compact Sound label', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => {
+    renderer = TestRenderer.create(
+      <PreparingStage
+        viewModel={preparingViewModel(5)}
+        workoutContext={COPY.en.eyebrow}
+        sessionStructure="1 Exercise · 3 Sets"
+        label={COPY.en.preparingLabel}
+        firstUp={COPY.en.firstUp}
+        readinessMessage={COPY.en.readinessMessage}
+        readinessGuidance={COPY.en.readinessGuidance}
+        announcement={COPY.en.announcement(5)}
+        secondsUnit={COPY.en.secondsUnit}
+        countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+        musicOnLabel={COPY.en.musicOn}
+        musicOffLabel={COPY.en.musicOff}
+        moreLabel={COPY.en.more}
+        prescriptionContext={COPY.en.prescription}
+        tips={TIPS}
+        onToggleMusic={() => {}}
+        musicPlaying={false}
+        onMore={() => {}}
+      />,
+    );
+  });
+  assert.ok(
+    renderer!.root.findAllByProps({children: COPY.en.prescription}).length > 0,
+    'prescription/equipment context visible under the exercise title',
+  );
+  const sound = renderer!.root.findByProps({'data-workout-v2-sound': true});
+  assert.equal(sound.props['aria-label'], 'Sound', 'compact truthful state label');
+  // Visible label is compact; the full sentence lives only in the a11y label.
+  assert.ok(
+    renderer!.root.findAllByProps({children: 'Mute workout music'}).length === 0,
+    'long mute sentence must not be a visible label',
+  );
 });
 
 test('PREPARING secondary controls dispatch REAL functions (Sound, More) — no dead controls', () => {
@@ -418,6 +542,7 @@ test('PREPARING secondary controls dispatch REAL functions (Sound, More) — no 
         musicOnLabel={COPY.en.musicOn}
         musicOffLabel={COPY.en.musicOff}
         moreLabel={COPY.en.more}
+        prescriptionContext={COPY.en.prescription}
         tips={TIPS}
         onToggleMusic={() => {
           toggled = 'music';

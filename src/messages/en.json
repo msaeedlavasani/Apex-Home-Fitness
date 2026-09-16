@@ -198,20 +198,26 @@
       "readinessMessage": "Get ready to start",
       "readinessGuidance": "Find your space and get into position.",
       "announcement": "Starting in {seconds} seconds",
-      "secondsUnit": "Seconds"
+      "secondsUnit": "Seconds",
+      "bodyweight": "Bodyweight"
     },
     "readiness": {
       "clearSpaceTitle": "Clear space",
       "clearSpaceDetail": "Make sure you have enough room.",
       "goodPostureTitle": "Good posture",
-      "goodPostureDetail": "Stand tall and relaxed."
+      "goodPostureDetail": "Stand tall and relaxed.",
+      "noEquipmentTitle": "No equipment",
+      "noEquipmentDetail": "This is a bodyweight exercise."
     },
     "actions": {
       "pause": "Pause",
       "resume": "Resume",
       "musicOn": "Mute workout music",
       "musicOff": "Play workout music",
-      "more": "More"
+      "musicOnShort": "Sound",
+      "musicOffShort": "Sound",
+      "more": "More",
+      "exit": "Exit workout"
     },
     "exerciseDetails": {
       "title": "Exercise Details",

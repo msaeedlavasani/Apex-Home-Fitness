@@ -25,7 +25,9 @@ test.describe('Workout V2 first slice — START + PREPARING', () => {
     await expect(page.locator('[data-workout-v2-backstage] img').first()).toBeAttached();
     await expect(start).toHaveCount(0);
     await expect(page.getByRole('button', {name: 'More', exact: true})).toBeVisible();
-    await expect(page.getByRole('button', {name: /workout music/i})).toBeVisible();
+    // §16 compact visible label: the short localized "Sound" label — the
+    // muted/unmuted state lives in the icon + aria-pressed, not the text.
+    await expect(page.getByRole('button', {name: 'Sound', exact: true})).toBeVisible();
   });
 
   test('rapid duplicate taps remain a single transition (no double-fire)', async ({page}) => {
@@ -81,38 +83,48 @@ test.describe('Workout V2 first slice — START + PREPARING', () => {
 test.describe('Workout V2 first slice — locale and theme controls', () => {
   test.use({viewport: {width: 390, height: 844}, hasTouch: true});
 
-  test('language control swaps EN ↔ FA on the review route', async ({page}) => {
+  test('language control swaps EN ↔ FA with ONE tap (two-state owner control)', async ({page}) => {
     await page.goto('/en/workout/v2');
-    await expect(page.getByRole('radio', {name: 'Switch to Persian'})).toBeVisible();
-    await page.getByRole('radio', {name: 'Switch to Persian'}).click();
+    await expect(page.getByRole('button', {name: 'Switch to Persian'})).toBeVisible();
+    await page.getByRole('button', {name: 'Switch to Persian'}).tap();
     await page.waitForURL('**/fa/workout/v2');
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('button', {name: 'شروع تمرین', exact: true})).toBeVisible();
 
-    await page.getByRole('radio', {name: 'تغییر به انگلیسی'}).click();
+    await page.getByRole('button', {name: 'تغییر به انگلیسی'}).tap();
     await page.waitForURL('**/en/workout/v2');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
     await expect(page.getByRole('button', {name: 'Start Workout', exact: true})).toBeVisible();
   });
 
-  test('theme control cycles light → dark → system without changing geometry', async ({page}) => {
+  test('theme control is TWO-STATE Dark ⇄ Light; SYSTEM is never offered', async ({page}) => {
     await page.emulateMedia({colorScheme: 'light'});
+    // Deterministic initial state: persisted 'dark' (via the canonical
+    // storage key) — independent of the emulated OS preference.
+    await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
     await page.goto('/en/workout/v2');
     const shell = page.locator('[data-workout-v2-shell]');
     const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    // Let the 240ms stage entrance animation finish so geometry is stable
+    // before measuring (mid-animation boxes render with fractional scale).
+    await expect(start).toBeVisible();
+    await page.waitForTimeout(400);
     const before = await start.boundingBox();
     expect(before).not.toBeNull();
 
-    const theme = page.getByRole('button', {name: 'Light', exact: true});
-    await theme.click();
+    // The Workout V2 control exposes only Dark/Light (never System). The
+    // label is the ACTION (target theme): from resolved dark, tapping
+    // announces and performs "Light".
+    await expect(page.getByRole('button', {name: 'System', exact: true})).toHaveCount(0);
+    await page.getByRole('button', {name: 'Light', exact: true}).click();
     await expect(page.locator('html')).not.toHaveClass(/dark/);
     await expect(page.getByRole('button', {name: 'Dark', exact: true})).toBeVisible();
     await page.getByRole('button', {name: 'Dark', exact: true}).click();
     await expect(page.locator('html')).toHaveClass(/dark/);
-    await page.getByRole('button', {name: 'System', exact: true}).click();
-    await expect(page.locator('html')).not.toHaveClass(/dark/);
 
+    // Geometry invariance: theme transformation never moves the composition.
+    await page.waitForTimeout(150);
     const after = await start.boundingBox();
     expect(after).not.toBeNull();
     expect(after!.x).toBeCloseTo(before!.x, 0);
@@ -120,6 +132,32 @@ test.describe('Workout V2 first slice — locale and theme controls', () => {
     expect(after!.width).toBeCloseTo(before!.width, 0);
     expect(after!.height).toBeCloseTo(before!.height, 0);
     await expect(shell).toBeVisible();
+  });
+
+  test('Exit control navigates to the locale dashboard (real semantics, no dead X)', async ({page}) => {
+    await page.goto('/en/workout/v2');
+    await page.getByRole('button', {name: 'Exit workout'}).tap();
+    await page.waitForURL('**/en/dashboard');
+    await expect(page.getByRole('heading')).toBeVisible();
+  });
+
+  test('START composition has no horizontal overflow and a viewport-connected CTA', async ({page}) => {
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto('/en/workout/v2');
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+    const box = await page.getByRole('button', {name: 'Start Workout', exact: true}).boundingBox();
+    expect(box).not.toBeNull();
+    // CTA is part of the hero composition: visible within the initial viewport
+    // (not pushed below it) and NOT fixed/absolute to the viewport.
+    expect(box!.y).toBeLessThan(844);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+    const position = await page
+      .getByRole('button', {name: 'Start Workout', exact: true})
+      .evaluate((button) => getComputedStyle(button.closest('[data-workout-v2-start-stage]') as Element).position);
+    expect(position).toBe('relative');
   });
 });
 
@@ -145,9 +183,55 @@ test.describe('Workout V2 first slice — Backstage family and RTL', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('button', {name: 'شروع تمرین', exact: true})).toBeVisible();
+    const faOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(faOverflow).toBeLessThanOrEqual(0);
     await page.getByRole('button', {name: 'شروع تمرین', exact: true}).tap();
     await expect(page.getByText('آماده شو', {exact: true})).toBeVisible();
     await expect(page.locator('[data-workout-v2-countdown]')).toHaveText('5');
     await expect(page.getByRole('button', {name: 'بیشتر', exact: true})).toBeVisible();
+  });
+
+  test('PREPARING presents the corrected reference content without deletion', async ({page}) => {
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto('/en/workout/v2');
+    await startPreparing(page);
+
+    // Prescription/equipment context pill restored (§11) — resolved data.
+    await expect(page.locator('[data-workout-v2-prescription-pill]')).toBeVisible();
+    // THREE guidance rows (§13) — content never deleted to fit.
+    const items = page.locator('[data-workout-v2-readiness-item]');
+    await expect(items).toHaveCount(3);
+    await expect(page.getByText('No equipment')).toBeVisible();
+    // Countdown stack stays inside the dial (§12) — no overflow in any axis.
+    const geometry = await page.evaluate(() => {
+      const dial = document.querySelector('[data-workout-v2-countdown-dial]')!.getBoundingClientRect();
+      const number = document.querySelector('[data-workout-v2-countdown]')!.getBoundingClientRect();
+      const unit = [...document.querySelectorAll('[data-workout-v2-countdown-dial] span')]
+        .map((span) => span.getBoundingClientRect())
+        .find((box) => box.height > 0 && box.width < dial.width * 0.8 && box.top > number.bottom - 2)!;
+      const inset = 8; // half of the 6px stroke + margin
+      return {
+        numberInside:
+          number.left >= dial.left + inset &&
+          number.right <= dial.right - inset &&
+          number.top >= dial.top + inset &&
+          number.bottom <= dial.bottom - inset,
+        unitInside:
+          unit.left >= dial.left + inset &&
+          unit.right <= dial.right - inset &&
+          unit.top >= dial.top + inset &&
+          unit.bottom <= dial.bottom - inset,
+      };
+    });
+    expect(geometry.numberInside).toBe(true);
+    expect(geometry.unitInside).toBe(true);
+    // Compact Sound/More labels (§16).
+    await expect(page.getByRole('button', {name: 'Sound', exact: true})).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 });

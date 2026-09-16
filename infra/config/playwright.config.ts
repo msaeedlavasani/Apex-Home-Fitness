@@ -1,7 +1,7 @@
 import {defineConfig, devices} from '@playwright/test';
 import path from 'node:path';
 
-const PORT = 3000;
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
 const BASE_URL = `http://localhost:${PORT}`;
 const isCI = !!process.env.CI;
 
