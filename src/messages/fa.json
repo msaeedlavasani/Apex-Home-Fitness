@@ -183,13 +183,12 @@
   },
   "WorkoutV2": {
     "shellLabel": "تمرین هدایت‌شده",
-    "sessionLive": "جلسه در حال اجراست",
-    "start": {
-      "eyebrow": "تمرین امروز",
-      "titleFallback": "تمرین شما",
-      "copy": "جلسه‌ات آماده است. با سرعت خودت ادامه بده.",
-      "cta": "شروع تمرین"
-    },
+    "sessionLive": "جلسه در حال اجراست", "start": {
+  "eyebrow": "تمرین امروز",
+  "headline": "آماده‌ای شروع کنیم؟",
+  "supporting": "جلسه‌ات آماده است. با سرعت خودت پیش برو.",
+  "cta": "شروع تمرین"
+ },
     "preparing": {
       "workoutContext": "تمرین امروز",
       "sessionStructure": "{exercises} حرکت · {sets} ست",
@@ -200,6 +199,15 @@
       "announcement": "شروع در {seconds} ثانیه",
       "secondsUnit": "ثانیه",
       "bodyweight": "وزن بدن"
+    },
+    "intro": {
+      "firstExercise": "حرکت اول",
+      "cues": ["سینه بالا", "زانوها هم‌جهت با پنجه‌ها", "با کنترل پایین برو"],
+      "beginSet": "شروع ست اول",
+      "mentorUnavailable": "منتور در دسترس نیست",
+      "mentorLoading": "در حال بارگذاری منتور",
+      "mentorAria": "نمایش زنده حرکت پیش رو",
+      "live": "جلسه در جریان است"
     },
     "readiness": {
       "clearSpaceTitle": "فضای آزاد",

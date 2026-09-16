@@ -105,25 +105,26 @@ test('presentation cannot start the session: only the orchestration action mutat
   assert.equal(after.modules.PREPARING, 'PENDING');
 });
 
-test('PREPARING countdown advances by whole seconds and completes into RUNNING', () => {
+test('PREPARING countdown advances by whole seconds and completes into the INTRO boundary', () => {
   const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
   const tick = orchestrator.advance(2);
   assert.equal(tick.state.preparingSecondsRemaining, PREPARING_DURATION_SECONDS - 2);
   const finish = orchestrator.advance(PREPARING_DURATION_SECONDS);
-  assert.equal(finish.state.lifecycle, 'RUNNING');
-  assert.equal(finish.state.activeModule, null);
+  assert.equal(finish.state.lifecycle, 'AWAITING_WORK_SET');
+  assert.equal(finish.state.activeModule, 'EXERCISE_INTRO');
   assert.equal(finish.state.modules.PREPARING, 'DONE');
   assert.equal(finish.state.preparingSecondsRemaining, null);
   assert.ok(finish.effects.some((effect) => effect.kind === 'MODULE_CHANGED'));
 });
 
-test('advance with a large overshoot lands exactly on RUNNING (no skipped module)', () => {
+test('advance with a large overshoot lands exactly on the INTRO boundary (no skipped module)', () => {
   const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
   const {state} = orchestrator.advance(PREPARING_DURATION_SECONDS + 30);
-  assert.equal(state.lifecycle, 'RUNNING');
+  assert.equal(state.lifecycle, 'AWAITING_WORK_SET');
   assert.equal(state.modules.PREPARING, 'DONE');
+  assert.equal(state.modules.EXERCISE_INTRO, 'ACTIVE');
 });
 
 test('pause during PREPARING freezes countdown and context; resume continues', () => {
@@ -143,7 +144,7 @@ test('pause during PREPARING freezes countdown and context; resume continues', (
   assert.equal(resumed.lifecycle, 'PREPARING');
   assert.ok(resumeEffects.some((effect) => effect.kind === 'RESUMED'));
   orchestrator.advance(3);
-  assert.equal(orchestrator.state.lifecycle, 'RUNNING');
+  assert.equal(orchestrator.state.lifecycle, 'AWAITING_WORK_SET', 'countdown completes into the INTRO boundary');
 });
 
 test('actions outside their lifecycle are no-ops (fail-closed guard rails)', () => {
@@ -157,16 +158,99 @@ test('actions outside their lifecycle are no-ops (fail-closed guard rails)', () 
   assert.equal(fresh.dispatch({type: 'RESUME'}).state.lifecycle, 'PREPARING');
 });
 
-test('pause/resume after PREPARING (RUNNING) preserves the running context', () => {
+test('pause/resume after PREPARING (WORK_SET RUNNING) preserves the running context', () => {
   const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
   orchestrator.advance(PREPARING_DURATION_SECONDS);
+  orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
   orchestrator.advance(5);
   const {state} = orchestrator.dispatch({type: 'PAUSE'});
   assert.equal(state.lifecycle, 'PAUSED');
-  assert.equal(state.pausedFromModule, null);
+  assert.equal(state.pausedFromModule, 'WORK_SET');
   assert.equal(state.executionElapsedSeconds, PREPARING_DURATION_SECONDS + 5);
   const {state: resumed} = orchestrator.dispatch({type: 'RESUME'});
   assert.equal(resumed.lifecycle, 'RUNNING');
   assert.equal(resumed.pausedFromModule, null);
+});
+
+// ---------------------------------------------------------------------------
+// EXERCISE_INTRO module (owner polish delta §C: START → PREPARING → INTRO → SET1)
+// ---------------------------------------------------------------------------
+
+test('PREPARING countdown completion activates EXERCISE_INTRO, never SET1/RUNNING directly', () => {
+  const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
+  orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
+  const {state, effects} = orchestrator.advance(PREPARING_DURATION_SECONDS);
+  assert.equal(state.lifecycle, 'AWAITING_WORK_SET');
+  assert.equal(state.activeModule, 'EXERCISE_INTRO');
+  assert.equal(state.modules.PREPARING, 'DONE');
+  assert.equal(state.modules.EXERCISE_INTRO, 'ACTIVE');
+  assert.equal(state.modules.WORK_SET, 'PENDING');
+  assert.equal(state.introExercise?.exercise.id, 's1', 'INTRO exposes the first exercise identity');
+  assert.ok(effects.some((effect) => effect.kind === 'MODULE_CHANGED' && effect.moduleId === 'EXERCISE_INTRO'));
+});
+
+test('overshooting advance lands exactly on INTRO (no skipped module)', () => {
+  const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
+  orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
+  const {state} = orchestrator.advance(PREPARING_DURATION_SECONDS + 30);
+  assert.equal(state.lifecycle, 'AWAITING_WORK_SET');
+  assert.equal(state.activeModule, 'EXERCISE_INTRO');
+});
+
+const INTRO_MODULES = {START: 'DONE', PREPARING: 'DONE', EXERCISE_INTRO: 'ACTIVE', WORK_SET: 'PENDING', REST: 'PENDING', EXERCISE_TRANSITION: 'PENDING', COMPLETE: 'PENDING'} as const;
+
+function introOrchestrator() {
+  const orchestrator = createSessionOrchestrator(prescriptionFor(PLAN));
+  orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
+  orchestrator.advance(PREPARING_DURATION_SECONDS);
+  return orchestrator;
+}
+
+test('BEGIN_WORK_SET from INTRO crosses the SET1 entry boundary exactly once', () => {
+  const orchestrator = introOrchestrator();
+  const {state, effects} = orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
+  assert.equal(state.lifecycle, 'RUNNING');
+  assert.equal(state.activeModule, 'WORK_SET');
+  assert.equal(state.modules.EXERCISE_INTRO, 'DONE');
+  assert.equal(state.modules.WORK_SET, 'ACTIVE');
+  assert.equal(state.introExercise, null, 'INTRO context released at the boundary');
+  assert.ok(effects.some((effect) => effect.kind === 'MODULE_CHANGED' && effect.moduleId === 'WORK_SET'));
+  // Re-dispatch is a no-op (fail-closed; the boundary is crossed once).
+  assert.deepEqual(orchestrator.dispatch({type: 'BEGIN_WORK_SET'}).effects, []);
+  assert.equal(orchestrator.state.activeModule, 'WORK_SET');
+});
+
+test('INTRO never auto-completes: time advance alone cannot leave AWAITING_WORK_SET', () => {
+  const orchestrator = introOrchestrator();
+  const {state} = orchestrator.advance(120);
+  assert.equal(state.lifecycle, 'AWAITING_WORK_SET', 'no timeout-driven INTRO completion (delta §C)');
+  assert.equal(state.activeModule, 'EXERCISE_INTRO');
+  // Execution seconds do not accrue while parked in INTRO.
+  assert.equal(state.executionElapsedSeconds, PREPARING_DURATION_SECONDS);
+});
+
+test('BEGIN_WORK_SET outside INTRO is a no-op (fail-closed guard rails)', () => {
+  const fresh = createSessionOrchestrator(prescriptionFor(PLAN));
+  assert.deepEqual(fresh.dispatch({type: 'BEGIN_WORK_SET'}).effects, []);
+  assert.equal(fresh.state.lifecycle, 'READY_TO_START');
+  const running = createSessionOrchestrator(prescriptionFor(PLAN));
+  running.dispatch({type: 'START_SESSION'}, 1_000);
+  assert.deepEqual(running.dispatch({type: 'BEGIN_WORK_SET'}).effects, []);
+  assert.equal(running.state.lifecycle, 'PREPARING');
+});
+
+test('PAUSE inside INTRO freezes the intro context; resume returns to it (not SET1)', () => {
+  const orchestrator = introOrchestrator();
+  const {state: paused} = orchestrator.dispatch({type: 'PAUSE'});
+  assert.equal(paused.lifecycle, 'PAUSED');
+  assert.equal(paused.pausedFromModule, 'EXERCISE_INTRO');
+  assert.ok(paused.introExercise, 'intro context preserved under the freeze');
+  const {state: resumed} = orchestrator.dispatch({type: 'RESUME'});
+  assert.equal(resumed.lifecycle, 'AWAITING_WORK_SET');
+  assert.equal(resumed.activeModule, 'EXERCISE_INTRO');
+  // The user still owns progression after the freeze.
+  const {state} = orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
+  assert.equal(state.lifecycle, 'RUNNING');
+  assert.equal(state.activeModule, 'WORK_SET');
 });

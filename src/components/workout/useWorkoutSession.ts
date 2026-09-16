@@ -53,6 +53,11 @@ export interface UseWorkoutSessionResult {
   pause: () => void;
   /** RESUME control — continues the same execution context. */
   resume: () => void;
+  /**
+   * INTRO primary progression control (delta §C): AWAITING_WORK_SET →
+   * RUNNING at the SET1 entry boundary. No-op outside INTRO.
+   */
+  beginWorkSet: () => void;
 }
 
 export function useWorkoutSession(
@@ -161,7 +166,13 @@ export function useWorkoutSession(
     emit(effects);
   }, [orchestrator, emit]);
 
-  return {viewModel: currentViewModel, startSession, pause, resume};
+  const beginWorkSet = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  return {viewModel: currentViewModel, startSession, pause, resume, beginWorkSet};
 }
 
 export default useWorkoutSession;

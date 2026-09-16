@@ -7,15 +7,19 @@
  * (§3 boundaries, §5 orchestration contract, §11 ownership rules, §17 START
  * readiness).
  *
- * OWNS (first authorized slice): session lifecycle
- * (`READY_TO_START → PREPARING → RUNNING`, with `PAUSED` as an orthogonal
- * freeze), module applicability for START/PREPARING, the start/pause/resume
- * action set, and the frozen presentation view-model.
+ * OWNS (INTRO slice): session lifecycle
+ * (`READY_TO_START → PREPARING → AWAITING_WORK_SET → RUNNING`, with `PAUSED`
+ * as an orthogonal freeze), module applicability for
+ * START/PREPARING/EXERCISE_INTRO and the SET1 entry boundary, the
+ * start/pause/resume/begin-work-set action set, and the frozen presentation
+ * view-model.
  *
- * DOES NOT OWN (later work packages, prohibited here): exercise-block
- * sequencing, set/rest progression, transitions, deferred/skipped resolution,
- * completion eligibility — the contract is shaped so those extend additively
- * without redesign (spec §2), but they are NOT implemented in this slice.
+ * DOES NOT OWN (later work packages, prohibited here): set execution,
+ * set/rest progression, exercise-block completion, transitions, deferred/
+ * skipped resolution, completion eligibility — the contract is shaped so
+ * those extend additively without redesign (spec §2), but they are NOT
+ * implemented in this slice. WORK_SET presentation is a static boundary
+ * placeholder only (the INTRO delta implements INTRO, not SET1 UI).
  *
  * Presentation NEVER sequences: components consume the view-model and
  * dispatch these actions through the adapter — nothing else. No competing
@@ -67,6 +71,7 @@ function initialViewModel(prescription: ResolvedPrescription): OrchestrationStat
     modules,
     activeExercise: prescription.exercises[0] ?? null,
     activeExerciseIndex: prescription.exercises.length > 0 ? 0 : null,
+    introExercise: null,
     preparingSecondsRemaining: null,
     executionElapsedSeconds: 0,
     pausedFromModule: null,
@@ -115,20 +120,23 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
         state = next;
         return {state: next, effects: []};
       }
-      // PREPARING elapsed → the session is RUNNING; the exercise-block
-      // composition (EXERCISE_INTRO / WORK_SET / …) activates in later
-      // authorized slices. The view-model exposes the first exercise now.
-      const nextModules = {...modules, PREPARING: 'DONE' as const};
+      // PREPARING elapsed → the EXERCISE_INTRO module activates (owner
+      // polish delta §C: PREPARING countdown completion must transition to
+      // INTRO, never directly to SET1/RUNNING). The view-model exposes the
+      // intro exercise (once per new identity — spec §5.3); the user exits
+      // INTRO through BEGIN_WORK_SET (no timeout auto-completion).
+      const nextModules = {...modules, PREPARING: 'DONE' as const, EXERCISE_INTRO: 'ACTIVE' as const};
       const next: OrchestrationState = {
         ...state,
-        lifecycle: 'RUNNING',
-        activeModule: null,
+        lifecycle: 'AWAITING_WORK_SET',
+        activeModule: 'EXERCISE_INTRO',
         modules: nextModules,
+        introExercise: state.activeExercise,
         preparingSecondsRemaining: null,
         executionElapsedSeconds: total,
       };
       state = next;
-      return {state: next, effects: [{kind: 'MODULE_CHANGED', moduleId: null}]};
+      return {state: next, effects: [{kind: 'MODULE_CHANGED', moduleId: 'EXERCISE_INTRO'}]};
     }
 
     if (state.lifecycle === 'RUNNING') {
@@ -140,8 +148,33 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     return {state, effects: []};
   };
 
+  /**
+   * INTRO primary progression (owner polish delta §C): the deterministic
+   * INTRO → SET1 entry boundary. `AWAITING_WORK_SET → RUNNING` with
+   * WORK_SET ACTIVE; execution accounting continues in RUNNING. No other
+   * state may dispatch it (fail-closed, like every action).
+   */
+  const beginWorkSet = (): OrchestrationTransition => {
+    if (state.lifecycle !== 'AWAITING_WORK_SET' || state.activeModule !== 'EXERCISE_INTRO') {
+      return {state, effects: []};
+    }
+    const next: OrchestrationState = {
+      ...state,
+      lifecycle: 'RUNNING',
+      activeModule: 'WORK_SET',
+      modules: {...state.modules, EXERCISE_INTRO: 'DONE' as const, WORK_SET: 'ACTIVE' as const},
+      introExercise: null,
+    };
+    state = next;
+    return {state: next, effects: [{kind: 'MODULE_CHANGED', moduleId: 'WORK_SET'}]};
+  };
+
   const freeze = (duringModule: ExperienceModuleId | null): OrchestrationTransition => {
-    if (state.lifecycle !== 'PREPARING' && state.lifecycle !== 'RUNNING') {
+    if (
+      state.lifecycle !== 'PREPARING' &&
+      state.lifecycle !== 'RUNNING' &&
+      state.lifecycle !== 'AWAITING_WORK_SET'
+    ) {
       return {state, effects: []};
     }
     const next: OrchestrationState = {
@@ -158,7 +191,12 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     const duringModule = state.pausedFromModule;
     const next: OrchestrationState = {
       ...state,
-      lifecycle: duringModule === 'PREPARING' ? 'PREPARING' : 'RUNNING',
+      lifecycle:
+        duringModule === 'PREPARING'
+          ? 'PREPARING'
+          : duringModule === 'EXERCISE_INTRO'
+            ? 'AWAITING_WORK_SET'
+            : 'RUNNING',
       pausedFromModule: null,
     };
     state = next;
@@ -174,7 +212,7 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     advance(elapsedSeconds: number): OrchestrationTransition {
       return advance(elapsedSeconds);
     },
-    /** Session actions (first-slice set: start/pause/resume only). */
+    /** Session actions (first-slice set + the INTRO BEGIN_WORK_SET boundary). */
     dispatch(action: SessionAction, atMs = Date.now()): OrchestrationTransition {
       switch (action.type) {
         case 'START_SESSION':
@@ -183,6 +221,8 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
           return freeze(state.activeModule);
         case 'RESUME':
           return unfreeze();
+        case 'BEGIN_WORK_SET':
+          return beginWorkSet();
         default: {
           const exhaustive: never = action;
           void exhaustive;

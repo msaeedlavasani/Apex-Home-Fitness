@@ -11,9 +11,7 @@ import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
   deriveExerciseDetails,
   exerciseDetailFields,
-} from '@/lib/workout/experience/exerciseDetails';
-import {
-  createWorkoutMusic,
+} from '@/lib/workout/experience/exerciseDetails';import {createWorkoutMusic,
   type WorkoutMusicController,
 } from '@/lib/workout/experience/sessionMusic';
 import {deriveReadinessTips} from './readiness';
@@ -21,6 +19,8 @@ import {BackstageBackdrop} from './BackstageBackdrop';
 import {ExerciseDetailsSheet} from './ExerciseDetailsSheet';
 import {StartStage} from './StartStage';
 import {PreparingStage} from './PreparingStage';
+import {IntroStage} from './IntroStage';
+import {WorkSetStage} from './WorkSetStage';
 import {
   WorkoutV2ExitControl,
   WorkoutV2LanguageControl,
@@ -71,6 +71,16 @@ import {
  * the foreground UI becomes primary — no blur, no modal backdrop, UI stays
  * sharp. Reduced motion: the veil is an opacity transition carrying no
  * information; stage swaps use the CSS-gated `animate-phase-enter`.
+ *
+ * SHELL CONTROL CONTRAST (owner polish delta §B): the compact shell controls
+ * are a low-contrast overlay over the bright Backstage on DESKTOP LIGHT —
+ * the brand wordmark and `CONTROL_BASE` surface/border tokens are too faint
+ * there. The shared shell therefore carries a `data-workout-theme` attribute
+ * and two DESKTOP-ONLY scrim utilities (a localized top veil + a strengthened
+ * control surface token) that activate only on `sm:`+ screens in the LIGHT
+ * theme: geometry, radii, touch targets and positions are untouched, Mobile
+ * Light and Dark themes are unaffected, and START/PREPARING/INTRO share ONE
+ * treatment (never state-specific copies).
  */
 
 export interface ExperienceShellProps {
@@ -94,7 +104,7 @@ export function ExperienceShell({
   const {resolvedTheme} = useTheme();
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
 
-  const {viewModel, startSession, pause, resume} = useWorkoutSession(exercises, {
+  const {viewModel, startSession, pause, resume, beginWorkSet} = useWorkoutSession(exercises, {
     onEffect: useMemo(() => {
       const handler = (effect: {kind: string}) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
@@ -156,13 +166,20 @@ export function ExperienceShell({
   }, []);
 
   const handleStart = useCallback(() => {
-    startSession(); // the real START → PREPARING transition (§25)
+    // START dispatch (§25) — the session's first, gesture-backed user
+    // interaction: the approved playback unlock for the music controller.
+    startSession();
     // §30: the Start Workout gesture is the valid playback interaction.
     void getMusic()
       .play()
       .then((state) => setMusicPlaying(state === 'PLAYING'))
       .catch(() => setMusicPlaying(false));
   }, [startSession, getMusic]);
+
+  /** INTRO primary CTA — BEGIN_WORK_SET through the single authority (INTRO delta: INTRO → WORK_SET). */
+  const handleBeginWorkSet = useCallback(() => {
+    beginWorkSet();
+  }, [beginWorkSet]);
 
   const handleToggleMusic = useCallback(() => {
     const music = getMusic();
@@ -249,8 +266,14 @@ export function ExperienceShell({
 
       {/* TOP SHELL (correction §5): [Brand] …… [Language] | [Theme] | [Exit] —
           compact corner controls, one design family, no dominating capsule.
-          RTL mirrors naturally through flexbox row direction. */}
-      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+          RTL mirrors naturally through flexbox row direction.
+          `data-workout-theme` scopes the desktop-light scrim CSS (delta §B):
+          a sm:-only top veil restores text/icon contrast on the bright
+          Backstage; geometry/touch targets are untouched. */}
+      <header
+        data-workout-theme={theme}
+        className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6"
+      >
         <BrandIcon size="h-9 w-9" iconClass="h-5 w-5" wordmark />
         <div
           data-workout-v2-top-controls=""
@@ -276,8 +299,8 @@ export function ExperienceShell({
           <StartStage
             viewModel={viewModel}
             eyebrow={t('start.eyebrow')}
-            title={sessionTitle ?? t('start.titleFallback')}
-            copy={t('start.copy')}
+            headline={t('start.headline')}
+            supporting={t('start.supporting')}
             ctaLabel={t('start.cta')}
             onStart={handleStart}
           />
@@ -304,6 +327,20 @@ export function ExperienceShell({
             onMore={openDetails}
           />
         )}
+        {activeModule === 'EXERCISE_INTRO' && (
+          <IntroStage
+            viewModel={viewModel}
+            firstExerciseLabel={t('intro.firstExercise')}
+            equipment={t('preparing.bodyweight')}
+            cues={t.raw('intro.cues') as readonly string[]}
+            beginSetLabel={t('intro.beginSet')}
+            mentorUnavailableLabel={t('intro.mentorUnavailable')}
+            mentorLoadingLabel={t('intro.mentorLoading')}
+            mentorAriaLabel={t('intro.mentorAria')}
+            onBeginWorkSet={handleBeginWorkSet}
+          />
+        )}
+        {activeModule === 'WORK_SET' && <WorkSetStage viewModel={viewModel} />}
         {activeModule === null && (
           <div role="status" className="flex flex-1 items-center justify-center px-4 text-center">
             <p className="text-sm text-[color:var(--apex-text-secondary)]">{t('sessionLive')}</p>

@@ -7,13 +7,20 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 /**
  * StartStage — the START module presentation, WORKOUT-V2-IMPL-01 OWNER
  * VISUAL CORRECTION (Start Dark Mobile + Desktop references = geometry
- * authority; correction contract §6–§8).
+ * authority; correction contract §6–§8) + the START/PREPARING POLISH delta.
  *
- * OWNER CORRECTIONS vs the previous slice (superseding the old frozen
- * geometry where they conflict):
- *   - ONE hero composition: eyebrow → title → copy → accent → CTA as a
- *     single centered flex column. The CTA belongs to the hero flow — it is
- *     NEVER fixed/absolute bottom-anchored at any breakpoint (§6.2).
+ * HERO CONTENT LAW (owner polish delta §A): START is the ENTRY state into
+ * the workout experience — the hero answers "What am I about to do?" at the
+ * SESSION level and must NOT display the workout/exercise identity as its
+ * primary headline. Exercise/workout identity belongs later in the
+ * progression (PREPARING/INTRO). The shell therefore supplies session-level
+ * copy (`headline` + `supporting`), never the resolved workout name; the
+ * underlying resolver/prescription data model is untouched.
+ *
+ * OWNER CORRECTIONS (visual geometry, unchanged by the content delta):
+ *   - ONE hero composition: eyebrow → headline → supporting → accent → CTA
+ *     as a single centered flex column. The CTA belongs to the hero flow —
+ *     it is NEVER fixed/absolute bottom-anchored at any breakpoint (§6.2).
  *   - MOBILE (Start dark mobile.png, ≤430px): the hero copy group rides
  *     HIGH (upper-middle) as one coherent composition; the CTA sits low
  *     over the mat. Expressed with flexible spacers in ONE flex column
@@ -21,27 +28,30 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
  *     flexible gap between accent and CTA) — real in-flow layout, no
  *     absolute positioning, no detached viewport footer, hierarchy order
  *     unchanged. The bottom spacer keeps a safe-area aware minimum so the
- *     CTA never collides with the home indicator. Mobile CTA uses size
- *     `lg` (50px) so it stays proportionate to the hero; desktop keeps
- *     `xl` (56px) per the approved desktop geometry. Subtitle contrast:
- *     `--apex-text` (full-strength theme token) on mobile only — no
- *     opaque card, no geometry change, identical in light and dark.
+ *     CTA never collides with the home indicator. Mobile CTA uses a 50px
+ *     trim so it stays proportionate to the hero; desktop keeps `xl`
+ *     (56px) per the approved desktop geometry. Supporting-copy contrast:
+ *     `--apex-text` (full-strength theme token) on mobile only — no opaque
+ *     card, no geometry change, identical in light and dark.
  *   - DESKTOP (Start dark desktop.png): spacers collapse (md:) and the
  *     whole stack is optically centered with the CTA directly under the
  *     copy — the reference's single hero block (§6.2). DESKTOP GEOMETRY
- *     IS UNCHANGED by the mobile calibration.
- *   - Responsive typography discipline: mobile title is capped (text-4xl,
- *     scaling to 6xl/7xl on wider screens), with controlled max-width
- *     (`max-w-[11ch]` mobile / `max-w-2xl` desktop) so long titles wrap
- *     naturally over 2 lines like the reference ("Full Body / Strength") —
- *     never one oversized wide line, never nowrap, no hardcoded breaks.
+ *     IS UNCHANGED by the mobile calibration. The shorter session headline
+ *     may wrap differently than the old workout title — spacing rebalances
+ *     naturally (delta §A: no artificial multi-line height is preserved).
+ *   - Responsive typography discipline: mobile headline is capped
+ *     (text-4xl, scaling to 6xl/7xl on wider screens) with controlled
+ *     max-width (`max-w-[14ch]` mobile / `max-w-2xl` desktop) so text wraps
+ *     naturally — never one oversized wide line, never nowrap, no hardcoded
+ *     breaks. Width never forces a break inside a Persian word (breaks land
+ *     on spaces, not the ZWNJ).
  *   - Persian receives the same disciplined width treatment (RTL verified
  *     by E2E); tracking on the eyebrow stays EN-only (rtl:neutralized).
  *
  * CTA: canonical Design System Button — variant `filled`, tone `primary`;
- * mobile `lg` (h-[50px] = 50px, ≥ touch target), desktop `xl` (h-14 =
- * 56px) per the approved desktop reference. Flat (no gradient), no icon,
- * one native `<button type="button">` dispatching START once through the
+ * mobile trimmed (h-[50px], ≥ touch target), desktop `xl` (h-14 = 56px)
+ * per the approved desktop reference. Flat (no gradient), no icon, one
+ * native `<button type="button">` dispatching START once through the
  * orchestration authority. Startup reliability behavior is unchanged.
  *
  * Reduced motion: only the kit's canonical press/hover feedback transitions.
@@ -49,19 +59,19 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 
 export interface StartStageProps {
   viewModel: SessionViewModel;
-  /** Localized eyebrow: workout context (e.g. "Today's Workout"). */
+  /** Localized session eyebrow (e.g. "Today's Workout"). */
   eyebrow: string;
-  /** Localized hero title — the resolved workout name. */
-  title: string;
-  /** Localized supporting copy under the title. */
-  copy: string;
+  /** Localized session-level hero headline (no exercise/workout identity — delta §A). */
+  headline: string;
+  /** Localized session-level supporting sentence under the headline. */
+  supporting: string;
   /** Localized primary CTA label ("Start Workout"). */
   ctaLabel: string;
   /** Dispatches the START_SESSION orchestration action. */
   onStart: () => void;
 }
 
-export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}: StartStageProps) {
+export function StartStage({viewModel, eyebrow, headline, supporting, ctaLabel, onStart}: StartStageProps) {
   const startable = viewModel.lifecycle === 'READY_TO_START' && viewModel.activeExercise != null;
 
   return (
@@ -73,7 +83,9 @@ export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}:
           with a 12vh bottom inset for the mat/home-indicator zone. vh units
           keep the composition proportional across 844/932. Desktop (md:)
           restores the approved a9e625d geometry exactly: no offsets, block
-          centers with flex-1, CTA directly under the copy (§6.2). */}
+          centers with flex-1, CTA directly under the copy (§6.2). The
+          session-level headline is shorter than the old workout title; the
+          flexible spacing absorbs the height change naturally (delta §A). */}
       <div
         className="flex flex-1 flex-col items-center px-4 pt-[28vh] pb-[12vh] text-center sm:px-6 md:justify-center md:pt-0 md:pb-10"
       >
@@ -83,20 +95,21 @@ export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}:
         >
           {eyebrow}
         </p>
-        {/* Controlled width → natural wrapping for long titles (EN + FA); the
-            reference's two-line title shape emerges from width + scale. */}
+        {/* Session-level headline (delta §A: no workout/exercise identity on
+            START). Controlled width → natural wrapping; the reference's
+            two-line hero shape emerges from width + scale. */}
         <h1
           data-workout-v2-start-title=""
-          className="mt-4 max-w-[11ch] text-4xl font-extrabold leading-[1.08] text-[color:var(--apex-text)] sm:max-w-2xl sm:text-6xl md:mt-5 md:text-7xl"
+          className="mt-4 max-w-[14ch] text-4xl font-extrabold leading-[1.08] text-[color:var(--apex-text)] sm:max-w-2xl sm:text-6xl md:mt-5 md:text-7xl"
         >
-          {title}
+          {headline}
         </h1>
-        {/* Mobile subtitle contrast: full-strength `--apex-text` (theme
+        {/* Mobile supporting contrast: full-strength `--apex-text` (theme
             token, no card/opaque surface) so the supporting sentence stays
             readable against the bright equipment band; desktop keeps the
             softer secondary token. Geometry identical in light and dark. */}
         <p className="mt-4 max-w-xs text-sm leading-relaxed text-[color:var(--apex-text)] max-[430px]:text-[13px] sm:mt-5 sm:max-w-sm sm:text-lg sm:text-[color:var(--apex-text-secondary)]">
-          {copy}
+          {supporting}
         </p>
         <span aria-hidden="true" className="mt-6 h-[3px] w-10 rounded-full bg-apex-primary sm:mt-7" />
         {/* CTA — directly associated with the hero stack (correction §6.2:

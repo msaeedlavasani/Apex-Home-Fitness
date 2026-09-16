@@ -235,3 +235,124 @@ test.describe('Workout V2 first slice — Backstage family and RTL', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 });
+
+test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', () => {
+  test.use({viewport: {width: 390, height: 844}, hasTouch: true});
+
+  async function reachIntro(page: Page) {
+    await page.goto('/en/workout/v2');
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    await expect(start).toBeVisible();
+    await start.tap();
+    await expect(page.getByText('Prepare', {exact: true})).toBeVisible();
+    // The user CANNOT skip the countdown: completion enters INTRO, never SET1.
+    await page.getByRole('button', {name: 'Start Set 1', exact: true}).waitFor({state: 'attached', timeout: 15_000});
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible();
+  }
+
+  test('PREPARING countdown completion enters INTRO (never SET1 directly)', async ({page}) => {
+    await reachIntro(page);
+    await expect(page.locator('[data-workout-v2-preparing-stage]')).toHaveCount(0);
+  });
+
+  test('INTRO presents resolved Squat identity, equipment, Mentor and cues', async ({page}) => {
+    await reachIntro(page);
+    await expect(page.locator('[data-workout-v2-intro-exercise]')).toHaveText(/Squat|اسکات/);
+    await expect(page.locator('[data-workout-v2-intro-equipment]')).toHaveText(/Bodyweight/);
+    await expect(page.locator('[data-workout-v2-mentor]')).toBeAttached();
+    const cues = page.locator('[data-workout-v2-intro-cues] li');
+    await expect(cues).toHaveCount(3);
+    await expect(page.getByText('Keep your chest up')).toBeVisible();
+  });
+
+  test('INTRO CTA crosses the SET1 boundary exactly once (user-controlled, no timeout)', async ({page}) => {
+    await reachIntro(page);
+    const cta = page.getByRole('button', {name: 'Start Set 1', exact: true});
+    // Real Mentor readiness gates the primary action.
+    await expect(cta).toBeEnabled({timeout: 20_000});
+    await cta.tap();
+    await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible();
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toHaveCount(0);
+  });
+
+  test('INTRO holds no extra controls: exactly ONE button (primary progression)', async ({page}) => {
+    await reachIntro(page);
+    // The shell header (language/theme/exit) is a shared overlay; the INTRO
+    // stage itself contributes exactly one interactive control.
+    const stageButtons = page.locator('[data-workout-v2-intro-stage] button');
+    await expect(stageButtons).toHaveCount(1);
+  });
+
+  test('INTRO has no horizontal overflow at mobile and desktop', async ({page}) => {
+    await reachIntro(page);
+    const overflowMobile = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflowMobile).toBeLessThanOrEqual(0);
+    await page.setViewportSize({width: 1440, height: 900});
+    await page.waitForTimeout(600);
+    const overflowDesktop = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflowDesktop).toBeLessThanOrEqual(0);
+  });
+
+  test('INTRO renders Persian identity + cues under RTL', async ({page}) => {
+    await page.goto('/fa/workout/v2');
+    const start = page.getByRole('button', {name: 'شروع تمرین', exact: true});
+    await expect(start).toBeVisible();
+    await start.tap();
+    await page.getByRole('button', {name: 'شروع ست اول', exact: true}).waitFor({state: 'attached', timeout: 15_000});
+    await expect(page.locator('[data-workout-v2-intro-exercise]')).toHaveText('اسکات');
+    await expect(page.locator('[data-workout-v2-intro-cues] li')).toHaveCount(3);
+    await expect(page.getByText('سینه بالا')).toBeVisible();
+  });
+});
+
+test.describe('Workout V2 — desktop Light shell contrast (owner polish delta §B)', () => {
+  test('desktop Light applies the contrast scrim without geometry changes; dark/mobile untouched', async ({page}) => {
+    await page.setViewportSize({width: 1440, height: 900});
+    // Deterministic LIGHT initial state (canonical storage key).
+    await page.addInitScript(() => window.localStorage.setItem('theme', 'light'));
+    await page.goto('/en/workout/v2');
+    const shell = page.locator('[data-workout-v2-shell]');
+    const controls = page.locator('[data-workout-v2-top-controls]');
+
+    // Light desktop: the shell carries the theme marker and the scrim
+    // pseudo-element exists (content rendered on ::before).
+    await expect(shell).toHaveAttribute('data-workout-theme', 'light');
+    const lightScrim = await shell.evaluate(
+      (element) => getComputedStyle(element, '::before').backgroundImage,
+    );
+    expect(lightScrim).toContain('linear-gradient');
+    // Controls gain the sturdier light surface (≥ the old translucent base).
+    const control = controls.locator('button').first();
+    const lightSurface = await control.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(lightSurface).toContain('rgba(255, 255, 255');
+
+    // Dark: no scrim, base tokens (no geometry/position shift either).
+    await page.evaluate(() => window.localStorage.setItem('theme', 'dark'));
+    await page.reload();
+    await expect(shell).toHaveAttribute('data-workout-theme', 'dark');
+    const darkScrim = await shell.evaluate(
+      (element) => getComputedStyle(element, '::before').backgroundImage,
+    );
+    expect(darkScrim).toBe('none');
+    const darkControl = controls.locator('button').first();
+    const darkBox = await darkControl.boundingBox();
+    expect(darkBox).not.toBeNull();
+
+    // Mobile Light: the scrim must NOT activate below the sm breakpoint.
+    await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
+    await page.setViewportSize({width: 390, height: 844});
+    await page.reload();
+    const mobileScrim = await shell.evaluate(
+      (element) => getComputedStyle(element, '::before').backgroundImage,
+    );
+    expect(mobileScrim).toBe('none');
+    // Control geometry identical between themes at the same viewport.
+    const mobileLightBox = await controls.locator('button').first().boundingBox();
+    expect(mobileLightBox!.x).toBeCloseTo(darkBox!.x, 0);
+    expect(mobileLightBox!.width).toBeCloseTo(darkBox!.width, 0);
+  });
+});

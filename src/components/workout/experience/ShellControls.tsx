@@ -31,7 +31,9 @@ import {useTheme} from '@/components/providers/ThemeProvider';
  *
  * Compact family: 44px circular buttons (≥ canonical touch target), shared
  * surface/border tokens, one design family — never dominant over content.
- * This file is isolated to the V2 experience surface; the site-wide
+ * Each control carries `data-slot="workout-v2-control"` so the shared shell
+ * can apply the desktop-light contrast scrim (owner polish delta §B) without
+ * geometry changes. Isolated to the V2 experience surface; the site-wide
  * LanguageSwitcher/ThemeToggle used by the rest of the app are untouched.
  */
 
@@ -53,6 +55,7 @@ export function WorkoutV2LanguageControl() {
     <button
       type="button"
       data-workout-v2-language={true}
+      data-slot="workout-v2-control"
       onClick={() => router.push(pathname, {locale: target})}
       aria-label={target === 'en' ? t('switchToEn') : t('switchToFa')}
       title={target === 'en' ? t('switchToEn') : t('switchToFa')}
@@ -78,6 +81,7 @@ export function WorkoutV2ThemeControl() {
     <button
       type="button"
       data-workout-v2-theme={true}
+      data-slot="workout-v2-control"
       onClick={() => setTheme(dark ? 'light' : 'dark')}
       aria-label={label}
       title={label}
@@ -104,6 +108,7 @@ export function WorkoutV2ExitControl() {
     <button
       type="button"
       data-workout-v2-exit={true}
+      data-slot="workout-v2-control"
       onClick={() => router.push('/dashboard')}
       aria-label={t('exit')}
       title={t('exit')}

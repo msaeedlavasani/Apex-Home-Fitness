@@ -28,6 +28,14 @@
  *   - it carries NO persistence shape: nothing here is written to
  *     IndexedDB/DB, and no snapshotVersion changes (WP-01 prohibition).
  *
+ * INTRO EXTENSION (owner polish delta §C — INTRO only): the EXERCISE_INTRO
+ * module is now AUTHORED as the deterministic boundary between PREPARING
+ * and WORK_SET. The contract-level entry point is `activeModule =
+ * 'EXERCISE_INTRO'` with `introExercise` exposed from the view-model; the
+ * exit action `BEGIN_WORK_SET` hands control to the SET1 entry contract.
+ * NO set execution, completion, REST or progression logic is implemented
+ * here — WORK_SET remains a PENDING module and a later slice.
+ *
  * PURE: types + pure helpers only — no React, no I/O, no side effects.
  */
 
@@ -99,22 +107,30 @@ export interface ResolvedPrescription {
  */
 export type ModuleProgressionPolicy = Partial<Record<ExperienceModuleId, ProgressionPolicy>>;
 
-/** Orchestration commands (plan §17 `START_SHARED_CONTRACTS`). First slice: start/pause/resume only. */
+/**
+ * Orchestration commands (plan §17 `START_SHARED_CONTRACTS`). The set is
+ * still the first-slice set (start/pause/resume) plus the INTRO extension's
+ * `BEGIN_WORK_SET` — the deterministic INTRO → SET1 boundary (delta §C).
+ * No SKIP/COMPLETE/deferral commands exist.
+ */
 export type SessionAction =
   | {type: 'START_SESSION'}
   | {type: 'PAUSE'}
-  | {type: 'RESUME'};
+  | {type: 'RESUME'}
+  | {type: 'BEGIN_WORK_SET'};
 
 /**
- * Session lifecycle (plan §5 states — implementation view, first slice):
- * `READY_TO_START → PREPARING → RUNNING`. `AWAITING_CONFIRMATION` and the
- * exercise-block progression belong to later work packages and are
- * intentionally absent. `PAUSED` freezes the current execution context
- * (spec FR-9 posture at first-slice scope).
+ * Session lifecycle (plan §5 states — implementation view, INTRO slice):
+ * `READY_TO_START → PREPARING → AWAITING_WORK_SET (INTRO) → RUNNING`.
+ * `AWAITING_WORK_SET` is the INTRO presentation window: orchestration
+ * presentation is parked there until the explicit `BEGIN_WORK_SET` action
+ * moves the session to `RUNNING` at the SET1 entry boundary (delta §C).
+ * `PAUSED` freezes the current execution context (spec FR-9 posture).
  */
 export type SessionLifecycle =
   | 'READY_TO_START'
   | 'PREPARING'
+  | 'AWAITING_WORK_SET'
   | 'RUNNING'
   | 'PAUSED';
 
@@ -133,6 +149,12 @@ export interface SessionViewModel {
   /** The exercise the session will execute first once running (null before start). */
   readonly activeExercise: ResolvedExercisePrescription | null;
   readonly activeExerciseIndex: number | null;
+  /**
+   * The exercise INTRO is presenting (delta §C: INTRO is ONCE per new
+   * exercise identity, before its first work set — spec §5.3). Null
+   * outside EXERCISE_INTRO.
+   */
+  readonly introExercise: ResolvedExercisePrescription | null;
   /** Seconds remaining in PREPARING (null outside PREPARING). Text-rendered — never animation-only. */
   readonly preparingSecondsRemaining: number | null;
   /** Total session execution seconds (preparing + running), pause-frozen. */
@@ -164,10 +186,16 @@ export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModu
   };
 }
 
-/** Progression policy defaults for the authorized slice (spec §5.5). */
+/**
+ * Progression policy defaults for the authorized slice (spec §5.5). INTRO's
+ * user-controlled exit (BEGIN_WORK_SET) is `CONFIRMATION_REQUIRED` — the
+ * user decides when the movement is understood; NO timeout auto-completes
+ * INTRO (delta §C).
+ */
 export const SLICE_PROGRESSION_POLICY: ModuleProgressionPolicy = {
   START: 'AUTO',
   PREPARING: 'AUTO',
+  EXERCISE_INTRO: 'CONFIRMATION_REQUIRED',
 };
 
 /** Positive-integer normalizer (0/undefined → null). Pure. */
