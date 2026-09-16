@@ -297,7 +297,10 @@ test('START control: canonical CTA semantics (native button, xl height, focus ri
   assert.ok(button, 'canonical Button renders a native button element');
   assert.equal(button.props.type, 'button');
   assert.match(String(button.props.className), /focus-visible:ring-2/);
-  assert.match(String(button.props.className), /h-14/, 'canonical xl = 56px CTA height');
+  // Owner delta: mobile CTA trimmed (50px via max-[430px]) so it stays
+  // proportionate to the hero; desktop keeps the canonical xl = 56px.
+  assert.match(String(button.props.className), /h-14/, 'canonical xl = 56px CTA height (desktop)');
+  assert.match(String(button.props.className), /max-\[430px\]:h-\[50px\]/, 'mobile CTA trimmed to 50px (owner delta)');
   assert.doesNotMatch(String(button.props.className), /bg-gradient/, 'no CTA gradient');
 });
 

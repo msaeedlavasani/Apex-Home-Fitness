@@ -14,16 +14,22 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
  *   - ONE hero composition: eyebrow → title → copy → accent → CTA as a
  *     single centered flex column. The CTA belongs to the hero flow — it is
  *     NEVER fixed/absolute bottom-anchored at any breakpoint (§6.2).
- *   - MOBILE (Start dark mobile.png): the reference places the CTA low in
- *     the composition, over the mat, while the copy sits above center.
- *     Expressed with TWO flexible spacers around the hero block in ONE
- *     flex column (top flex-[2] : bottom flex-[1]) — real in-flow layout,
- *     no absolute positioning, no detached viewport footer, hierarchy
- *     order unchanged (§6.1). The bottom spacer keeps a safe-area aware
- *     minimum so the CTA never collides with the home indicator.
+ *   - MOBILE (Start dark mobile.png, ≤430px): the hero copy group rides
+ *     HIGH (upper-middle) as one coherent composition; the CTA sits low
+ *     over the mat. Expressed with flexible spacers in ONE flex column
+ *     (top flex-[3] : bottom flex-[2] around the copy block; a slim
+ *     flexible gap between accent and CTA) — real in-flow layout, no
+ *     absolute positioning, no detached viewport footer, hierarchy order
+ *     unchanged. The bottom spacer keeps a safe-area aware minimum so the
+ *     CTA never collides with the home indicator. Mobile CTA uses size
+ *     `lg` (50px) so it stays proportionate to the hero; desktop keeps
+ *     `xl` (56px) per the approved desktop geometry. Subtitle contrast:
+ *     `--apex-text` (full-strength theme token) on mobile only — no
+ *     opaque card, no geometry change, identical in light and dark.
  *   - DESKTOP (Start dark desktop.png): spacers collapse (md:) and the
  *     whole stack is optically centered with the CTA directly under the
- *     copy — the reference's single hero block (§6.2).
+ *     copy — the reference's single hero block (§6.2). DESKTOP GEOMETRY
+ *     IS UNCHANGED by the mobile calibration.
  *   - Responsive typography discipline: mobile title is capped (text-4xl,
  *     scaling to 6xl/7xl on wider screens), with controlled max-width
  *     (`max-w-[11ch]` mobile / `max-w-2xl` desktop) so long titles wrap
@@ -32,8 +38,9 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
  *   - Persian receives the same disciplined width treatment (RTL verified
  *     by E2E); tracking on the eyebrow stays EN-only (rtl:neutralized).
  *
- * CTA: canonical Design System Button — variant `filled`, tone `primary`,
- * size `xl` (h-14 = 56px, ≥ touch target), flat (no gradient), no icon,
+ * CTA: canonical Design System Button — variant `filled`, tone `primary`;
+ * mobile `lg` (h-[50px] = 50px, ≥ touch target), desktop `xl` (h-14 =
+ * 56px) per the approved desktop reference. Flat (no gradient), no icon,
  * one native `<button type="button">` dispatching START once through the
  * orchestration authority. Startup reliability behavior is unchanged.
  *
@@ -59,11 +66,17 @@ export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}:
 
   return (
     <div data-workout-v2-start-stage="" className="relative flex h-full w-full flex-col">
-      {/* ONE hero column — mobile distributes free space 2:1 around the hero
-          block (CTA rides low over the mat, §6.1); desktop collapses the
-          spacers and centers the stack (§6.2). */}
-      <div aria-hidden="true" className="min-h-6 flex-[2] md:hidden" />
-      <div className="flex flex-col items-center px-4 text-center sm:px-6 md:flex-1 md:justify-center md:pb-10">
+      {/* ONE hero column — mobile (≤430px): the copy block is the single
+          flexible child; it opens at a fixed optical offset (28vh ≈ the
+          reference's eyebrow line) and an internal flexible gap pushes the
+          CTA down to the reference's low position (~82% top, over the mat)
+          with a 12vh bottom inset for the mat/home-indicator zone. vh units
+          keep the composition proportional across 844/932. Desktop (md:)
+          restores the approved a9e625d geometry exactly: no offsets, block
+          centers with flex-1, CTA directly under the copy (§6.2). */}
+      <div
+        className="flex flex-1 flex-col items-center px-4 pt-[28vh] pb-[12vh] text-center sm:px-6 md:justify-center md:pt-0 md:pb-10"
+      >
         <p
           data-workout-v2-start-eyebrow=""
           className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--apex-text-secondary)] rtl:normal-case rtl:tracking-normal sm:text-sm"
@@ -78,13 +91,23 @@ export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}:
         >
           {title}
         </h1>
-        <p className="mt-4 max-w-xs text-sm leading-relaxed text-[color:var(--apex-text-secondary)] sm:mt-5 sm:max-w-sm sm:text-lg">
+        {/* Mobile subtitle contrast: full-strength `--apex-text` (theme
+            token, no card/opaque surface) so the supporting sentence stays
+            readable against the bright equipment band; desktop keeps the
+            softer secondary token. Geometry identical in light and dark. */}
+        <p className="mt-4 max-w-xs text-sm leading-relaxed text-[color:var(--apex-text)] max-[430px]:text-[13px] sm:mt-5 sm:max-w-sm sm:text-lg sm:text-[color:var(--apex-text-secondary)]">
           {copy}
         </p>
         <span aria-hidden="true" className="mt-6 h-[3px] w-10 rounded-full bg-apex-primary sm:mt-7" />
         {/* CTA — directly associated with the hero stack (correction §6.2:
-            no fixed/absolute bottom anchoring at any breakpoint). */}
-        <div className="mt-8 w-full max-w-md sm:mt-9 sm:w-auto sm:max-w-none">
+            no fixed/absolute bottom anchoring at any breakpoint). Mobile:
+            flexible gap + trimmed height so the CTA stays proportionate to
+            the hero (owner delta); desktop: `xl` directly under the copy. */}
+        {/* Flexible accent→CTA gap: absorbs the block's free space on
+            mobile so the CTA rides low (reference ~82%) while the copy
+            group stays high and clear of the bright floor band. */}
+        <div aria-hidden="true" className="min-h-8 flex-1 md:hidden" />
+        <div className="w-full max-w-md sm:mt-9 sm:w-auto sm:max-w-none">
           <Button
             type="button"
             data-workout-v2-start={true}
@@ -94,18 +117,18 @@ export function StartStage({viewModel, eyebrow, title, copy, ctaLabel, onStart}:
             disabled={!startable}
             aria-disabled={!startable}
             onClick={onStart}
-            className="w-full sm:w-auto sm:min-w-[340px]"
+            className="max-[430px]:h-[50px] max-[430px]:px-6 max-[430px]:text-[15px] w-full sm:w-auto sm:min-w-[340px]"
           >
             {ctaLabel}
           </Button>
         </div>
       </div>
-      {/* Mobile: flexible lower spacer (safe-area aware minimum) that keeps
-          the CTA above the home indicator; desktop: fixed optical lift of
-          the centered stack. In flow at every breakpoint (§6.1). */}
+      {/* Mobile: static safe-area-only footer (the 12vh inset lives inside
+          the copy block); desktop: fixed optical lift of the centered
+          stack. In flow at every breakpoint (§6.1). */}
       <div
         aria-hidden="true"
-        className="min-h-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))] flex-1 md:h-16 md:min-h-0 md:flex-none"
+        className="h-[max(1rem,env(safe-area-inset-bottom))] md:h-16"
       />
     </div>
   );

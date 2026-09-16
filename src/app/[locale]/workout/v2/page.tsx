@@ -16,9 +16,35 @@ import {
 } from '@/lib/programSchedule';
 import {
   SAMPLE_WORKOUT_EXERCISES,
-  resolveWorkoutKeyForDate,
   toWorkoutExercises,
 } from '@/lib/workout/samplePlan';
+
+/**
+ * V2 prototype/Owner-review exercise substitution (WORKOUT-V2 DELTA —
+ * PREPARING first-exercise identity): the Owner's representative exercise
+ * for this V2 prototype/Mentor review is the Squat, so the sample-plan
+ * fallback (the shared V1 fixture) leads with the Squat on the PREPARING
+ * surface. Scoped strictly to this V2 review route — the shipped V1
+ * `/workout` player keeps the untouched sample plan. The substitution uses
+ * the dedicated canonical message key `Library.exercises.squat`
+ * ("Squat" / "اسکات" — the Owner-specified identity), not the pre-existing
+ * `squats` key ("Air Squats" / "اسکوات با وزن بدن"), which remains exactly
+ * as-is for the V1 dashboard/library. Bodyweight-coherent, no hardcoded
+ * display strings in code, no invented fixture.
+ */
+const V2_FALLBACK_EXERCISE_SUBSTITUTION: Record<string, string> = {
+  // pushUps → squat: the Owner-designated representative movement.
+  pushUps: 'squat',
+};
+
+/**
+ * V2 prototype/Owner-review representative session: the delta fixes the
+ * review identity to "کالیستنیک بالاتنه" (upperBody) leading with the Squat
+ * (5 exercises · 17 sets), so the fallback resolves to that session on ANY
+ * review day instead of drifting with the weekday (the shipped /workout
+ * page keeps date-based resolution). Scoped to this route only.
+ */
+const V2_FALLBACK_WORKOUT_KEY = 'upperBody';
 
 type CurrentProgramResponse = {
   program: {
@@ -109,10 +135,19 @@ export default function WorkoutV2Page() {
     };
   }, []);
 
-  const fallbackKey = useMemo(() => resolveWorkoutKeyForDate(new Date()), []);
+  // V2 prototype: deterministic Owner-review session (see
+  // V2_FALLBACK_WORKOUT_KEY) — the date-based resolution stays on the
+  // shipped /workout route.
+  const fallbackKey = V2_FALLBACK_WORKOUT_KEY;
   const fallbackExercises = useMemo<SessionExercise[]>(
     () => toWorkoutExercises(
-      SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? [],
+      (SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? []).map((exercise) => (
+        // V2 review substitution (see constant): Owner-designated first
+        // exercise. Plan structure, sets/reps and other exercises untouched.
+        V2_FALLBACK_EXERCISE_SUBSTITUTION[exercise.nameKey]
+          ? {...exercise, nameKey: V2_FALLBACK_EXERCISE_SUBSTITUTION[exercise.nameKey]!}
+          : exercise
+      )),
       (nameKey) => tLibrary(`exercises.${nameKey}`),
     ),
     [fallbackKey, tLibrary],
