@@ -237,6 +237,11 @@ test.describe('Workout V2 first slice — Backstage family and RTL', () => {
 });
 
 test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', () => {
+  // The INTRO journey includes the real 5s PREPARING countdown plus the
+  // 16MB Mentor GLB fetch/parse; under parallel workers this can approach
+  // the 30s default, so give the group a realistic ceiling.
+  test.setTimeout(60_000);
+
   test.use({viewport: {width: 390, height: 844}, hasTouch: true});
 
   async function reachIntro(page: Page) {
@@ -245,9 +250,11 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(start).toBeVisible();
     await start.tap();
     await expect(page.getByText('Prepare', {exact: true})).toBeVisible();
-    // The user CANNOT skip the countdown: completion enters INTRO, never SET1.
-    await page.getByRole('button', {name: 'Start Set 1', exact: true}).waitFor({state: 'attached', timeout: 15_000});
-    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible();
+    // The countdown completes hands-free: PREPARING enters INTRO on its own.
+    // Ceiling is generous: the Mentor preparation parse (moved into the
+    // PREPARING window) shares the main thread and parallel workers on one
+    // machine contend, which can delay the observable module swap.
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 30_000});
   }
 
   test('PREPARING countdown completion enters INTRO (never SET1 directly)', async ({page}) => {
@@ -265,22 +272,82 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(page.getByText('Keep your chest up')).toBeVisible();
   });
 
-  test('INTRO CTA crosses the SET1 boundary exactly once (user-controlled, no timeout)', async ({page}) => {
-    await reachIntro(page);
-    const cta = page.getByRole('button', {name: 'Start Set 1', exact: true});
-    // Real Mentor readiness gates the primary action.
-    await expect(cta).toBeEnabled({timeout: 20_000});
-    await cta.tap();
-    await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible();
-    await expect(page.locator('[data-workout-v2-intro-stage]')).toHaveCount(0);
+  test('Mentor prepares during PREPARING and INTRO reuses it (single fetch, no reload)', async ({page}) => {
+    await page.goto('/en/workout/v2');
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    await expect(start).toBeVisible();
+    await start.tap();
+    await expect(page.getByText('Prepare', {exact: true})).toBeVisible();
+
+    // Hands-free countdown completion enters INTRO.
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 15_000});
+    // Timeline marker: the moment INTRO became visible.
+    await page.evaluate(() => performance.mark('intro-entry'));
+
+    // Mentor becomes visible-ready by attaching to the SAME prepared
+    // lifecycle — the GLB fetch must have started during PREPARING (before
+    // the intro-entry marker) and there must be exactly ONE GLB request.
+    await page.waitForFunction(
+      () => !document.querySelector('[data-workout-v2-mentor] [role="status"]'),
+      null,
+      {timeout: 60_000},
+    );
+    const evidence = await page.evaluate(() => {
+      const glb = performance
+        .getEntriesByType('resource')
+        .filter((r) => /\.glb(\?|$)/.test(r.name));
+      const marker = performance.getEntriesByName('intro-entry')[0];
+      return {
+        glbCount: glb.length,
+        glbStartTime: glb.length > 0 ? glb[0].startTime : null,
+        glbDuration: glb.length > 0 ? Math.round(glb[0].duration) : null,
+        introEntryTime: marker ? marker.startTime : null,
+      };
+    });
+    expect(evidence.glbCount).toBe(1);
+    expect(evidence.introEntryTime).not.toBeNull();
+    expect(evidence.glbStartTime).not.toBeNull();
+    // PREPARE ONCE: the fetch began BEFORE INTRO entry (during PREPARING).
+    expect(evidence.glbStartTime!).toBeLessThan(evidence.introEntryTime!);
+    // REUSE: no second load after INTRO took over (count stays 1 after a
+    // settle window on the same page).
+    await page.waitForTimeout(2_000);
+    const glbAfter = await page.evaluate(
+      () => performance.getEntriesByType('resource').filter((r) => /\.glb(\?|$)/.test(r.name)).length,
+    );
+    expect(glbAfter).toBe(1);
   });
 
-  test('INTRO holds no extra controls: exactly ONE button (primary progression)', async ({page}) => {
+  test('INTRO is hands-free: zero controls and no auto SET1 handoff', async ({page}) => {
     await reachIntro(page);
-    // The shell header (language/theme/exit) is a shared overlay; the INTRO
-    // stage itself contributes exactly one interactive control.
+    // The hands-free contract: the INTRO stage contributes NO interactive
+    // control — no Start/Next/Continue CTA and no reserved CTA space.
     const stageButtons = page.locator('[data-workout-v2-intro-stage] button');
-    await expect(stageButtons).toHaveCount(1);
+    await expect(stageButtons).toHaveCount(0);
+    // The handoff contract intentionally terminates at the INTRO boundary:
+    // no timeout-driven SET1 entry may occur on its own.
+    await page.waitForTimeout(3_000);
+    await expect(page.locator('[data-workout-v2-workset-stage]')).toHaveCount(0);
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible();
+  });
+
+  test('INTRO cue zone sits below the mentor host, outside the demonstration area', async ({page}) => {
+    await reachIntro(page);
+    // Let the 240ms stage entrance animation finish so geometry is stable
+    // before measuring (mid-animation boxes render with fractional scale).
+    await page.waitForTimeout(400);
+    const host = page.locator('[data-workout-v2-intro-mentor-host]');
+    const zone = page.locator('[data-workout-v2-intro-cue-zone]');
+    const hostBox = await host.boundingBox();
+    const zoneBox = await zone.boundingBox();
+    expect(hostBox).not.toBeNull();
+    expect(zoneBox).not.toBeNull();
+    // The cue zone starts BELOW the mentor host's bottom edge — it never
+    // overlaps the Mentor body/mat (owner correction delta §3).
+    expect(zoneBox!.y).toBeGreaterThanOrEqual(hostBox!.y + hostBox!.height - 1);
+    // Safe-area aware bottom padding is part of the zone itself.
+    const pad = await zone.evaluate((element) => getComputedStyle(element).paddingBottom);
+    expect(parseFloat(pad)).toBeGreaterThan(8);
   });
 
   test('INTRO has no horizontal overflow at mobile and desktop', async ({page}) => {
@@ -302,26 +369,37 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     const start = page.getByRole('button', {name: 'شروع تمرین', exact: true});
     await expect(start).toBeVisible();
     await start.tap();
-    await page.getByRole('button', {name: 'شروع ست اول', exact: true}).waitFor({state: 'attached', timeout: 15_000});
+    // Same rationale as reachIntro: the Mentor preparation parse shares the
+    // PREPARING window and main thread; the ceiling is deliberately generous.
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 30_000});
     await expect(page.locator('[data-workout-v2-intro-exercise]')).toHaveText('اسکات');
     await expect(page.locator('[data-workout-v2-intro-cues] li')).toHaveCount(3);
     await expect(page.getByText('سینه بالا')).toBeVisible();
+    await expect(page.locator('[data-workout-v2-intro-stage] button')).toHaveCount(0);
   });
 });
 
 test.describe('Workout V2 — desktop Light shell contrast (owner polish delta §B)', () => {
   test('desktop Light applies the contrast scrim without geometry changes; dark/mobile untouched', async ({page}) => {
     await page.setViewportSize({width: 1440, height: 900});
-    // Deterministic LIGHT initial state (canonical storage key).
-    await page.addInitScript(() => window.localStorage.setItem('theme', 'light'));
     await page.goto('/en/workout/v2');
-    const shell = page.locator('[data-workout-v2-shell]');
+    // Deterministic LIGHT initial state (canonical storage key). The value
+    // is set + reloaded per phase — an addInitScript would re-impose the
+    // seeded value on EVERY navigation and make the later dark phase
+    // impossible to observe.
+    await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
+    await page.reload();
+    // DOM OWNERSHIP CONTRACT: `data-workout-theme` is carried by the shared
+    // top-shell `<header>` (the surface the desktop-light scrim actually
+    // decorates) — not the outer shell section. Tests assert the attribute
+    // where the shell actually renders it.
+    const header = page.locator('header[data-workout-theme]');
     const controls = page.locator('[data-workout-v2-top-controls]');
 
-    // Light desktop: the shell carries the theme marker and the scrim
+    // Light desktop: the header carries the theme marker and the scrim
     // pseudo-element exists (content rendered on ::before).
-    await expect(shell).toHaveAttribute('data-workout-theme', 'light');
-    const lightScrim = await shell.evaluate(
+    await expect(header).toHaveAttribute('data-workout-theme', 'light');
+    const lightScrim = await header.evaluate(
       (element) => getComputedStyle(element, '::before').backgroundImage,
     );
     expect(lightScrim).toContain('linear-gradient');
@@ -330,11 +408,12 @@ test.describe('Workout V2 — desktop Light shell contrast (owner polish delta �
     const lightSurface = await control.evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(lightSurface).toContain('rgba(255, 255, 255');
 
-    // Dark: no scrim, base tokens (no geometry/position shift either).
+    // Desktop Dark: no scrim (dark is NEVER veiled, on any viewport),
+    // base tokens (no geometry/position shift either).
     await page.evaluate(() => window.localStorage.setItem('theme', 'dark'));
     await page.reload();
-    await expect(shell).toHaveAttribute('data-workout-theme', 'dark');
-    const darkScrim = await shell.evaluate(
+    await expect(header).toHaveAttribute('data-workout-theme', 'dark');
+    const darkScrim = await header.evaluate(
       (element) => getComputedStyle(element, '::before').backgroundImage,
     );
     expect(darkScrim).toBe('none');
@@ -342,17 +421,28 @@ test.describe('Workout V2 — desktop Light shell contrast (owner polish delta �
     const darkBox = await darkControl.boundingBox();
     expect(darkBox).not.toBeNull();
 
-    // Mobile Light: the scrim must NOT activate below the sm breakpoint.
-    await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
+    // Mobile phase at 390×844 — the same viewport for BOTH themes so the
+    // geometry comparison below is actually like-for-like.
     await page.setViewportSize({width: 390, height: 844});
+    // Mobile Dark reference: no scrim below the sm breakpoint, either theme.
     await page.reload();
-    const mobileScrim = await shell.evaluate(
+    const mobileDarkScrim = await header.evaluate(
+      (element) => getComputedStyle(element, '::before').backgroundImage,
+    );
+    expect(mobileDarkScrim).toBe('none');
+    const mobileDarkBox = await controls.locator('button').first().boundingBox();
+    expect(mobileDarkBox).not.toBeNull();
+
+    // Mobile Light: the scrim must still NOT activate below the sm breakpoint.
+    await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
+    await page.reload();
+    const mobileScrim = await header.evaluate(
       (element) => getComputedStyle(element, '::before').backgroundImage,
     );
     expect(mobileScrim).toBe('none');
-    // Control geometry identical between themes at the same viewport.
+    // Control geometry identical between themes at the SAME viewport.
     const mobileLightBox = await controls.locator('button').first().boundingBox();
-    expect(mobileLightBox!.x).toBeCloseTo(darkBox!.x, 0);
-    expect(mobileLightBox!.width).toBeCloseTo(darkBox!.width, 0);
+    expect(mobileLightBox!.x).toBeCloseTo(mobileDarkBox!.x, 0);
+    expect(mobileLightBox!.width).toBeCloseTo(mobileDarkBox!.width, 0);
   });
 });

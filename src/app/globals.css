@@ -583,38 +583,41 @@
      (2) a sturdier neutral surface behind each control.
      GEOMETRY LAW: positions, sizes, radii, touch targets, icon and
      text geometry are untouched; the treatment is scoped by
-     `data-workout-theme="light"` (set by the shared shell) and
-     min-width:640px ONLY — Mobile Light and every Dark surface are
-     untouched, and START/PREPARING/INTRO share the same treatment
-     (one shell, never state-specific copies).
+     `data-workout-theme="light"` (set by the shared shell header) AND
+     `min-width: 640px` — the gate is enforced by the @media wrapper
+     below. Mobile Light and every Dark surface (Desktop included) are
+     untouched, and START/PREPARING/INTRO share the same treatment (one
+     shell, never state-specific copies).
      ═════════════════════════════════════════════════════════════ */
-  [data-workout-theme='light']::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    z-index: -1;
-    background: linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 0.46),
-      rgb(255 255 255 / 0.24) 62%,
-      rgb(255 255 255 / 0)
-    );
-  }
+  @media (min-width: 640px) {
+    [data-workout-theme='light']::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: -1;
+      background: linear-gradient(
+        to bottom,
+        rgb(255 255 255 / 0.46),
+        rgb(255 255 255 / 0.24) 62%,
+        rgb(255 255 255 / 0)
+      );
+    }
 
-  [data-workout-theme='light'] [data-workout-v2-top-controls] [data-slot='workout-v2-control'] {
-    --apex-border: rgb(255 255 255 / 0.85);
-    --apex-fill: rgb(255 255 255 / 0.42);
-    background-color: rgb(255 255 255 / 0.58);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
+    [data-workout-theme='light'] [data-workout-v2-top-controls] [data-slot='workout-v2-control'] {
+      --apex-border: rgb(255 255 255 / 0.85);
+      --apex-fill: rgb(255 255 255 / 0.42);
+      background-color: rgb(255 255 255 / 0.58);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
 
-  [data-workout-theme='light']
-    [data-workout-v2-top-controls]
-    [data-slot='workout-v2-control']:hover {
-    background-color: rgb(255 255 255 / 0.78);
+    [data-workout-theme='light']
+      [data-workout-v2-top-controls]
+      [data-slot='workout-v2-control']:hover {
+      background-color: rgb(255 255 255 / 0.78);
+    }
   }
   /* Apple HIG form control (text, email, number, select) — used by the
      profile editor. Solid rounded field on the grouped background with

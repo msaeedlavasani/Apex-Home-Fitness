@@ -74,7 +74,6 @@ const COPY = {
     prescription: 'Bodyweight',
     introFirst: 'First exercise',
     introCues: ['Keep your chest up', 'Track your knees over your toes', 'Lower with control'] as readonly string[],
-    introBegin: 'Start Set 1',
     mentorLoading: 'Loading Mentor',
     mentorUnavailable: 'Mentor unavailable',
     mentorAria: 'Live demonstration of the upcoming exercise',
@@ -96,7 +95,6 @@ const COPY = {
     prescription: 'وزن بدن',
     introFirst: 'حرکت اول',
     introCues: ['سینه بالا', 'زانوها هم‌جهت با پنجه‌ها', 'با کنترل پایین برو'] as readonly string[],
-    introBegin: 'شروع ست اول',
     mentorLoading: 'در حال بارگذاری منتور',
     mentorUnavailable: 'منتور در دسترس نیست',
     mentorAria: 'نمایش زنده حرکت پیش رو',
@@ -163,11 +161,9 @@ function Harness({locale, now, onStarted, intro, probe}: HarnessProps) {
           firstExerciseLabel={copy.introFirst}
           equipment={copy.prescription}
           cues={copy.introCues}
-          beginSetLabel={copy.introBegin}
           mentorLoadingLabel={copy.mentorLoading}
           mentorUnavailableLabel={copy.mentorUnavailable}
           mentorAriaLabel={copy.mentorAria}
-          onBeginWorkSet={beginWorkSet}
         />
       )}
     </div>
@@ -631,11 +627,9 @@ test('INTRO renders resolved Squat identity, equipment metadata and the three cu
         firstExerciseLabel={COPY.en.introFirst}
         equipment={COPY.en.prescription}
         cues={COPY.en.introCues}
-        beginSetLabel={COPY.en.introBegin}
         mentorLoadingLabel={COPY.en.mentorLoading}
         mentorUnavailableLabel={COPY.en.mentorUnavailable}
         mentorAriaLabel={COPY.en.mentorAria}
-        onBeginWorkSet={() => {}}
       />,
     );
   });
@@ -657,11 +651,9 @@ test('INTRO renders Persian identity + cues (fa contract)', () => {
         firstExerciseLabel={COPY.fa.introFirst}
         equipment={COPY.fa.prescription}
         cues={COPY.fa.introCues}
-        beginSetLabel={COPY.fa.introBegin}
         mentorLoadingLabel={COPY.fa.mentorLoading}
         mentorUnavailableLabel={COPY.fa.mentorUnavailable}
         mentorAriaLabel={COPY.fa.mentorAria}
-        onBeginWorkSet={() => {}}
       />,
     );
   });
@@ -671,8 +663,7 @@ test('INTRO renders Persian identity + cues (fa contract)', () => {
   }
 });
 
-test('INTRO CTA: single primary action, real dispatch, disabled until the Mentor presents', () => {
-  let began = 0;
+test('INTRO is hands-free: NO Start/Next/Continue control and no reserved CTA space', () => {
   let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => {
     renderer = TestRenderer.create(
@@ -681,23 +672,44 @@ test('INTRO CTA: single primary action, real dispatch, disabled until the Mentor
         firstExerciseLabel={COPY.en.introFirst}
         equipment={COPY.en.prescription}
         cues={COPY.en.introCues}
-        beginSetLabel={COPY.en.introBegin}
         mentorLoadingLabel={COPY.en.mentorLoading}
         mentorUnavailableLabel={COPY.en.mentorUnavailable}
         mentorAriaLabel={COPY.en.mentorAria}
-        onBeginWorkSet={() => {
-          began += 1;
-        }}
       />,
     );
   });
-  const cta = renderer!.root.findByProps({'data-workout-v2-intro-begin': ''});
-  assert.equal(cta.props.type, 'button');
-  assert.equal(cta.props.disabled, true, 'CTA disabled until the Mentor is ready (real readiness)');
-  assert.equal(cta.props['aria-disabled'], true);
-  // No skip/reorder/extend controls exist on INTRO (delta §C).
   const buttons = renderer!.root.findAllByType('button');
-  assert.equal(buttons.length, 1, 'exactly ONE control on INTRO (the primary progression action)');
+  assert.equal(buttons.length, 0, 'ZERO interactive controls on INTRO (hands-free contract)');
+  assert.equal(renderer!.root.findAllByProps({'data-workout-v2-intro-begin': ''}).length, 0, 'no Start Set CTA anywhere');
+  // No reserved CTA space: no begin-set marker, no orphan CTA wrapper.
+  assert.equal(renderer!.root.findAllByProps({'data-workout-v2-intro-begin': true}).length, 0);
+});
+
+test('INTRO cue zone: explicit bottom band OUTSIDE the mentor host (placement law)', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => {
+    renderer = TestRenderer.create(
+      <IntroStage
+        viewModel={introViewModel()}
+        firstExerciseLabel={COPY.en.introFirst}
+        equipment={COPY.en.prescription}
+        cues={COPY.en.introCues}
+        mentorLoadingLabel={COPY.en.mentorLoading}
+        mentorUnavailableLabel={COPY.en.mentorUnavailable}
+        mentorAriaLabel={COPY.en.mentorAria}
+      />,
+    );
+  });
+  const zone = renderer!.root.findByProps({'data-workout-v2-intro-cue-zone': ''});
+  assert.match(String(zone.props.className), /pb-\[max/, 'cue zone respects the safe area');
+  // The cues are siblings of the mentor host — not overlaid on it.
+  const stage = renderer!.root.findByProps({'data-workout-v2-intro-stage': ''});
+  const stageChildren = Array.isArray(stage.props.children) ? stage.props.children : [stage.props.children];
+  const indexOf = (marker: string) =>
+    stageChildren.findIndex((child: {props?: Record<string, unknown>}) => marker in (child?.props ?? {}));
+  const cueZoneIndex = indexOf('data-workout-v2-intro-cue-zone');
+  const mentorIndex = indexOf('data-workout-v2-intro-mentor-host');
+  assert.ok(mentorIndex >= 0 && cueZoneIndex > mentorIndex, 'cue zone renders AFTER (below) the mentor host');
 });
 
 test('INTRO → SET1 through the full adapter chain: BEGIN_WORK_SET is the only exit', () => {
@@ -733,11 +745,9 @@ test('INTRO without a resolvable exercise renders no identity (never faked)', ()
         firstExerciseLabel={COPY.en.introFirst}
         equipment={COPY.en.prescription}
         cues={COPY.en.introCues}
-        beginSetLabel={COPY.en.introBegin}
         mentorLoadingLabel={COPY.en.mentorLoading}
         mentorUnavailableLabel={COPY.en.mentorUnavailable}
         mentorAriaLabel={COPY.en.mentorAria}
-        onBeginWorkSet={() => {}}
       />,
     );
   });

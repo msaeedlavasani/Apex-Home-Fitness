@@ -14,6 +14,10 @@ import {
 } from '@/lib/workout/experience/exerciseDetails';import {createWorkoutMusic,
   type WorkoutMusicController,
 } from '@/lib/workout/experience/sessionMusic';
+import {
+  disposeMentorPreparation,
+  prepareMentorAsset,
+} from './mentor/mentorPreparation';
 import {deriveReadinessTips} from './readiness';
 import {BackstageBackdrop} from './BackstageBackdrop';
 import {ExerciseDetailsSheet} from './ExerciseDetailsSheet';
@@ -104,7 +108,7 @@ export function ExperienceShell({
   const {resolvedTheme} = useTheme();
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
 
-  const {viewModel, startSession, pause, resume, beginWorkSet} = useWorkoutSession(exercises, {
+  const {viewModel, startSession, pause, resume} = useWorkoutSession(exercises, {
     onEffect: useMemo(() => {
       const handler = (effect: {kind: string}) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
@@ -165,6 +169,23 @@ export function ExperienceShell({
     };
   }, []);
 
+  // Mentor PREPARE ONCE → REUSE (mentorPreparation.ts): PREPARING is the
+  // preparation window — start the single fetch/parse of the canonical
+  // Mentor GLB as soon as the countdown begins (fire-and-forget: the
+  // PREPARING UI/countdown is never blocked). INTRO's stage later ACQUIRES
+  // the same in-flight/settled preparation (no second request, no reparse).
+  // Resources are released at session teardown if INTRO never consumed them.
+  const mentorPreloadStartedRef = useRef(false);
+  useEffect(() => {
+    if (viewModel.lifecycle === 'PREPARING' && !mentorPreloadStartedRef.current) {
+      mentorPreloadStartedRef.current = true;
+      void prepareMentorAsset().catch(() => undefined);
+    }
+  }, [viewModel.lifecycle]);
+  useEffect(() => {
+    return () => disposeMentorPreparation();
+  }, []);
+
   const handleStart = useCallback(() => {
     // START dispatch (§25) — the session's first, gesture-backed user
     // interaction: the approved playback unlock for the music controller.
@@ -175,11 +196,6 @@ export function ExperienceShell({
       .then((state) => setMusicPlaying(state === 'PLAYING'))
       .catch(() => setMusicPlaying(false));
   }, [startSession, getMusic]);
-
-  /** INTRO primary CTA — BEGIN_WORK_SET through the single authority (INTRO delta: INTRO → WORK_SET). */
-  const handleBeginWorkSet = useCallback(() => {
-    beginWorkSet();
-  }, [beginWorkSet]);
 
   const handleToggleMusic = useCallback(() => {
     const music = getMusic();
@@ -333,11 +349,9 @@ export function ExperienceShell({
             firstExerciseLabel={t('intro.firstExercise')}
             equipment={t('preparing.bodyweight')}
             cues={t.raw('intro.cues') as readonly string[]}
-            beginSetLabel={t('intro.beginSet')}
             mentorUnavailableLabel={t('intro.mentorUnavailable')}
             mentorLoadingLabel={t('intro.mentorLoading')}
             mentorAriaLabel={t('intro.mentorAria')}
-            onBeginWorkSet={handleBeginWorkSet}
           />
         )}
         {activeModule === 'WORK_SET' && <WorkSetStage viewModel={viewModel} />}

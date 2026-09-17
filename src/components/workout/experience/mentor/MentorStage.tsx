@@ -2,13 +2,13 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type {GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
-  MENTOR_URL,
   type MentorStageStrings,
   type MentorStageStatus,
 } from './contract';
 import {MENTOR_BONE_MAP, type MentorBoneKey} from './mentorBones';
+import {acquireMentorPreparation, disposeMentorResources} from './mentorPreparation';
 
 /**
  * MentorStage (INTRO) — the existing APPROVED 3D Mentor capability
@@ -36,11 +36,18 @@ import {MENTOR_BONE_MAP, type MentorBoneKey} from './mentorBones';
  *     classes so it obeys the shared shell's frozen visual system.
  *
  * Lifecycle contract: the stage is mounted ONLY while INTRO is presented
- * (one mount per exercise identity — spec §5.3 intro cadence). `paused`
- * freezes the animation loop through the existing prop convention.
- * Reduced motion: the demonstration IS the content (motion conveys the
- * movement understanding INTRO exists for); the stage still renders and
- * respects `paused`. WebGL failure degrades to the text status surface.
+ * (one mount per exercise identity — spec §5.3 intro cadence). The GLB is
+ * NOT loaded here: the stage ACQUIRES the session's prepared Mentor
+ * (PREPARE ONCE → REUSE — `mentorPreparation.ts`, started during
+ * PREPARING by the shared shell) and only ATTACHES the parsed GLTF to its
+ * own renderer/scene. If preparation is still in flight at mount, the
+ * stage shows the existing lightweight loading state and attaches the SAME
+ * in-flight lifecycle when it settles — no restart, no duplicate request,
+ * no second parse. `paused` freezes the animation loop through the
+ * existing prop convention. Reduced motion: the demonstration IS the
+ * content (motion conveys the movement understanding INTRO exists for);
+ * the stage still renders and respects `paused`. WebGL failure degrades
+ * to the text status surface.
  */
 
 export interface MentorStageProps {
@@ -113,6 +120,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
     let mixer: THREE.AnimationMixer | null = null;
     let animationAction: THREE.AnimationAction | null = null;
     let model: THREE.Group | null = null;
+    let preparedGltf: GLTF | null = null;
     let normalizedModelPosition = new THREE.Vector3();
     let shouldNeutralizeRootDrift = false;
     const mentorBones: Partial<Record<MentorBoneKey, THREE.Bone>> = {};
@@ -243,7 +251,6 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
     if (resizeObserver && stage) resizeObserver.observe(stage);
     resize();
 
-    const loader = new GLTFLoader();
     const collectVisibleMeshBounds = (target: THREE.Box3, collectVertices?: THREE.Vector3[]) => {
       if (!model) return target.makeEmpty();
       target.makeEmpty();
@@ -296,10 +303,13 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
       return Array.from(new Set(candidateVertices)).map((vertex) => vertex.clone());
     };
 
-    loader.load(
-      MENTOR_URL,
-      (gltf) => {
+    // PREPARE ONCE → REUSE: join the session's single Mentor preparation
+    // (started during PREPARING) and take single-consumer ownership of the
+    // parsed GLTF. Attach-only from here — no loader, no second parse.
+    void acquireMentorPreparation()
+      .then((gltf) => {
         if (disposed) return;
+        preparedGltf = gltf;
         model = gltf.scene;
         model.traverse((object) => {
           if (!(object instanceof THREE.Bone)) return;
@@ -435,15 +445,13 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         model.updateMatrixWorld(true);
         setStatus('ready');
         onReadyRef.current?.();
-      },
-      undefined,
-      () => {
+      })
+      .catch(() => {
         if (!disposed) {
           setStatus('failed');
           onFailedRef.current?.();
         }
-      },
-    );
+      });
 
     const render = (time: number) => {
       if (disposed) return;
@@ -468,13 +476,9 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
       cancelAnimationFrame(animationFrame);
       resizeObserver?.disconnect();
       mixer?.stopAllAction();
-      scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((material) => material.dispose());
-        }
-      });
+      // The stage OWNS the acquired preparation (single consumer) — its
+      // unmount releases geometry/material/textures (see mentorPreparation).
+      if (preparedGltf) disposeMentorResources(preparedGltf);
       renderer.dispose();
     };
     // Mount-once lifecycle: the stage exists exactly while INTRO presents.

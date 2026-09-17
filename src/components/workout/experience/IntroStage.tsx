@@ -2,46 +2,44 @@
 
 import React from 'react';
 import {Check} from 'lucide-react';
-import {Button} from '@/components/ui/platform';
 import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 import {MentorStage} from './mentor/MentorStage';
 
 /**
  * IntroStage — the EXERCISE_INTRO product state presentation (owner polish
- * delta §C) on the frozen Workout Experience visual system.
+ * delta §C + INTRO VISUAL/RUNTIME CORRECTION delta) on the frozen Workout
+ * Experience visual system.
  *
- * PURPOSE (delta §C): INTRO is the user's FIRST direct introduction to the
- * upcoming exercise — movement understanding/demonstration, NOT another
- * PREPARING screen (PREPARING owns physical readiness/space/posture). It
- * answers: what exercise am I doing, what does the movement look like,
- * what are the essential cues, how do I continue into the actual set.
+ * PURPOSE: INTRO is the user's first direct introduction to the upcoming
+ * exercise — movement understanding/demonstration, NOT another PREPARING
+ * screen. It answers: what exercise am I doing, what does the movement look
+ * like, what are the essential cues.
  *
- * INFORMATION HIERARCHY (delta §C): eyebrow (حرکت اول / FIRST EXERCISE) →
- * exercise identity (from the RESOLVED prescription — never a hardcoded
- * string) → equipment metadata (وزن بدن / Bodyweight — from the resolved
- * bodyweight condition) → Mentor demonstration (visually central, the
- * existing approved capability) → concise coaching cues → Start Set 1 CTA.
- * NO instructional paragraphs; later-slice controls (Skip Exercise/Skip
- * Set/reorder/Extend-Reduce Rest) are deliberately absent.
+ * HANDS-FREE PROGRESSION LAW (correction delta §4): INTRO is part of the
+ * hands-free Workout Experience — there is NO "Start Set 1" (or any
+ * Start/Next/Continue) control, and NO reserved CTA layout space. The
+ * automatic handoff contract terminates at the INTRO boundary for now: the
+ * orchestration still owns the `BEGIN_WORK_SET` typed boundary (tests +
+ * adapter unchanged), but presentation never dispatches it. The SET slice
+ * will attach its own auto-handoff to that boundary later.
  *
- * VOICE (delta §C): Mentor voice-over is a FUTURE requirement — no TTS, no
- * placeholder narration, INTRO works fully without it. The component
- * contract keeps a clean seam (the stage owns the demonstration; a future
- * coach-audio controller can subscribe to the same mount/unmount lifecycle)
- * without implementing anything now.
+ * CUE ZONE LAW (correction delta §3): the cue pills keep their approved
+ * mobile treatment (individually readable rounded surfaces with check
+ * indicators) but render inside an EXPLICIT responsive cue zone anchored to
+ * the bottom of the stage — a quiet surface band that never overlays the
+ * Mentor's body/legs, never attaches to the mat, stays readable over
+ * variable photographic backgrounds (its own local surface + theme tokens),
+ * respects the safe areas, and never pushes the Mentor out of position.
+ * Desktop and Mobile share ONE semantic list; only arrangement/spacing are
+ * responsive (`flex-col` mobile → `flex-row` desktop). Light and Dark both
+ * retain reliable contrast via tokens.
  *
- * PROGRESSION: the single primary CTA dispatches BEGIN_WORK_SET through the
- * orchestration adapter (INTRO → WORK_SET boundary, deterministic and
- * testable). There is NO timeout auto-completion — the user controls when
- * they are ready. The CTA is disabled until the Mentor is ready so the
- * user never starts a set they have not been shown (loading still leaves
- * the full surface usable; failure leaves it usable with the degraded
- * status text — starting the set never depends on WebGL succeeding).
+ * MENTOR: the single approved capability (same GLB, same lifecycle) remains
+ * visually central; the stage reserves the header strip and the bottom cue
+ * zone so responsive framing can center the demonstration between them.
  *
- * CROSS-SCREEN CONSISTENCY: same shell, same tokens, same control family
- * (44px touch targets, canonical Button), Light/Dark identical geometry,
- * RTL mirrors via logical layout only. Music/audio untouched (session-owned
- * singleton continues; INTRO renders no audio controls).
+ * VOICE: Mentor voice-over is a FUTURE requirement — no TTS, no narration
+ * architecture; INTRO works fully without it.
  */
 
 export interface IntroStageProps {
@@ -52,8 +50,6 @@ export interface IntroStageProps {
   equipment: string | null;
   /** Localized coaching cues (concise list — no paragraphs). */
   cues: readonly string[];
-  /** Localized primary CTA (شروع ست اول / Start Set 1). */
-  beginSetLabel: string;
   /** Localized Mentor loading label. */
   mentorLoadingLabel: string;
   /** Localized Mentor unavailable label (degraded mode). */
@@ -64,8 +60,6 @@ export interface IntroStageProps {
    * voice-over (Mentor voice is a future requirement, delta §C).
    */
   mentorAriaLabel: string;
-  /** Dispatches BEGIN_WORK_SET through the orchestration adapter. */
-  onBeginWorkSet: () => void;
 }
 
 export function IntroStage({
@@ -73,25 +67,21 @@ export function IntroStage({
   firstExerciseLabel,
   equipment,
   cues,
-  beginSetLabel,
   mentorLoadingLabel,
   mentorUnavailableLabel,
   mentorAriaLabel,
-  onBeginWorkSet,
 }: IntroStageProps) {
-  // The demonstration is INTRO's content; the primary action stays honest
-  // until the Mentor is actually presenting (real readiness, not a timer).
-  const [mentorReady, setMentorReady] = React.useState(false);
+  // The demonstration is INTRO's content. Mentor readiness no longer gates
+  // any control (there are none) — it only drives the loading/degraded text.
   const exercise = viewModel.introExercise ?? viewModel.activeExercise;
-  const beginSetable = mentorReady && exercise != null;
   // While paused the demonstration freezes with the session (same authority).
   const paused = viewModel.lifecycle === 'PAUSED';
 
   return (
     <div data-workout-v2-intro-stage="" className="flex h-full w-full flex-col">
-      {/* ONE centered composition — mobile primary; desktop centers the
-          same hierarchy with the Mentor visually central (§C hierarchy). */}
-      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center sm:px-6">
+      {/* Header strip — eyebrow → identity → equipment. Fixed-height top
+          zone so the Mentor's responsive framing can clear it entirely. */}
+      <div className="flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-2">
         <p
           data-workout-v2-intro-eyebrow=""
           className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--apex-text-secondary)] rtl:normal-case rtl:tracking-normal sm:text-sm"
@@ -111,75 +101,56 @@ export function IntroStage({
         {equipment != null && exercise != null && (
           <p
             data-workout-v2-intro-equipment=""
-            className="mt-2 rounded-full border border-apex-primary/60 px-4 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-apex-primary rtl:normal-case rtl:tracking-normal sm:text-xs"
+            className="mt-1.5 rounded-full border border-apex-primary/60 px-4 py-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-apex-primary rtl:normal-case rtl:tracking-normal sm:mt-2 sm:text-xs"
           >
             {equipment}
           </p>
         )}
-
-        {/* Mentor demonstration — the existing approved capability,
-            visually central (delta §C). Loading/failure keep the surface
-            usable (degraded status text; no broken canvas, no crash). */}
-        <div className="mt-2 grid w-full max-w-3xl flex-1 grid-rows-[minmax(0,1fr)_auto] items-center sm:mt-3">
-          <MentorStage
-            paused={paused}
-            strings={{
-              ariaLabel: mentorAriaLabel,
-              loading: mentorLoadingLabel,
-              unavailable: mentorUnavailableLabel,
-            }}
-            onReady={() => setMentorReady(true)}
-            onFailed={() => undefined}
-          />
-          {/* Coaching cues — concise essential list, one row per cue on
-              mobile; a single balanced row on desktop. Real list semantics
-              (readable by AT, no dead chips). Cues render whenever the
-              contract supplies them — they are INTRO's content, independent
-              of the Mentor load outcome. */}
-          {cues.length > 0 && (
-            <ul
-              data-workout-v2-intro-cues=""
-              className="mx-auto mb-1 mt-2 flex w-full max-w-md flex-col items-center gap-1.5 sm:max-w-3xl sm:flex-row sm:justify-center sm:gap-3"
-            >
-              {cues.map((cue) => (
-                <li
-                  key={cue}
-                  className="flex items-center gap-2 rounded-full bg-[color:var(--apex-fill)] px-3.5 py-1.5"
-                >
-                  <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-apex-primary" />
-                  <span className="whitespace-nowrap text-[13px] font-semibold text-[color:var(--apex-text)] sm:text-sm">
-                    {cue}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Primary progression — the ONLY action on INTRO (delta §C: no
-            skip/reorder/extend controls). Begins SET1 through the single
-            orchestration authority; disabled until the Mentor presents. */}
-        <div className="w-full max-w-md sm:w-auto">
-          <Button
-            type="button"
-            data-workout-v2-intro-begin=""
-            variant="filled"
-            tone="primary"
-            size="xl"
-            disabled={!beginSetable}
-            aria-disabled={!beginSetable}
-            onClick={onBeginWorkSet}
-            className="max-[430px]:h-[50px] max-[430px]:px-6 max-[430px]:text-[15px] w-full sm:w-auto sm:min-w-[340px]"
-          >
-            {beginSetLabel}
-          </Button>
-        </div>
       </div>
-      {/* Safe-area footer — same flow treatment as the other stages. */}
-      <div
-        aria-hidden="true"
-        className="h-[max(1rem,env(safe-area-inset-bottom))] md:h-10"
-      />
+
+      {/* Mentor demonstration — fills the space BETWEEN the header strip
+          and the cue zone: the responsive framing keeps the full body
+          grounded and clear of both. One lifecycle, one asset. */}
+      <div data-workout-v2-intro-mentor-host="" className="relative min-h-0 flex-1">
+        <MentorStage
+          paused={paused}
+          strings={{
+            ariaLabel: mentorAriaLabel,
+            loading: mentorLoadingLabel,
+            unavailable: mentorUnavailableLabel,
+          }}
+          onReady={() => undefined}
+          onFailed={() => undefined}
+        />
+      </div>
+
+      {/* EXPLICIT CUE ZONE (correction delta §3): one quiet surface band
+          anchored to the bottom of the stage — never over the Mentor body/
+          mat, readable over any background, safe-area aware. ONE semantic
+          list for both platforms; arrangement is responsive only. */}
+      {cues.length > 0 && (
+        <div
+          data-workout-v2-intro-cue-zone=""
+          className="bg-[color:color-mix(in_srgb,var(--apex-surface)_72%,transparent)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md sm:pb-4 sm:pt-3"
+        >
+          <ul
+            data-workout-v2-intro-cues=""
+            className="mx-auto flex w-full max-w-md flex-col items-center gap-1.5 px-4 sm:max-w-3xl sm:flex-row sm:justify-center sm:gap-3 sm:px-6"
+          >
+            {cues.map((cue) => (
+              <li
+                key={cue}
+                className="flex items-center gap-2 rounded-full border border-[color:var(--apex-border)] bg-[color:var(--apex-surface)]/80 px-3.5 py-1.5"
+              >
+                <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-apex-primary" />
+                <span className="whitespace-nowrap text-[13px] font-semibold text-[color:var(--apex-text)] sm:text-sm">
+                  {cue}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

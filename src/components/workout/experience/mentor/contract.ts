@@ -17,7 +17,9 @@
  * PURE: constants + types only — no React, no I/O.
  */
 
-/** Self-hosted Mentor asset (FR-12: product media is self-hosted; no CDN). */
+/** Self-hosted Mentor asset (FR-12: product media is self-hosted; no CDN).
+ *  Prepared once during PREPARING and consumed by the INTRO stage —
+ *  see `mentorPreparation.ts` (PREPARE ONCE → REUSE boundary). */
 export const MENTOR_URL = '/workout-assets/AHF_Mentor_Squat.glb';
 
 /** Mentor stage presentation status (safe loading/failure surface). */
