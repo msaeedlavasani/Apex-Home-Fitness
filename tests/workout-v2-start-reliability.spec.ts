@@ -625,8 +625,12 @@ test.describe('Workout V2 — INTRO desktop central composition', () => {
     expect(geometry.mentor!.bottom).toBeLessThanOrEqual(geometry.viewport.height);
     expect(geometry.projectedMentor.left).toBeGreaterThanOrEqual(0);
     expect(geometry.projectedMentor.right).toBeLessThanOrEqual(geometry.viewport.width);
-    expect(geometry.projectedMentor.top + geometry.mentor!.top).toBeGreaterThanOrEqual(geometry.mentor!.top);
-    expect(geometry.projectedMentor.bottom + geometry.mentor!.top).toBeLessThanOrEqual(geometry.mentor!.bottom);
+    const {top: projectedTop, bottom: projectedBottom} = geometry.projectedMentor;
+    if (typeof projectedTop !== 'number' || typeof projectedBottom !== 'number') {
+      throw new Error('Mentor projected bounds must include top and bottom values');
+    }
+    expect(projectedTop + geometry.mentor!.top).toBeGreaterThanOrEqual(geometry.mentor!.top);
+    expect(projectedBottom + geometry.mentor!.top).toBeLessThanOrEqual(geometry.mentor!.bottom);
   });
 
   test('Mentor first-frame timing is observable on desktop', async ({page}) => {
