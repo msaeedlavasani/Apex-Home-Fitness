@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, {useLayoutEffect, useRef, useState} from 'react';
 import {Check} from 'lucide-react';
 import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 import {MentorStage} from './mentor/MentorStage';
@@ -35,10 +35,9 @@ import {MentorStage} from './mentor/MentorStage';
  *     cue (token-driven text surface + border on the text pill itself);
  *   - DESKTOP: one horizontal row of compact pills near the bottom safe
  *     area;
- *   - MOBILE: one compact unified cue container with concise rows (the
- *     rejected three-large-pill layout is structurally gone — one surface,
- *     one row per cue, small type, minimal height, visually secondary to
- *     the Mentor);
+ *   - MOBILE: one compact unified cue group with intrinsic wrapping — cues
+ *     share rows when their measured content fits and wrap centered when it
+ *     does not (the rejected three-large-pill layout is gone);
  *   - same semantic list for both platforms; only arrangement is
  *     responsive; safe areas + no overflow respected; no new controls.
  *
@@ -72,6 +71,95 @@ export interface IntroStageProps {
   onMentorReady?: () => void;
 }
 
+interface CueItemProps {
+  cue: string;
+  index: number;
+  visualOrder: number | undefined;
+}
+
+function CueItem({cue, index, visualOrder}: CueItemProps) {
+  return (
+    <li
+      data-workout-v2-intro-cue=""
+      data-cue-index={index}
+      style={visualOrder == null ? undefined : {order: visualOrder}}
+      className="flex shrink-0 items-center gap-1.5 rounded-full border border-[color:var(--apex-border)] bg-[color:color-mix(in_srgb,var(--apex-surface)_88%,transparent)] px-2.5 py-[3px]"
+    >
+      <Check aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-apex-primary" />
+      <span className="whitespace-nowrap text-xs font-semibold text-[color:var(--apex-text)] sm:text-[13px]">
+        {cue}
+      </span>
+    </li>
+  );
+}
+
+/**
+ * Intrinsic cue wrapping — the row grouping is derived from measured item
+ * widths and the available list width. The shortest items are packed first,
+ * while each row retains the source order of the items it contains. This
+ * lets a long cue naturally occupy its own centered row without encoding cue
+ * indices or English copy in the presentation.
+ */
+function CueList({cues}: {cues: readonly string[]}) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const [visualOrder, setVisualOrder] = useState<number[] | null>(null);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const measure = () => {
+      const items = Array.from(list.children) as HTMLElement[];
+      const availableWidth = list.clientWidth;
+      if (availableWidth <= 0 || items.length < 2) return;
+
+      const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
+      const widths = items.map((item) => item.getBoundingClientRect().width);
+      const rankedIndexes = widths
+        .map((width, index) => ({width, index}))
+        .sort((left, right) => left.width - right.width || left.index - right.index)
+        .map(({index}) => index);
+      const rows: Array<{indexes: number[]; width: number}> = [];
+
+      for (const index of rankedIndexes) {
+        const width = widths[index]!;
+        const row = rows.find((candidate) => candidate.width + gap + width <= availableWidth);
+        if (row) {
+          row.indexes.push(index);
+          row.width += gap + width;
+        } else {
+          rows.push({indexes: [index], width});
+        }
+      }
+
+      const nextOrder = rows.flatMap((row) => row.indexes.sort((left, right) => left - right));
+      setVisualOrder(nextOrder);
+    };
+
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(list);
+    return () => observer?.disconnect();
+  }, [cues]);
+
+  return (
+    <ul
+      ref={listRef}
+      data-workout-v2-intro-cues=""
+      className="flex w-full flex-wrap items-center justify-center gap-1.5 sm:w-fit sm:flex-nowrap sm:gap-2"
+    >
+      {cues.map((cue, index) => (
+        <CueItem
+          key={cue}
+          cue={cue}
+          index={index}
+          visualOrder={visualOrder == null ? undefined : visualOrder.indexOf(index)}
+        />
+      ))}
+    </ul>
+  );
+}
+
 export function IntroStage({
   viewModel,
   firstExerciseLabel,
@@ -92,7 +180,7 @@ export function IntroStage({
     <div data-workout-v2-intro-stage="" className="flex h-full w-full flex-col">
       {/* Header strip — eyebrow → identity → equipment. Fixed-height top
           zone so the Mentor's responsive framing can clear it entirely. */}
-      <div className="flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-2">
+      <div className="flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-0">
         <p
           data-workout-v2-intro-eyebrow=""
           className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--apex-text-secondary)] rtl:normal-case rtl:tracking-normal sm:text-sm"
@@ -103,7 +191,7 @@ export function IntroStage({
             string in code); width-constrained like PREPARING's title. */}
         <h2
           data-workout-v2-intro-exercise=""
-          className="mt-0.5 max-w-[12ch] text-3xl font-extrabold leading-[1.12] text-[color:var(--apex-text)] sm:max-w-xl sm:text-5xl sm:leading-tight"
+          className="mt-0.5 max-w-[12ch] text-3xl font-extrabold leading-[1.12] text-[color:var(--apex-text)] sm:mt-0 sm:max-w-xl sm:text-5xl sm:leading-tight"
         >
           {exercise?.exercise.name ?? ''}
         </h2>
@@ -112,7 +200,7 @@ export function IntroStage({
         {equipment != null && exercise != null && (
           <p
             data-workout-v2-intro-equipment=""
-            className="mt-1.5 rounded-full border border-apex-primary/60 px-4 py-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-apex-primary rtl:normal-case rtl:tracking-normal sm:mt-2 sm:text-xs"
+            className="mt-1.5 rounded-full border border-apex-primary/60 px-4 py-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-apex-primary rtl:normal-case rtl:tracking-normal sm:mt-1.5 sm:text-xs"
           >
             {equipment}
           </p>
@@ -146,23 +234,8 @@ export function IntroStage({
           data-workout-v2-intro-cue-zone=""
           className="w-full px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-1.5 sm:px-6 sm:pb-2.5 sm:pt-2"
         >
-          <div className="mx-auto flex w-fit max-w-full flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
-            <ul
-              data-workout-v2-intro-cues=""
-              className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2"
-            >
-              {cues.map((cue) => (
-                <li
-                  key={cue}
-                  className="flex items-center gap-1.5 rounded-full border border-[color:var(--apex-border)] bg-[color:color-mix(in_srgb,var(--apex-surface)_88%,transparent)] px-2.5 py-[3px]"
-                >
-                  <Check aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-apex-primary" />
-                  <span className="whitespace-nowrap text-xs font-semibold text-[color:var(--apex-text)] sm:text-[13px]">
-                    {cue}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <div className="mx-auto flex w-full max-w-full justify-center">
+            <CueList cues={cues} />
           </div>
         </div>
       )}

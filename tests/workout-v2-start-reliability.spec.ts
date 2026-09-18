@@ -257,6 +257,30 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 30_000});
   }
 
+  async function cueLayout(page: Page) {
+    return page.locator('[data-workout-v2-intro-cue]').evaluateAll((elements) => {
+      const items = elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {text: element.textContent?.trim() ?? '', x: rect.x, y: rect.y, width: rect.width, height: rect.height};
+      });
+      const rows: Array<typeof items> = [];
+      for (const item of items) {
+        const row = rows.find((candidate) => Math.abs(candidate[0]!.y - item.y) <= 2);
+        if (row) row.push(item);
+        else rows.push([item]);
+      }
+      return {
+        items,
+        rows: rows.map((row) => ({
+          count: row.length,
+          centerX: (Math.min(...row.map((item) => item.x)) + Math.max(...row.map((item) => item.x + item.width))) / 2,
+          topY: Math.min(...row.map((item) => item.y)),
+          bottomY: Math.max(...row.map((item) => item.y + item.height)),
+        })),
+      };
+    });
+  }
+
   test('PREPARING countdown completion enters INTRO (never SET1 directly)', async ({page}) => {
     await reachIntro(page);
     await expect(page.locator('[data-workout-v2-preparing-stage]')).toHaveCount(0);
@@ -354,6 +378,22 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test('INTRO mobile cues use intrinsic centered wrapping at 390px and 430px', async ({page}) => {
+    await reachIntro(page);
+    await page.waitForTimeout(400);
+    for (const viewport of [{width: 390, height: 844}, {width: 430, height: 932}]) {
+      await page.setViewportSize(viewport);
+      await page.waitForTimeout(250);
+      const layout = await cueLayout(page);
+      expect(layout.rows.map((row) => row.count)).toEqual([2, 1]);
+      for (const row of layout.rows) expect(Math.abs(row.centerX - viewport.width / 2)).toBeLessThanOrEqual(2);
+      for (const item of layout.items) {
+        expect(item.x).toBeGreaterThanOrEqual(0);
+        expect(item.x + item.width).toBeLessThanOrEqual(viewport.width);
+      }
+    }
+  });
+
   test('Mentor prepares during PREPARING and INTRO reuses it (single fetch, no reload)', async ({page}) => {
     await page.goto('/en/workout/v2');
     const start = page.getByRole('button', {name: 'Start Workout', exact: true});
@@ -446,6 +486,36 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     expect(overflowDesktop).toBeLessThanOrEqual(0);
   });
 
+  test('INTRO Mentor lifecycle exposes the real first canvas frame after INTRO paint', async ({page}) => {
+    await reachIntro(page);
+    await page.waitForFunction(
+      () => performance.getEntriesByName('v2:mentor-first-visible-frame').length > 0,
+      null,
+      {timeout: 30_000},
+    );
+    const timeline = await page.evaluate(() => {
+      const names = [
+        'v2:t3-intro-first-paint',
+        'v2:mentor-prepared-gltf-available',
+        'v2:mentor-renderer-created',
+        'v2:mentor-scene-attached',
+        'v2:mentor-clone-instance-prepared',
+        'v2:mentor-framing-solved',
+        'v2:mentor-animation-setup',
+        'v2:mentor-first-request-animation-frame',
+        'v2:mentor-first-visible-frame',
+      ];
+      return Object.fromEntries(
+        names.map((name) => [name, performance.getEntriesByName(name)[0]?.startTime ?? null]),
+      );
+    });
+    expect(timeline['v2:t3-intro-first-paint']).not.toBeNull();
+    expect(timeline['v2:mentor-first-visible-frame']).not.toBeNull();
+    expect(timeline['v2:mentor-first-visible-frame']!).toBeGreaterThanOrEqual(timeline['v2:t3-intro-first-paint']!);
+    expect(timeline['v2:mentor-first-visible-frame']! - timeline['v2:t3-intro-first-paint']!).toBeLessThan(15_000);
+    for (const name of Object.keys(timeline)) expect(timeline[name]).not.toBeNull();
+  });
+
   test('INTRO renders Persian identity + cues under RTL', async ({page}) => {
     await page.goto('/fa/workout/v2');
     const start = page.getByRole('button', {name: 'شروع تمرین', exact: true});
@@ -458,6 +528,59 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(page.locator('[data-workout-v2-intro-cues] li')).toHaveCount(3);
     await expect(page.getByText('سینه بالا')).toBeVisible();
     await expect(page.locator('[data-workout-v2-intro-stage] button')).toHaveCount(0);
+  });
+});
+
+test.describe('Workout V2 — INTRO desktop central composition', () => {
+  test.use({viewport: {width: 1440, height: 900}, hasTouch: false});
+  test.setTimeout(60_000);
+
+  test('Mentor stays between identity and cues with breathing room', async ({page}) => {
+    await page.goto('/en/workout/v2');
+    await page.getByRole('button', {name: 'Start Workout', exact: true}).click();
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 30_000});
+    await page.waitForTimeout(400);
+    const geometry = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return {top: rect.top, bottom: rect.bottom, height: rect.height};
+      };
+      return {
+        identity: read('[data-workout-v2-intro-exercise]'),
+        mentor: read('[data-workout-v2-intro-mentor-host]'),
+        cues: read('[data-workout-v2-intro-cues]'),
+        viewport: {width: window.innerWidth, height: window.innerHeight},
+      };
+    });
+    expect(geometry.identity).not.toBeNull();
+    expect(geometry.mentor).not.toBeNull();
+    expect(geometry.cues).not.toBeNull();
+    expect(geometry.mentor!.top).toBeGreaterThanOrEqual(geometry.identity!.bottom);
+    expect(geometry.cues!.top).toBeGreaterThanOrEqual(geometry.mentor!.bottom);
+    expect(geometry.mentor!.top - geometry.identity!.bottom).toBeGreaterThanOrEqual(4);
+    expect(geometry.cues!.top - geometry.mentor!.bottom).toBeGreaterThanOrEqual(4);
+    expect(geometry.mentor!.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.mentor!.bottom).toBeLessThanOrEqual(geometry.viewport.height);
+  });
+
+  test('Mentor first-frame timing is observable on desktop', async ({page}) => {
+    await page.goto('/en/workout/v2');
+    await page.getByRole('button', {name: 'Start Workout', exact: true}).click();
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible({timeout: 30_000});
+    await page.waitForFunction(
+      () => performance.getEntriesByName('v2:mentor-first-visible-frame').length > 0,
+      null,
+      {timeout: 30_000},
+    );
+    const delta = await page.evaluate(() => {
+      const intro = performance.getEntriesByName('v2:t3-intro-first-paint')[0]?.startTime ?? 0;
+      const frame = performance.getEntriesByName('v2:mentor-first-visible-frame')[0]?.startTime ?? 0;
+      return frame - intro;
+    });
+    expect(delta).toBeGreaterThanOrEqual(0);
+    expect(delta).toBeLessThan(15_000);
   });
 });
 

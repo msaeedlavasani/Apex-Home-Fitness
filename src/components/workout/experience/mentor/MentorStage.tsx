@@ -99,6 +99,11 @@ const ATTACH_POSE_SAMPLES = 16;
  */
 const ATTACH_VERTEX_STRIDE = 8;
 
+function markMentorPerformance(name: string): void {
+  if (typeof performance === 'undefined') return;
+  if (performance.getEntriesByName(name).length === 0) performance.mark(name);
+}
+
 export function MentorStage({paused, fillHost = true, strings, onReady, onFailed}: MentorStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
@@ -138,6 +143,8 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
 
     let disposed = false;
     let animationFrame = 0;
+    let firstAnimationFrameMarked = false;
+    let firstVisibleFrameMarked = false;
     let activeRenderer: THREE.WebGLRenderer | null = null;
     let activeResizeObserver: ResizeObserver | null = null;
     const stage = canvas.parentElement;
@@ -164,6 +171,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         onFailedRef.current?.();
         return;
       }
+      markMentorPerformance('v2:mentor-renderer-created');
       activeRenderer = renderer;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.setClearColor(0x000000, 0);
@@ -257,6 +265,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           }
           return;
         }
+        markMentorPerformance('v2:mentor-prepared-gltf-available');
         // Unmount won the race before the preparation settled: release the
         // acquired single-consumer ownership here (the cleanup path ran with
         // preparedGltf still null and cannot see this resource).
@@ -292,6 +301,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         // is presented to the camera at the unrotated Y orientation.
         model.rotation.y = 0;
         mentorAnchor.add(model);
+        markMentorPerformance('v2:mentor-scene-attached');
         model.updateMatrixWorld(true);
 
         // The GLB contains a Hips translation track. Clone the runtime clip
@@ -316,6 +326,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         }
         const previewMixer = playableClip ? new THREE.AnimationMixer(model) : null;
         const previewAction = previewMixer && playableClip ? previewMixer.clipAction(playableClip) : null;
+        markMentorPerformance('v2:mentor-clone-instance-prepared');
         await yieldChunk();
         if (disposed || !model) return;
 
@@ -366,7 +377,14 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         const anchorVerticalOffset = framingAnimatedSize.y * 0.06;
         // Empirically verified deterministic visual-envelope correction from
         // the approved prototype presentation (shared by every pose).
-        const presentationOffset = new THREE.Vector3(-0.002, 0.055, 0);
+        // Desktop gets a small presentation lift as part of the central
+        // composition balance. Mobile portrait keeps the owner-approved
+        // framing/position exactly unchanged.
+        const stageDimensions = stageBox();
+        const isMobilePortrait = Boolean(
+          stageDimensions && stageDimensions.width <= 430 && stageDimensions.height > stageDimensions.width,
+        );
+        const presentationOffset = new THREE.Vector3(-0.002, isMobilePortrait ? 0.055 : 0.075, 0);
         const torsoTargetY = framingAnimatedMinY + framingAnimatedSize.y * 0.58;
         const visualStageLift = framingAnimatedSize.y * 0.05;
         framingTargetY = torsoTargetY + visualStageLift;
@@ -399,6 +417,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         // applied — the user never sees a mis-framed intermediate state.
         hasFit = true;
         applyFitFromCache();
+        markMentorPerformance('v2:mentor-framing-solved');
         previewAction?.stop();
         previewMixer?.stopAllAction();
         model.traverse((object) => {
@@ -418,14 +437,18 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           animationAction.paused = pausedRef.current;
           animationAction.play();
         }
+        markMentorPerformance('v2:mentor-animation-setup');
         model.updateMatrixWorld(true);
         setStatus('ready');
-        onReadyRef.current?.();
       };
 
       const lastTimeRef = {value: performance.now()};
       const render = (time: number) => {
         if (disposed) return;
+        if (!firstAnimationFrameMarked) {
+          firstAnimationFrameMarked = true;
+          markMentorPerformance('v2:mentor-first-request-animation-frame');
+        }
         const delta = Math.min((time - lastTimeRef.value) / 1000, 0.05);
         lastTimeRef.value = time;
         if (animationAction) animationAction.paused = pausedRef.current;
@@ -438,6 +461,12 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         }
         if (model) model.updateMatrixWorld(true);
         renderer.render(scene, camera);
+        if (model && hasFit && !firstVisibleFrameMarked) {
+          firstVisibleFrameMarked = true;
+          markMentorPerformance('v2:mentor-first-visible-frame');
+          markMentorPerformance('MENTOR_FIRST_VISIBLE_FRAME');
+          onReadyRef.current?.();
+        }
         animationFrame = requestAnimationFrame(render);
       };
       animationFrame = requestAnimationFrame(render);

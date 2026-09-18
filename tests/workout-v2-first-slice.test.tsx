@@ -734,18 +734,21 @@ test('INTRO cue treatment: compact pills, no three-large-pill mobile layout (§2
   // Each cue keeps a MINIMUM local-contrast pill on the text itself —
   // small paddings/typography, never the previous oversized pill cards.
   const cueList = renderer!.root.findByProps({'data-workout-v2-intro-cues': ''});
-  const listChildren = Array.isArray(cueList.props.children) ? cueList.props.children : [cueList.props.children];
-  const pillClass = listChildren
-    .map((pill) => String((pill as {props?: {className?: string}})?.props?.className ?? ''))
+  const pillClass = renderer!.root.findAllByProps({'data-workout-v2-intro-cue': ''})
+    .map((pill) => String(pill.props.className ?? ''))
     .join(' ');
   assert.match(pillClass, /rounded-full/, 'cues keep the token pill shape');
   assert.match(pillClass, /py-\[3px\]/, 'pill vertical padding is minimal (compact rows)');
   assert.doesNotMatch(pillClass, /py-1\.5/, 'the previous large pill padding is gone');
   assert.doesNotMatch(pillClass, /text-\[13px\] font-semibold text-\[color:var\(--apex-text\)\] sm:text-sm/, 'no large mobile type');
-  // Mobile composition is ONE unified group (flex-col), never three
-  // independent large pills: the cue list is a single column on mobile.
-  assert.match(String(cueList.props.className), /flex-col/, 'mobile: one unified compact cue group (concise rows)');
-  assert.match(String(cueList.props.className), /gap-1/, 'compact row spacing');
+  // Mobile composition is ONE unified intrinsic-width group: items wrap as
+  // content requires, rather than three independent large pills or a
+  // hardcoded English-specific 2+1 arrangement.
+  assert.match(String(cueList.props.className), /flex-wrap/, 'mobile: cues wrap by available width');
+  assert.match(String(cueList.props.className), /justify-center/, 'mobile: every cue row is centered');
+  assert.match(String(cueList.props.className), /w-full/, 'mobile: the group measures against available width');
+  assert.match(String(cueList.props.className), /gap-1\.5/, 'compact row and item spacing');
+  assert.equal(cueList.findAllByProps({'data-workout-v2-intro-cue': ''}).length, COPY.en.introCues.length);
 });
 
 test('INTRO wires the mentor visible-ready callback (T4 instrumentation seam)', () => {

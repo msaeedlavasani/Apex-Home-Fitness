@@ -152,6 +152,9 @@ export function ExperienceShell({
           if (performance.getEntriesByName('v2:t3-intro-first-paint').length === 0) {
             performance.mark('v2:t3-intro-first-paint');
           }
+          if (performance.getEntriesByName('INTRO_FIRST_VISIBLE').length === 0) {
+            performance.mark('INTRO_FIRST_VISIBLE');
+          }
         }),
       );
     }
@@ -250,7 +253,7 @@ export function ExperienceShell({
   }, []);
 
   // T4 = Mentor visible-ready (wired from the stage's readiness callback —
-  // fires after the time-sliced attach applied the final framing).
+  // fires after the first real canvas frame containing the framed Mentor).
   const markMentorReady = useCallback(() => {
     if (typeof performance === 'undefined') return;
     if (performance.getEntriesByName('v2:t4-mentor-ready').length === 0) {
