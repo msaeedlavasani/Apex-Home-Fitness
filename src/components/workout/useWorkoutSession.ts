@@ -14,6 +14,11 @@ import {
 } from '@/lib/workout/orchestration';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 
+function markWorkoutPerformance(name: string): void {
+  if (typeof performance === 'undefined') return;
+  if (performance.getEntriesByName(name).length === 0) performance.mark(name);
+}
+
 /**
  * React adapter around the pure V2 orchestration authority (`orchestration.ts`).
  *
@@ -110,7 +115,14 @@ export function useWorkoutSession(
   const accountElapsed = useCallback(() => {
     const delta = accumulatorRef.current?.account() ?? 0;
     if (delta > 0) {
+      const wasPreparing =
+        orchestrator.state.lifecycle === 'PREPARING' && orchestrator.state.activeModule === 'PREPARING';
       const {state, effects} = orchestrator.advance(delta);
+      if (wasPreparing && state.activeModule === 'EXERCISE_INTRO') {
+        // A is the actual orchestration handoff, not the last visible countdown
+        // tick. This keeps the latency measurement tied to the product event.
+        markWorkoutPerformance('A_PREPARING_COMPLETION');
+      }
       setViewModel(state);
       emit(effects);
     }

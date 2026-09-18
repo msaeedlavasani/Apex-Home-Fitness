@@ -8,10 +8,15 @@ import {
   type MentorStageStatus,
 } from './contract';
 import {MENTOR_BONE_MAP, type MentorBoneKey} from './mentorBones';
-import {acquireMentorPreparation, disposeMentorResources} from './mentorPreparation';
 import {
+  acquireMentorPreparation,
+  disposeMentorResources,
+  getMentorAttachmentPreparation,
+} from './mentorPreparation';
+import {
+  ATTACH_CHUNK_BUDGET_MS,
   applyMentorCameraFit,
-  collectVisibleMeshBounds,
+  projectMentorBoundsAtDistance,
   selectProjectedEnvelopeVertices,
   solveMentorCameraFit,
   yieldToMain,
@@ -36,20 +41,13 @@ import {
  *     (no crash, no broken canvas — status text + aria-live).
  *
  * HANDOFF TWO-PHASE DEFERRED MOUNT (owner device correction §1 — the
- * freeze fix): the previous implementation performed its ENTIRE mount work
- * — WebGL renderer/scene creation AND the demonstration attach (33
- * skinned-pose vertex samples + per-pose silhouette selection + camera
- * solve) — synchronously inside ONE mount task. On real devices that was a
- * multi-second long main-thread task sitting exactly between the PREPARING
- * countdown completion (T1) and the first INTRO paint (T3) — measured
- * T1→T3 ≈ 5.4s with T1→T2 = 0ms: the state transition was already instant;
- * the MOUNT TASK blocked the first visible frame. The mount is now
- * TWO-PHASE and COOPERATIVE:
- *   phase 0 — the effect body does nothing heavy; it yields to the main
- *     thread FIRST so the PREPARING→INTRO transition paints immediately;
- *   phase 1 — renderer/scene creation + the attach work, every chunk
- *     capped (~12ms budget) and separated by main-thread yields
- *     (`mentorFraming`).
+ * freeze fix): the renderer-independent normalization, animation-track
+ * cleanup, pose sampling, and envelope collection are prepared once with
+ * the session GLTF during PREPARING. INTRO then yields before creating its
+ * renderer and only performs the renderer-bound attach, responsive candidate
+ * selection, and camera solve in cooperative chunks. This keeps the parsed
+ * scene as one owned instance while moving reusable work out of the visible
+ * handoff path.
  * The stage keeps the existing lightweight loading state until the attach
  * settles — the demonstration appears with its final framing, never a
  * wrong-size flash, and NOTHING (state, render, orchestration) waits on
@@ -86,23 +84,18 @@ export interface MentorStageProps {
   onFailed?: () => void;
 }
 
-/** Main-thread budget per attach chunk (ms) — caps every task under a frame. */
-const ATTACH_CHUNK_BUDGET_MS = 12;
-/** Pose samples across the embedded clip (owner-approved framing contract). */
-const ATTACH_POSE_SAMPLES = 16;
-/**
- * Vertex subsample stride for the pose sampling. The dense Mentor mesh has
- * ~60k skinned vertices; every 8th vertex keeps the per-pose vertex work
- * inside the attach chunk budget (the solved fit is unchanged — see
- * collectVisibleMeshBounds), so INTRO stays responsive during the
- * time-sliced attach.
- */
-const ATTACH_VERTEX_STRIDE = 8;
-
 function markMentorPerformance(name: string): void {
   if (typeof performance === 'undefined') return;
   if (performance.getEntriesByName(name).length === 0) performance.mark(name);
 }
+
+// The approved pre-correction mobile cue stack occupied 80px (three 24px
+// rows with 4px gaps); the accepted intrinsic 2+1 group occupies 54px. Keep
+// that 26px of vertical framing budget in the camera solve so the cue
+// composition can stay compact without enlarging the already-approved Mentor.
+const MOBILE_CUE_FRAMING_RESERVE_PX = 26;
+const MOBILE_PRESENTATION_OFFSET_Y = 0.125;
+const DESKTOP_PRESENTATION_OFFSET_Y = 0.1;
 
 export function MentorStage({paused, fillHost = true, strings, onReady, onFailed}: MentorStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -140,6 +133,10 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
     const framingBounds = new THREE.Box3();
     const framingVertexSets: THREE.Vector3[][] = [];
     let framingTargetY = 0.52;
+    let framingAnimatedSize = new THREE.Vector3();
+    let framingAnimatedCenter = new THREE.Vector3();
+    let framingAnimatedMinY = 0;
+    let hasFramingPresentation = false;
 
     let disposed = false;
     let animationFrame = 0;
@@ -172,6 +169,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         return;
       }
       markMentorPerformance('v2:mentor-renderer-created');
+      markMentorPerformance('E_MENTOR_RENDERER_CREATED');
       activeRenderer = renderer;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.setClearColor(0x000000, 0);
@@ -207,11 +205,28 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         if (!hasFit) return;
         const box = stageBox();
         if (!box) return;
+        const isMobilePortrait = box.width <= 430 && box.height > box.width;
+        const framingHeight = isMobilePortrait
+          ? Math.max(1, box.height - MOBILE_CUE_FRAMING_RESERVE_PX)
+          : box.height;
+        if (hasFramingPresentation) {
+          const anchorVerticalOffset = framingAnimatedSize.y * 0.06;
+          const presentationOffset = new THREE.Vector3(
+            -0.002,
+            isMobilePortrait ? MOBILE_PRESENTATION_OFFSET_Y : DESKTOP_PRESENTATION_OFFSET_Y,
+            0,
+          );
+          mentorAnchor.position.set(
+            -framingAnimatedCenter.x + presentationOffset.x,
+            anchorVerticalOffset + presentationOffset.y,
+            -framingAnimatedCenter.z + presentationOffset.z,
+          );
+        }
         camera.aspect = box.width / box.height;
         camera.updateProjectionMatrix();
         const fit = solveMentorCameraFit({
           width: box.width,
-          height: box.height,
+          height: framingHeight,
           camera,
           anchorPosition: mentorAnchor.position,
           bounds: framingBounds,
@@ -220,6 +235,23 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           isMobilePortrait: box.width <= 430 && box.height > box.width,
         });
         applyMentorCameraFit(camera, fit);
+        const projected = projectMentorBoundsAtDistance(
+          {
+            camera: camera.clone(),
+            anchorPosition: mentorAnchor.position,
+            vertexSets: framingVertexSets,
+            bounds: framingBounds,
+          },
+          fit.distance,
+          fit.targetY,
+          box.width,
+          box.height,
+        );
+        if (canvas.parentElement) {
+          canvas.parentElement.dataset.mentorProjectedBounds = JSON.stringify(projected);
+          canvas.parentElement.dataset.mentorCameraDistance = String(fit.distance);
+          canvas.parentElement.dataset.mentorCameraTargetY = String(fit.targetY);
+        }
       };
 
       const resize = () => {
@@ -266,6 +298,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           return;
         }
         markMentorPerformance('v2:mentor-prepared-gltf-available');
+        markMentorPerformance('D_MENTOR_GLTF_PREPARATION_SETTLED');
         // Unmount won the race before the preparation settled: release the
         // acquired single-consumer ownership here (the cleanup path ran with
         // preparedGltf still null and cannot see this resource).
@@ -275,116 +308,43 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         }
         preparedGltf = acquired;
         model = acquired.scene;
-        chunkStart = performance.now();
+        const preparedAttachment = getMentorAttachmentPreparation(acquired);
+        normalizedModelPosition.copy(preparedAttachment.normalizedModelPosition);
+        shouldNeutralizeRootDrift = preparedAttachment.shouldNeutralizeRootDrift;
 
-        // CHUNK: collect rig bones + normalize the authored asset into
-        // presentation space (one vertex traversal — cheap).
+        // The parsed scene is the single owned instance. Preparation already
+        // normalized it; INTRO only attaches it to this renderer's anchor.
         model.traverse((object) => {
           if (!(object instanceof THREE.Bone)) return;
           const match = (Object.entries(MENTOR_BONE_MAP) as Array<[MentorBoneKey, string]>)
             .find(([, boneName]) => boneName === object.name);
           if (match) mentorBones[match[0]] = object;
         });
-        const sourceBounds = new THREE.Box3().setFromObject(model);
-        const sourceSize = sourceBounds.getSize(new THREE.Vector3());
-        const sourceCenter = sourceBounds.getCenter(new THREE.Vector3());
-        const scaleFactor = 1.08;
-        const baseScale = 1.22 / Math.max(sourceSize.y, 0.01);
-        const scale = baseScale * scaleFactor;
-        model.scale.setScalar(scale);
-        model.position.set(
-          -sourceCenter.x * scale,
-          -sourceBounds.min.y * scale,
-          -sourceCenter.z * scale,
-        );
-        // Empirically verified against the rendered asset: its visible face
-        // is presented to the camera at the unrotated Y orientation.
-        model.rotation.y = 0;
         mentorAnchor.add(model);
         markMentorPerformance('v2:mentor-scene-attached');
+        markMentorPerformance('F_MENTOR_SCENE_ATTACHED');
         model.updateMatrixWorld(true);
 
-        // The GLB contains a Hips translation track. Clone the runtime clip
-        // and keep its vertical component, while locking X/Z to the first
-        // keyed position so the squat cannot walk across the stage.
-        const clip = acquired.animations[0];
-        const playableClip = clip?.clone();
-        if (playableClip) {
-          playableClip.tracks.forEach((track) => {
-            if (!/(^|\.)((position)|(translation))$/.test(track.name) ||
-                !/(^|\.)((root)|(hips)|(armature)|(scene))($|\.)/i.test(track.name)) return;
-            const values = track.values;
-            const stride = track.getValueSize();
-            const baseX = values[0] ?? 0;
-            const baseZ = values[2] ?? 0;
-            for (let index = 0; index < values.length; index += stride) {
-              values[index] = baseX;
-              if (stride > 2) values[index + 2] = baseZ;
-            }
-            shouldNeutralizeRootDrift = true;
-          });
-        }
-        const previewMixer = playableClip ? new THREE.AnimationMixer(model) : null;
-        const previewAction = previewMixer && playableClip ? previewMixer.clipAction(playableClip) : null;
+        const {playableClip, animatedBounds, poseVertexSets} = preparedAttachment;
+        framingAnimatedSize = preparedAttachment.framingAnimatedSize;
+        framingAnimatedMinY = preparedAttachment.framingAnimatedMinY;
+        framingAnimatedCenter = preparedAttachment.framingAnimatedCenter;
+        hasFramingPresentation = true;
         markMentorPerformance('v2:mentor-clone-instance-prepared');
+        framingBounds.copy(animatedBounds);
+        chunkStart = performance.now();
         await yieldChunk();
         if (disposed || !model) return;
-
-        // CHUNKS: sample the embedded clip ONCE, time-sliced per chunk so no
-        // task exceeds the frame budget. Unioning these pose bounds gives the
-        // squat loop a stable frame that covers both standing and deep-squat
-        // extremes without per-frame camera movement.
-        const animatedBounds = new THREE.Box3();
-        normalizedModelPosition = new THREE.Vector3(-sourceCenter.x * scale, model.position.y, -sourceCenter.z * scale);
-        const poseVertexSets: THREE.Vector3[][] = [];
-        if (previewAction && previewMixer && playableClip) {
-          previewAction.play();
-          for (let index = 0; index <= ATTACH_POSE_SAMPLES; index += 1) {
-            previewMixer.setTime((playableClip.duration * index) / ATTACH_POSE_SAMPLES);
-            model.updateMatrixWorld(true);
-            const poseBounds = new THREE.Box3();
-            const poseVertices: THREE.Vector3[] = [];
-            collectVisibleMeshBounds(model, poseBounds, poseVertices, ATTACH_VERTEX_STRIDE);
-            animatedBounds.union(poseBounds);
-            poseVertexSets.push(poseVertices);
-            if (chunkBudgetExceeded()) {
-              // eslint-disable-next-line no-await-in-loop
-              await yieldChunk();
-              if (disposed || !model) return;
-            }
-          }
-        } else {
-          const poseVertices: THREE.Vector3[] = [];
-          collectVisibleMeshBounds(model, animatedBounds, poseVertices, ATTACH_VERTEX_STRIDE);
-          poseVertexSets.push(poseVertices);
-        }
-        if (chunkBudgetExceeded()) {
-          await yieldChunk();
-          if (disposed || !model) return;
-        }
 
         // CHUNKS: per-pose silhouette candidate selection (projections at
         // three reference distances), time-sliced the same way.
         // Use the current camera only to identify each pose's projected
         // silhouette candidates. The actual fit below tests every pose
         // independently at every candidate distance.
-        const animatedSize = animatedBounds.getSize(new THREE.Vector3());
-        const animatedCenter = animatedBounds.getCenter(new THREE.Vector3());
-        // Keep the approved anchor and camera framing fixed while applying
-        // the requested presentation-only scale increase.
-        const framingAnimatedSize = animatedSize.clone().multiplyScalar(1 / scaleFactor);
-        const framingAnimatedMinY = animatedBounds.min.y / scaleFactor;
-        const anchorVerticalOffset = framingAnimatedSize.y * 0.06;
-        // Empirically verified deterministic visual-envelope correction from
-        // the approved prototype presentation (shared by every pose).
-        // Desktop gets a small presentation lift as part of the central
-        // composition balance. Mobile portrait keeps the owner-approved
-        // framing/position exactly unchanged.
-        const stageDimensions = stageBox();
-        const isMobilePortrait = Boolean(
-          stageDimensions && stageDimensions.width <= 430 && stageDimensions.height > stageDimensions.width,
-        );
-        const presentationOffset = new THREE.Vector3(-0.002, isMobilePortrait ? 0.055 : 0.075, 0);
+        // The presentation offset is derived again from the settled stage
+        // dimensions in applyFitFromCache. That preserves the approved mobile
+        // framing even when the first layout read occurs before iOS finishes
+        // resolving the stage height.
         const torsoTargetY = framingAnimatedMinY + framingAnimatedSize.y * 0.58;
         const visualStageLift = framingAnimatedSize.y * 0.05;
         framingTargetY = torsoTargetY + visualStageLift;
@@ -402,14 +362,6 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         // The anchor is the sole horizontal/depth presentation transform. The
         // camera must look at that normalized space, otherwise applying the
         // bounds center to both anchor and camera causes a visible side drift.
-        const framingAnimatedCenter = animatedCenter.clone().multiplyScalar(1 / scaleFactor);
-        const presentationCenterX = framingAnimatedCenter.x;
-        const presentationCenterZ = framingAnimatedCenter.z;
-        mentorAnchor.position.set(
-          -presentationCenterX + presentationOffset.x,
-          anchorVerticalOffset + presentationOffset.y,
-          -presentationCenterZ + presentationOffset.z,
-        );
         framingBounds.copy(animatedBounds);
 
         // Final framing solve from the cached candidates, then the real
@@ -418,8 +370,6 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         hasFit = true;
         applyFitFromCache();
         markMentorPerformance('v2:mentor-framing-solved');
-        previewAction?.stop();
-        previewMixer?.stopAllAction();
         model.traverse((object) => {
           if (object instanceof THREE.Mesh) {
             object.castShadow = true;
@@ -448,6 +398,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
         if (!firstAnimationFrameMarked) {
           firstAnimationFrameMarked = true;
           markMentorPerformance('v2:mentor-first-request-animation-frame');
+          markMentorPerformance('v2:mentor-first-raf-callback');
         }
         const delta = Math.min((time - lastTimeRef.value) / 1000, 0.05);
         lastTimeRef.value = time;
@@ -465,10 +416,15 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           firstVisibleFrameMarked = true;
           markMentorPerformance('v2:mentor-first-visible-frame');
           markMentorPerformance('MENTOR_FIRST_VISIBLE_FRAME');
+          markMentorPerformance('H_MENTOR_FIRST_MESH_RENDERED');
+          requestAnimationFrame(() => {
+            markMentorPerformance('I_BROWSER_PAINT_AFTER_MENTOR_FRAME');
+          });
           onReadyRef.current?.();
         }
         animationFrame = requestAnimationFrame(render);
       };
+      markMentorPerformance('G_MENTOR_FIRST_RAF_REQUESTED');
       animationFrame = requestAnimationFrame(render);
 
       await attach();

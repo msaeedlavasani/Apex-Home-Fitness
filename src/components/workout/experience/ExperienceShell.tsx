@@ -36,6 +36,11 @@ import {
   WorkoutV2ThemeControl,
 } from './ShellControls';
 
+function markExperiencePerformance(name: string): void {
+  if (typeof performance === 'undefined') return;
+  if (performance.getEntriesByName(name).length === 0) performance.mark(name);
+}
+
 /**
  * ExperienceShell (WP-04) — the full-surface V2 experience shell,
  * conformed to the OWNER VISUAL CORRECTION (WORKOUT-V2-IMPL-01: the four
@@ -134,21 +139,23 @@ export function ExperienceShell({
       performance.clearMarks();
     }
     if (viewModel.lifecycle === 'PREPARING') {
-      // T1 = the countdown REACHING completion — the FINAL rendered tick
-      // (preparingSecondsRemaining === 1). Marks update on every tick; the
-      // mark's startTime always reflects the LAST seen value, so the second
-      // order (transition to INTRO) can never race a stale mark.
+      // Preserve the legacy countdown mark for existing diagnostics. The
+      // canonical A mark is emitted by the orchestration handoff itself.
       if (viewModel.preparingSecondsRemaining !== null && viewModel.preparingSecondsRemaining <= 1) {
-        performance.mark('v2:t1-preparing-countdown-end');
+        if (performance.getEntriesByName('v2:t1-preparing-countdown-end').length === 0) {
+          performance.mark('v2:t1-preparing-countdown-end');
+        }
       }
     }
     if (viewModel.activeModule === 'EXERCISE_INTRO') {
+      markExperiencePerformance('B_INTRO_STATE_COMMITTED');
       if (performance.getEntriesByName('v2:t2-intro-transition').length === 0) {
         performance.mark('v2:t2-intro-transition');
       }
       // First VISIBLE paint of INTRO: two frames after the transition commit.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
+          markExperiencePerformance('C_INTRO_DOM_FIRST_PAINT');
           if (performance.getEntriesByName('v2:t3-intro-first-paint').length === 0) {
             performance.mark('v2:t3-intro-first-paint');
           }
@@ -242,14 +249,23 @@ export function ExperienceShell({
   // /settled preparation (no second request, no reparse). Resources are
   // released at session teardown if INTRO never consumed them.
   const mentorPreloadStartedRef = useRef(false);
+  const mentorLifecycleRef = useRef(0);
   useEffect(() => {
+    const lifecycle = mentorLifecycleRef.current + 1;
+    mentorLifecycleRef.current = lifecycle;
     if (!mentorPreloadStartedRef.current) {
       mentorPreloadStartedRef.current = true;
       void prepareMentorAsset().catch(() => undefined);
     }
-  }, []);
-  useEffect(() => {
-    return () => disposeMentorPreparation();
+    return () => {
+      // React replays passive effects in development. Defer teardown one
+      // microtask so replay cleanup cannot invalidate the session-wide
+      // preparation before the replayed setup rejoins it. A real unmount has
+      // no subsequent lifecycle value and still disposes promptly.
+      queueMicrotask(() => {
+        if (mentorLifecycleRef.current === lifecycle) disposeMentorPreparation();
+      });
+    };
   }, []);
 
   // T4 = Mentor visible-ready (wired from the stage's readiness callback —

@@ -1,4 +1,12 @@
 import * as THREE from 'three';
+import type {GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+/** Main-thread budget per reusable preparation chunk. */
+export const ATTACH_CHUNK_BUDGET_MS = 12;
+/** Pose samples across the embedded clip. */
+export const ATTACH_POSE_SAMPLES = 16;
+/** Dense mesh subsample stride used by the approved framing heuristic. */
+export const ATTACH_VERTEX_STRIDE = 8;
 
 /**
  * Mentor framing/scheduling boundary — OWNER DEVICE CORRECTION (handoff §1).
@@ -95,6 +103,114 @@ export function collectVisibleMeshBounds(
     }
   });
   return target;
+}
+
+export interface MentorAttachmentPreparation {
+  normalizedModelPosition: THREE.Vector3;
+  shouldNeutralizeRootDrift: boolean;
+  playableClip: THREE.AnimationClip | null;
+  animatedBounds: THREE.Box3;
+  poseVertexSets: THREE.Vector3[][];
+  framingAnimatedSize: THREE.Vector3;
+  framingAnimatedMinY: number;
+  framingAnimatedCenter: THREE.Vector3;
+}
+
+/**
+ * Prepare the renderer-independent half of Mentor attachment exactly once.
+ *
+ * The parsed GLTF scene is the single owned scene that INTRO later attaches
+ * to its one renderer. Normalization, animation-track cleanup, pose sampling,
+ * and envelope collection do not depend on a canvas or viewport, so doing
+ * them while the session resource is preparing removes that work from the
+ * INTRO mount without creating a clone or a second parse lifecycle.
+ */
+export async function prepareMentorAttachment(gltf: GLTF): Promise<MentorAttachmentPreparation> {
+  const model = gltf.scene;
+  const sourceBounds = new THREE.Box3().setFromObject(model);
+  const sourceSize = sourceBounds.getSize(new THREE.Vector3());
+  const sourceCenter = sourceBounds.getCenter(new THREE.Vector3());
+  const scaleFactor = 1.08;
+  const baseScale = 1.22 / Math.max(sourceSize.y, 0.01);
+  const scale = baseScale * scaleFactor;
+
+  model.scale.setScalar(scale);
+  model.position.set(
+    -sourceCenter.x * scale,
+    -sourceBounds.min.y * scale,
+    -sourceCenter.z * scale,
+  );
+  model.rotation.y = 0;
+  model.updateMatrixWorld(true);
+
+  let shouldNeutralizeRootDrift = false;
+  const clip = gltf.animations[0];
+  const playableClip = clip?.clone() ?? null;
+  playableClip?.tracks.forEach((track) => {
+    if (!/(^|\.)((position)|(translation))$/.test(track.name) ||
+        !/(^|\.)((root)|(hips)|(armature)|(scene))($|\.)/i.test(track.name)) return;
+    const values = track.values;
+    const stride = track.getValueSize();
+    const baseX = values[0] ?? 0;
+    const baseZ = values[2] ?? 0;
+    for (let index = 0; index < values.length; index += stride) {
+      values[index] = baseX;
+      if (stride > 2) values[index + 2] = baseZ;
+    }
+    shouldNeutralizeRootDrift = true;
+  });
+
+  const previewMixer = playableClip ? new THREE.AnimationMixer(model) : null;
+  const previewAction = previewMixer && playableClip ? previewMixer.clipAction(playableClip) : null;
+  await yieldToMain();
+
+  const animatedBounds = new THREE.Box3();
+  const normalizedModelPosition = new THREE.Vector3(
+    -sourceCenter.x * scale,
+    model.position.y,
+    -sourceCenter.z * scale,
+  );
+  const poseVertexSets: THREE.Vector3[][] = [];
+  let chunkStart = performance.now();
+  const yieldChunk = async () => {
+    await yieldToMain();
+    chunkStart = performance.now();
+  };
+
+  if (previewAction && previewMixer && playableClip) {
+    previewAction.play();
+    for (let index = 0; index <= ATTACH_POSE_SAMPLES; index += 1) {
+      previewMixer.setTime((playableClip.duration * index) / ATTACH_POSE_SAMPLES);
+      model.updateMatrixWorld(true);
+      const poseBounds = new THREE.Box3();
+      const poseVertices: THREE.Vector3[] = [];
+      collectVisibleMeshBounds(model, poseBounds, poseVertices, ATTACH_VERTEX_STRIDE);
+      animatedBounds.union(poseBounds);
+      poseVertexSets.push(poseVertices);
+      if (performance.now() - chunkStart > ATTACH_CHUNK_BUDGET_MS) {
+        // eslint-disable-next-line no-await-in-loop
+        await yieldChunk();
+      }
+    }
+  } else {
+    const poseVertices: THREE.Vector3[] = [];
+    collectVisibleMeshBounds(model, animatedBounds, poseVertices, ATTACH_VERTEX_STRIDE);
+    poseVertexSets.push(poseVertices);
+  }
+  if (performance.now() - chunkStart > ATTACH_CHUNK_BUDGET_MS) await yieldChunk();
+
+  const animatedSize = animatedBounds.getSize(new THREE.Vector3());
+  const animatedCenter = animatedBounds.getCenter(new THREE.Vector3());
+  return {
+    normalizedModelPosition,
+    shouldNeutralizeRootDrift,
+    playableClip,
+    animatedBounds,
+    poseVertexSets,
+    framingAnimatedSize: animatedSize.clone().multiplyScalar(1 / scaleFactor),
+    framingAnimatedMinY: animatedBounds.min.y / scaleFactor,
+    framingAnimatedCenter: animatedCenter.clone().multiplyScalar(1 / scaleFactor),
+  };
 }
 
 export interface ProjectedBounds {

@@ -394,6 +394,38 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     }
   });
 
+  test('INTRO mobile Mentor framing stays contained and clear of identity/cues', async ({page}) => {
+    await reachIntro(page);
+    for (const viewport of [{width: 390, height: 844}, {width: 430, height: 932}]) {
+      await page.setViewportSize(viewport);
+      await page.waitForTimeout(250);
+      await page.waitForFunction(
+        () => performance.getEntriesByName('I_BROWSER_PAINT_AFTER_MENTOR_FRAME').length > 0,
+        null,
+        {timeout: 30_000},
+      );
+      const geometry = await page.evaluate(() => {
+        const host = document.querySelector('[data-workout-v2-intro-mentor-host]')!.getBoundingClientRect();
+        const identity = document.querySelector('[data-workout-v2-intro-exercise]')!.getBoundingClientRect();
+        const cues = document.querySelector('[data-workout-v2-intro-cues]')!.getBoundingClientRect();
+        const projected = JSON.parse(
+          document.querySelector('[data-workout-v2-mentor]')?.getAttribute('data-mentor-projected-bounds') ?? '{}',
+        ) as {left: number; right: number; top: number; bottom: number};
+        return {
+          mentor: {left: projected.left, right: projected.right, top: host.top + projected.top, bottom: host.top + projected.bottom},
+          identity: {bottom: identity.bottom},
+          cues: {top: cues.top},
+          viewport: {width: window.innerWidth, height: window.innerHeight},
+        };
+      });
+      expect(geometry.mentor.left).toBeGreaterThanOrEqual(0);
+      expect(geometry.mentor.right).toBeLessThanOrEqual(geometry.viewport.width);
+      expect(geometry.mentor.top).toBeGreaterThanOrEqual(geometry.identity.bottom);
+      expect(geometry.mentor.bottom).toBeLessThanOrEqual(geometry.cues.top);
+      expect(geometry.mentor.bottom).toBeLessThanOrEqual(geometry.viewport.height);
+    }
+  });
+
   test('Mentor prepares during PREPARING and INTRO reuses it (single fetch, no reload)', async ({page}) => {
     await page.goto('/en/workout/v2');
     const start = page.getByRole('button', {name: 'Start Workout', exact: true});
@@ -495,6 +527,15 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     );
     const timeline = await page.evaluate(() => {
       const names = [
+        'A_PREPARING_COMPLETION',
+        'B_INTRO_STATE_COMMITTED',
+        'C_INTRO_DOM_FIRST_PAINT',
+        'D_MENTOR_GLTF_PREPARATION_SETTLED',
+        'E_MENTOR_RENDERER_CREATED',
+        'F_MENTOR_SCENE_ATTACHED',
+        'G_MENTOR_FIRST_RAF_REQUESTED',
+        'H_MENTOR_FIRST_MESH_RENDERED',
+        'I_BROWSER_PAINT_AFTER_MENTOR_FRAME',
         'v2:t3-intro-first-paint',
         'v2:mentor-prepared-gltf-available',
         'v2:mentor-renderer-created',
@@ -509,6 +550,21 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
         names.map((name) => [name, performance.getEntriesByName(name)[0]?.startTime ?? null]),
       );
     });
+    for (const name of [
+      'A_PREPARING_COMPLETION',
+      'B_INTRO_STATE_COMMITTED',
+      'C_INTRO_DOM_FIRST_PAINT',
+      'D_MENTOR_GLTF_PREPARATION_SETTLED',
+      'E_MENTOR_RENDERER_CREATED',
+      'F_MENTOR_SCENE_ATTACHED',
+      'G_MENTOR_FIRST_RAF_REQUESTED',
+      'H_MENTOR_FIRST_MESH_RENDERED',
+      'I_BROWSER_PAINT_AFTER_MENTOR_FRAME',
+    ]) expect(timeline[name]).not.toBeNull();
+    expect(timeline['B_INTRO_STATE_COMMITTED']!).toBeGreaterThanOrEqual(timeline['A_PREPARING_COMPLETION']!);
+    expect(timeline['C_INTRO_DOM_FIRST_PAINT']!).toBeGreaterThanOrEqual(timeline['B_INTRO_STATE_COMMITTED']!);
+    expect(timeline['I_BROWSER_PAINT_AFTER_MENTOR_FRAME']!).toBeGreaterThanOrEqual(timeline['H_MENTOR_FIRST_MESH_RENDERED']!);
+    expect(timeline['I_BROWSER_PAINT_AFTER_MENTOR_FRAME']!).toBeGreaterThan(timeline['A_PREPARING_COMPLETION']!);
     expect(timeline['v2:t3-intro-first-paint']).not.toBeNull();
     expect(timeline['v2:mentor-first-visible-frame']).not.toBeNull();
     expect(timeline['v2:mentor-first-visible-frame']!).toBeGreaterThanOrEqual(timeline['v2:t3-intro-first-paint']!);
@@ -551,6 +607,9 @@ test.describe('Workout V2 — INTRO desktop central composition', () => {
         identity: read('[data-workout-v2-intro-exercise]'),
         mentor: read('[data-workout-v2-intro-mentor-host]'),
         cues: read('[data-workout-v2-intro-cues]'),
+        projectedMentor: JSON.parse(
+          document.querySelector('[data-workout-v2-mentor]')?.getAttribute('data-mentor-projected-bounds') ?? '{}',
+        ) as {left?: number; right?: number; top?: number; bottom?: number},
         viewport: {width: window.innerWidth, height: window.innerHeight},
       };
     });
@@ -563,6 +622,10 @@ test.describe('Workout V2 — INTRO desktop central composition', () => {
     expect(geometry.cues!.top - geometry.mentor!.bottom).toBeGreaterThanOrEqual(4);
     expect(geometry.mentor!.top).toBeGreaterThanOrEqual(0);
     expect(geometry.mentor!.bottom).toBeLessThanOrEqual(geometry.viewport.height);
+    expect(geometry.projectedMentor.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.projectedMentor.right).toBeLessThanOrEqual(geometry.viewport.width);
+    expect(geometry.projectedMentor.top + geometry.mentor!.top).toBeGreaterThanOrEqual(geometry.mentor!.top);
+    expect(geometry.projectedMentor.bottom + geometry.mentor!.top).toBeLessThanOrEqual(geometry.mentor!.bottom);
   });
 
   test('Mentor first-frame timing is observable on desktop', async ({page}) => {

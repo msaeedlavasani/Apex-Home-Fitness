@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import type {GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {MENTOR_URL} from './contract';
+import {
+  prepareMentorAttachment,
+  type MentorAttachmentPreparation,
+} from './mentorFraming';
 
 /**
  * Mentor preparation boundary — PREPARE ONCE → REUSE.
@@ -36,13 +40,29 @@ import {MENTOR_URL} from './contract';
 
 let preparation: Promise<GLTF> | null = null;
 let preparationConsumed = false;
+const attachmentPreparations = new WeakMap<GLTF, MentorAttachmentPreparation>();
+
+function markPreparationPerformance(name: string): void {
+  if (typeof performance === 'undefined') return;
+  if (performance.getEntriesByName(name).length === 0) performance.mark(name);
+}
 
 function startPreparation(): Promise<GLTF> {
+  markPreparationPerformance('MENTOR_PREPARATION_STARTED');
   return new Promise<GLTF>((resolve, reject) => {
     try {
       new GLTFLoader().load(
         MENTOR_URL,
-        (gltf) => resolve(gltf),
+        (gltf) => {
+          void prepareMentorAttachment(gltf).then(
+            (prepared) => {
+              attachmentPreparations.set(gltf, prepared);
+              markPreparationPerformance('MENTOR_PREPARATION_RESOLVED');
+              resolve(gltf);
+            },
+            reject,
+          );
+        },
         undefined,
         (error) => reject(error instanceof Error ? error : new Error(String(error))),
       );
@@ -74,8 +94,16 @@ export function acquireMentorPreparation(): Promise<GLTF> {
   return promise;
 }
 
+/** Read the renderer-independent work prepared with the shared GLTF. */
+export function getMentorAttachmentPreparation(gltf: GLTF): MentorAttachmentPreparation {
+  const prepared = attachmentPreparations.get(gltf);
+  if (!prepared) throw new Error('Mentor attachment preparation is unavailable');
+  return prepared;
+}
+
 /** Release prepared-but-NEVER-acquired resources (session teardown). */
 export function disposeMentorPreparation(): void {
+  markPreparationPerformance('MENTOR_PREPARATION_DISPOSED');
   if (preparation && !preparationConsumed) {
     void preparation.then(disposeMentorResources).catch(() => undefined);
   }
