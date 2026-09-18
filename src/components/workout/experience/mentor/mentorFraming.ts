@@ -126,6 +126,7 @@ export interface MentorAttachmentPreparation {
  * INTRO mount without creating a clone or a second parse lifecycle.
  */
 export async function prepareMentorAttachment(gltf: GLTF): Promise<MentorAttachmentPreparation> {
+  if (typeof performance !== 'undefined') performance.mark('MENTOR_NORMALIZATION_STARTED');
   const model = gltf.scene;
   const sourceBounds = new THREE.Box3().setFromObject(model);
   const sourceSize = sourceBounds.getSize(new THREE.Vector3());
@@ -142,6 +143,7 @@ export async function prepareMentorAttachment(gltf: GLTF): Promise<MentorAttachm
   );
   model.rotation.y = 0;
   model.updateMatrixWorld(true);
+  if (typeof performance !== 'undefined') performance.mark('MENTOR_NORMALIZATION_ENDED');
 
   let shouldNeutralizeRootDrift = false;
   const clip = gltf.animations[0];
@@ -177,6 +179,7 @@ export async function prepareMentorAttachment(gltf: GLTF): Promise<MentorAttachm
     chunkStart = performance.now();
   };
 
+  if (typeof performance !== 'undefined') performance.mark('MENTOR_POSE_ENVELOPE_STARTED');
   if (previewAction && previewMixer && playableClip) {
     previewAction.play();
     for (let index = 0; index <= ATTACH_POSE_SAMPLES; index += 1) {
@@ -198,6 +201,7 @@ export async function prepareMentorAttachment(gltf: GLTF): Promise<MentorAttachm
     poseVertexSets.push(poseVertices);
   }
   if (performance.now() - chunkStart > ATTACH_CHUNK_BUDGET_MS) await yieldChunk();
+  if (typeof performance !== 'undefined') performance.mark('MENTOR_POSE_ENVELOPE_ENDED');
 
   const animatedSize = animatedBounds.getSize(new THREE.Vector3());
   const animatedCenter = animatedBounds.getCenter(new THREE.Vector3());

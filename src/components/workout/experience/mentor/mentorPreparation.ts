@@ -51,13 +51,27 @@ function startPreparation(): Promise<GLTF> {
   markPreparationPerformance('MENTOR_PREPARATION_STARTED');
   return new Promise<GLTF>((resolve, reject) => {
     try {
-      new GLTFLoader().load(
+      const loader = new GLTFLoader();
+      const parse = loader.parse.bind(loader);
+      loader.parse = (data, path, onLoad, onError) => {
+        markPreparationPerformance('MENTOR_PARSE_STARTED');
+        parse(data, path, (gltf) => {
+          markPreparationPerformance('MENTOR_PARSE_ENDED');
+          onLoad(gltf);
+        }, onError);
+      };
+      markPreparationPerformance('MENTOR_NETWORK_FETCH_STARTED');
+      loader.load(
         MENTOR_URL,
         (gltf) => {
           void prepareMentorAttachment(gltf).then(
             (prepared) => {
               attachmentPreparations.set(gltf, prepared);
               markPreparationPerformance('MENTOR_PREPARATION_RESOLVED');
+              // D is the actual shared-preparation settlement boundary. It
+              // must be recorded here, not when INTRO later awaits the
+              // already-settled session promise.
+              markPreparationPerformance('D_MENTOR_GLTF_PREPARATION_SETTLED');
               resolve(gltf);
             },
             reject,
@@ -77,6 +91,7 @@ function startPreparation(): Promise<GLTF> {
 /** Fire-and-forget start/join of the single preparation (PREPARING window). */
 export function prepareMentorAsset(): Promise<GLTF> {
   if (!preparation) {
+    markPreparationPerformance('MENTOR_PREPARATION_ACQUISITION_STARTED');
     preparation = startPreparation();
     preparationConsumed = false;
   }

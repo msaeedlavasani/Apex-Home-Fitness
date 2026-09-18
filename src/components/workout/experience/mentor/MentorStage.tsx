@@ -298,7 +298,6 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
           return;
         }
         markMentorPerformance('v2:mentor-prepared-gltf-available');
-        markMentorPerformance('D_MENTOR_GLTF_PREPARATION_SETTLED');
         // Unmount won the race before the preparation settled: release the
         // acquired single-consumer ownership here (the cleanup path ran with
         // preparedGltf still null and cannot see this resource).

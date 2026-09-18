@@ -563,6 +563,7 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     ]) expect(timeline[name]).not.toBeNull();
     expect(timeline['B_INTRO_STATE_COMMITTED']!).toBeGreaterThanOrEqual(timeline['A_PREPARING_COMPLETION']!);
     expect(timeline['C_INTRO_DOM_FIRST_PAINT']!).toBeGreaterThanOrEqual(timeline['B_INTRO_STATE_COMMITTED']!);
+    expect(timeline['D_MENTOR_GLTF_PREPARATION_SETTLED']!).toBeLessThanOrEqual(timeline['A_PREPARING_COMPLETION']!);
     expect(timeline['I_BROWSER_PAINT_AFTER_MENTOR_FRAME']!).toBeGreaterThanOrEqual(timeline['H_MENTOR_FIRST_MESH_RENDERED']!);
     expect(timeline['I_BROWSER_PAINT_AFTER_MENTOR_FRAME']!).toBeGreaterThan(timeline['A_PREPARING_COMPLETION']!);
     expect(timeline['v2:t3-intro-first-paint']).not.toBeNull();
