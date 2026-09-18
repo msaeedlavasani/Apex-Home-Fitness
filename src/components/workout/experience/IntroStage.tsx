@@ -23,20 +23,28 @@ import {MentorStage} from './mentor/MentorStage';
  * adapter unchanged), but presentation never dispatches it. The SET slice
  * will attach its own auto-handoff to that boundary later.
  *
- * CUE ZONE LAW (correction delta §3): the cue pills keep their approved
- * mobile treatment (individually readable rounded surfaces with check
- * indicators) but render inside an EXPLICIT responsive cue zone anchored to
- * the bottom of the stage — a quiet surface band that never overlays the
- * Mentor's body/legs, never attaches to the mat, stays readable over
- * variable photographic backgrounds (its own local surface + theme tokens),
- * respects the safe areas, and never pushes the Mentor out of position.
- * Desktop and Mobile share ONE semantic list; only arrangement/spacing are
- * responsive (`flex-col` mobile → `flex-row` desktop). Light and Dark both
- * retain reliable contrast via tokens.
+ * CUE ZONE LAW (owner device correction §2 — cue presentation): the cues
+ * are a COMPACT, visually-integrated coaching group — NOT a surface band.
+ * The previous implementation wrapped the cues in a full-width blurred
+ * `--apex-surface` band (the owner-rejected dark bottom strip) with three
+ * large standalone pill cards stacked on mobile (dominating the bottom
+ * third). The corrected treatment:
+ *
+ *   - NO container band at all — cues float directly over the Backstage;
+ *   - readability comes ONLY from a minimum local contrast treatment per
+ *     cue (token-driven text surface + border on the text pill itself);
+ *   - DESKTOP: one horizontal row of compact pills near the bottom safe
+ *     area;
+ *   - MOBILE: one compact unified cue container with concise rows (the
+ *     rejected three-large-pill layout is structurally gone — one surface,
+ *     one row per cue, small type, minimal height, visually secondary to
+ *     the Mentor);
+ *   - same semantic list for both platforms; only arrangement is
+ *     responsive; safe areas + no overflow respected; no new controls.
  *
  * MENTOR: the single approved capability (same GLB, same lifecycle) remains
- * visually central; the stage reserves the header strip and the bottom cue
- * zone so responsive framing can center the demonstration between them.
+ * visually central; the stage reserves the header strip and the compact cue
+ * group so responsive framing can center the demonstration between them.
  *
  * VOICE: Mentor voice-over is a FUTURE requirement — no TTS, no narration
  * architecture; INTRO works fully without it.
@@ -60,6 +68,8 @@ export interface IntroStageProps {
    * voice-over (Mentor voice is a future requirement, delta §C).
    */
   mentorAriaLabel: string;
+  /** Fires when the demonstration reaches visible-ready (final framing applied). */
+  onMentorReady?: () => void;
 }
 
 export function IntroStage({
@@ -70,6 +80,7 @@ export function IntroStage({
   mentorLoadingLabel,
   mentorUnavailableLabel,
   mentorAriaLabel,
+  onMentorReady,
 }: IntroStageProps) {
   // The demonstration is INTRO's content. Mentor readiness no longer gates
   // any control (there are none) — it only drives the loading/degraded text.
@@ -119,36 +130,40 @@ export function IntroStage({
             loading: mentorLoadingLabel,
             unavailable: mentorUnavailableLabel,
           }}
-          onReady={() => undefined}
+          onReady={onMentorReady}
           onFailed={() => undefined}
         />
       </div>
 
-      {/* EXPLICIT CUE ZONE (correction delta §3): one quiet surface band
-          anchored to the bottom of the stage — never over the Mentor body/
-          mat, readable over any background, safe-area aware. ONE semantic
-          list for both platforms; arrangement is responsive only. */}
+      {/* COMPACT CUE GROUP (owner device correction §2): no band, no
+          container surface — the cues sit directly on the Backstage with a
+          minimum local-contrast pill on the text itself. Desktop: one
+          horizontal row; Mobile: one unified compact group with concise
+          rows (never the three-large-pill layout). Safe-area aware,
+          overflow-safe, visually secondary to the Mentor. */}
       {cues.length > 0 && (
         <div
           data-workout-v2-intro-cue-zone=""
-          className="bg-[color:color-mix(in_srgb,var(--apex-surface)_72%,transparent)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md sm:pb-4 sm:pt-3"
+          className="w-full px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-1.5 sm:px-6 sm:pb-2.5 sm:pt-2"
         >
-          <ul
-            data-workout-v2-intro-cues=""
-            className="mx-auto flex w-full max-w-md flex-col items-center gap-1.5 px-4 sm:max-w-3xl sm:flex-row sm:justify-center sm:gap-3 sm:px-6"
-          >
-            {cues.map((cue) => (
-              <li
-                key={cue}
-                className="flex items-center gap-2 rounded-full border border-[color:var(--apex-border)] bg-[color:var(--apex-surface)]/80 px-3.5 py-1.5"
-              >
-                <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-apex-primary" />
-                <span className="whitespace-nowrap text-[13px] font-semibold text-[color:var(--apex-text)] sm:text-sm">
-                  {cue}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mx-auto flex w-fit max-w-full flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <ul
+              data-workout-v2-intro-cues=""
+              className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2"
+            >
+              {cues.map((cue) => (
+                <li
+                  key={cue}
+                  className="flex items-center gap-1.5 rounded-full border border-[color:var(--apex-border)] bg-[color:color-mix(in_srgb,var(--apex-surface)_88%,transparent)] px-2.5 py-[3px]"
+                >
+                  <Check aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-apex-primary" />
+                  <span className="whitespace-nowrap text-xs font-semibold text-[color:var(--apex-text)] sm:text-[13px]">
+                    {cue}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>

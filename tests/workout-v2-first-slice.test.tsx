@@ -685,7 +685,7 @@ test('INTRO is hands-free: NO Start/Next/Continue control and no reserved CTA sp
   assert.equal(renderer!.root.findAllByProps({'data-workout-v2-intro-begin': true}).length, 0);
 });
 
-test('INTRO cue zone: explicit bottom band OUTSIDE the mentor host (placement law)', () => {
+test('INTRO cue zone: compact group OUTSIDE the mentor host (placement law)', () => {
   let renderer: TestRenderer.ReactTestRenderer | undefined;
   act(() => {
     renderer = TestRenderer.create(
@@ -702,6 +702,10 @@ test('INTRO cue zone: explicit bottom band OUTSIDE the mentor host (placement la
   });
   const zone = renderer!.root.findByProps({'data-workout-v2-intro-cue-zone': ''});
   assert.match(String(zone.props.className), /pb-\[max/, 'cue zone respects the safe area');
+  // Owner device correction §2: NO surface band behind the cues.
+  const zoneClass = String(zone.props.className);
+  assert.doesNotMatch(zoneClass, /backdrop-blur/, 'no full-width blurred band (owner-rejected dark strip)');
+  assert.doesNotMatch(zoneClass, /bg-\[/, 'no full-width background surface on the cue zone container');
   // The cues are siblings of the mentor host — not overlaid on it.
   const stage = renderer!.root.findByProps({'data-workout-v2-intro-stage': ''});
   const stageChildren = Array.isArray(stage.props.children) ? stage.props.children : [stage.props.children];
@@ -710,6 +714,63 @@ test('INTRO cue zone: explicit bottom band OUTSIDE the mentor host (placement la
   const cueZoneIndex = indexOf('data-workout-v2-intro-cue-zone');
   const mentorIndex = indexOf('data-workout-v2-intro-mentor-host');
   assert.ok(mentorIndex >= 0 && cueZoneIndex > mentorIndex, 'cue zone renders AFTER (below) the mentor host');
+});
+
+test('INTRO cue treatment: compact pills, no three-large-pill mobile layout (§2)', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => {
+    renderer = TestRenderer.create(
+      <IntroStage
+        viewModel={introViewModel()}
+        firstExerciseLabel={COPY.en.introFirst}
+        equipment={COPY.en.prescription}
+        cues={COPY.en.introCues}
+        mentorLoadingLabel={COPY.en.mentorLoading}
+        mentorUnavailableLabel={COPY.en.mentorUnavailable}
+        mentorAriaLabel={COPY.en.mentorAria}
+      />,
+    );
+  });
+  // Each cue keeps a MINIMUM local-contrast pill on the text itself —
+  // small paddings/typography, never the previous oversized pill cards.
+  const cueList = renderer!.root.findByProps({'data-workout-v2-intro-cues': ''});
+  const listChildren = Array.isArray(cueList.props.children) ? cueList.props.children : [cueList.props.children];
+  const pillClass = listChildren
+    .map((pill) => String((pill as {props?: {className?: string}})?.props?.className ?? ''))
+    .join(' ');
+  assert.match(pillClass, /rounded-full/, 'cues keep the token pill shape');
+  assert.match(pillClass, /py-\[3px\]/, 'pill vertical padding is minimal (compact rows)');
+  assert.doesNotMatch(pillClass, /py-1\.5/, 'the previous large pill padding is gone');
+  assert.doesNotMatch(pillClass, /text-\[13px\] font-semibold text-\[color:var\(--apex-text\)\] sm:text-sm/, 'no large mobile type');
+  // Mobile composition is ONE unified group (flex-col), never three
+  // independent large pills: the cue list is a single column on mobile.
+  assert.match(String(cueList.props.className), /flex-col/, 'mobile: one unified compact cue group (concise rows)');
+  assert.match(String(cueList.props.className), /gap-1/, 'compact row spacing');
+});
+
+test('INTRO wires the mentor visible-ready callback (T4 instrumentation seam)', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  let readyFired = 0;
+  act(() => {
+    renderer = TestRenderer.create(
+      <IntroStage
+        viewModel={introViewModel()}
+        firstExerciseLabel={COPY.en.introFirst}
+        equipment={COPY.en.prescription}
+        cues={COPY.en.introCues}
+        mentorLoadingLabel={COPY.en.mentorLoading}
+        mentorUnavailableLabel={COPY.en.mentorUnavailable}
+        mentorAriaLabel={COPY.en.mentorAria}
+        onMentorReady={() => {
+          readyFired += 1;
+        }}
+      />,
+    );
+  });
+  const mentor = renderer!.root.findByProps({'data-workout-v2-mentor': ''});
+  assert.equal(typeof mentor.props.children, 'object');
+  // The stage forwards the readiness callback into MentorStage's onReady.
+  assert.ok(readyFired === 0, 'callback is wired, not fired by the presentation itself');
 });
 
 test('INTRO → SET1 through the full adapter chain: BEGIN_WORK_SET is the only exit', () => {

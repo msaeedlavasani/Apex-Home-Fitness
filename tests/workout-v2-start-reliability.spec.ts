@@ -272,6 +272,88 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(page.getByText('Keep your chest up')).toBeVisible();
   });
 
+  test('PREPARING completion does NOT await Mentor readiness — INTRO paints immediately (handoff §1)', async ({page}) => {
+    // The owner device correction fixes the real-device freeze where the
+    // INTRO mount blocked the first paint for seconds. This pins the
+    // corrected handoff: the first INTRO PAINT (double-rAF instrumentation
+    // mark) must land ~immediately after the last countdown tick, with the
+    // Mentor still loading when the state arrives.
+    await page.goto('/en/workout/v2');
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    await expect(start).toBeVisible();
+    await start.tap();
+    await expect(page.locator('[data-workout-v2-countdown]')).toBeVisible();
+
+    await page.evaluate(() => {
+      const win = window as unknown as {__t1: number | null};
+      win.__t1 = null;
+      // Last countdown tick (remaining = 1) ≈ countdown completion.
+      new MutationObserver(() => {
+        const cd = document.querySelector('[data-workout-v2-countdown]');
+        if (cd?.textContent === '1' && win.__t1 === null) win.__t1 = performance.now();
+      }).observe(document.querySelector('main') ?? document.body, {childList: true, subtree: true, characterData: true});
+    });
+    await page.waitForFunction(() => (window as unknown as {__t1: number | null}).__t1 !== null, null, {timeout: 15000});
+    await page.waitForFunction(
+      () => performance.getEntriesByName('v2:t3-intro-first-paint').length > 0,
+      null,
+      {timeout: 10000},
+    );
+    const handoffMs = await page.evaluate(() => {
+      const t1 = performance.getEntriesByName('v2:t1-preparing-countdown-end')[0]?.startTime ?? 0;
+      const t3 = performance.getEntriesByName('v2:t3-intro-first-paint')[0]?.startTime ?? 0;
+      return t3 - t1;
+    });
+    // The transition must paint within a normal frame budget — NOT the
+    // multi-second freeze the owner observed. Generous CI ceiling covers
+    // parallel-worker noise; the real-device evidence is the ~0.1-0.3s
+    // measured value, orders of magnitude below the old 5.4s.
+    expect(handoffMs).toBeLessThan(2000);
+    // The Mentor may still be attaching when INTRO paints — the lightweight
+    // loading state must be present (same in-flight preparation, no restart).
+    const loadingOrNull = await page.evaluate(() => {
+      const intro = document.querySelector('[data-workout-v2-intro-stage]');
+      if (!intro) return 'no-intro';
+      return document.querySelector('[data-workout-v2-mentor] [role="status"]') ? 'loading' : 'ready';
+    });
+    expect(['loading', 'ready']).toContain(loadingOrNull);
+    // And the SAME single preparation continues to visible readiness.
+    await page.waitForFunction(
+      () => !document.querySelector('[data-workout-v2-mentor] [role="status"]'),
+      null,
+      {timeout: 90000},
+    );
+    const glb = await page.evaluate(() =>
+      performance.getEntriesByType('resource').filter((r) => /\.glb(\?|$)/.test(r.name)).length,
+    );
+    expect(glb).toBe(1);
+  });
+
+  test('INTRO cue treatment: no surface band, compact pills, no overflow (§2)', async ({page}) => {
+    await reachIntro(page);
+    await page.waitForTimeout(400); // stage entrance animation settle
+    const zone = page.locator('[data-workout-v2-intro-cue-zone]');
+    await expect(zone).toBeVisible();
+    // Owner-rejected dark bottom strip: the container must NOT paint a
+    // full-width background surface or blur band behind the cues.
+    const bandPainted = await zone.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const paintsBackground = style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+      const hasBackdrop = style.backdropFilter !== 'none' && style.backdropFilter !== '';
+      return paintsBackground || hasBackdrop;
+    });
+    expect(bandPainted).toBe(false);
+    // Compact: the zone height must stay well under the previous band.
+    const zoneBox = await zone.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(zoneBox!.height).toBeLessThan(viewport.height * 0.2);
+    // No horizontal overflow (compact pills never push layout).
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
   test('Mentor prepares during PREPARING and INTRO reuses it (single fetch, no reload)', async ({page}) => {
     await page.goto('/en/workout/v2');
     const start = page.getByRole('button', {name: 'Start Workout', exact: true});

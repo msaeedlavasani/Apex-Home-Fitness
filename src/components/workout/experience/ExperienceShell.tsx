@@ -11,9 +11,14 @@ import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
   deriveExerciseDetails,
   exerciseDetailFields,
-} from '@/lib/workout/experience/exerciseDetails';import {createWorkoutMusic,
+} from '@/lib/workout/experience/exerciseDetails';
+import {createWorkoutMusic,
   type WorkoutMusicController,
 } from '@/lib/workout/experience/sessionMusic';
+import {
+  resolveMentorFixtureExercise,
+  UnsupportedMentorExerciseError,
+} from '@/lib/workout/experience/mentorBinding';
 import {
   disposeMentorPreparation,
   prepareMentorAsset,
@@ -117,12 +122,66 @@ export function ExperienceShell({
     }, [onSessionStarted]),
   });
 
+  // HANDOFF INSTRUMENTATION (owner device correction §1): performance marks
+  // for the real-device freeze evidence — T1 PREPARING countdown completion
+  // (last rendered tick), T2 the orchestration transition render (INTRO
+  // content attached), T3 the first INTRO paint (double rAF after T2), and
+  // T4 the Mentor visible-ready (wired via markMentorReady below). Pure
+  // marks only — never gates behavior.
+  useEffect(() => {
+    if (typeof performance === 'undefined') return;
+    if (viewModel.lifecycle === 'READY_TO_START' && viewModel.activeModule === 'START') {
+      performance.clearMarks();
+    }
+    if (viewModel.lifecycle === 'PREPARING') {
+      // T1 = the countdown REACHING completion — the FINAL rendered tick
+      // (preparingSecondsRemaining === 1). Marks update on every tick; the
+      // mark's startTime always reflects the LAST seen value, so the second
+      // order (transition to INTRO) can never race a stale mark.
+      if (viewModel.preparingSecondsRemaining !== null && viewModel.preparingSecondsRemaining <= 1) {
+        performance.mark('v2:t1-preparing-countdown-end');
+      }
+    }
+    if (viewModel.activeModule === 'EXERCISE_INTRO') {
+      if (performance.getEntriesByName('v2:t2-intro-transition').length === 0) {
+        performance.mark('v2:t2-intro-transition');
+      }
+      // First VISIBLE paint of INTRO: two frames after the transition commit.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (performance.getEntriesByName('v2:t3-intro-first-paint').length === 0) {
+            performance.mark('v2:t3-intro-first-paint');
+          }
+        }),
+      );
+    }
+  }, [viewModel.lifecycle, viewModel.activeModule, viewModel.preparingSecondsRemaining]);
+
   // Resolved session facts for the PREPARING context block (§18: displayed
   // counts represent ACTUAL resolved data — derived from the same plan the
   // adapter resolves, never a hardcoded fixture).
   const sessionFacts = useMemo(() => {
     const setCount = exercises.reduce((sum, exercise) => sum + Math.max(1, Math.floor(exercise.sets ?? 1)), 0);
     return {exercises: exercises.length, sets: setCount};
+  }, [exercises]);
+
+  // MENTOR FIXTURE BINDING (owner device correction §3 — fail-closed):
+  // the current validation fixture demonstrates EXACTLY ONE exercise (the
+  // canonical Squat GLB + its squat-authored cues). The presented identity
+  // MUST be that exercise — the previous fallback silently bound an
+  // unsupported resolved exercise ("Plank Hold") to the Squat Mentor.
+  // The shell picks the first SUPPORTED plan exercise for the fixture
+  // presentation; a plan with no supported exercise fails HONESTLY (typed
+  // error surface, rendered AFTER all hooks below) instead of mismatching.
+  // Raw plan exercises (not the resolved prescription — nameKeys only exist
+  // there) feed the check.
+  const fixtureError = useMemo(() => {
+    try {
+      resolveMentorFixtureExercise(exercises.map((exercise) => ({exercise})));
+      return null;
+    } catch (error) {
+      return error instanceof UnsupportedMentorExerciseError ? error : null;
+    }
   }, [exercises]);
 
   // Prescription context for the restored pill (correction §11): derived
@@ -169,21 +228,34 @@ export function ExperienceShell({
     };
   }, []);
 
-  // Mentor PREPARE ONCE → REUSE (mentorPreparation.ts): PREPARING is the
-  // preparation window — start the single fetch/parse of the canonical
-  // Mentor GLB as soon as the countdown begins (fire-and-forget: the
-  // PREPARING UI/countdown is never blocked). INTRO's stage later ACQUIRES
-  // the same in-flight/settled preparation (no second request, no reparse).
-  // Resources are released at session teardown if INTRO never consumed them.
+  // Mentor PREPARE ONCE → REUSE (mentorPreparation.ts): the preparation
+  // window is the WHOLE pre-INTRO session — the single fetch/parse of the
+  // canonical Mentor GLB starts when the session shell first mounts (START
+  // screen) so the monolithic GLTFLoader parse (2-4s desktop, longer on
+  // mobile networks) has the maximum possible lead before the PREPARING
+  // countdown completes (owner device correction §1: the parse long-task
+  // must not straddle the PREPARING→INTRO transition). Fire-and-forget: no
+  // UI ever blocks on it. INTRO's stage later ACQUIRES the same in-flight
+  // /settled preparation (no second request, no reparse). Resources are
+  // released at session teardown if INTRO never consumed them.
   const mentorPreloadStartedRef = useRef(false);
   useEffect(() => {
-    if (viewModel.lifecycle === 'PREPARING' && !mentorPreloadStartedRef.current) {
+    if (!mentorPreloadStartedRef.current) {
       mentorPreloadStartedRef.current = true;
       void prepareMentorAsset().catch(() => undefined);
     }
-  }, [viewModel.lifecycle]);
+  }, []);
   useEffect(() => {
     return () => disposeMentorPreparation();
+  }, []);
+
+  // T4 = Mentor visible-ready (wired from the stage's readiness callback —
+  // fires after the time-sliced attach applied the final framing).
+  const markMentorReady = useCallback(() => {
+    if (typeof performance === 'undefined') return;
+    if (performance.getEntriesByName('v2:t4-mentor-ready').length === 0) {
+      performance.mark('v2:t4-mentor-ready');
+    }
   }, []);
 
   const handleStart = useCallback(() => {
@@ -257,6 +329,31 @@ export function ExperienceShell({
     () => (viewModel.activeExercise ? deriveExerciseDetails(viewModel.activeExercise) : null),
     [viewModel.activeExercise],
   );
+
+  // Fail-closed fixture surface — rendered only AFTER every hook above has
+  // run (React rules-of-hooks), never early-returned past them.
+  if (fixtureError) {
+    return (
+      <section
+        data-workout-v2-shell=""
+        aria-label={t('shellLabel')}
+        className={cn(
+          'relative isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[color:var(--app-background)]',
+          className,
+        )}
+      >
+        <BackstageBackdrop theme={theme} />
+        <div role="alert" className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
+          <p className="max-w-md text-sm font-semibold text-[color:var(--apex-text)]">
+            {t('sessionLive')}
+          </p>
+          <p className="mt-2 max-w-md text-xs text-[color:var(--apex-text-secondary)]">
+            {fixtureError.message}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -352,6 +449,7 @@ export function ExperienceShell({
             mentorUnavailableLabel={t('intro.mentorUnavailable')}
             mentorLoadingLabel={t('intro.mentorLoading')}
             mentorAriaLabel={t('intro.mentorAria')}
+            onMentorReady={markMentorReady}
           />
         )}
         {activeModule === 'WORK_SET' && <WorkSetStage viewModel={viewModel} />}
