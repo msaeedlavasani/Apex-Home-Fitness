@@ -12,8 +12,9 @@
 > may still require an architecture gate or Owner decision before it is
 > autonomous-eligible. The Owner lifted the AHF execution freeze on
 > 2026-09-01, but **execution has NOT started** — nothing here authorizes
-> or begins implementation. Task selection requires a subsequent explicit
-> Owner instruction.
+> or begins implementation. Once a task is authorized and admitted, normal
+> task selection is repository-driven; Owner/chat input is required only for
+> new product decisions, explicit gates, or genuine blockers.
 
 ## Lifecycle now
 
@@ -22,10 +23,47 @@
 | Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; execution **staged** — first executable slice: `START + PREPARING` + minimum DAG dependencies) |
 | Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
 | Branch | (none yet) — the execution agent creates `workout/v2-implementation` from fresh main at slice start |
-| State | `AUTHORIZED — implementation may begin`; later slices stay pending their dependencies/verification/freeze sequence |
+| State | `AUTHORIZED — staged`; current accepted START/PREPARING/INTRO boundary is frozen; later slices are selected from canonical dependencies and remain admission-gated |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next authorized task | `WORKOUT-V2-IMPL-01` first slice — `START + PREPARING` (+ minimum DAG dependencies), per the owner authorization of 2026-09-15 |
+| Next selectable work | Repository dry-run selects the next eligible Workstream A/B candidates; no child Execution Unit is admitted by this state |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
+
+<!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
+```json
+{
+  "schema": 1,
+  "program": "WORKOUT-V2-IMPL-01",
+  "canonicalSpec": "docs/specs/0001-workout-experience/spec.md",
+  "canonicalPlan": "docs/specs/0001-workout-experience/plan.md",
+  "canonicalTasks": "docs/specs/0001-workout-experience/tasks.md",
+  "canonicalDependencies": "docs/specs/0001-workout-experience/dependencies.md",
+  "parentAdmission": "docs/admissions/WORKOUT-V2-IMPL-01.admission.json",
+  "items": [
+    {"id":"WP-01","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"WP-02","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"WP-03","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"WP-04","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"WP-05","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"WP-06","status":"PLANNED","frozen":false,"autonomousEligibility":"READY","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-07","status":"PLANNED","frozen":false,"autonomousEligibility":"READY","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-08","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-09","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-10","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-12","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"GATE-01","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"RUN-4-PROGRAM-COMPOSITION","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
+  ]
+}
+```
+<!-- WORKOUT_V2_AUTONOMOUS_STATE:END -->
+
+The JSON block is the execution-state projection for this already-canonical
+Workout V2 backlog. Product semantics remain owned by the linked Spec Kit
+authorities; this projection records lifecycle/freeze state and selection
+metadata only. `WP-06` and `WP-07` are the current dry-run candidates, but each
+still requires its own admission before execution and neither requires Owner
+visual acceptance. `RUN-5-OWNER-ACCEPTANCE` is the complete-flow visual gate.
 
 ## Strategic basis
 
@@ -1239,7 +1277,8 @@ each requires its dependencies, targeted verification, stage acceptance and
 freeze.**
 
 Unfrozen is not the same as started: no task in the Mission Queue has been
-begun, and backlog priority is NOT permission to start. The queue becomes
-executable only when the Owner separately instructs that a specific task
-(or batch) may begin. Strategy persistence and backlog design are allowed;
-feature implementation awaits that explicit instruction.
+begun, and backlog priority is NOT permission to start. After canonical
+authorization and admission, the queue is executable through the repository
+selector and dependency/admission gates; a separate Owner prompt naming the
+next task is not required. Owner/chat remains authoritative for new product
+decisions, explicit human gates, and genuine blockers.

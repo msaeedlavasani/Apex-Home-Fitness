@@ -11,6 +11,19 @@ function run(...args) { return execFileSync(process.execPath, [checker, ...args]
 function tempJson(value) { const file = path.join(os.tmpdir(), `governance-${Date.now()}-${Math.random()}.json`); fs.writeFileSync(file, JSON.stringify(value)); return file; }
 
 test('known profile and docs route pass', () => { assert.match(run('profile', 'CODE_NO_DEPLOY'), /GOVERNANCE_PASS/); assert.match(run('docs'), /GOVERNANCE_PASS/); });
+test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
+  const output = run('workout-v2-ready');
+  const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['WP-06', 'WP-07']);
+  assert.deepEqual(result.readyTasks.map((task) => task.ownerVisualAcceptanceRequired), [false, false]);
+  assert.deepEqual(result.nextAdmissionCandidates, ['WP-06', 'WP-07']);
+  assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
+  assert.equal(result.selectionOnly, true);
+  const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
+  assert.ok(blocked.get('WP-12')?.includes('DEPENDENCIES_UNSATISFIED=WP-06,WP-07'));
+  assert.ok(blocked.get('GATE-01')?.includes('DEPENDENCIES_UNSATISFIED=WP-06,WP-07,WP-12'));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
+});
 test('unknown profile fails closed', () => { assert.throws(() => run('profile', 'UNKNOWN')); });
 test('valid context receipt passes', () => { const file = tempJson({ TASK_ID: 'T', TASK_PROFILE: 'DOCS_ONLY', READ_FILES: ['AGENTS.md', 'docs/INDEX.md'] }); assert.match(run('receipt', file), /GOVERNANCE_PASS/); });
 test('receipt with missing file fails', () => { const file = tempJson({ TASK_ID: 'T', TASK_PROFILE: 'DOCS_ONLY', READ_FILES: ['missing-governance.md'] }); assert.throws(() => run('receipt', file)); });

@@ -17,6 +17,21 @@
 
 Each package: **ID · purpose · dependencies · ownership scope · outputs · prohibited scope · verification · acceptance · real-device**.
 
+### Owner visual acceptance policy
+
+Task-scoped machine, agent, and real-device verification is evidence for the
+work package; it is not Owner visual acceptance and MUST NOT be inserted as a
+per-package DAG gate. Work packages may unlock their dependents when their
+defined verification and acceptance evidence passes. Owner intervention before
+the complete-flow milestone is limited to an explicit `OWNER_DECISION_REQUIRED`
+condition or another existing hard governance stop.
+
+The single Owner visual gate is the complete program-driven Workout
+Experience, after block-completeness/integration verification. Findings from
+that review are collected into one coherent correction batch where
+dependencies allow, machine regression runs before the complete-flow Owner
+re-review, and only then is the experience frozen.
+
 ## WP-01 — Session-core contract extension *(CRITICAL core; single writer)*
 
 - **Purpose:** extend the pure session core (ADR-0002) with the modular/phase vocabulary + per-phase progression policy (`AUTO` | `CONFIRMATION_REQUIRED`), additively.
@@ -59,7 +74,7 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Prohibited scope:** session logic, mentor internals, controls semantics.
 - **Verification:** targeted UI test at 360px in both locales; UI conformance gate.
 - **Acceptance:** no scroll/trap issues; safe-area correct; reduced motion respected.
-- **Real device:** recommended (mobile viewport), Owner acceptance at first on-device stage.
+- **Real device:** recommended (mobile viewport) as task-scoped verification; no Owner visual gate.
 
 ## WP-05 — START + PREPARING first slice *(the first planned implementation slice — §17 readiness)*
 
@@ -67,32 +82,32 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Dependencies:** WP-01, WP-02 (+ WP-04 for the shell).
 - **Ownership scope:** START/PREPARING stage components + start/pause/resume actions.
 - **Outputs:** first slice running end-to-end on device; START reliability evidence.
-- **Prohibited scope:** WORK_SET execution, REST, transitions, deferral/skip, mentor implementation, schema, new dependencies.
-- **Verification:** unit + orchestration contract tests; targeted UI test both locales; **explicit real-iPhone tap/interactivity acceptance** (legacy reliability risk).
+- **Prohibited scope:** SET execution, REST, transitions, deferral/skip, mentor implementation, schema, new dependencies.
+- **Verification:** unit + orchestration contract tests; targeted UI test both locales; **explicit real-iPhone tap/interactivity verification** (legacy reliability risk).
 - **Acceptance:** `START_FREEZE_CRITERIA` from `plan.md` §17 met.
-- **Real device:** **required** (Owner).
+- **Real device:** **required** as task-scoped verification; no Owner visual gate.
 
-## WP-06 — WORK_SET + mode-aware progress *(CRITICAL capability)*
+## WP-06 — SET + SET_RESULT + mode-aware progress *(CRITICAL capability; Run 1 / Workstream A)*
 
-- **Purpose:** implement ONE `WORK_SET` capability supporting both modes + ONE mode-aware progress capability.
+- **Purpose:** implement ONE `SET` capability supporting both modes, ONE mode-aware progress capability, and reusable `SET_RESULT` after every completed Set. `WORK_SET` may remain only as an implementation compatibility label.
 - **Dependencies:** WP-02, WP-03.
-- **Ownership scope:** WORK_SET module + progress component.
-- **Outputs:** rep-based and time-based execution through one capability; `6/10` and `40→0` presentations.
-- **Prohibited scope:** per-mode parallel architectures; progression logic in the UI; HOLD as a third mode.
-- **Verification:** unit (both modes), contract tests, targeted UI tests.
-- **Acceptance:** both modes demonstrably share one capability; progress reflects state without owning it.
-- **Real device:** yes at stage freeze.
+- **Ownership scope:** SET module + progress component + SET_RESULT presentation/consumption.
+- **Outputs:** rep-based and time-based execution through one capability; `6/10` and `40→0` presentations; stable completed-Set result/evidence.
+- **Prohibited scope:** per-mode parallel architectures; progression logic in the UI; HOLD as a third mode; REST/INTRO/global sequencing.
+- **Verification:** unit (both modes), SET_RESULT contract tests, targeted UI tests.
+- **Acceptance:** both modes demonstrably share one SET capability; SET_RESULT follows each completed Set; both return state/result/intent to orchestration and do not choose the next global destination.
+- **Real device:** yes at stage freeze as task-scoped verification; no Owner visual gate.
 
-## WP-07 — REST / EXERCISE_TRANSITION / Exercise-Block lifecycle
+## WP-07 — REST *(CRITICAL capability; Run 1 / Workstream B)*
 
-- **Purpose:** implement REST (independent), EXERCISE_TRANSITION, Intro-once-per-identity, next-exercise-only-on-identity-change.
+- **Purpose:** implement the independent REST capability for typed same-Exercise and exercise-boundary recovery. Exercise-boundary transition semantics remain orchestration-owned; there is no independent EXERCISE_TRANSITION top-level module.
 - **Dependencies:** WP-02, WP-03.
-- **Ownership scope:** REST + transition modules; block lifecycle in orchestration consumption.
-- **Outputs:** set/rest/transition sequence per prescription; no re-intro between same-exercise sets.
-- **Prohibited scope:** Intro inside REST; `REST_NEXT_PREVIEW` semantics; next-set-as-Next-Exercise; legacy rest preview.
+- **Ownership scope:** REST capability and its local countdown/controls only.
+- **Outputs:** typed `REST(BETWEEN_SETS)` and `REST(BETWEEN_EXERCISES)` behavior consumed by orchestration; no re-intro or same-Exercise next-preview ownership.
+- **Prohibited scope:** SET/SET_RESULT ownership; INTRO ownership; global sequencing; `REST_NEXT_PREVIEW` semantics; next-set-as-Next-Exercise; legacy rest preview.
 - **Verification:** orchestration + contract tests; targeted UI tests; regression tests against the legacy confusion findings.
-- **Acceptance:** identity-change-only Next-Exercise; Intro exactly once per identity.
-- **Real device:** yes at stage freeze.
+- **Acceptance:** REST returns state/result/intent to orchestration; it never directly routes to SET, INTRO, or another global state; no terminal REST is created.
+- **Real device:** yes at stage freeze as task-scoped verification; no Owner visual gate.
 
 ## WP-08 — Session controls + outcomes *(control surface; consumes WP-02 state)*
 
@@ -103,7 +118,7 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Prohibited scope:** owning deferred/skipped state, orchestration transition logic, or any global action state machine (WP-02 owns these); `SKIP SET` / `EXTEND REST` / `REDUCE REST`; prescription writes; silent completion.
 - **Verification:** control dispatch tests + contract tests for each approved action (state assertions run against WP-02's orchestration); targeted UI tests.
 - **Acceptance:** every control dispatches exactly the approved orchestration action; outcomes render from orchestration state; deferred blocks block completion until resolved (asserted against WP-02's state, not re-implemented).
-- **Real device:** yes at stage freeze.
+- **Real device:** yes at stage freeze as task-scoped verification; no Owner visual gate.
 
 ## WP-09 — Mentor presentation boundary + degraded mode
 
@@ -114,7 +129,7 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Prohibited scope:** orchestration ownership; Three.js/3D/renderer/format/tracking **mandates**; blocking workout on demo availability.
 - **Verification:** degraded-mode tests (forced failure), targeted UI tests, reduced-motion check; asset integrity per MG-07 rules when assets are introduced.
 - **Acceptance:** workout fully usable with the mentor unavailable; no renderer mandate recorded anywhere.
-- **Real device:** yes at stage freeze (performance/fidelity).
+- **Real device:** yes at stage freeze (performance/fidelity) as task-scoped verification; no Owner visual gate.
 
 ## WP-10 — Functional audio + accessibility completion *(cross-cutting)*
 
@@ -125,7 +140,7 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Prohibited scope:** Voice/TTS; essential state carried by audio; new settings systems beyond existing preferences.
 - **Verification:** targeted tests; reduced-motion checks; a11y assertions in stage acceptance.
 - **Acceptance:** the spec §5.8/§5.9 contract holds on every frozen stage.
-- **Real device:** sound behavior checked on device at stage freeze.
+- **Real device:** sound behavior checked on device at stage freeze as task-scoped verification; no Owner visual gate.
 
 ## WP-11 — Convergence & release path
 
@@ -136,7 +151,39 @@ Each package: **ID · purpose · dependencies · ownership scope · outputs · p
 - **Prohibited scope:** unrelated refactors; production deployment without the standard gates.
 - **Verification:** governance validation; full targeted + nightly E2E on the release path.
 - **Acceptance:** canonical docs reflect the shipped architecture; release policy satisfied.
-- **Real device:** Owner acceptance per release policy.
+- **Real device:** any Owner/release-policy acceptance applies only at the existing release gate; this convergence package is not a per-capability visual gate.
+
+## WP-12 — WORKOUT_RESULT + EXIT *(CRITICAL capability; Run 2)*
+
+- **Purpose:** implement the reusable `WORKOUT_RESULT` + `EXIT` capability block after Run 1 (`SET + SET_RESULT` and `REST`) has been accepted and frozen.
+- **Dependencies:** WP-02, WP-06, WP-07.
+- **Ownership scope:** Workout-result presentation/consumption and Exit confirmation/return boundary.
+- **Outputs:** semantic completion result; confirmed Exit returns to Dashboard; deferred/skipped obligations remain respected.
+- **Prohibited scope:** full Prototype Composition; fixed fixture sequencing; SET/SET_RESULT/REST/INTRO ownership; array-position completion rules.
+- **Verification:** orchestration contract tests, result/Exit UI tests, recovery/control integration tests.
+- **Acceptance:** `WORKOUT_RESULT` is entered only after semantic completion; Exit is confirmed and functional; no terminal REST; no global sequencing is owned by the capability.
+- **Real device:** yes at stage freeze as task-scoped verification; no Owner visual gate.
+
+## GATE-01 — Workout Experience Block-Completeness Audit *(Run 3; non-executable gate)*
+
+- **Purpose:** audit the implemented and accepted reusable Workout Experience capabilities against `spec.md`, rather than inferring completeness from planned work-package completion.
+- **Dependencies:** accepted START/PREPARING/INTRO boundary plus accepted WP-06, WP-07 and WP-12 freezes. Other required capabilities are audit subjects, not assumed complete dependencies.
+- **Scope:** capability inventory, orchestration boundaries, controls, degraded behavior, localization/accessibility and completion/recovery contracts.
+- **Outputs:** explicit `BLOCK_COMPLETENESS = PASS|FAIL` evidence and a list of any genuinely missing reusable capabilities.
+- **Rule:** on FAIL, admit/implement only the missing capability or capabilities, then repeat the audit. No Prototype Composition is permitted before PASS.
+- **Owner gate:** this is machine/agent completeness and integration verification; it is not the complete-flow Owner visual gate.
+- **Status:** non-executable; does not admit Run 1, Run 2, or Run 4.
+
+## Roadmap overlay *(non-executable)*
+
+1. **RUN 1:** WP-06 (`SET + SET_RESULT`) ∥ WP-07 (`REST`), then task-scoped machine/agent verification and freeze evidence.
+2. **RUN 2:** WP-12 (`WORKOUT_RESULT + EXIT`), then task-scoped machine/agent verification and freeze evidence.
+3. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
+4. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`.
+5. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.
+
+The prototype must prove that changing only resolved Program data changes topology
+(2/3 Sets → 3/1 Sets) through the same reusable capabilities.
 
 ## Convergence checklist (when implementation lands)
 

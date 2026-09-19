@@ -297,6 +297,108 @@ function checkAdmissions(dir) {
   console.log(`ADMISSIONS_PASS ${files.length} records (granted: ${granted}, denied: ${denied})`);
 }
 
+// --- Repository-driven Workout V2 ready-work selection -------------------
+// This is a read-only projection over the canonical executable backlog and the
+// existing Spec Kit dependency authority. It selects candidates; it never
+// creates an admission record or changes task state.
+function readTaggedJsonBlock(file, tag) {
+  const content = fs.readFileSync(path.resolve(root, file), 'utf8');
+  const pattern = new RegExp('<!-- ' + tag + ':BEGIN -->\\s*```json\\s*([\\s\\S]*?)```\\s*<!-- ' + tag + ':END -->');
+  const match = content.match(pattern);
+  if (!match) throw new Error(`missing machine-readable ${tag} block in ${file}`);
+  try { return JSON.parse(match[1]); } catch (err) { throw new Error(`invalid JSON in ${tag} block: ${String(err.message || err)}`); }
+}
+
+function checkWorkoutV2Ready() {
+  try {
+    const stateFile = 'docs/TASKS.md';
+    const dagFile = 'docs/specs/0001-workout-experience/dependencies.md';
+    const state = readTaggedJsonBlock(stateFile, 'WORKOUT_V2_AUTONOMOUS_STATE');
+    const dag = readTaggedJsonBlock(dagFile, 'WORKOUT_V2_AUTONOMOUS_DAG');
+    if (state.schema !== 1 || dag.schema !== 1) throw new Error('unsupported Workout V2 execution projection schema');
+    for (const file of [state.canonicalSpec, state.canonicalPlan, state.canonicalTasks, state.canonicalDependencies, state.parentAdmission]) {
+      if (typeof file !== 'string' || !fs.existsSync(path.resolve(root, file))) throw new Error(`canonical execution reference missing: ${file}`);
+    }
+
+    const items = new Map();
+    for (const item of state.items ?? []) {
+      if (!item.id || items.has(item.id)) throw new Error(`duplicate or missing execution-state item: ${item.id}`);
+      if (!states.has(item.status)) throw new Error(`invalid execution-state status for ${item.id}: ${item.status}`);
+      if (!['READY', 'NOT_YET', 'HUMAN_GATE', 'RESEARCH_ONLY'].includes(item.autonomousEligibility)) throw new Error(`invalid autonomous eligibility for ${item.id}: ${item.autonomousEligibility}`);
+      items.set(item.id, item);
+    }
+    const nodes = new Map();
+    for (const node of dag.nodes ?? []) {
+      if (!node.id || nodes.has(node.id)) throw new Error(`duplicate or missing DAG node: ${node.id}`);
+      if (!Array.isArray(node.dependsOn) || !Array.isArray(node.softDependsOn ?? [])) throw new Error(`invalid dependency arrays for ${node.id}`);
+      nodes.set(node.id, node);
+    }
+    for (const id of nodes.keys()) {
+      if (!items.has(id)) throw new Error(`DAG node has no execution state: ${id}`);
+    }
+    for (const id of items.keys()) {
+      if (!nodes.has(id)) throw new Error(`execution state has no DAG node: ${id}`);
+    }
+    for (const node of nodes.values()) {
+      for (const dependency of [...node.dependsOn, ...node.softDependsOn ?? []]) {
+        if (!nodes.has(dependency)) throw new Error(`DAG dependency ${dependency} referenced by ${node.id} is missing`);
+        if (dependency === node.id) throw new Error(`DAG self-dependency: ${node.id}`);
+      }
+    }
+    const visit = new Set();
+    const active = new Set();
+    const walk = (id) => {
+      if (active.has(id)) throw new Error(`DAG cycle detected at ${id}`);
+      if (visit.has(id)) return;
+      active.add(id);
+      for (const dependency of nodes.get(id).dependsOn) walk(dependency);
+      active.delete(id);
+      visit.add(id);
+    };
+    for (const id of nodes.keys()) walk(id);
+
+    let parentAdmission;
+    try {
+      parentAdmission = readJson(state.parentAdmission);
+      validateAdmission(parentAdmission);
+    } catch (err) {
+      throw new Error(`parent admission is not eligible: ${String(err.message || err)}`);
+    }
+
+    const ready = [];
+    const blocked = [];
+    for (const node of nodes.values()) {
+      const item = items.get(node.id);
+      if (item.status === 'CLOSED' && item.frozen === true) continue;
+      const blockers = [];
+      if (item.ownerBlocked === true || item.status === 'BLOCKED') blockers.push('OWNER_BLOCKED');
+      if (item.status === 'HUMAN_GATE' || item.autonomousEligibility === 'HUMAN_GATE') blockers.push('HUMAN_GATE');
+      if (item.ownerVisualAcceptanceRequired === true) blockers.push('COMPLETE_FLOW_OWNER_GATE');
+      if (item.autonomousEligibility !== 'READY') blockers.push(`AUTONOMOUS_ELIGIBILITY=${item.autonomousEligibility}`);
+      const unmet = node.dependsOn.filter((dependency) => {
+        const dependencyState = items.get(dependency);
+        return dependencyState.status !== 'CLOSED' || dependencyState.frozen !== true;
+      });
+      if (unmet.length) blockers.push(`DEPENDENCIES_UNSATISFIED=${unmet.join(',')}`);
+      if (item.ownerDecisionRequired === true) blockers.push('OWNER_DECISION_REQUIRED');
+      if (blockers.length) blocked.push({id: node.id, blockers});
+      else ready.push({id: node.id, workstream: node.workstream ?? null, admissionRequired: item.admissionRequired === true, taskProfile: item.taskProfile ?? null, parallelSafety: item.parallelSafety ?? null, ownerVisualAcceptanceRequired: item.ownerVisualAcceptanceRequired === true});
+    }
+    const admissionCandidates = ready.filter((candidate) => candidate.admissionRequired).map((candidate) => candidate.id);
+    console.log(JSON.stringify({
+      milestone: state.program,
+      parentAdmission: 'ADMISSION_GRANTED',
+      readyTasks: ready,
+      nextAdmissionCandidates: admissionCandidates,
+      blockedWork: blocked,
+      ownerPromptRequiredToSelectNextTask: 'NO',
+      selectionOnly: true,
+    }, null, 2));
+  } catch (err) {
+    fail(`WORKOUT_V2_READY_INVALID: ${String(err.message || err)}`);
+  }
+}
+
 const [command, arg] = process.argv.slice(2);
 if (command === 'profile') checkProfile(arg);
 else if (command === 'report') checkReport(arg);
@@ -304,8 +406,9 @@ else if (command === 'receipt') checkReceipt(arg);
 else if (command === 'ui') checkUi(arg);
 else if (command === 'admission') checkAdmission(arg);
 else if (command === 'admissions') checkAdmissions(arg);
+else if (command === 'workout-v2-ready') checkWorkoutV2Ready();
 else if (command === 'docs') {
   const index = fs.readFileSync(path.join(root, 'docs/INDEX.md'), 'utf8');
   for (const file of ['AGENTS.md', 'docs/governance/DOCUMENTATION-GOVERNANCE.md', 'docs/AI_CHANGE_TEMPLATE.md', 'docs/PITFALL_GUARDRAILS.md']) if (!index.includes(file.replace('docs/', ''))) fail(`INDEX missing governance route: ${file}`);
-} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | receipt <JSON> | docs | ui [TARGET] | admission <JSON> | admissions [DIR]'); }
+} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | receipt <JSON> | docs | ui [TARGET] | admission <JSON> | admissions [DIR] | workout-v2-ready'); }
 if (!process.exitCode) console.log('GOVERNANCE_PASS');
