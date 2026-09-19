@@ -98,7 +98,8 @@ function validateCheckpoint(record, {requireCurrentSha = false, allowUnpassed = 
   if (record.CHECKPOINT_KIND === 'INTEGRATION' && record.DEPLOYMENT_IDENTITY !== 'NOT_APPLICABLE') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} integration checkpoints require DEPLOYMENT_IDENTITY=NOT_APPLICABLE`);
   if (record.CHECKPOINT_KIND === 'DEPLOYMENT') {
     if (record.DEPLOYMENT_AUTHORIZED !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} deployment checkpoint lacks canonical deployment authorization`);
-    if (!record.DEPLOYMENT_IDENTITY || typeof record.DEPLOYMENT_IDENTITY !== 'object' || record.DEPLOYMENT_IDENTITY.STATUS !== 'PASS' || record.DEPLOYMENT_IDENTITY.DEPLOYED_SHA !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} deployment identity does not match KNOWN_GOOD_SHA`);
+    if (record.STATUS === 'PASS' && (!record.DEPLOYMENT_IDENTITY || typeof record.DEPLOYMENT_IDENTITY !== 'object' || record.DEPLOYMENT_IDENTITY.STATUS !== 'PASS' || record.DEPLOYMENT_IDENTITY.DEPLOYED_SHA !== record.KNOWN_GOOD_SHA)) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} deployment identity does not match KNOWN_GOOD_SHA`);
+    if (record.STATUS === 'PENDING' && (!record.DEPLOYMENT_IDENTITY || typeof record.DEPLOYMENT_IDENTITY !== 'object' || !['PENDING', 'PASS'].includes(record.DEPLOYMENT_IDENTITY.STATUS))) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} pending deployment checkpoint requires pending deployment identity`);
   }
   if (requireCurrentSha) {
     const current = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();

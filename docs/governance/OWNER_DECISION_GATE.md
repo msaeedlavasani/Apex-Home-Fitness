@@ -29,6 +29,14 @@
 - **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate after the new product-integration checkpoint. No per-task visual acceptance is introduced. Production remains unauthorized. Beta remains a separate deployment-authority decision under the permanent checkpoint policy.
 - **Canonical work packages:** `WP-15-REAL-PRODUCT-ENTRY-INTEGRATION` and `WP-16-QA-PROGRAM-DOMAIN-PATH` are authorized only within the existing Spec Kit, DAG, admission, and checkpoint authorities.
 
+### WORKOUT-V2-BETA-DEPLOYMENT-01 — Beta deployment authorization (2026-09-19)
+
+- **Owner decision:** AUTHORIZE deployment of the current verified Workout Experience V2 candidate to the existing AHF Beta environment for complete-flow validation and RUN-5 Owner acceptance.
+- **Scope:** Beta only. Production deployment remains unauthorized, PR #72 remains unmerged, and all existing CI, rollback, security, deployment-checkpoint, and verification requirements remain binding.
+- **Canonical acceptance path:** authenticated application → normal Dashboard → assigned QA Program/workout → normal localized workout route → Workout Experience V2 → complete Program-derived workout → Workout Result/Exit → Dashboard.
+- **Reconciliation result:** the repository contains no Beta deployment workflow, GitHub environment, deployment record, target mapping, or Beta-capable deployment gateway. The existing gateway is Production-only: it requires authoritative `main` HEAD and the Production compose/volume allowlist. The authorization is therefore persisted as accepted, but the derived Beta deployment capability remains BLOCKED until a canonical Beta path is established within deployment governance.
+- **No inference:** this decision does not authorize Production, PR merge, a new deployment authority, arbitrary host/compose/secret values, or bypass of the existing Production gateway security model.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

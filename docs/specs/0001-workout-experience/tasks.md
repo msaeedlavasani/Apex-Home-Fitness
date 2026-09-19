@@ -239,8 +239,22 @@ The product implementation must prove that changing only resolved Program data c
 ### BETA-DEPLOYMENT-AUTHORIZATION — existing deployment-authority Human Gate
 
 - **Dependencies:** `PRODUCT-INTEGRATION-CHECKPOINT`.
-- **Scope:** determine whether repository-authorized Beta deployment exists. The current permanent checkpoint policy says it does not; no deployment is inferred from this product decision.
-- **Rule:** this is a genuine deployment-authority gate, not a product scheduling choice and not Owner visual acceptance. RUN-5 remains downstream.
+- **Scope:** the Owner authorized Beta-only deployment on 2026-09-19. This gate records that decision; it does not invent a Beta host, workflow, compose file, secret source, or deployment authority.
+- **Current reconciliation:** authorization is accepted, but the repository has no canonical Beta deployment path. The existing gateway is Production-only and therefore cannot safely execute this Beta deployment.
+- **Rule:** this is a genuine deployment-authority gate, not a product scheduling choice and not Owner visual acceptance. The derived Beta deployment capability and deployment checkpoint remain upstream of RUN-5.
+
+### BETA-DEPLOYMENT-CAPABILITY — canonical Beta path prerequisite
+
+- **Dependencies:** `BETA-DEPLOYMENT-AUTHORIZATION`, `PRODUCT-INTEGRATION-CHECKPOINT`.
+- **Purpose:** establish or expose a governed Beta deployment path using existing deployment security, exact-SHA identity, rollback, runtime, and environment controls.
+- **Status:** BLOCKED — no repository-authorized Beta target/workflow/gateway mapping exists; no values may be guessed.
+- **Prohibited scope:** Production deployment, PR merge, bypassing the Production gateway, arbitrary host/compose/secret selection, or weakening deployment security.
+
+### BETA-DEPLOYMENT-CHECKPOINT — deployed Beta identity and runtime gate
+
+- **Dependencies:** `BETA-DEPLOYMENT-CAPABILITY`.
+- **Scope:** exact deployed SHA/build identity, deployment success, rollback identity, route/browser/runtime/assets/CSP/network verification, and the real authenticated QA Program flow.
+- **Rule:** only PASS may unblock RUN-5; a pending or failed deployment checkpoint fails closed.
 
 ## Run 1 close-out — 2026-09-19
 

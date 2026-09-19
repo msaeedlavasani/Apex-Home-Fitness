@@ -36,7 +36,10 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
-  assert.equal(blocked.get('BETA-DEPLOYMENT-AUTHORIZATION')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'), !productCheckpointPass);
+  assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization is not a remaining scheduling gate');
+  assert.ok(blocked.get('BETA-DEPLOYMENT-CAPABILITY')?.includes('OWNER_BLOCKED'));
+  assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
@@ -67,6 +70,22 @@ test('checkpoint PASS fails closed when either branch or PR CI is not PASS', () 
   const file = tempJson(baseCheckpoint({AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'PASS', COMMIT_SHA: sha, RUN_ID: 'pass-run', URL: 'https://example.invalid/ci', BRANCH_STATUS: 'PASS', BRANCH_COMMIT_SHA: sha, BRANCH_RUN_ID: 'branch-pass', BRANCH_URL: 'https://example.invalid/branch-ci', PR_STATUS: 'FAIL', PR_COMMIT_SHA: sha, PR_RUN_ID: 'pr-fail', PR_URL: 'https://example.invalid/pr-ci'}}));
   assert.throws(() => run('checkpoint', file), /branch and PR authoritative CI PASS/);
 });
+test('pending deployment checkpoint remains unsatisfied without a deployed identity', () => {
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  const file = tempJson({
+    ...baseCheckpoint(),
+    CHECKPOINT_ID: 'TEST-DEPLOYMENT-01',
+    CHECKPOINT_KIND: 'DEPLOYMENT',
+    STATUS: 'PENDING',
+    DEPLOYMENT_AUTHORIZED: 'YES',
+    DEPLOYMENT_IDENTITY: {STATUS: 'PENDING', DEPLOYED_SHA: 'NONE'},
+    KNOWN_GOOD_SHA: sha,
+    VERIFIED_SOURCE_SHA: sha,
+    CHECKPOINT_EVIDENCE_SHA: sha,
+    AUTHORITATIVE_CI: {...baseCheckpoint().AUTHORITATIVE_CI, COMMIT_SHA: sha},
+  });
+  assert.throws(() => run('checkpoint', file), /CHECKPOINT_NOT_PASS/);
+});
 test('checkpoint completion recalculates readiness and leaves the Human Gate downstream', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
   const dagSource = readTaggedJson(path.join(root, 'docs/specs/0001-workout-experience/dependencies.md'), 'WORKOUT_V2_AUTONOMOUS_DAG');
@@ -94,7 +113,10 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));
-  assert.ok(blocked.get('BETA-DEPLOYMENT-AUTHORIZATION')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'));
+  assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization remains closed while product checkpoint is reset in this fixture');
+  assert.ok(blocked.get('BETA-DEPLOYMENT-CAPABILITY')?.includes('OWNER_BLOCKED'));
+  assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
