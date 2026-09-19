@@ -240,7 +240,7 @@ The product implementation must prove that changing only resolved Program data c
 
 - **Dependencies:** `PRODUCT-INTEGRATION-CHECKPOINT`.
 - **Scope:** the Owner authorized Beta-only deployment on 2026-09-19. This gate records that decision; it does not invent a Beta host, workflow, compose file, secret source, or deployment authority.
-- **Current reconciliation:** authorization is accepted, but the repository has no canonical Beta deployment path. The existing gateway is Production-only and therefore cannot safely execute this Beta deployment.
+- **Current reconciliation:** authorization is accepted and the canonical Beta path is established through the existing constrained gateway with an explicit Beta target, isolated volume/port, protected environment, and rollback identity.
 - **Rule:** this is a genuine deployment-authority gate, not a product scheduling choice and not Owner visual acceptance. The derived Beta deployment capability and deployment checkpoint remain upstream of RUN-5.
 
 ### BETA-DEPLOYMENT-CAPABILITY — canonical Beta path prerequisite
@@ -248,15 +248,15 @@ The product implementation must prove that changing only resolved Program data c
 - **Dependencies:** `BETA-DEPLOYMENT-AUTHORIZATION`, `PRODUCT-INTEGRATION-CHECKPOINT`.
 - **Purpose:** establish and verify a governed Beta deployment path using the existing constrained gateway, exact-SHA identity, rollback, runtime, and environment controls.
 - **Canonical target:** `beta.apexhomefit.ir` → existing AHF host → Nginx TLS/reverse proxy → `127.0.0.1:3100` → isolated `ahf_beta_db` volume. The repository-owned Beta Compose template and gateway action are the canonical deployment path; host configuration is verified without exposing secrets.
-- **Status:** READY_DERIVED — Owner authorized path establishment on 2026-09-19; the existing host already exposes the target DNS/TLS/proxy and isolated Beta container/volume, subject to repository governance reconciliation and exact-SHA deployment.
-- **Verification:** gateway source-ref/branch+PR CI checks, immutable Beta images, exact deployed SHA/build identity, protected Beta environment shape, Production topology non-interference, database hash stability, health/readiness, and rollback proof.
+- **Status:** CLOSED/FROZEN — governed Beta path established and deployed on 2026-09-19; exact source/build identity, Production non-interference, database hash stability, health, and rollback were verified.
+- **Verification:** gateway source-ref/branch+PR CI checks, immutable Beta images, exact deployed SHA/build identity, protected Beta environment shape, Production topology non-interference, database hash stability, health/readiness, and rollback proof; evidence is recorded in `docs/checkpoints/WORKOUT-V2-BETA-DEPLOYMENT-01.json`.
 - **Prohibited scope:** Production deployment, PR merge, bypassing the Production gateway, arbitrary host/compose/secret selection, or weakening deployment security.
 
 ### BETA-DEPLOYMENT-CHECKPOINT — deployed Beta identity and runtime gate
 
 - **Dependencies:** `BETA-DEPLOYMENT-CAPABILITY`.
-- **Scope:** exact deployed SHA/build identity, deployment success, rollback identity, route/browser/runtime/assets/CSP/network verification, and the real authenticated QA Program flow.
-- **Rule:** only PASS may unblock RUN-5; a pending or failed deployment checkpoint fails closed.
+- **Scope:** exact deployed SHA/build identity, deployment success, rollback identity, route/runtime/assets/CSP/network verification, and the Beta authenticated entry boundary; complete-flow visual/device acceptance remains RUN-5.
+- **Rule:** PASS is recorded only with authoritative branch/PR CI, exact deployed identity, rollback, health, and Beta route evidence; PASS unblocks RUN-5 without satisfying its Human Gate.
 
 ## Run 1 close-out — 2026-09-19
 

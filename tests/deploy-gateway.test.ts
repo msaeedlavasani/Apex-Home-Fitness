@@ -40,6 +40,16 @@ test('gateway accepts a dry-run db-operation for the MG-09 adoption op', () => {
   assert.equal(validate(noEvidence).stdout.trim(), 'GateError');
 });
 
+test('gateway accepts only the bounded Beta QA data operation', () => {
+  const source = readFileSync(gateway, 'utf8');
+  assert.match(source, /"beta-qa-program-assign"/);
+  assert.match(source, /scripts\/gateway-db-ops\/beta-qa-program-assign\.mjs/);
+  const valid = {action:'beta-db-operation',schema_version:1,operation_id:'beta-qa-program-assign',mode:'dry-run',source_sha:'a'.repeat(40)};
+  assert.equal(validate(valid).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, mode:'rehearsal'}).stdout.trim(), 'GateError');
+  assert.equal(validate({...valid, mode:'apply'}).stdout.trim(), 'GateError');
+});
+
 test('gateway source is fixed to canonical host, repository, compose and volume', () => {
   const source = readFileSync(gateway, 'utf8');
   assert.match(source, /HOST = "sabtbrooker"/);

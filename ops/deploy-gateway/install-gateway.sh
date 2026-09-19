@@ -52,5 +52,5 @@ systemctl restart apex-deploy-gateway.service
 sleep 1
 systemctl is-active --quiet apex-deploy-gateway.service || { echo "gateway inactive after upgrade" >&2; exit 1; }
 VERSION="$(/usr/local/bin/apex-deploy status | sed -n 's/.*"version": *\([0-9]*\).*/\1/p')"
-[ "$VERSION" = "3" ] || { echo "gateway version verification failed (got: $VERSION)" >&2; exit 1; }
+[ "$VERSION" = "4" ] || { echo "gateway version verification failed (got: $VERSION)" >&2; exit 1; }
 echo "{\"status\":\"GATEWAY_INSTALLED\",\"version\":$VERSION}"

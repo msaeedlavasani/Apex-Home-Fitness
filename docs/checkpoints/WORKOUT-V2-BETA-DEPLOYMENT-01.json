@@ -1,31 +1,36 @@
 {
   "CHECKPOINT_ID": "WORKOUT-V2-BETA-DEPLOYMENT-01",
   "CHECKPOINT_KIND": "DEPLOYMENT",
-  "STATUS": "PENDING",
-  "KNOWN_GOOD_SHA": "b8a7ffd74f96f0839b2d5b03226b76760339e7c7",
-  "VERIFIED_SOURCE_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
-  "CHECKPOINT_EVIDENCE_SHA": "c44b568e7dfe3ffa837f6516a49d1b175a15e57b",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
+  "VERIFIED_SOURCE_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
+  "CHECKPOINT_EVIDENCE_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
   "AUTHORITATIVE_CI": {
     "PROVIDER": "GITHUB_ACTIONS",
     "WORKFLOW": "CI",
-    "STATUS": "PENDING",
-    "COMMIT_SHA": "b8a7ffd74f96f0839b2d5b03226b76760339e7c7",
-    "RUN_ID": "PENDING",
-    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions",
-    "BRANCH_STATUS": "PENDING",
-    "BRANCH_COMMIT_SHA": "b8a7ffd74f96f0839b2d5b03226b76760339e7c7",
-    "BRANCH_RUN_ID": "PENDING",
-    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions",
-    "PR_STATUS": "PENDING",
-    "PR_COMMIT_SHA": "b8a7ffd74f96f0839b2d5b03226b76760339e7c7",
-    "PR_RUN_ID": "PENDING",
-    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/pull/72"
+    "STATUS": "PASS",
+    "COMMIT_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
+    "RUN_ID": "35462743121",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35462743121",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
+    "BRANCH_RUN_ID": "35462743121",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35462743121",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "a68836120428f5e4d2a12b224636dade7ec28f4a",
+    "PR_RUN_ID": "35462745396",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35462745396"
   },
   "VERIFICATION_EVIDENCE": [
-    {"ID":"beta-deployment-pending","COMMAND":"canonical Beta deployment checkpoint","STATUS":"PENDING","SUMMARY":"Awaiting a governed Beta deployment path and deployed artifact identity; no deployment has been attempted."}
+    {"ID":"gateway-source-ci","COMMAND":"Beta gateway beta-release workout-v2-a688361","STATUS":"PASS","SUMMARY":"The constrained gateway accepted only branch feat/workout-v2-first-slice, PR #72, and matching successful branch/PR CI for a68836120428f5e4d2a12b224636dade7ec28f4a."},
+    {"ID":"beta-deployment","COMMAND":"apex-deploy beta-release workout-v2-a688361","STATUS":"PASS","SUMMARY":"AHF Beta deployed image ahf-home-fit:beta-a68836120428 from the exact source SHA with build identity 60cBrMrAqIbjwDxGzE2H8; health passed and the protected deployment proof recorded production_untouched=true."},
+    {"ID":"beta-rollback","COMMAND":"apex-deploy beta-verify-rollback workout-v2-a688361","STATUS":"PASS","SUMMARY":"The canonical Beta rollback compose identity and preserved previous Beta image were available and verified without restarting Production."},
+    {"ID":"beta-database","COMMAND":"Beta deployment database before/after SHA-256 comparison","STATUS":"PASS","SUMMARY":"Beta database hash remained cd84ab7e065be53fb0b01f615c4b57bafb647d8244616841554ad2a9fbb174ce across the non-DB-change deployment."},
+    {"ID":"beta-runtime","COMMAND":"HTTPS Beta route, localized route, redirect, manifest, service worker, Nginx, and container boundary checks","STATUS":"PASS","SUMMARY":"beta.apexhomefit.ir/en and /fa returned 200; HTTP redirected to HTTPS; manifest.json and service-worker.js returned 200; Beta ran on 127.0.0.1:3100 while Production remained on 127.0.0.1:3000 and its original image."},
+    {"ID":"local-ci-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"The deployed candidate a68836120428f5e4d2a12b224636dade7ec28f4a was CI-verified and pushed before deployment; the governance close-out preserves that deployed SHA as the known-good baseline."}
   ],
   "WORKTREE_CLEAN": "YES",
   "LOCAL_REMOTE_PARITY": "YES",
   "DEPLOYMENT_AUTHORIZED": "YES",
-  "DEPLOYMENT_IDENTITY": {"STATUS":"PENDING","DEPLOYED_SHA":"NONE","ENVIRONMENT":"AHF_BETA"}
+  "DEPLOYMENT_IDENTITY": {"STATUS":"PASS","DEPLOYED_SHA":"a68836120428f5e4d2a12b224636dade7ec28f4a","ENVIRONMENT":"AHF_BETA","URL":"https://beta.apexhomefit.ir","BUILD_ID":"60cBrMrAqIbjwDxGzE2H8","IMAGE":"ahf-home-fit:beta-a68836120428","IMAGE_ID":"sha256:c3749ee8355174cb75191a51724d05e3d0939f6e90d5a9b2ad812d1f682d58ef","MIGRATION_IMAGE":"ahf-home-fit:beta-migrate-a68836120428","MIGRATION_IMAGE_ID":"sha256:dd1598cd484867a85fc7a7ce74111f00ba713d080f036b4c5ed2bc5453ee901d","ROLLBACK":"compose.yml.rollback-workout-v2-a688361","ROLLBACK_VERIFIED":"YES","PRODUCTION_UNTOUCHED":"YES"}
 }

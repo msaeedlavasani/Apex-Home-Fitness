@@ -23,6 +23,12 @@ import {
   ExerciseCategory,
   DifficultyLevel,
 } from "@prisma/client";
+import {
+  QA_PROGRAM_DESCRIPTION,
+  QA_PROGRAM_EXERCISES,
+  QA_PROGRAM_NAME,
+  QA_PROGRAM_WEEKLY_SCHEDULE,
+} from "../src/lib/program/qaProgram";
 
 const prisma = new PrismaClient();
 
@@ -799,7 +805,7 @@ async function main() {
   // not product behavior: normal Program resolution selects it by ownership
   // and the Workout route consumes the same persisted schedule/contract as
   // every other Program. No phone, user, or account conditional is involved.
-  const qaExerciseNames = ["Jump Squats", "Push-Up", "Plank Hold"];
+  const qaExerciseNames = QA_PROGRAM_EXERCISES.map((exercise) => exercise.name);
   const qaExercises = await prisma.exercise.findMany({
     where: {name: {in: qaExerciseNames}},
   });
@@ -807,34 +813,19 @@ async function main() {
   if (qaExercises.length !== qaExerciseNames.length) {
     throw new Error("Workout V2 QA Program requires its canonical seed exercises");
   }
-  const qaWeeklySchedule: Prisma.InputJsonValue = [
-    {
-      day: 1,
-      day_name: "Monday",
-      focus: "Workout V2 QA",
-      is_rest_day: false,
-      warmup: [],
-      exercises: [
-        {id: "qa-squat", name: "Jump Squats", method: "strength", equipment: "none", sets: 2, reps: "8", duration_seconds: null, fallback_duration_seconds: 45, rest_seconds: 20, instruction_cue: "Move with control.", alternatives: [], contraindicated_for: []},
-        {id: "qa-push-up", name: "Push-Up", method: "strength", equipment: "none", sets: 3, reps: "10", duration_seconds: null, fallback_duration_seconds: 50, rest_seconds: 25, instruction_cue: "Keep a steady pace.", alternatives: [], contraindicated_for: []},
-        {id: "qa-plank", name: "Plank Hold", method: "isometric", equipment: "none", sets: 1, reps: null, duration_seconds: 30, fallback_duration_seconds: null, rest_seconds: 30, instruction_cue: "Breathe steadily.", alternatives: [], contraindicated_for: []}
-      ],
-      cooldown: [],
-      notes: "QA data only; the normal Program path remains authoritative."
-    }
-  ];
+  const qaWeeklySchedule: Prisma.InputJsonValue = QA_PROGRAM_WEEKLY_SCHEDULE;
   const qaProgram = await prisma.program.upsert({
-    where: {name: "Apex Workout V2 QA Program"},
+    where: {name: QA_PROGRAM_NAME},
     update: {
-      description: "Small repeatable QA input for the real Workout V2 Program path.",
+      description: QA_PROGRAM_DESCRIPTION,
       sessionsPerWeek: 1,
       restDays: [],
       weeklySchedule: qaWeeklySchedule,
       ownerId: demoUser.id,
     },
     create: {
-      name: "Apex Workout V2 QA Program",
-      description: "Small repeatable QA input for the real Workout V2 Program path.",
+      name: QA_PROGRAM_NAME,
+      description: QA_PROGRAM_DESCRIPTION,
       level: DifficultyLevel.BEGINNER,
       durationWeeks: 1,
       sessionsPerWeek: 1,
@@ -849,9 +840,9 @@ async function main() {
       programId: qaProgram.id,
       exerciseId: qaByName.get(name)!.id,
       order: index + 1,
-      sets: index === 0 ? 2 : index === 1 ? 3 : 1,
-      reps: index === 2 ? null : index === 0 ? 8 : 10,
-      restSeconds: index === 0 ? 20 : index === 1 ? 25 : 30,
+      sets: QA_PROGRAM_EXERCISES[index].sets,
+      reps: QA_PROGRAM_EXERCISES[index].reps,
+      restSeconds: QA_PROGRAM_EXERCISES[index].restSeconds,
     })),
   });
   console.log(`QA Program ready: ${qaProgram.name} (${qaExerciseNames.length} exercises linked)`);

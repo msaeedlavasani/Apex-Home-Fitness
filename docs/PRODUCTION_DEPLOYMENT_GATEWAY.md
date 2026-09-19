@@ -44,6 +44,17 @@ missing protected configuration, failed CI, changed database hash, or failed
 health check fails closed. Production is never stopped, recreated, mounted, or
 selected by a Beta request.
 
+The same constrained gateway also exposes the narrowly bounded
+`beta-db-operation` action for the canonical QA data setup. Its only
+allowlisted operation is `beta-qa-program-assign`: it runs from the exact
+deployed Beta migration image, mounts only `ahf_beta_db`, reads the protected
+`SMOKE_TEST_PHONE` configuration without returning it, and ensures the
+repository-seeded `Apex Workout V2 QA Program` is owned by that authenticated
+QA account. Dry-run evidence is required before apply; the Beta app is
+quiesced, backed up, hash-verified, restored on failure, and restarted. This
+is operational test data, not a product identity conditional, and it cannot
+select Production resources.
+
 ## Authorization and allowlist
 
 - exact host: `sabtbrooker`;
@@ -144,4 +155,4 @@ Contract (bounded, fail-closed, mirrors the release security model):
 
 Upgrade/install: `ops/deploy-gateway/install-gateway.sh` (root, host-guarded,
 idempotent; runs `py_compile` + `--self-test`, restarts the service, verifies
-`version: 2`).
+`version: 4`).
