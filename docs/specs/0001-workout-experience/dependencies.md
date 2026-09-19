@@ -19,8 +19,9 @@ WP-01 Session-core contract extension
                    ├── (hard) ─► WP-08 Controls surface + outcome consumption
                    └── (soft) ─► WP-09 Mentor presentation boundary + degraded mode (consumes the view-model)
 WP-03 Prescription resolution contract ── (hard) ─► consumed by WP-06 / WP-07
+WP-03 ── (hard) ─► WP-13 Shared Program ↔ Workout prescription contract
 WP-10 Audio cues + accessibility — (software/cross-cutting) asserts on every stage WP
-WP-12 WORKOUT_RESULT + EXIT ── (hard) ─► after accepted WP-06 + WP-07
+WP-12 WORKOUT_RESULT + EXIT ── (hard) ─► after accepted WP-06 + WP-07 + WP-13
 GATE-01 Block-Completeness Audit ── (hard) ─► after accepted WP-05/06/07/12; audits all required capabilities
 WP-11 Convergence & release path — (hard) depends on all implementing WPs and GATE-01
 ```
@@ -40,7 +41,8 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-08","dependsOn":["WP-02","WP-06","WP-07"],"kind":"WORK_PACKAGE"},
     {"id":"WP-09","dependsOn":["WP-02"],"softDependsOn":["WP-06"],"kind":"WORK_PACKAGE"},
     {"id":"WP-10","dependsOn":["WP-05"],"kind":"WORK_PACKAGE"},
-    {"id":"WP-12","dependsOn":["WP-06","WP-07"],"kind":"WORK_PACKAGE"},
+    {"id":"WP-12","dependsOn":["WP-06","WP-07","WP-13"],"kind":"WORK_PACKAGE"},
+    {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false},
     {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE"},
     {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
@@ -49,7 +51,7 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
 ```
 <!-- WORKOUT_V2_AUTONOMOUS_DAG:END -->
 
-Cross-cutting capabilities: **Session Controls** (WP-08) · **Progress** (WP-06) · **Mentor Presentation** (WP-09) · **Functional Audio** (WP-10) · **Accessibility** (WP-10, asserted per stage) · **Persistence/Resume** (existing snapshot contract; WP-01 must keep it intact).
+Cross-cutting capabilities: **Session Controls** (WP-08) · **Progress** (WP-06) · **Mentor Presentation** (WP-09) · **Functional Audio** (WP-10) · **Shared Program ↔ Workout prescription contract** (WP-13) · **Accessibility** (WP-10, asserted per stage) · **Persistence/Resume** (existing snapshot contract; WP-01 must keep it intact).
 
 Owner visual acceptance is a milestone gate, not a work-package dependency:
 WP-06 and WP-07 have no Owner visual gate. The only Owner visual gate in this
@@ -58,8 +60,12 @@ experience after composition and machine/integration verification.
 
 Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required
 child admissions, task-scoped verification, and report validation. The
-canonical selector therefore returns no READY child; `WP-12` remains
-`NOT_YET` until its own admission and implementation scope are activated.
+previous selector incorrectly treated manually assigned `NOT_YET` fields as
+independent gates even after dependencies were satisfied. The selector now
+derives readiness for ordinary autonomous nodes from the DAG and governance
+state. The current derived candidates are `WP-08`, `WP-09`, `WP-10`, and
+`WP-13`; `WP-12` is deterministically blocked by the new shared-contract
+prerequisite rather than by a manual promotion field.
 Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json),
 [`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json).
 
@@ -70,7 +76,8 @@ Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-clos
 - WP-05 requires WP-02 (orchestration actions/state) **and** WP-04 (the shell it presents inside).
 - WP-06/07/08 require WP-02 (they consume orchestration state/actions, never sequence themselves).
 - WP-06/07 require WP-03 (mode + targets must be explicit on the resolved prescription).
-- WP-12 requires accepted Run 1 capabilities (WP-06 + WP-07); it owns neither Run 1 capability and consumes orchestration actions rather than owning control sequencing.
+- WP-13 requires the existing WP-03 resolution authority and establishes the shared, versioned Program ↔ Workout resolved-prescription boundary before later integration.
+- WP-12 requires accepted Run 1 capabilities (WP-06 + WP-07) **and WP-13**; it owns neither Run 1 capability and consumes orchestration actions rather than owning control sequencing.
 - GATE-01 requires the accepted START/PREPARING/INTRO boundary plus accepted Run 1/Run 2 blocks; it audits every required reusable/cross-cutting capability, does not assume missing capabilities are complete, and does not itself implement or admit a missing capability.
 - WP-11 requires every implementing WP terminal and GATE-01 PASS.
 
@@ -92,8 +99,8 @@ Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-clos
 | 1 | WP-01 · WP-03 | no shared files; distinct contracts; both available immediately |
 | 2 | WP-02 (after WP-01) · WP-04 (after the view-model contract freeze) · WP-09 (after the view-model contract freeze) | WP-04 and WP-09 consume WP-02's frozen view-model contract; WP-09 must not depend on WP-02 completion (degraded-first) |
 | 3 | WP-05 (after WP-02 + WP-04) → then WP-06 ∥ WP-07 (after WP-03 + WP-02) | Run 1 Workstream A/B remain independent; orchestration contract is frozen before stages |
-| 4 | WP-08 · WP-10 | controls surface + audio/a11y; both consume frozen stage contracts |
-| 5 | WP-12 (after WP-06 + WP-07) | Run 2 result/Exit block follows the frozen Run 1 capabilities |
+| 4 | WP-08 · WP-09 · WP-10 ∥ WP-13 | controls, mentor/a11y assertions, and the shared prescription contract consume the frozen architecture; WP-13 must close before WP-12/composition |
+| 5 | WP-12 (after WP-06 + WP-07 + WP-13) | Run 2 result/Exit block follows the frozen Run 1 capabilities and shared contract |
 | 6 | GATE-01 → program-driven Prototype Composition only after PASS | completeness is audited explicitly before composition |
 
 Parallel work must never edit the same contract file concurrently; contract changes go through the owning WP. WP-04/WP-09 may start in wave 2 **only** because the view-model contract is a design output frozen at WP-02's design start — if that freeze slips, they wait (they never invent their own view-model).

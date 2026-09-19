@@ -70,6 +70,37 @@ choose the next Exercise, enter `WORKOUT_RESULT`, or declare completion.
 - **Storage of the mode remains an implementation decision** (spec §16) — this plan deliberately does **not** select a schema. **WP-03** may propose an additive representation (existing `ProgramExercise`/enrichment surfaces first) inside its **DB_CHANGE** gate if a schema change proves necessary; no other work package may touch the prescription data representation.
 - **No hardcoded per-exercise modes**; no invented policy that chooses between modes (that policy is future authorization).
 
+### 4.1 Shared-boundary audit (2026-09-19)
+
+The repository audit found that the existing artifacts are only partial
+implementations of this boundary. `src/lib/ai/contracts.ts` is the validated
+generator-output contract, while `src/lib/workout/resolvedPrescription.ts`
+is a consumer-local in-memory resolver over `SessionExercise`; neither is the
+one shared, versioned Program ↔ Workout contract required by this plan. The
+persisted `ProgramExercise` representation also does not preserve explicit
+execution mode or duration semantics for every AI/rules source.
+The current V2 shape also has no explicit `fallbackDuration`, although the
+spec requires a resolved camera-less fallback for eligible `REP_BASED`
+prescriptions.
+
+Before `WP-12`, `GATE-01`, or program-driven composition, `WP-13` must define
+the minimum canonical boundary without prematurely selecting a storage schema:
+
+- shared domain semantics for exercise identity/order, explicit
+  `REP_BASED`/`TIME_BASED` mode, mutually exclusive targets, set count, rest,
+  and any required camera-less fallback duration;
+- a machine-readable versioned shape and source-independent AI/rules/persisted
+  adapters;
+- deterministic fail-closed validation invariants and compatibility rules;
+- no presentation topology fields (`INTRO`, `SET`, `REST`, etc.), because the
+  Workout Session Orchestrator derives HOW from the resolved WHAT.
+
+The existing versioned AL-01 `WorkoutOutcomeRecord` is the downstream
+Progress/Adaptation-facing outcome authority. A separate durable adaptation
+policy or duplicate outcome schema is not authorized by this audit; `WP-13`
+must define only the narrow mapping seam from a future Workout Session Result
+to that existing record.
+
 ## 5. Session orchestration contract
 
 Owns: session lifecycle · composed capability order · active Exercise · **Set progression** · **REST progression** · exercise-boundary transition semantics · deferred Exercises · skipped-for-session Exercises · completion eligibility · pause/resume · exit boundary · auto vs confirmation-required transitions. `SET`, `SET_RESULT` and `REST` return state/result/intent to this layer; none owns global sequencing or directly routes to another capability.

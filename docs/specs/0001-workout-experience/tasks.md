@@ -156,13 +156,24 @@ re-review, and only then is the experience frozen.
 ## WP-12 — WORKOUT_RESULT + EXIT *(CRITICAL capability; Run 2)*
 
 - **Purpose:** implement the reusable `WORKOUT_RESULT` + `EXIT` capability block after Run 1 (`SET + SET_RESULT` and `REST`) has been accepted and frozen.
-- **Dependencies:** WP-02, WP-06, WP-07.
+- **Dependencies:** WP-02, WP-06, WP-07, WP-13.
 - **Ownership scope:** Workout-result presentation/consumption and Exit confirmation/return boundary.
 - **Outputs:** semantic completion result; confirmed Exit returns to Dashboard; deferred/skipped obligations remain respected.
 - **Prohibited scope:** full Prototype Composition; fixed fixture sequencing; SET/SET_RESULT/REST/INTRO ownership; array-position completion rules.
 - **Verification:** orchestration contract tests, result/Exit UI tests, recovery/control integration tests.
 - **Acceptance:** `WORKOUT_RESULT` is entered only after semantic completion; Exit is confirmed and functional; no terminal REST; no global sequencing is owned by the capability.
 - **Real device:** yes at stage freeze as task-scoped verification; no Owner visual gate.
+
+## WP-13 — Shared Program ↔ Workout prescription contract *(CRITICAL architecture prerequisite)*
+
+- **Purpose:** establish and validate the one canonical, shared, versioned domain contract produced by the Program/Prescription Engine and consumed by Workout Experience.
+- **Dependencies:** WP-03; it reconciles the existing resolution authority before Run 2 and program-driven composition.
+- **Ownership scope:** contract semantics, machine-readable shape/schema, fail-closed validation invariants, source-adapter parity for AI/rules/persisted program inputs, and compatibility/versioning rules.
+- **Outputs:** a canonical resolved-prescription boundary plus a documented adapter/validation decision; an explicit mapping seam to the existing AL-01 `WorkoutOutcomeRecord` without inventing adaptation policy.
+- **Prohibited scope:** Workout UI, session topology, presentation modules, orchestration ownership, numbered/fixture-specific flows, schema migration unless separately admitted as a DB_CHANGE decision, and future adaptation policy.
+- **Verification:** contract-shape/invariant tests, AI/rules source-parity tests, persisted-program loss/incompatibility tests, and governance/dependency validation.
+- **Acceptance:** Workout consumes only the shared resolved contract; Program/Prescription owns WHAT, Orchestrator derives HOW/topology; the contract carries explicit mode/targets/set/rest semantics, versioning, and compatibility behavior without freezing an implementation storage schema prematurely.
+- **Real device:** not required; this is a pure architecture/contract prerequisite.
 
 ## GATE-01 — Workout Experience Block-Completeness Audit *(Run 3; non-executable gate)*
 
@@ -177,7 +188,7 @@ re-review, and only then is the experience frozen.
 ## Roadmap overlay *(non-executable)*
 
 1. **RUN 1:** WP-06 (`SET + SET_RESULT`) ∥ WP-07 (`REST`), then task-scoped machine/agent verification and freeze evidence.
-2. **RUN 2:** WP-12 (`WORKOUT_RESULT + EXIT`), then task-scoped machine/agent verification and freeze evidence.
+2. **RUN 2 prerequisite:** WP-13 (shared Program ↔ Workout prescription contract), then WP-12 (`WORKOUT_RESULT + EXIT`) with task-scoped machine/agent verification and freeze evidence.
 3. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
 4. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`.
 5. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.

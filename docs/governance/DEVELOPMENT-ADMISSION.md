@@ -118,6 +118,13 @@ READ CANONICAL STATE → REFRESH DAG → CALCULATE READY WORK
 → VERIFY → RECORD RESULT → UPDATE DAG → RECALCULATE
 ```
 
+For Workout V2, ordinary autonomous nodes declare
+`readinessRule: DAG_DERIVED` in the canonical execution projection. The
+selector computes their readiness from lifecycle state, hard dependencies, and
+governance gates; a manually assigned `autonomousEligibility: NOT_YET` is not
+permitted on those nodes. `readinessRule: EXPLICIT` is reserved for genuine
+explicit states such as `HUMAN_GATE` or an unresolved Owner decision.
+
 Independent candidates may be selected together only when their recorded
 dependencies, resource boundaries and admission profiles permit it. A selector
 must stop on an unresolved Owner decision, authority conflict, failed dependency

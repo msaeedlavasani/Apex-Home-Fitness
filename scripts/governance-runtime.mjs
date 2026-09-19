@@ -324,7 +324,13 @@ function checkWorkoutV2Ready() {
     for (const item of state.items ?? []) {
       if (!item.id || items.has(item.id)) throw new Error(`duplicate or missing execution-state item: ${item.id}`);
       if (!states.has(item.status)) throw new Error(`invalid execution-state status for ${item.id}: ${item.status}`);
-      if (!['READY', 'NOT_YET', 'HUMAN_GATE', 'RESEARCH_ONLY'].includes(item.autonomousEligibility)) throw new Error(`invalid autonomous eligibility for ${item.id}: ${item.autonomousEligibility}`);
+      const readinessRule = item.readinessRule ?? 'EXPLICIT';
+      if (!['DAG_DERIVED', 'EXPLICIT'].includes(readinessRule)) throw new Error(`invalid readiness rule for ${item.id}: ${readinessRule}`);
+      if (readinessRule === 'DAG_DERIVED') {
+        if ('autonomousEligibility' in item) throw new Error(`DAG_DERIVED item must not carry manually assigned autonomousEligibility: ${item.id}`);
+      } else if (!['READY', 'NOT_YET', 'HUMAN_GATE', 'RESEARCH_ONLY'].includes(item.autonomousEligibility)) {
+        throw new Error(`invalid autonomous eligibility for ${item.id}: ${item.autonomousEligibility}`);
+      }
       items.set(item.id, item);
     }
     const nodes = new Map();
@@ -374,7 +380,8 @@ function checkWorkoutV2Ready() {
       if (item.ownerBlocked === true || item.status === 'BLOCKED') blockers.push('OWNER_BLOCKED');
       if (item.status === 'HUMAN_GATE' || item.autonomousEligibility === 'HUMAN_GATE') blockers.push('HUMAN_GATE');
       if (item.ownerVisualAcceptanceRequired === true) blockers.push('COMPLETE_FLOW_OWNER_GATE');
-      if (item.autonomousEligibility !== 'READY') blockers.push(`AUTONOMOUS_ELIGIBILITY=${item.autonomousEligibility}`);
+      const readinessRule = item.readinessRule ?? 'EXPLICIT';
+      if (readinessRule === 'EXPLICIT' && item.autonomousEligibility !== 'READY') blockers.push(`AUTONOMOUS_ELIGIBILITY=${item.autonomousEligibility}`);
       const unmet = node.dependsOn.filter((dependency) => {
         const dependencyState = items.get(dependency);
         return dependencyState.status !== 'CLOSED' || dependencyState.frozen !== true;
@@ -382,7 +389,7 @@ function checkWorkoutV2Ready() {
       if (unmet.length) blockers.push(`DEPENDENCIES_UNSATISFIED=${unmet.join(',')}`);
       if (item.ownerDecisionRequired === true) blockers.push('OWNER_DECISION_REQUIRED');
       if (blockers.length) blocked.push({id: node.id, blockers});
-      else ready.push({id: node.id, workstream: node.workstream ?? null, admissionRequired: item.admissionRequired === true, taskProfile: item.taskProfile ?? null, parallelSafety: item.parallelSafety ?? null, ownerVisualAcceptanceRequired: item.ownerVisualAcceptanceRequired === true});
+      else ready.push({id: node.id, workstream: node.workstream ?? null, eligibility: readinessRule === 'DAG_DERIVED' ? 'READY_DERIVED' : 'READY', eligibilityDerivedAutomatically: readinessRule === 'DAG_DERIVED', admissionRequired: item.admissionRequired === true, taskProfile: item.taskProfile ?? null, parallelSafety: item.parallelSafety ?? null, ownerVisualAcceptanceRequired: item.ownerVisualAcceptanceRequired === true});
     }
     const admissionCandidates = ready.filter((candidate) => candidate.admissionRequired).map((candidate) => candidate.id);
     console.log(JSON.stringify({

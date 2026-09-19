@@ -26,7 +26,7 @@
 | Branch | `feat/workout-v2-first-slice` — current feature branch; Run 1 changes are pushed and parity-verified |
 | State | `AUTHORIZED — Run 1 closed`; SET/SET_RESULT and typed REST are frozen; later slices remain admission-gated |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next selectable work | None — repository dry-run reports no READY work; `WP-12` and later nodes remain canonical `NOT_YET`/dependency-gated |
+| Next selectable work | Repository-derived READY work: `WP-08`, `WP-09`, `WP-10`, and the new shared-contract prerequisite `WP-13`; `WP-12` remains dependency-gated on `WP-13` |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 <!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
@@ -47,13 +47,14 @@
     {"id":"WP-05","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
     {"id":"WP-06","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-06.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"SET + SET_RESULT implemented and verified"},
     {"id":"WP-07","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-07.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Typed REST implemented and verified"},
-    {"id":"WP-08","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-09","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-10","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-12","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"GATE-01","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
-    {"id":"RUN-4-PROGRAM-COMPOSITION","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
+    {"id":"WP-08","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-09","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-10","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-12","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-13","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"GATE-01","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
+    {"id":"RUN-4-PROGRAM-COMPOSITION","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
   ]
 }
 ```
@@ -66,8 +67,10 @@ metadata only. `WP-06` and `WP-07` are CLOSED/FROZEN with task-scoped
 verification recorded in [`WP-06-closeout.json`](../reports/workout-v2-impl-01/WP-06-closeout.json),
 [`WP-07-closeout.json`](../reports/workout-v2-impl-01/WP-07-closeout.json), and
 the shared [Run 1 UI evidence](../reports/workout-v2-impl-01/run-1-ui-conformance-evidence.md).
-Neither requires Owner visual acceptance. `RUN-5-OWNER-ACCEPTANCE` remains the
-complete-flow visual gate.
+For planned autonomous work, `readinessRule: DAG_DERIVED` means the selector
+calculates eligibility from lifecycle, hard dependencies, and governance gates;
+it must not be manually promoted from `NOT_YET`. `RUN-5-OWNER-ACCEPTANCE` is
+the explicit complete-flow human gate.
 
 ## Strategic basis
 
