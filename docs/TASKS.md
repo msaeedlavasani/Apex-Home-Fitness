@@ -24,9 +24,9 @@
 | Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; Run 1 `WP-06` + `WP-07` closed/frozen) |
 | Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
 | Branch | `feat/workout-v2-first-slice` — current feature branch; Run 1 changes are pushed and parity-verified |
-| State | `AUTHORIZED — Run 4 composition closed`; the canonical complete-flow integration checkpoint is now required before the downstream human gate |
+| State | `AUTHORIZED — complete-flow integration checkpoint PASS`; the downstream complete-flow human gate is now the only Workout V2 stop |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next selectable work | Repository-derived integration checkpoint: `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW`; `RUN-5-OWNER-ACCEPTANCE` remains downstream |
+| Next selectable work | `RUN-5-OWNER-ACCEPTANCE` — downstream complete-flow human gate; no autonomous task is selected |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 <!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
@@ -55,7 +55,7 @@
     {"id":"WP-13","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-13.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Shared versioned Program-to-Workout prescription contract, source adapters, validation, compatibility rules, and outcome mapping seam implemented and verified"},
     {"id":"GATE-01","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"BLOCK_COMPLETENESS=PASS; all required reusable Workout V2 capabilities and contracts audited"},
     {"id":"RUN-4-PROGRAM-COMPOSITION","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Program-driven asymmetric 2/3 and 3/1 set topologies verified through the shared prescription contract and reusable orchestration/presentation path"},
-    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json","verification":"PENDING"},
+    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json","verification":"PASS","result":"Machine complete-flow integration checkpoint PASS; KNOWN_GOOD_SHA=a20e31f5979fae681cf0a1a4a6a44aa99a32a247"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
   ]
 }

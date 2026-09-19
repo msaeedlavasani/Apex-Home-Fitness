@@ -47,7 +47,7 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-13.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1","provider":"WP-03"}],"providesCapabilities":["V2_SHARED_PRESCRIPTION_CONTRACT_V1"]},
     {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE","status":"CLOSED","frozen":true,"verification":"PASS","reportPath":"reports/workout-v2-impl-01/GATE-01-completeness.json","blockCompleteness":"PASS"},
     {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","verification":"PASS","providesCapabilities":["V2_PROGRAM_DRIVEN_COMPOSITION_V1"]},
-    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json"},
+    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }

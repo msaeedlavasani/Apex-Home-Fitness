@@ -26,16 +26,15 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), ['READY_DERIVED']);
-  assert.ok(result.readyTasks.every((task) => task.eligibilityDerivedAutomatically === true));
+  assert.deepEqual(result.readyTasks.map((task) => task.id), []);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), []);
   assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
-  assert.equal(result.checkpointGates[0]?.status, 'UNSATISFIED');
+  assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
-  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'));
+  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'), false);
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
