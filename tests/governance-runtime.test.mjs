@@ -14,14 +14,15 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['WP-06', 'WP-07']);
-  assert.deepEqual(result.readyTasks.map((task) => task.ownerVisualAcceptanceRequired), [false, false]);
-  assert.deepEqual(result.nextAdmissionCandidates, ['WP-06', 'WP-07']);
+  assert.deepEqual(result.readyTasks, []);
+  assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
-  assert.ok(blocked.get('WP-12')?.includes('DEPENDENCIES_UNSATISFIED=WP-06,WP-07'));
-  assert.ok(blocked.get('GATE-01')?.includes('DEPENDENCIES_UNSATISFIED=WP-06,WP-07,WP-12'));
+  assert.ok(blocked.get('WP-12')?.includes('AUTONOMOUS_ELIGIBILITY=NOT_YET'));
+  assert.ok(!blocked.get('WP-12')?.some((blocker) => blocker.startsWith('DEPENDENCIES_UNSATISFIED=')));
+  assert.ok(blocked.get('GATE-01')?.includes('AUTONOMOUS_ELIGIBILITY=NOT_YET'));
+  assert.ok(blocked.get('GATE-01')?.includes('DEPENDENCIES_UNSATISFIED=WP-12'));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
 });
 test('unknown profile fails closed', () => { assert.throws(() => run('profile', 'UNKNOWN')); });

@@ -208,6 +208,19 @@
       "mentorAria": "نمایش زنده حرکت پیش رو",
       "live": "جلسه در جریان است"
     },
+    "set": {
+      "setLabel": "ست",
+      "recordRep": "ثبت تکرار",
+      "reps": "تکرار",
+      "seconds": "ثانیه",
+      "result": "ست کامل شد"
+    },
+    "rest": {
+      "label": "استراحت",
+      "betweenSets": "پیش از ست بعدی",
+      "betweenExercises": "پیش از حرکت بعدی",
+      "skip": "رد کردن استراحت"
+    },
     "readiness": {
       "clearSpaceTitle": "فضای آزاد",
       "clearSpaceDetail": "مطمئن شو فضای کافی داری.",

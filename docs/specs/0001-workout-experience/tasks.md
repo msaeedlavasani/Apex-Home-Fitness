@@ -185,6 +185,17 @@ re-review, and only then is the experience frozen.
 The prototype must prove that changing only resolved Program data changes topology
 (2/3 Sets → 3/1 Sets) through the same reusable capabilities.
 
+## Run 1 close-out — 2026-09-19
+
+`WP-06` and `WP-07` were admitted as the two repository-selected Run 1 child
+units, implemented, task-scoped verified, and then frozen CLOSED. The close-out
+reports are [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json)
+and [`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json);
+shared UI conformance evidence is in
+[`run-1-ui-conformance-evidence.md`](../../../reports/workout-v2-impl-01/run-1-ui-conformance-evidence.md).
+No Owner visual acceptance was required for either child. `WP-12` remains the
+next dependency node but is not READY in the canonical execution projection.
+
 ## Convergence checklist (when implementation lands)
 
 - [ ] Spec status/implementation state updated; this file marked `CLOSED`/`SUPERSEDED`
@@ -196,7 +207,7 @@ The prototype must prove that changing only resolved Program data changes topolo
 
 | Field | Value |
 |---|---|
-| CURRENT_STATUS | `WORK_PACKAGES_READY` (non-executable; admission DENIED) |
-| NEXT_ACTION | Owner authorizes `WORKOUT-V2-IMPL-01` implementation (admission gate then expected to return GRANTED) |
+| CURRENT_STATUS | `RUN_1_CLOSED` — WP-06 and WP-07 are frozen after task-scoped verification |
+| NEXT_ACTION | No READY Workout V2 child exists; WP-12 remains canonical `NOT_YET` and requires its own admission when activated |
 | NEXT_ACTION_AUTONOMOUS | `NO` |
-| BLOCKERS | Owner implementation authorization |
+| BLOCKERS | Canonical eligibility gate for the next slice; no unresolved Owner decision for Run 1 |

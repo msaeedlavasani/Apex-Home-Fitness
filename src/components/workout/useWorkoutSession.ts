@@ -32,10 +32,9 @@ function markWorkoutPerformance(name: string): void {
  * remainder) and the orchestrator stays clock-free/pure. The 1s interval is
  * cosmetic refresh; visibility handlers catch up exactly on return.
  *
- * Persistence: none. The V1 snapshot contract (`WorkoutStateRecord`) is
- * unchanged (WP-01 prohibition) and PREPARING is intentionally not persisted
- * in this slice; resume integration for the running session arrives with the
- * exercise-block work packages.
+ * Persistence: none. The V1 snapshot contract (`WorkoutStateRecord`) remains
+ * unchanged. Run 1 keeps SET/SET_RESULT/REST in-memory and returns all
+ * progress through the same orchestration view-model boundary.
  */
 
 export interface UseWorkoutSessionOptions {
@@ -60,9 +59,13 @@ export interface UseWorkoutSessionResult {
   resume: () => void;
   /**
    * INTRO primary progression control (delta §C): AWAITING_WORK_SET →
-   * RUNNING at the SET1 entry boundary. No-op outside INTRO.
+   * SET at the first-set entry boundary. No-op outside INTRO.
    */
   beginWorkSet: () => void;
+  /** Records one honest REP_BASED observation for the active SET. */
+  recordRep: () => void;
+  /** Ends only the active REST early; orchestration chooses the destination. */
+  skipRest: () => void;
 }
 
 export function useWorkoutSession(
@@ -130,7 +133,9 @@ export function useWorkoutSession(
 
   const isTicking =
     currentViewModel.lifecycle === 'PREPARING' ||
-    currentViewModel.lifecycle === 'RUNNING';
+    currentViewModel.lifecycle === 'RUNNING' ||
+    currentViewModel.lifecycle === 'SET_RESULT' ||
+    currentViewModel.lifecycle === 'RESTING';
 
   useEffect(() => {
     if (!isTicking) return;
@@ -184,7 +189,19 @@ export function useWorkoutSession(
     emit(effects);
   }, [orchestrator, emit]);
 
-  return {viewModel: currentViewModel, startSession, pause, resume, beginWorkSet};
+  const recordRep = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'RECORD_REP'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const skipRest = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'SKIP_REST'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  return {viewModel: currentViewModel, startSession, pause, resume, beginWorkSet, recordRep, skipRest};
 }
 
 export default useWorkoutSession;

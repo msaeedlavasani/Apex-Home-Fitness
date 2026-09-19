@@ -11,21 +11,22 @@
 > and current repository state. Priority ≠ execution eligibility: a P0 task
 > may still require an architecture gate or Owner decision before it is
 > autonomous-eligible. The Owner lifted the AHF execution freeze on
-> 2026-09-01, but **execution has NOT started** — nothing here authorizes
-> or begins implementation. Once a task is authorized and admitted, normal
-> task selection is repository-driven; Owner/chat input is required only for
-> new product decisions, explicit gates, or genuine blockers.
+> 2026-09-01. Workout V2 Run 1 execution is now complete and frozen; later
+> slices remain governed by this projection and their explicit admissions.
+> Once a task is authorized and admitted, normal task selection is
+> repository-driven; Owner/chat input is required only for new product
+> decisions, explicit gates, or genuine blockers.
 
 ## Lifecycle now
 
 | Field | Value |
 |---|---|
-| Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; execution **staged** — first executable slice: `START + PREPARING` + minimum DAG dependencies) |
+| Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; Run 1 `WP-06` + `WP-07` closed/frozen) |
 | Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
-| Branch | (none yet) — the execution agent creates `workout/v2-implementation` from fresh main at slice start |
-| State | `AUTHORIZED — staged`; current accepted START/PREPARING/INTRO boundary is frozen; later slices are selected from canonical dependencies and remain admission-gated |
+| Branch | `feat/workout-v2-first-slice` — current feature branch; Run 1 changes are pushed and parity-verified |
+| State | `AUTHORIZED — Run 1 closed`; SET/SET_RESULT and typed REST are frozen; later slices remain admission-gated |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next selectable work | Repository dry-run selects the next eligible Workstream A/B candidates; no child Execution Unit is admitted by this state |
+| Next selectable work | None — repository dry-run reports no READY work; `WP-12` and later nodes remain canonical `NOT_YET`/dependency-gated |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 <!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
@@ -44,8 +45,8 @@
     {"id":"WP-03","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
     {"id":"WP-04","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
     {"id":"WP-05","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
-    {"id":"WP-06","status":"PLANNED","frozen":false,"autonomousEligibility":"READY","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-07","status":"PLANNED","frozen":false,"autonomousEligibility":"READY","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-06","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-06.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"SET + SET_RESULT implemented and verified"},
+    {"id":"WP-07","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-07.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Typed REST implemented and verified"},
     {"id":"WP-08","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
     {"id":"WP-09","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
     {"id":"WP-10","status":"PLANNED","frozen":false,"autonomousEligibility":"NOT_YET","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
@@ -61,9 +62,12 @@
 The JSON block is the execution-state projection for this already-canonical
 Workout V2 backlog. Product semantics remain owned by the linked Spec Kit
 authorities; this projection records lifecycle/freeze state and selection
-metadata only. `WP-06` and `WP-07` are the current dry-run candidates, but each
-still requires its own admission before execution and neither requires Owner
-visual acceptance. `RUN-5-OWNER-ACCEPTANCE` is the complete-flow visual gate.
+metadata only. `WP-06` and `WP-07` are CLOSED/FROZEN with task-scoped
+verification recorded in [`WP-06-closeout.json`](../reports/workout-v2-impl-01/WP-06-closeout.json),
+[`WP-07-closeout.json`](../reports/workout-v2-impl-01/WP-07-closeout.json), and
+the shared [Run 1 UI evidence](../reports/workout-v2-impl-01/run-1-ui-conformance-evidence.md).
+Neither requires Owner visual acceptance. `RUN-5-OWNER-ACCEPTANCE` remains the
+complete-flow visual gate.
 
 ## Strategic basis
 

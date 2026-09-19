@@ -211,6 +211,19 @@
   "mentorAria": "Live demonstration of the upcoming exercise",
   "live": "Session running"
  },
+ "set": {
+  "setLabel": "Set",
+  "recordRep": "Record rep",
+  "reps": "reps",
+  "seconds": "seconds",
+  "result": "Set complete"
+ },
+ "rest": {
+  "label": "Rest",
+  "betweenSets": "Before the next set",
+  "betweenExercises": "Before the next exercise",
+  "skip": "Skip rest"
+ },
     "readiness": {
       "clearSpaceTitle": "Clear space",
       "clearSpaceDetail": "Make sure you have enough room.",

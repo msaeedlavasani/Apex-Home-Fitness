@@ -52,6 +52,7 @@ export type ExperienceModuleId =
   | 'PREPARING'
   | 'EXERCISE_INTRO'
   | 'WORK_SET'
+  | 'SET_RESULT'
   | 'REST'
   | 'EXERCISE_TRANSITION'
   | 'COMPLETE';
@@ -117,7 +118,9 @@ export type SessionAction =
   | {type: 'START_SESSION'}
   | {type: 'PAUSE'}
   | {type: 'RESUME'}
-  | {type: 'BEGIN_WORK_SET'};
+  | {type: 'BEGIN_WORK_SET'}
+  | {type: 'RECORD_REP'}
+  | {type: 'SKIP_REST'};
 
 /**
  * Session lifecycle (plan §5 states — implementation view, INTRO slice):
@@ -132,7 +135,48 @@ export type SessionLifecycle =
   | 'PREPARING'
   | 'AWAITING_WORK_SET'
   | 'RUNNING'
+  | 'SET_RESULT'
+  | 'RESTING'
   | 'PAUSED';
+
+/** Immutable progress snapshot owned by the reusable SET capability. */
+export interface SetProgress {
+  readonly status: 'ACTIVE' | 'COMPLETE';
+  readonly executionMode: ExecutionMode;
+  readonly setNumber: number;
+  readonly setCount: number;
+  readonly completedReps: number;
+  readonly targetReps: number | null;
+  readonly elapsedSeconds: number;
+  readonly targetSeconds: number | null;
+  readonly remainingSeconds: number | null;
+}
+
+/** Typed REST boundary owned by the reusable REST capability. */
+export type RestKind = 'BETWEEN_SETS' | 'BETWEEN_EXERCISES';
+
+export interface RestState {
+  readonly status: 'ACTIVE' | 'COMPLETE';
+  readonly kind: RestKind;
+  readonly elapsedSeconds: number;
+  readonly totalSeconds: number;
+  readonly remainingSeconds: number;
+}
+
+/** Stable evidence presented after each completed Set. */
+export interface SetResult {
+  readonly exerciseIndex: number;
+  readonly setNumber: number;
+  readonly setCount: number;
+  readonly executionMode: ExecutionMode;
+  readonly completedReps: number;
+  readonly targetReps: number | null;
+  readonly elapsedSeconds: number;
+  readonly targetSeconds: number | null;
+  readonly isFinalSet: boolean;
+  readonly isFinalExercise: boolean;
+  readonly elapsedInResultSeconds: number;
+}
 
 /**
  * Presentation view-model — the frozen WP-02 output presentation consumes
@@ -145,7 +189,7 @@ export interface SessionViewModel {
   /** Currently presented module (null = session live, no module presentation in this slice). */
   readonly activeModule: ExperienceModuleId | null;
   /** Module lifecycle map — later slices may only extend activation of their own modules. */
-  readonly modules: Readonly<Record<ExperienceModuleId, ExperienceModuleState>>;
+  readonly modules: Readonly<Partial<Record<ExperienceModuleId, ExperienceModuleState>>>;
   /** The exercise the session will execute first once running (null before start). */
   readonly activeExercise: ResolvedExercisePrescription | null;
   readonly activeExerciseIndex: number | null;
@@ -161,6 +205,18 @@ export interface SessionViewModel {
   readonly executionElapsedSeconds: number;
   /** When paused: the module being paused (null when not paused). */
   readonly pausedFromModule: ExperienceModuleId | null;
+  /** Run 1 SET capability state; absent before the first Set is entered. */
+  readonly setProgress?: SetProgress | null;
+  /** Stable result/evidence after each completed Set. */
+  readonly setResult?: SetResult | null;
+  /** Run 1 REST capability state; absent outside REST. */
+  readonly restState?: RestState | null;
+  /** 1-based current Set number for the active Exercise. */
+  readonly currentSetNumber?: number | null;
+  /** Completed Sets across the resolved session. */
+  readonly completedSetCount?: number;
+  /** Total Sets across the resolved session. */
+  readonly totalSetCount?: number;
 }
 
 /**
@@ -171,7 +227,11 @@ export type SessionOrchestrationEffect =
   | {kind: 'SESSION_STARTED'; startedAtMs: number}
   | {kind: 'MODULE_CHANGED'; moduleId: ExperienceModuleId | null}
   | {kind: 'PAUSED'; duringModule: ExperienceModuleId | null}
-  | {kind: 'RESUMED'; duringModule: ExperienceModuleId | null};
+  | {kind: 'RESUMED'; duringModule: ExperienceModuleId | null}
+  | {kind: 'SET_COMPLETED'; exerciseIndex: number; setNumber: number}
+  | {kind: 'SET_RESULT_READY'; exerciseIndex: number; setNumber: number}
+  | {kind: 'REST_STARTED'; restKind: RestKind; seconds: number}
+  | {kind: 'REST_COMPLETED'; restKind: RestKind};
 
 /** Neutral initial module map: nothing activated yet. */
 export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModuleState> {
@@ -180,6 +240,7 @@ export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModu
     PREPARING: 'PENDING',
     EXERCISE_INTRO: 'PENDING',
     WORK_SET: 'PENDING',
+    SET_RESULT: 'PENDING',
     REST: 'PENDING',
     EXERCISE_TRANSITION: 'PENDING',
     COMPLETE: 'PENDING',

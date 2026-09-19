@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `READY — dependency analysis for CRITICAL admission` |
+| STATUS | `RUN 1 CLOSED — dependency graph remains canonical for subsequent admission` |
 | SPEC | [`spec.md`](./spec.md) · PLAN: [`plan.md`](./plan.md) · WORK PACKAGES: [`tasks.md`](./tasks.md) |
 | Date | 2026-09-15 · Baseline: fresh main `897e376` |
-| IMPLEMENTATION | **NOT AUTHORIZED** |
+| IMPLEMENTATION | **AUTHORIZED by parent admission; WP-06/WP-07 Run 1 CLOSED/FROZEN** |
 
 ## 1. Dependency graph (design graph — not a required code shape)
 
@@ -35,8 +35,8 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-03","dependsOn":[],"kind":"WORK_PACKAGE"},
     {"id":"WP-04","dependsOn":["WP-02"],"kind":"WORK_PACKAGE"},
     {"id":"WP-05","dependsOn":["WP-02","WP-04"],"kind":"WORK_PACKAGE"},
-    {"id":"WP-06","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"A","ownerVisualGate":false},
-    {"id":"WP-07","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"B","ownerVisualGate":false},
+    {"id":"WP-06","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"A","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-06.admission.json","verification":"PASS"},
+    {"id":"WP-07","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"B","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-07.admission.json","verification":"PASS"},
     {"id":"WP-08","dependsOn":["WP-02","WP-06","WP-07"],"kind":"WORK_PACKAGE"},
     {"id":"WP-09","dependsOn":["WP-02"],"softDependsOn":["WP-06"],"kind":"WORK_PACKAGE"},
     {"id":"WP-10","dependsOn":["WP-05"],"kind":"WORK_PACKAGE"},
@@ -55,6 +55,13 @@ Owner visual acceptance is a milestone gate, not a work-package dependency:
 WP-06 and WP-07 have no Owner visual gate. The only Owner visual gate in this
 DAG is `RUN-5-OWNER-ACCEPTANCE`, and its scope is the complete program-driven
 experience after composition and machine/integration verification.
+
+Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required
+child admissions, task-scoped verification, and report validation. The
+canonical selector therefore returns no READY child; `WP-12` remains
+`NOT_YET` until its own admission and implementation scope are activated.
+Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json),
+[`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json).
 
 ## 2. Hard dependencies
 

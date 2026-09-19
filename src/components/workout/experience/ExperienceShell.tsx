@@ -6,7 +6,7 @@ import {useTranslations} from 'next-intl';
 import {BrandIcon} from '@/components/layout/BrandIcon';
 import {useTheme} from '@/components/providers/ThemeProvider';
 import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
-import {PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
+import {INTRO_HANDOFF_DELAY_MS, PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
   deriveExerciseDetails,
@@ -30,6 +30,7 @@ import {StartStage} from './StartStage';
 import {PreparingStage} from './PreparingStage';
 import {IntroStage} from './IntroStage';
 import {WorkSetStage} from './WorkSetStage';
+import {RestStage} from './RestStage';
 import {
   WorkoutV2ExitControl,
   WorkoutV2LanguageControl,
@@ -118,7 +119,7 @@ export function ExperienceShell({
   const {resolvedTheme} = useTheme();
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
 
-  const {viewModel, startSession, pause, resume} = useWorkoutSession(exercises, {
+  const {viewModel, startSession, pause, resume, beginWorkSet, recordRep, skipRest} = useWorkoutSession(exercises, {
     onEffect: useMemo(() => {
       const handler = (effect: {kind: string}) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
@@ -126,6 +127,15 @@ export function ExperienceShell({
       return handler;
     }, [onSessionStarted]),
   });
+
+  // Run 1 attaches the SET capability to the already-frozen hands-free INTRO
+  // boundary. The timer is a local presentation handoff; orchestration still
+  // validates BEGIN_WORK_SET and owns the resulting global state.
+  useEffect(() => {
+    if (viewModel.activeModule !== 'EXERCISE_INTRO' || viewModel.lifecycle !== 'AWAITING_WORK_SET') return;
+    const id = globalThis.setTimeout(beginWorkSet, INTRO_HANDOFF_DELAY_MS);
+    return () => globalThis.clearTimeout(id);
+  }, [beginWorkSet, viewModel.activeModule, viewModel.lifecycle]);
 
   // HANDOFF INSTRUMENTATION (owner device correction §1): performance marks
   // for the real-device freeze evidence — T1 PREPARING countdown completion
@@ -471,7 +481,27 @@ export function ExperienceShell({
             onMentorReady={markMentorReady}
           />
         )}
-        {activeModule === 'WORK_SET' && <WorkSetStage viewModel={viewModel} />}
+        {(activeModule === 'WORK_SET' || activeModule === 'SET_RESULT') && (
+          <WorkSetStage
+            viewModel={viewModel}
+            recordRep={recordRep}
+            setLabel={t('set.setLabel')}
+            recordRepLabel={t('set.recordRep')}
+            repsLabel={t('set.reps')}
+            secondsLabel={t('set.seconds')}
+            resultLabel={t('set.result')}
+          />
+        )}
+        {activeModule === 'REST' && (
+          <RestStage
+            viewModel={viewModel}
+            onSkipRest={skipRest}
+            restLabel={t('rest.label')}
+            betweenSetsLabel={t('rest.betweenSets')}
+            betweenExercisesLabel={t('rest.betweenExercises')}
+            skipRestLabel={t('rest.skip')}
+          />
+        )}
         {activeModule === null && (
           <div role="status" className="flex flex-1 items-center justify-center px-4 text-center">
             <p className="text-sm text-[color:var(--apex-text-secondary)]">{t('sessionLive')}</p>
