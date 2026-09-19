@@ -40,6 +40,11 @@ const V2_FALLBACK_EXERCISE_SUBSTITUTION: Record<string, string> = {
   // Owner-specified canonical squat identity so every squat-family item of
   // the review fixture presents the ONE identity the Mentor demonstrates.
   squats: 'squat',
+  // The date-based mobility fallback can lead with hipMobility. The current
+  // approved V2 Mentor fixture demonstrates Squat only, so keep this
+  // validation plan internally consistent until multi-exercise Mentor
+  // selection is authorized.
+  hipMobility: 'squat',
 };
 
 type CurrentProgramResponse = {
@@ -92,13 +97,13 @@ function generatedExercisesForShell(
  * are UNTOUCHED operational fallback (plan §13).
  *
  * COMPOSITION (delta §7): the shell renders on a bare full-viewport surface
- * (100vw/100dvh) with NO app chrome — AppShell would impose platform chrome
- * and require an unauthorized back/exit control (§19: no real exit behavior
- * is authorized, so none is exposed). Plan loading mirrors the shipped page
- * exactly: generated program for the selected day with the localized
- * sample-plan fallback when no program exists, so the slice is reviewable in
- * both locales, in CI (open mode) and on device. Rest days render the
- * localized rest notice on the same bare surface.
+ * (100vw/100dvh) with NO app chrome — AppShell would impose platform chrome;
+ * the session-owned compact controls remain on the experience surface. Plan
+ * loading mirrors the shipped page exactly: generated program for the
+ * selected day with the localized sample-plan fallback when no program
+ * exists, so the slice is reviewable in both locales, in CI (open mode) and
+ * on device. Rest days render the localized rest notice on the same bare
+ * surface.
  */
 export default function WorkoutV2Page() {
   const tDashboard = useTranslations('Dashboard');

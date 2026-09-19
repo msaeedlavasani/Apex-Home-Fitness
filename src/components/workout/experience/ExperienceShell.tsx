@@ -7,7 +7,7 @@ import {useRouter} from '@/i18n/navigation';
 import {BrandIcon} from '@/components/layout/BrandIcon';
 import {useTheme} from '@/components/providers/ThemeProvider';
 import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
-import {INTRO_HANDOFF_DELAY_MS, PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
+import {PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
   deriveExerciseDetails,
@@ -130,7 +130,6 @@ export function ExperienceShell({
     startSession,
     pause,
     resume,
-    beginWorkSet,
     recordRep,
     skipRest,
     exitWorkout,
@@ -149,15 +148,6 @@ export function ExperienceShell({
       return handler;
     }, [onSessionStarted, router]),
   });
-
-  // Run 1 attaches the SET capability to the already-frozen hands-free INTRO
-  // boundary. The timer is a local presentation handoff; orchestration still
-  // validates BEGIN_WORK_SET and owns the resulting global state.
-  useEffect(() => {
-    if (viewModel.activeModule !== 'EXERCISE_INTRO' || viewModel.lifecycle !== 'AWAITING_WORK_SET') return;
-    const id = globalThis.setTimeout(beginWorkSet, INTRO_HANDOFF_DELAY_MS);
-    return () => globalThis.clearTimeout(id);
-  }, [beginWorkSet, viewModel.activeModule, viewModel.lifecycle]);
 
   // HANDOFF INSTRUMENTATION (owner device correction §1): performance marks
   // for the real-device freeze evidence — T1 PREPARING countdown completion

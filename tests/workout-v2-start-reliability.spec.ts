@@ -137,6 +137,8 @@ test.describe('Workout V2 first slice — locale and theme controls', () => {
   test('Exit control navigates to the locale dashboard (real semantics, no dead X)', async ({page}) => {
     await page.goto('/en/workout/v2');
     await page.getByRole('button', {name: 'Exit workout'}).tap();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', {name: 'Leave workout', exact: true}).tap();
     await page.waitForURL('**/en/dashboard');
     await expect(page.getByRole('heading')).toBeVisible();
   });
@@ -472,12 +474,13 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     expect(glbAfter).toBe(1);
   });
 
-  test('INTRO is hands-free: zero controls and no auto SET1 handoff', async ({page}) => {
+  test('INTRO is hands-free: no progression control and no auto SET1 handoff', async ({page}) => {
     await reachIntro(page);
-    // The hands-free contract: the INTRO stage contributes NO interactive
-    // control — no Start/Next/Continue CTA and no reserved CTA space.
-    const stageButtons = page.locator('[data-workout-v2-intro-stage] button');
-    await expect(stageButtons).toHaveCount(0);
+    // The hands-free contract excludes Start/Next/Continue progression CTAs.
+    // The approved v1 exception controls (Do Later / Skip for this session)
+    // remain available through orchestration-owned session outcomes.
+    await expect(page.locator('[data-workout-v2-intro-begin]')).toHaveCount(0);
+    await expect(page.locator('[data-workout-v2-intro-controls] button')).toHaveCount(2);
     // The handoff contract intentionally terminates at the INTRO boundary:
     // no timeout-driven SET1 entry may occur on its own.
     await page.waitForTimeout(3_000);
@@ -584,7 +587,7 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(page.locator('[data-workout-v2-intro-exercise]')).toHaveText('اسکات');
     await expect(page.locator('[data-workout-v2-intro-cues] li')).toHaveCount(3);
     await expect(page.getByText('سینه بالا')).toBeVisible();
-    await expect(page.locator('[data-workout-v2-intro-stage] button')).toHaveCount(0);
+    await expect(page.locator('[data-workout-v2-intro-controls] button')).toHaveCount(2);
   });
 });
 

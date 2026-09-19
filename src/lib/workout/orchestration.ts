@@ -25,8 +25,6 @@ import {createSetCapability, type SetCapability} from './setCapability';
 export const PREPARING_DURATION_SECONDS = 5;
 /** SET_RESULT is stable evidence, not a global routing authority. */
 export const SET_RESULT_DURATION_SECONDS = 2;
-/** INTRO remains hands-free; Run 1 attaches the deterministic SET handoff. */
-export const INTRO_HANDOFF_DELAY_MS = 3_000;
 
 export type OrchestrationState = SessionViewModel;
 
@@ -445,7 +443,7 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
   };
 
   const requestExit = (): OrchestrationTransition => {
-    if (state.lifecycle === 'READY_TO_START' || state.lifecycle === 'EXIT_REQUESTED') return {state, effects: []};
+    if (state.lifecycle === 'EXIT_REQUESTED') return {state, effects: []};
     const next: OrchestrationState = {
       ...state,
       lifecycle: 'EXIT_REQUESTED',
