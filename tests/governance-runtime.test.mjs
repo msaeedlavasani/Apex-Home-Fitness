@@ -26,11 +26,14 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
+  const state = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE').value;
+  const betaCapabilityClosed = state.items.find((item) => item.id === 'BETA-DEPLOYMENT-CAPABILITY')?.status === 'CLOSED';
   const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
   const productCheckpointPass = result.checkpointGates.find((gate) => gate.id === 'PRODUCT-INTEGRATION-CHECKPOINT')?.status === 'PASS';
-  assert.deepEqual(result.readyTasks.map((task) => task.id), productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), productCheckpointPass ? ['READY_DERIVED'] : (!checkpointPass && result.readyTasks.length === 0) ? [] : ['READY_DERIVED']);
-  assert.deepEqual(result.nextAdmissionCandidates, productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : []);
+  const expectedReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
+  assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), expectedReady.length === 0 ? [] : ['READY_DERIVED']);
+  assert.deepEqual(result.nextAdmissionCandidates, betaCapabilityClosed || !productCheckpointPass ? [] : ['BETA-DEPLOYMENT-CAPABILITY']);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
   assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
@@ -38,8 +41,10 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
   assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization is not a remaining scheduling gate');
   assert.equal(blocked.has('BETA-DEPLOYMENT-CAPABILITY'), false, 'authorized Beta capability is derived READY when product prerequisites pass');
-  assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
-  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
+  if (!betaCapabilityClosed) {
+    assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
+    assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
+  }
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
@@ -90,6 +95,7 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
   const dagSource = readTaggedJson(path.join(root, 'docs/specs/0001-workout-experience/dependencies.md'), 'WORKOUT_V2_AUTONOMOUS_DAG');
   const state = structuredClone(stateSource.value);
+  const betaCapabilityWasClosed = state.items.find((item) => item.id === 'BETA-DEPLOYMENT-CAPABILITY')?.status === 'CLOSED';
   const checkpointState = state.items.find((item) => item.id === 'INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW');
   assert.ok(checkpointState);
   checkpointState.status = 'CLOSED';
@@ -114,9 +120,11 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));
   assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization remains closed while product checkpoint is reset in this fixture');
-  assert.ok(blocked.get('BETA-DEPLOYMENT-CAPABILITY')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'));
-  assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
-  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
+  if (!betaCapabilityWasClosed) {
+    assert.ok(blocked.get('BETA-DEPLOYMENT-CAPABILITY')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'));
+    assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
+    assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
+  }
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
