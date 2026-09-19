@@ -1,0 +1,12 @@
+{
+  "TASK_ID": "RUN-4-PROGRAM-COMPOSITION",
+  "TASK_CLASS": "STANDARD",
+  "SCOPE_SUMMARY": "Workout V2 Run 4 — prove that program-derived resolved prescriptions compose the same reusable Workout Experience with asymmetric 2/3 and 3/1 set topologies, preserving Program-owned exercise order and without numbered or fixture-specific presentation flow.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/TASKS.md"
+}

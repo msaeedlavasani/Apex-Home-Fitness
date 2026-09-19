@@ -181,6 +181,100 @@
       "sunday": "یکشنبه"
     }
   },
+  "WorkoutV2": {
+    "shellLabel": "تمرین هدایت‌شده",
+    "sessionLive": "جلسه در حال اجراست", "start": {
+  "eyebrow": "تمرین امروز",
+  "headline": "آماده‌ای شروع کنیم؟",
+  "supporting": "جلسه‌ات آماده است. با سرعت خودت پیش برو.",
+  "cta": "شروع تمرین"
+ },
+    "preparing": {
+      "workoutContext": "تمرین امروز",
+      "sessionStructure": "{exercises} حرکت · {sets} ست",
+      "label": "آماده شو",
+      "firstUp": "نخستین حرکت",
+      "readinessMessage": "آماده شروع شو",
+      "readinessGuidance": "فضایت را آماده کن و جایت را بگیر.",
+      "announcement": "شروع در {seconds} ثانیه",
+      "secondsUnit": "ثانیه",
+      "bodyweight": "وزن بدن"
+    },
+    "intro": {
+      "firstExercise": "حرکت اول",
+      "cues": ["سینه بالا", "زانوها هم‌جهت با پنجه‌ها", "با کنترل پایین برو"],
+      "mentorUnavailable": "منتور در دسترس نیست",
+      "mentorLoading": "در حال بارگذاری منتور",
+      "mentorAria": "نمایش زنده حرکت پیش رو",
+      "live": "جلسه در جریان است"
+    },
+    "set": {
+      "setLabel": "ست",
+      "recordRep": "ثبت تکرار",
+      "reps": "تکرار",
+      "seconds": "ثانیه",
+      "result": "ست کامل شد"
+    },
+    "rest": {
+      "label": "استراحت",
+      "betweenSets": "پیش از ست بعدی",
+      "betweenExercises": "پیش از حرکت بعدی",
+      "skip": "رد کردن استراحت"
+    },
+    "readiness": {
+      "clearSpaceTitle": "فضای آزاد",
+      "clearSpaceDetail": "مطمئن شو فضای کافی داری.",
+      "goodPostureTitle": "قامت درست",
+      "goodPostureDetail": "صاف و ریلکس بایست.",
+      "noEquipmentTitle": "بدون تجهیزات",
+      "noEquipmentDetail": "این حرکت با وزن بدن انجام می‌شود."
+    },
+    "actions": {
+      "pause": "توقف",
+      "resume": "ادامه",
+      "musicOn": "قطع صدای موسیقی تمرین",
+      "musicOff": "پخش موسیقی تمرین",
+      "musicOnShort": "صدا",
+      "musicOffShort": "صدا",
+      "more": "بیشتر",
+      "exit": "خروج از تمرین",
+      "doLater": "انجام حرکت بعداً",
+      "skipExercise": "رد کردن برای این جلسه",
+      "performNow": "اکنون انجام بده",
+      "skipDeferred": "رد کردن برای این جلسه",
+      "restartSet": "شروع دوباره ست",
+      "confirmExitTitle": "از تمرین خارج می‌شوی؟",
+      "confirmExitDescription": "جلسه فعلی پایان می‌یابد و به داشبورد برمی‌گردی.",
+      "cancelExit": "ادامه تمرین",
+      "confirmExit": "خروج از تمرین"
+    },
+    "outcomes": {
+      "completed": "انجام‌شده",
+      "deferred": "به تعویق‌افتاده",
+      "skipped": "ردشده"
+    },
+    "result": {
+      "title": "تمرین کامل شد",
+      "subtitle": "جلسه‌ات به‌عنوان یک تجربه تمرینی کامل ثبت شد.",
+      "completedSets": "ست‌ها",
+      "exercises": "حرکت‌ها",
+      "skipped": "ردشده",
+      "exit": "بازگشت به داشبورد"
+    },
+    "exerciseDetails": {
+      "title": "جزئیات حرکت",
+      "close": "بستن",
+      "fields": {
+        "exercise": "حرکت",
+        "prescription": "برنامه تمرینی",
+        "mode": "شیوه اجرا"
+      },
+      "mode": {
+        "repetitionBased": "بر پایه تکرار",
+        "timeBased": "بر پایه زمان"
+      }
+    }
+  },
   "WorkoutPlayer": {
     "phase": {
       "ready": "آماده",
@@ -565,6 +659,7 @@
     "exercises": {
       "pushUps": "پیشرفت شنا سوئدی",
       "squats": "اسکوات با وزن بدن",
+      "squat": "اسکات",
       "gluteBridge": "پل گلوت",
       "lunges": "لانژ راه‌رفته",
       "burpees": "اینتروال برپی",

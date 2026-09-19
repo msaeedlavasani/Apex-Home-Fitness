@@ -51,6 +51,8 @@ export interface SessionExercise {
   durationSeconds?: number | null;
   /** Rest time after each set in seconds. Omit/null to skip rest. */
   restSeconds?: number | null;
+  /** Program-owned fallback duration for camera-less REP_BASED execution. */
+  fallbackDurationSeconds?: number | null;
   /** Canonical Exercise identity: Prisma `Exercise.id` (branded). Present for program-derived plans. */
   exerciseId?: ExerciseId;
   /** Canonical Exercise identity: `Exercise.slug` (branded). Present for program-derived plans. */

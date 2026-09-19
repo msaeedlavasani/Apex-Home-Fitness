@@ -23,6 +23,7 @@
 | Product advisory, competitor evidence, North Star ideas | [`TRANSFORMATION_ROADMAP.md`](TRANSFORMATION_ROADMAP.md) |
 | Comprehensive product strategy (parent/master; PROPOSED / NON-EXECUTABLE) | [`product/PRODUCT-STRATEGY.md`](product/PRODUCT-STRATEGY.md) |
 | Movement Intelligence strategy (deep-dive specialist; PROPOSED / NON-EXECUTABLE) | [`product/MOVEMENT-INTELLIGENCE-STRATEGY.md`](product/MOVEMENT-INTELLIGENCE-STRATEGY.md) |
+| Canonical Workout Experience V2 session, orchestration, capability-gate and recovery contract (Spec Kit 0001; implementation not authorized by these docs) | [`specs/0001-workout-experience/spec.md`](specs/0001-workout-experience/spec.md), [`specs/0001-workout-experience/plan.md`](specs/0001-workout-experience/plan.md), [`architecture/CP-04-COMPANION-CAMERA-ARCHITECTURE.md`](architecture/CP-04-COMPANION-CAMERA-ARCHITECTURE.md) |
 | Workout V2 / CP-05 observation integration (Owner-authorized 2026-09-08; delivered PR #58 `20d793b`; bounded consent-gated browser-camera squat runtime reusing CP-03 same-origin MoveNet + CP-06/CP-07; only `DEVICE_MEASURED REP_COUNT`; no persistence/retention/Production/legal or unsupported quality claims; physical acceptance pending) | [`architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md`](architecture/CP-05-WORKOUT-OBSERVATION-INTEGRATION.md), [`product/WORKOUT-EXPERIENCE-V2.md`](product/WORKOUT-EXPERIENCE-V2.md), [`product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md`](product/WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md) |
 | Architecture principles and accepted architecture decisions | [`architecture/ARCHITECTURE-PRINCIPLES.md`](architecture/ARCHITECTURE-PRINCIPLES.md), [`adr/README.md`](adr/README.md) |
 | Admin Auth V1 architecture decision | [`adr/0004-dedicated-admin-authentication.md`](adr/0004-dedicated-admin-authentication.md) |
@@ -77,11 +78,13 @@
 | Branch lifecycle and `DOCS_DIRECT_MAIN` fast path | [`BRANCHING_POLICY.md`](BRANCHING_POLICY.md) |
 | Deployment operations | [`RELEASING.md`](RELEASING.md) |
 | Constrained Production deployment capability | [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md) |
+| Governed AHF Beta deployment capability for Workout V2 | [`architecture/AHF-BETA-DEPLOYMENT-CAPABILITY-01.md`](architecture/AHF-BETA-DEPLOYMENT-CAPABILITY-01.md), [`PRODUCTION_DEPLOYMENT_GATEWAY.md`](PRODUCTION_DEPLOYMENT_GATEWAY.md) §Beta |
 | Validation policy | [`CI.md`](CI.md) |
 | Production checkpoints | [`PRODUCTION_CHECKPOINTS.md`](PRODUCTION_CHECKPOINTS.md) |
 | Production incident index and reusable lessons | [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md), [`PITFALLS/`](PITFALLS/) |
 | Change-report contract | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) |
 | Runtime governance tooling | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md), [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) |
+| Integration/deployment checkpoint gates and known-good baseline evidence | [`governance/INTEGRATION-CHECKPOINT-POLICY.md`](governance/INTEGRATION-CHECKPOINT-POLICY.md), machine enforcement in [`../scripts/governance-runtime.mjs`](../scripts/governance-runtime.mjs) |
 | Supporting autonomous-development workflow | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) |
 | Architecture & scale-readiness audit + Spec Kit decision brief (AUDIT RECORD — not an architecture decision; placed 2026-09-14) | [`architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md`](architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md), [`architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md`](architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md) |
 | Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record + Stage-2 contradiction review | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md), [`governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md`](governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md) |

@@ -181,6 +181,103 @@
       "sunday": "Sunday"
     }
   },
+  "WorkoutV2": {
+    "shellLabel": "Guided workout",
+    "sessionLive": "Session running", "start": {
+  "eyebrow": "Today's Workout",
+  "headline": "Ready to get started?",
+  "supporting": "Your session is ready. Move at your own pace.",
+  "cta": "Start Workout"
+ }, "preparing": {
+  "workoutContext": "Today's Workout",
+  "sessionStructure": "{exercises, plural, one {# Exercise · {sets} Sets} other {# Exercises · {sets} Sets}}",
+  "label": "Prepare",
+  "firstUp": "First up",
+  "readinessMessage": "Get ready to start",
+  "readinessGuidance": "Find your space and get into position.",
+  "announcement": "Starting in {seconds} seconds",
+  "secondsUnit": "Seconds",
+  "bodyweight": "Bodyweight"
+ },
+ "intro": {
+  "firstExercise": "First exercise",
+  "cues": [
+   "Keep your chest up",
+   "Track your knees over your toes",
+   "Lower with control"
+  ],
+  "mentorUnavailable": "Mentor unavailable",
+  "mentorLoading": "Loading Mentor",
+  "mentorAria": "Live demonstration of the upcoming exercise",
+  "live": "Session running"
+ },
+ "set": {
+  "setLabel": "Set",
+  "recordRep": "Record rep",
+  "reps": "reps",
+  "seconds": "seconds",
+  "result": "Set complete"
+ },
+ "rest": {
+  "label": "Rest",
+  "betweenSets": "Before the next set",
+  "betweenExercises": "Before the next exercise",
+  "skip": "Skip rest"
+ },
+    "readiness": {
+      "clearSpaceTitle": "Clear space",
+      "clearSpaceDetail": "Make sure you have enough room.",
+      "goodPostureTitle": "Good posture",
+      "goodPostureDetail": "Stand tall and relaxed.",
+      "noEquipmentTitle": "No equipment",
+      "noEquipmentDetail": "This is a bodyweight exercise."
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "musicOn": "Mute workout music",
+      "musicOff": "Play workout music",
+      "musicOnShort": "Sound",
+      "musicOffShort": "Sound",
+      "more": "More",
+      "exit": "Exit workout",
+      "doLater": "Do exercise later",
+      "skipExercise": "Skip for this session",
+      "performNow": "Perform now",
+      "skipDeferred": "Skip for this session",
+      "restartSet": "Restart set",
+      "confirmExitTitle": "Leave this workout?",
+      "confirmExitDescription": "Your current session will end and return to the dashboard.",
+      "cancelExit": "Keep working out",
+      "confirmExit": "Leave workout"
+    },
+    "outcomes": {
+      "completed": "Completed",
+      "deferred": "Deferred",
+      "skipped": "Skipped"
+    },
+    "result": {
+      "title": "Workout complete",
+      "subtitle": "Your session is recorded as a completed workout experience.",
+      "completedSets": "Sets",
+      "exercises": "Exercises",
+      "skipped": "Skipped",
+      "exit": "Return to dashboard"
+    },
+    "exerciseDetails": {
+      "title": "Exercise Details",
+      "close": "Close",
+      "fields": {
+        "exercise": "Exercise",
+        "prescription": "Prescription",
+        "mode": "Mode"
+      },
+      "mode": {
+        "repetitionBased": "Repetition based",
+        "timeBased": "Time based"
+      }
+    }
+  },
   "WorkoutPlayer": {
     "phase": {
       "ready": "Ready",
@@ -565,6 +662,7 @@
     "exercises": {
       "pushUps": "Push-Up Progression",
       "squats": "Air Squats",
+      "squat": "Squat",
       "gluteBridge": "Glute Bridge",
       "lunges": "Walking Lunges",
       "burpees": "Burpee Intervals",

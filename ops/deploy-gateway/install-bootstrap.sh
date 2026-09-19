@@ -11,7 +11,7 @@ install -o root -g root -m 0755 "$(dirname "$0")/apex-deploy" /usr/local/bin/ape
 touch /var/log/apex-deploy-gateway.log; chown root:root /var/log/apex-deploy-gateway.log; chmod 0600 /var/log/apex-deploy-gateway.log
 cat >/etc/systemd/system/apex-deploy-gateway.service <<'EOF'
 [Unit]
-Description=Apex Home Fit constrained Production deployment gateway
+Description=Apex Home Fit constrained deployment gateway
 After=docker.service network-online.target
 Requires=docker.service
 [Service]
@@ -25,7 +25,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=full
-ReadWritePaths=/opt/apex-home-fit /var/lib/apex-deploy-gateway /var/log /run/apex-deploy-gateway
+ReadWritePaths=/opt/apex-home-fit /opt/ahf-beta /var/lib/apex-deploy-gateway /var/log /run/apex-deploy-gateway
 [Install]
 WantedBy=multi-user.target
 EOF

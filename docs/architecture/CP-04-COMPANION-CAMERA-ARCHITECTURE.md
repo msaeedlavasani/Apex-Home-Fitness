@@ -150,6 +150,43 @@ The camera surface is session-gated by default:
 - Inference only runs when the session is **actively exercising the relevant movement**
   (Aligns with CP-03 guidance discipline — it is not ambient monitoring).
 
+### 4.4 PRE_WORKOUT_CAPABILITY_GATE — canonical admission boundary
+
+Workout Experience V2 adds a first-class admission boundary before the Workout
+Experience itself:
+
+```text
+Dashboard / Workout Launch
+  → PRE_WORKOUT_CAPABILITY_GATE
+  → Workout Experience
+  → START → PREPARING → INTRO → …
+```
+
+This Gate is not a Workout Exercise state. On every launch it silently checks
+Camera permission/capability and Pose/Skeleton Harness readiness. If capability is
+already valid, the user proceeds normally without interruption or repeated
+permission prompts. If it is unavailable or not granted, the product explains
+that Camera access enables movement tracking and asks whether the user wants to
+enable it.
+
+If the user chooses **YES**, the flow requests Camera permission, initializes the
+Harness, and performs required calibration before entering Workout Experience. If
+the user chooses **NO**, Workout Experience remains fully usable without camera
+tracking; supported `REP_BASED` prescriptions use `TIMED_FALLBACK` with their
+resolved `fallbackDuration`. Permission granted is not equivalent to Pose/Skeleton
+Harness readiness.
+
+If calibration fails, the flow provides corrective guidance and **Retry**, while
+always providing **Continue without camera tracking**. The user must never be
+trapped behind calibration, and first-time permission/calibration must not
+unexpectedly interrupt an active Set.
+
+This gate does not authorize a new data plane. The CP-04/TS-01 privacy boundary
+remains binding: raw camera imagery is processed locally and is not sent to the
+AHF server in the normal movement-tracking pipeline. Only structured/derived
+movement information explicitly required by an authorized product contract may
+cross the local camera boundary; no exact JSON schema is fixed here.
+
 ## 5. Consent architecture (the authorization core)
 
 ### 5.1 Consent model (from TS-01, applied to camera)

@@ -19,9 +19,16 @@
 
 import {
   PrismaClient,
+  Prisma,
   ExerciseCategory,
   DifficultyLevel,
 } from "@prisma/client";
+import {
+  QA_PROGRAM_DESCRIPTION,
+  QA_PROGRAM_EXERCISES,
+  QA_PROGRAM_NAME,
+  QA_PROGRAM_WEEKLY_SCHEDULE,
+} from "../src/lib/program/qaProgram";
 
 const prisma = new PrismaClient();
 
@@ -793,6 +800,52 @@ async function main() {
   console.log(
     `Program ready: ${program.name} (${sampleExercises.length} exercises linked)`,
   );
+
+  // 3b) Small QA Program for the real Workout V2 product path. This is data,
+  // not product behavior: normal Program resolution selects it by ownership
+  // and the Workout route consumes the same persisted schedule/contract as
+  // every other Program. No phone, user, or account conditional is involved.
+  const qaExerciseNames = QA_PROGRAM_EXERCISES.map((exercise) => exercise.name);
+  const qaExercises = await prisma.exercise.findMany({
+    where: {name: {in: qaExerciseNames}},
+  });
+  const qaByName = new Map(qaExercises.map((exercise) => [exercise.name, exercise]));
+  if (qaExercises.length !== qaExerciseNames.length) {
+    throw new Error("Workout V2 QA Program requires its canonical seed exercises");
+  }
+  const qaWeeklySchedule: Prisma.InputJsonValue = QA_PROGRAM_WEEKLY_SCHEDULE;
+  const qaProgram = await prisma.program.upsert({
+    where: {name: QA_PROGRAM_NAME},
+    update: {
+      description: QA_PROGRAM_DESCRIPTION,
+      sessionsPerWeek: 1,
+      restDays: [],
+      weeklySchedule: qaWeeklySchedule,
+      ownerId: demoUser.id,
+    },
+    create: {
+      name: QA_PROGRAM_NAME,
+      description: QA_PROGRAM_DESCRIPTION,
+      level: DifficultyLevel.BEGINNER,
+      durationWeeks: 1,
+      sessionsPerWeek: 1,
+      restDays: [],
+      weeklySchedule: qaWeeklySchedule,
+      ownerId: demoUser.id,
+    },
+  });
+  await prisma.programExercise.deleteMany({where: {programId: qaProgram.id}});
+  await prisma.programExercise.createMany({
+    data: qaExerciseNames.map((name, index) => ({
+      programId: qaProgram.id,
+      exerciseId: qaByName.get(name)!.id,
+      order: index + 1,
+      sets: QA_PROGRAM_EXERCISES[index].sets,
+      reps: QA_PROGRAM_EXERCISES[index].reps,
+      restSeconds: QA_PROGRAM_EXERCISES[index].restSeconds,
+    })),
+  });
+  console.log(`QA Program ready: ${qaProgram.name} (${qaExerciseNames.length} exercises linked)`);
 
   // 4) Quiz response for the demo user (recreated so re-seeding stays clean)
   await prisma.quizResponse.deleteMany({ where: { userId: demoUser.id } });

@@ -1,0 +1,12 @@
+{
+  "TASK_ID": "WP-14",
+  "TASK_CLASS": "STANDARD",
+  "SCOPE_SUMMARY": "Workout V2 WP-14 — extend the single orchestration authority with the approved session-control action contract, session-scoped deferred/skipped state, completion eligibility, and exit action boundary; preserve WP-02 historical freeze and do not add UI or prescription writes.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/TASKS.md"
+}

@@ -1,0 +1,19 @@
+{
+  "TASK_ID": "BETA-DEPLOYMENT-CAPABILITY",
+  "TASK_CLASS": "CRITICAL",
+  "SCOPE_SUMMARY": "Establish and verify the governed AHF Beta deployment path for Workout Experience V2 using the existing constrained deployment gateway, explicit beta.apexhomefit.ir target identity, isolated Beta Compose/volume/port/environment boundary, exact source and build identity, database-safe rollout, and rollback evidence.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/governance/OWNER_DECISION_GATE.md",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0001-workout-experience/dependencies.md",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}

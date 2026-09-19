@@ -1,20 +1,15 @@
 'use client';
 
-import {useLocale, useTranslations} from 'next-intl';
+import {useTranslations} from 'next-intl';
 import {useSearchParams} from 'next/navigation';
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {AppShell} from '@/components/layout/AppShell';
-import {WorkoutPlayer} from '@/components/workout/WorkoutPlayer';
-import type {SessionExercise, SessionSummary} from '@/lib/workout/sessionContracts';
-import type {ConsentScope} from '@/lib/workout/consentEntity';
+import {ExperienceShell} from '@/components/workout/experience/ExperienceShell';
+import type {SessionExercise} from '@/lib/workout/sessionContracts';
+import type {WorkoutResultSummary} from '@/lib/workout/sessionV2Contracts';
 import {
-  enrichScheduleExercises,
   exerciseIdentityIndex,
-  generatedExerciseDefaults,
-  workoutExercisesFromSchedule,
-  type PersistedScheduleExercise,
+  workoutSessionExercisesFromProgram,
   type RelationalExercise,
-  type ExerciseIdentityIndex,
 } from '@/lib/programSchedule';
 import {
   SAMPLE_WORKOUT_EXERCISES,
@@ -42,29 +37,8 @@ function validWeekday(value: string | null): (typeof WEEKDAYS)[number] | null {
     : null;
 }
 
-function generatedExercisesForPlayer(
-  exercises: PersistedScheduleExercise[],
-  identityIndex: ExerciseIdentityIndex,
-): SessionExercise[] {
-  // S02-D2: enrich the step plan with canonical movement identity where the
-  // relational ProgramExercise→Exercise payload can resolve it. The step's
-  // `id` (generated/session-local) is always preserved — canonical identity
-  // adds optional `exerciseId`/`slug` only. Legacy-only when unresolvable.
-  const enriched = enrichScheduleExercises(exercises, identityIndex);
-  return exercises.map((exercise, index) => {
-    const base = generatedExerciseDefaults(exercise, index);
-    const identity = enriched[index];
-    if (identity?.exerciseId || identity?.slug) {
-      return {...base, exerciseId: identity.exerciseId, slug: identity.slug};
-    }
-    return base;
-  });
-}
-
 export default function WorkoutPage() {
-  const locale = useLocale();
   const searchParams = useSearchParams();
-  const tNav = useTranslations('Nav');
   const tDashboard = useTranslations('Dashboard');
   const tLibrary = useTranslations('Library');
   const selectedDay = validWeekday(searchParams.get('day')) ?? validWeekday(
@@ -106,13 +80,8 @@ export default function WorkoutPage() {
   const generatedExercises = useMemo(() => {
     if (!program || !selectedDay) return [];
     const restDays = Array.isArray(program.restDays) ? program.restDays.filter((day): day is string => typeof day === 'string') : [];
-    // Canonical identity comes ONLY from the relational ProgramExercise→Exercise
-    // rows the API already returns (never invented), via the S02-D1 seam.
     const identityIndex = exerciseIdentityIndex(program.exercises ?? []);
-    return generatedExercisesForPlayer(
-      workoutExercisesFromSchedule(program.weeklySchedule, selectedDay, restDays),
-      identityIndex,
-    );
+    return workoutSessionExercisesFromProgram(program.weeklySchedule, selectedDay, restDays, identityIndex);
   }, [program, selectedDay]);
 
   const isGeneratedRestDay = Boolean(program && selectedDay && generatedExercises.length === 0);
@@ -144,7 +113,7 @@ export default function WorkoutPage() {
     return startPromise;
   }
 
-  async function completePersistedSession(summary: SessionSummary) {
+  async function completePersistedSession(summary: WorkoutResultSummary) {
     await sessionStartRef.current;
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
@@ -152,56 +121,37 @@ export default function WorkoutPage() {
       await fetch('/api/workout/session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action: 'complete', sessionId, durationSeconds: summary.durationSeconds, completedSets: summary.completedSets}),
+        body: JSON.stringify({action: 'complete', sessionId, completedSets: summary.completedSets}),
       });
     } catch {
       // Completion remains available locally; a later sync can be added without blocking UX.
     }
   }
-  const cameraConsentScopes: ConsentScope[] = useMemo(() => {
-    const scopes = new Set<ConsentScope>();
-    for (const ex of exercises) {
-      const name = ex.name.toLowerCase();
-      if (name.includes('squat') || name.includes('اسکات')) scopes.add('poseTracking:squat');
-      if (name.includes('push') || name.includes('شنا')) scopes.add('poseTracking:pushup');
-      if (name.includes('bridge') || name.includes('پل')) scopes.add('poseTracking:hinge');
-      if (name.includes('lunge') || name.includes('لانژ')) scopes.add('poseTracking:lunge');
-    }
-    return Array.from(scopes);
-  }, [exercises]);
-
   const subtitle = program && selectedDay
     ? (isGeneratedRestDay ? tDashboard('summaryRest') : tDashboard('workouts.generated'))
     : tDashboard(`workouts.${fallbackKey}`);
 
   return (
-    <AppShell
-      title={tNav('workout')}
-      subtitle={subtitle}
-      backHref={`/${locale}/dashboard`}
-    >
-      <div className="mx-auto w-full max-w-md px-4 sm:max-w-lg md:max-w-xl">
-        {programLoading ? (
-          <p role="status" className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
-            {tDashboard('loading')}
-          </p>
-        ) : null}
-
-        {isGeneratedRestDay ? (
-          <section className="card-surface w-full p-6 text-center text-[color:var(--apex-text)]" aria-label={tDashboard('summaryRest')}>
-            <h1 className="text-xl font-bold">{tDashboard('summaryRest')}</h1>
+    <main data-workout-v2-surface="" className="h-[100dvh] w-full overflow-hidden bg-[color:var(--app-background)]">
+      {programLoading ? (
+        <div className="flex h-full items-center justify-center px-4">
+          <p role="status" className="text-sm text-[color:var(--apex-text-secondary)]">{tDashboard('loading')}</p>
+        </div>
+      ) : isGeneratedRestDay ? (
+        <div className="flex h-full items-center justify-center px-4 text-center">
+          <div>
+            <h1 className="text-xl font-bold text-[color:var(--apex-text)]">{tDashboard('summaryRest')}</h1>
             <p className="mt-2 text-sm text-[color:var(--apex-text-secondary)]">{tDashboard('summaryRestDesc')}</p>
-          </section>
-        ) : (
-          <WorkoutPlayer
-            exercises={exercises}
-            cameraConsentScopes={cameraConsentScopes}
-            cameraConsentVersion={1}
-            onWorkoutStart={() => { void startPersistedSession(); }}
-            onWorkoutComplete={(summary) => { void completePersistedSession(summary); }}
-          />
-        )}
-      </div>
-    </AppShell>
+          </div>
+        </div>
+      ) : (
+        <ExperienceShell
+          exercises={exercises}
+          sessionTitle={subtitle}
+          onSessionStarted={() => { void startPersistedSession(); }}
+          onWorkoutResultReady={(summary) => { void completePersistedSession(summary); }}
+        />
+      )}
+    </main>
   );
 }

@@ -16,6 +16,45 @@ capability. FreeBuff/`apexadmin` invokes `/usr/local/bin/apex-deploy` without
 `sudo`; the client can only exchange a bounded JSON message over a Unix socket
 owned by `root:apexdeploy`. It never invokes Docker or reads protected files.
 
+## Beta (Workout V2) — bounded extension of the same gateway
+
+The Owner-authorized Beta capability extends this daemon with a separate
+`beta-status`, `beta-release`, and `beta-verify-rollback` action. These actions
+do not alter the Production `release`, `db-operation`, or rollback contract.
+The repository-owned topology is installed by
+`ops/deploy-gateway/install-beta-path.sh` from
+`ops/deploy-gateway/beta-compose.yml`.
+
+Beta is explicitly identified as:
+
+- `https://beta.apexhomefit.ir` on host `sabtbrooker`;
+- `/opt/ahf-beta/compose.yml` and `/opt/ahf-beta/.env` (`root:root 0600`);
+- `127.0.0.1:3100` → container port `3000`;
+- `ahf_beta_db` only; never `apexhomefit_prod_db`;
+- `ahf-home-fit:beta-*` images; never the Production `apex-home-fit:release-*`
+  namespace.
+
+The Beta action accepts only the canonical Workout V2 feature-branch/PR
+candidate and requires the requested full SHA to match the branch head, open
+PR head, and successful authoritative branch and PR CI runs. It builds from
+that exact archive, records image IDs and Next build identity, snapshots the
+Beta Compose/SQLite state, requires a no-op migration hash, switches only the
+Beta app, and retains an executable Beta rollback proof. Any ambiguous target,
+missing protected configuration, failed CI, changed database hash, or failed
+health check fails closed. Production is never stopped, recreated, mounted, or
+selected by a Beta request.
+
+The same constrained gateway also exposes the narrowly bounded
+`beta-db-operation` action for the canonical QA data setup. Its only
+allowlisted operation is `beta-qa-program-assign`: it runs from the exact
+deployed Beta migration image, mounts only `ahf_beta_db`, reads the protected
+Beta QA allowlist without returning it, and ensures the repository-seeded
+`Apex Workout V2 QA Program` is owned by the unique already-persisted account
+in that allowlist. Ambiguous or absent accounts fail closed. Dry-run evidence
+is required before apply; the Beta app is quiesced, backed up, hash-verified,
+restored on failure, and restarted. This is operational test data, not a
+product identity conditional, and it cannot select Production resources.
+
 ## Authorization and allowlist
 
 - exact host: `sabtbrooker`;
@@ -116,4 +155,4 @@ Contract (bounded, fail-closed, mirrors the release security model):
 
 Upgrade/install: `ops/deploy-gateway/install-gateway.sh` (root, host-guarded,
 idempotent; runs `py_compile` + `--self-test`, restarts the service, verifies
-`version: 2`).
+`version: 4`).

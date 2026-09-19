@@ -20,6 +20,31 @@
 - **Admission transition:** `IMPLEMENTATION_AUTHORIZATION = OWNER_AUTHORIZED` with `AUTHORIZATION_SOURCE = docs/governance/OWNER_DECISION_GATE.md`.
 - **No new product decisions** are introduced by this record; it references the canonical package rather than restating product requirements.
 
+### WORKOUT-V2-PRODUCT-INTEGRATION-01 — normal product path and QA Program authorization (2026-09-19)
+
+- **Owner decision:** AUTHORIZE the downstream Workout V2 product-integration work packages `WP-15` and `WP-16`. The existing Run-4 implementation is the current Workout Experience V2 product implementation, not disposable prototype code.
+- **Required product path:** the normal authenticated Dashboard/Program/workout route must launch the shared V2 ExperienceShell through the existing Program/Prescription domain path; an isolated `/workout/v2` route may remain only as historical compatibility/evidence and is not an acceptance path.
+- **Required QA path:** a small persisted QA Program/fixture may be used for verification, but it must use the existing Program/Prescription persistence and resolution path. No phone, user, account, or test-identity conditional may enter product behavior.
+- **Binding boundary:** Program/Prescription owns exercise identity/order, set count, mode/targets, fallback duration, and rest semantics. Workout consumes the shared WP-13 contract; orchestration derives presentation topology.
+- **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate after the new product-integration checkpoint. No per-task visual acceptance is introduced. Production remains unauthorized. Beta remains a separate deployment-authority decision under the permanent checkpoint policy.
+- **Canonical work packages:** `WP-15-REAL-PRODUCT-ENTRY-INTEGRATION` and `WP-16-QA-PROGRAM-DOMAIN-PATH` are authorized only within the existing Spec Kit, DAG, admission, and checkpoint authorities.
+
+### WORKOUT-V2-BETA-DEPLOYMENT-01 — Beta deployment authorization (2026-09-19)
+
+- **Owner decision:** AUTHORIZE deployment of the current verified Workout Experience V2 candidate to the existing AHF Beta environment for complete-flow validation and RUN-5 Owner acceptance.
+- **Scope:** Beta only. Production deployment remains unauthorized, PR #72 remains unmerged, and all existing CI, rollback, security, deployment-checkpoint, and verification requirements remain binding.
+- **Canonical acceptance path:** authenticated application → normal Dashboard → assigned QA Program/workout → normal localized workout route → Workout Experience V2 → complete Program-derived workout → Workout Result/Exit → Dashboard.
+- **Reconciliation result:** the repository contains no Beta deployment workflow, GitHub environment, deployment record, target mapping, or Beta-capable deployment gateway. The existing gateway is Production-only: it requires authoritative `main` HEAD and the Production compose/volume allowlist. The authorization is therefore persisted as accepted, but the derived Beta deployment capability remains BLOCKED until a canonical Beta path is established within deployment governance.
+- **No inference:** this decision does not authorize Production, PR merge, a new deployment authority, arbitrary host/compose/secret values, or bypass of the existing Production gateway security model.
+
+### WORKOUT-V2-BETA-CAPABILITY-01 — Establish canonical Beta deployment path (2026-09-19)
+
+- **Owner decision:** AUTHORIZE `BETA-DEPLOYMENT-CAPABILITY` to design, implement, configure, and verify the minimum governed AHF Beta deployment path required for Workout Experience V2 validation.
+- **Canonical target:** `beta.apexhomefit.ir` on the existing AHF host, with explicit Beta-only Compose, loopback port, persistent volume, environment boundary, deployment source/build identity, and rollback evidence.
+- **Reuse boundary:** extend the existing constrained Deployment Gateway and host patterns; do not create a parallel scheduler, weaken Production safeguards, or target Production resources.
+- **Safety boundary:** Beta must fail closed on ambiguous target identity, must preserve the Production app/volume/configuration, and must not expose secret values.
+- **Scope:** Beta only; Production deployment, PR #72 merge, and any bypass of CI/admission/checkpoint/rollback requirements remain unauthorized.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

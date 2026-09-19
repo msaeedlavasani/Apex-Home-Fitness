@@ -1,0 +1,43 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01",
+  "CHECKPOINT_KIND": "INTEGRATION",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
+  "VERIFIED_SOURCE_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
+  "CHECKPOINT_EVIDENCE_SHA": "c44b568e7dfe3ffa837f6516a49d1b175a15e57b",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
+    "RUN_ID": "35457400606",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35457400606",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
+    "BRANCH_RUN_ID": "35457400606",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35457400606",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "835ef7bb39a11f62655be1d8320c4ca1308acc24",
+    "PR_RUN_ID": "35457403825",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/pull/72"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"governance","COMMAND":"npm run governance:check","STATUS":"PASS","SUMMARY":"Canonical documentation and governance checks passed."},
+    {"ID":"governance-tests","COMMAND":"npm run governance:test","STATUS":"PASS","SUMMARY":"25 governance runtime tests passed, including checkpoint/readiness negative paths."},
+    {"ID":"admission","COMMAND":"npm run admission:check","STATUS":"PASS","SUMMARY":"12 canonical admission records granted; 0 denied."},
+    {"ID":"admission-tests","COMMAND":"npm run admission:test","STATUS":"PASS","SUMMARY":"38 admission runtime tests passed."},
+    {"ID":"qa-program","COMMAND":"node --import tsx prisma/seed.ts && node --import tsx --test tests/workout-v2-qa-program.test.ts","STATUS":"PASS","SUMMARY":"Canonical persisted QA Program seed and mixed REP/TIME, asymmetric sets, rest, fallback, and order contract checks passed."},
+    {"ID":"product-domain","COMMAND":"node --import tsx --test tests/workout-v2-product-integration.test.ts","STATUS":"PASS","SUMMARY":"Normal product entry uses the shared Program-to-Workout contract without test-identity branching."},
+    {"ID":"browser-entry","COMMAND":"PLAYWRIGHT_PORT=52701 npx playwright test --config=infra/config/playwright.config.ts tests/workout-v2-product-entry.spec.ts --workers=1","STATUS":"PASS","SUMMARY":"Normal localized workout route launches the V2 experience shell; response handling and route assertions passed."},
+    {"ID":"browser-integration","COMMAND":"PLAYWRIGHT_PORT=52701 npx playwright test --config=infra/config/playwright.config.ts tests/workout-v2-start-reliability.spec.ts --workers=1","STATUS":"PASS","SUMMARY":"26 integrated Workout V2 browser checks passed in EN and FA, including start, stages, controls, responsive geometry, and theme behavior."},
+    {"ID":"unit","COMMAND":"npm test","STATUS":"PASS","SUMMARY":"859 repository tests passed with 0 failures."},
+    {"ID":"static-build","COMMAND":"npm run typecheck && npm run lint && npm run build","STATUS":"PASS","SUMMARY":"Typecheck, lint, and production build passed; only documented pre-existing warnings remained."},
+    {"ID":"git-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"Candidate 835ef7bb39a11f62655be1d8320c4ca1308acc24 was pushed with clean worktree and local/upstream parity."},
+    {"ID":"github-ci","COMMAND":"GitHub Actions CI for branch push 35457400606 and PR synchronization 35457403825","STATUS":"PASS","SUMMARY":"Both authoritative branch and PR CI runs passed governance, admission, unit, build, auth E2E, and smoke E2E for 835ef7bb39a11f62655be1d8320c4ca1308acc24."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE",
+  "BETA_DEPLOYMENT_AUTHORIZED": "NO",
+  "BETA_DEPLOYMENT_CHECKPOINT": "NOT_AUTHORIZED"
+}

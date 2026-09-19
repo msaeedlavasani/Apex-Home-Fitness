@@ -91,7 +91,7 @@ timings, Three.js, CSP relaxation are all recorded as evidence/non-requirements)
 ## 9. How does staged implementation work?
 
 Shared canonical spec → shared implementation architecture (plan) → stage/module work packages →
-implement → targeted verification → owner acceptance where required → **freeze the accepted
+implement → task-scoped machine/agent verification → **freeze the accepted
 boundary** → next work package. A freeze stabilizes the accepted boundary; later stages must stay
 consistent with the canonical spec, shared architecture and shared contracts — a freeze never
 authorizes an independent architecture.
@@ -100,6 +100,57 @@ authorizes an independent architecture.
 
 `docs/TASKS.md` remains the **only** executable backlog. Spec-local `tasks.md` files are planning
 artifacts: non-executable, non-authorizing, always linked **from** a `docs/TASKS.md` entry.
+
+## 10.1 Repository-driven execution after canonicalization
+
+Once a product decision has been canonicalized into the controlling spec, plan,
+tasks and dependency authorities, normal execution selection is repository-driven.
+The Owner/chat must not restate the architecture or manually name the next
+implementation task. The canonical executable backlog and its machine-readable
+dependency/state projection determine eligible work; the admission gate then
+decides whether a selected task may begin.
+
+The standard loop is:
+
+```text
+READ CANONICAL STATE → REFRESH DAG → CALCULATE READY WORK
+→ APPLY ADMISSION RULES → EXECUTE ADMITTED WORK
+→ VERIFY → RECORD RESULT → UPDATE DAG → RECALCULATE
+```
+
+For Workout V2, ordinary autonomous nodes declare
+`readinessRule: DAG_DERIVED` in the canonical execution projection. The
+selector computes their readiness from lifecycle state, hard dependencies, and
+governance gates; a manually assigned `autonomousEligibility: NOT_YET` is not
+permitted on those nodes. `readinessRule: EXPLICIT` is reserved for genuine
+explicit states such as `HUMAN_GATE` or an unresolved Owner decision.
+
+Independent candidates may be selected together only when their recorded
+dependencies, resource boundaries and admission profiles permit it. A selector
+must stop on an unresolved Owner decision, authority conflict, failed dependency
+or gate, denied admission, failed verification, no eligible work, or completed
+milestone. It must never infer a product decision from the absence of a task.
+
+For the Workout V2 staged program, the dry-run selector is:
+
+```bash
+node scripts/governance-runtime.mjs workout-v2-ready
+```
+
+This command is selection-only: it does not create an admission record, mutate
+task state, or execute code. A large chat delta required to determine the next
+task is an orchestration/repository-authority defect. Owner/chat remains
+authoritative for genuinely new product decisions and explicit human gates.
+
+Owner visual acceptance is milestone-level, not task-level. The admission and
+ready-work systems MUST NOT insert a per-work-package Owner visual gate between
+reusable capability blocks. The complete-flow Owner visual gate occurs only
+after program-driven composition and completeness/integration verification;
+visual/UX findings from that review are batched into one coherent correction
+batch where dependencies allow, machine regression runs before complete-flow
+Owner re-review, and the experience is frozen after that re-review. An earlier
+stop is valid only for an explicit `OWNER_DECISION_REQUIRED` condition or
+another existing hard governance gate.
 
 ## 11. Machine usage (fail-closed commands)
 
