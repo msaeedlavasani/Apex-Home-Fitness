@@ -946,7 +946,14 @@ def main():
             except Exception as error:
                 audit("request-fail")
                 response = {"ok": False, "error": str(error)}
-            conn.sendall((json.dumps(response, sort_keys=True) + "\n").encode())
+            try:
+                conn.sendall((json.dumps(response, sort_keys=True) + "\n").encode())
+            except BrokenPipeError:
+                # A caller may time out or disconnect after the bounded
+                # operation has begun. The operation's own rollback/receipt
+                # semantics remain authoritative; a lost response must not
+                # terminate the daemon and strand the deployment capability.
+                audit("response-disconnected")
 
 
 def self_test():
