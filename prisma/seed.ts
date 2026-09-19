@@ -799,7 +799,7 @@ async function main() {
   // not product behavior: normal Program resolution selects it by ownership
   // and the Workout route consumes the same persisted schedule/contract as
   // every other Program. No phone, user, or account conditional is involved.
-  const qaExerciseNames = ["Bodyweight Squat", "Push-Up", "Plank Hold"];
+  const qaExerciseNames = ["Jump Squats", "Push-Up", "Plank Hold"];
   const qaExercises = await prisma.exercise.findMany({
     where: {name: {in: qaExerciseNames}},
   });
@@ -815,8 +815,8 @@ async function main() {
       is_rest_day: false,
       warmup: [],
       exercises: [
-        {id: "qa-squat", name: "Bodyweight Squat", method: "strength", equipment: "none", sets: 2, reps: "8", duration_seconds: null, rest_seconds: 20, instruction_cue: "Move with control.", alternatives: [], contraindicated_for: []},
-        {id: "qa-push-up", name: "Push-Up", method: "strength", equipment: "none", sets: 3, reps: "10", duration_seconds: null, rest_seconds: 25, instruction_cue: "Keep a steady pace.", alternatives: [], contraindicated_for: []},
+        {id: "qa-squat", name: "Jump Squats", method: "strength", equipment: "none", sets: 2, reps: "8", duration_seconds: null, fallback_duration_seconds: 45, rest_seconds: 20, instruction_cue: "Move with control.", alternatives: [], contraindicated_for: []},
+        {id: "qa-push-up", name: "Push-Up", method: "strength", equipment: "none", sets: 3, reps: "10", duration_seconds: null, fallback_duration_seconds: 50, rest_seconds: 25, instruction_cue: "Keep a steady pace.", alternatives: [], contraindicated_for: []},
         {id: "qa-plank", name: "Plank Hold", method: "isometric", equipment: "none", sets: 1, reps: null, duration_seconds: 30, fallback_duration_seconds: null, rest_seconds: 30, instruction_cue: "Breathe steadily.", alternatives: [], contraindicated_for: []}
       ],
       cooldown: [],
