@@ -16,9 +16,13 @@ import {
   QA_PROGRAM_NAME,
   QA_PROGRAM_WEEKLY_SCHEDULE,
 } from '../../src/lib/program/qaProgram.ts';
+import {normalizePhone} from '../../src/lib/auth/phone.ts';
 
 const mode = process.env.DB_OPERATION_MODE;
-const phones = [...new Set((process.env.BETA_QA_PHONES ?? '').split(',').map((value) => value.trim()).filter(Boolean))];
+const phones = [...new Set((process.env.BETA_QA_PHONES ?? '')
+  .split(',')
+  .map((value) => normalizePhone(value.trim()))
+  .filter((value) => value !== null))];
 if (!['dry-run', 'apply'].includes(mode)) {
   console.error('DB_OPERATION_MODE must be dry-run or apply');
   process.exit(2);
