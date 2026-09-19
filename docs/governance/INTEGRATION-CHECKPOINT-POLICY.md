@@ -80,8 +80,9 @@ relying on chat history.
 The SHA relationship is explicit: `VERIFIED_SOURCE_SHA` identifies the
 product candidate, `KNOWN_GOOD_SHA` identifies the candidate whose required
 authoritative CI passed, and `CHECKPOINT_EVIDENCE_SHA` identifies the commit
-that records that result. A later evidence-only commit may be above the
-known-good candidate; it does not silently change the product baseline.
+that records the PASS result. A later evidence-only commit may be above the
+known-good candidate; it does not silently change the product baseline, but it
+must receive its own applicable verification before it can become `CURRENT_HEAD`.
 
 The authoritative branch/PR workflow checks out complete Git history because
 the validator must be able to prove that all recorded SHAs are real commits.
