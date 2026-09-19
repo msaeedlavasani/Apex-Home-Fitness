@@ -27,15 +27,16 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
-  assert.deepEqual(result.readyTasks.map((task) => task.id), checkpointPass ? [] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), checkpointPass ? [] : ['READY_DERIVED']);
+  const productCheckpointPass = result.checkpointGates.find((gate) => gate.id === 'PRODUCT-INTEGRATION-CHECKPOINT')?.status === 'PASS';
+  assert.deepEqual(result.readyTasks.map((task) => task.id), productCheckpointPass ? [] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), productCheckpointPass || (!checkpointPass && result.readyTasks.length === 0) ? [] : ['READY_DERIVED']);
   assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
   assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
-  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'), !checkpointPass);
+  assert.equal(blocked.get('BETA-DEPLOYMENT-AUTHORIZATION')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'), !productCheckpointPass);
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
@@ -83,11 +84,12 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const dagFile = tempText(replaceTaggedJson(dagSource.content, 'WORKOUT_V2_AUTONOMOUS_DAG', dag));
   const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks, []);
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT']);
+  assert.equal(result.readyTasks[0]?.eligibility, 'READY_DERIVED');
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));
-  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.some((item) => item.startsWith('CHECKPOINT_UNSATISFIED=')), false);
+  assert.ok(blocked.get('BETA-DEPLOYMENT-AUTHORIZATION')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'));
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
