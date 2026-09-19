@@ -12,6 +12,7 @@
 import {PrismaClient} from '@prisma/client';
 import {
   QA_PROGRAM_DESCRIPTION,
+  QA_PROGRAM_EXERCISE_RECORDS,
   QA_PROGRAM_EXERCISES,
   QA_PROGRAM_NAME,
   QA_PROGRAM_WEEKLY_SCHEDULE,
@@ -40,18 +41,22 @@ function sameJson(left, right) {
 }
 
 async function inspect() {
-  const users = await prisma.user.findMany({where: {phone: {in: phones}}, select: {id: true}});
-  const user = users.length === 1 ? users[0] : null;
+  const users = await prisma.user.findMany({
+    where: {phone: {in: phones}},
+    select: {id: true, _count: {select: {programs: true}}},
+  });
+  const program = await prisma.program.findUnique({
+    where: {name: QA_PROGRAM_NAME},
+    include: {exercises: {orderBy: {order: 'asc'}, include: {exercise: {select: {name: true}}}}},
+  });
+  const programOwner = program?.ownerId && users.find((candidate) => candidate.id === program.ownerId);
+  const candidates = programOwner ? [programOwner] : users.filter((candidate) => candidate._count.programs === 0);
+  const user = candidates.length === 1 ? candidates[0] : null;
   const exercises = await prisma.exercise.findMany({
     where: {name: {in: names}},
     select: {id: true, name: true},
   });
   const exerciseByName = new Map(exercises.map((exercise) => [exercise.name, exercise]));
-  const program = await prisma.program.findUnique({
-    where: {name: QA_PROGRAM_NAME},
-    include: {exercises: {orderBy: {order: 'asc'}, include: {exercise: {select: {name: true}}}}},
-  });
-
   const shapeValid = Boolean(program) &&
     program.description === QA_PROGRAM_DESCRIPTION &&
     sameJson(program.weeklySchedule, QA_PROGRAM_WEEKLY_SCHEDULE) &&
@@ -66,18 +71,19 @@ async function inspect() {
   const report = {
     operation: 'beta-qa-program-assign',
     mode,
-    qa_account_found: users.length === 1,
-    qa_account_ambiguous: users.length > 1,
+    qa_account_found: candidates.length === 1,
+    qa_account_ambiguous: candidates.length > 1,
+    qa_account_candidates: candidates.length,
     canonical_exercises_present: exercises.length === names.length,
     program_present: Boolean(program),
     program_shape_valid: shapeValid,
     owner_matches: Boolean(user && program && program.ownerId === user.id),
-    planned_change: user && exercises.length === names.length && (!program || shapeValid)
+    planned_change: user && (!program || shapeValid)
       ? (program ? (program.ownerId === user.id ? 'NONE' : 'ASSIGN_EXISTING_PROGRAM') : 'CREATE_AND_ASSIGN_PROGRAM')
       : 'BLOCKED_INVALID_CANONICAL_DATA',
   };
 
-  if (!report.qa_account_found || !report.canonical_exercises_present || (!report.program_present && mode === 'dry-run' && !report.canonical_exercises_present)) {
+  if (!report.qa_account_found || (program && !shapeValid)) {
     report.verification = {status: 'FAIL', reason: report.qa_account_ambiguous ? 'multiple protected QA accounts are persisted' : 'required Beta QA data is unavailable'};
     return {report, user, exerciseByName, program, shapeValid};
   }
@@ -102,6 +108,13 @@ try {
         await prisma.program.update({where: {id: program.id}, data: {ownerId: user.id}});
       }
     } else {
+      for (const exercise of QA_PROGRAM_EXERCISE_RECORDS) {
+        await prisma.exercise.upsert({
+          where: {name: exercise.name},
+          update: exercise,
+          create: exercise,
+        });
+      }
       const created = await prisma.program.create({
         data: {
           name: QA_PROGRAM_NAME,
@@ -118,7 +131,7 @@ try {
               sets: exercise.sets,
               reps: exercise.reps,
               restSeconds: exercise.restSeconds,
-              exercise: {connect: {id: exerciseByName.get(exercise.name).id}},
+              exercise: {connect: {name: exercise.name}},
             })),
           },
         },

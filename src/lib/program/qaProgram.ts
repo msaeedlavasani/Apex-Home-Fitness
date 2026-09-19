@@ -16,6 +16,57 @@ export const QA_PROGRAM_EXERCISES = [
   {name: 'Plank Hold', sets: 1, reps: null, restSeconds: 30},
 ] as const;
 
+export const QA_PROGRAM_EXERCISE_RECORDS = [
+  {
+    name: 'Jump Squats',
+    description: 'Explosive squat variation that builds power in the legs.',
+    category: 'HIIT',
+    equipment: [],
+    difficulty: 'INTERMEDIATE',
+    durationSeconds: 40,
+    reps: null,
+    sets: null,
+    restSeconds: 30,
+    instructions: [
+      'Lower into a squat with the chest up and weight in the heels.',
+      'Drive through the feet and jump as high as possible.',
+      'Land softly and immediately lower into the next rep.',
+    ],
+  },
+  {
+    name: 'Push-Up',
+    description: 'Classic upper-body exercise for the chest, shoulders and triceps.',
+    category: 'CALISTHENICS',
+    equipment: [],
+    difficulty: 'BEGINNER',
+    durationSeconds: 45,
+    reps: 10,
+    sets: 3,
+    restSeconds: 30,
+    instructions: [
+      'Start in a high plank with hands slightly wider than the shoulders.',
+      'Lower the chest toward the floor with elbows at 45 degrees.',
+      'Press back up, keeping the body in one straight line.',
+    ],
+  },
+  {
+    name: 'Plank Hold',
+    description: 'Full-body isometric hold for core and shoulder stability.',
+    category: 'ISOMETRIC',
+    equipment: ['yoga mat (optional)'],
+    difficulty: 'BEGINNER',
+    durationSeconds: 45,
+    reps: null,
+    sets: 3,
+    restSeconds: 30,
+    instructions: [
+      'Hold a forearm or high plank with a straight line from head to heels.',
+      'Squeeze the glutes and brace the abs.',
+      'Keep breathing; do not let the hips sag.',
+    ],
+  },
+] as const;
+
 export const QA_PROGRAM_WEEKLY_SCHEDULE = [
   {
     day: 1,

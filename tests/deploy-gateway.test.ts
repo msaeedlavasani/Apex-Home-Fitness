@@ -50,6 +50,15 @@ test('gateway accepts only the bounded Beta QA data operation', () => {
   assert.equal(validate({...valid, mode:'apply'}).stdout.trim(), 'GateError');
 });
 
+test('Beta QA operation uses canonical phone normalization and canonical data only', () => {
+  const source = readFileSync('scripts/gateway-db-ops/beta-qa-program-assign.mjs', 'utf8');
+  assert.match(source, /normalizePhone/);
+  assert.match(source, /QA_PROGRAM_EXERCISE_RECORDS/);
+  assert.match(source, /exercise\.upsert/);
+  assert.match(source, /users\.filter\(\(candidate\) => candidate\._count\.programs === 0\)/);
+  assert.doesNotMatch(source, /SMOKE_TEST_PHONE/);
+});
+
 test('gateway source is fixed to canonical host, repository, compose and volume', () => {
   const source = readFileSync(gateway, 'utf8');
   assert.match(source, /HOST = "sabtbrooker"/);
