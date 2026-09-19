@@ -75,6 +75,11 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   assert.ok(checkpointState);
   checkpointState.status = 'CLOSED';
   checkpointState.frozen = true;
+  const productCheckpointState = state.items.find((item) => item.id === 'PRODUCT-INTEGRATION-CHECKPOINT');
+  assert.ok(productCheckpointState);
+  productCheckpointState.status = 'PLANNED';
+  productCheckpointState.frozen = false;
+  productCheckpointState.verification = 'PENDING';
   const checkpointFile = tempJson(baseCheckpoint({CHECKPOINT_ID: 'WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01'}));
   const dag = structuredClone(dagSource.value);
   const checkpointNode = dag.nodes.find((node) => node.id === 'INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW');
