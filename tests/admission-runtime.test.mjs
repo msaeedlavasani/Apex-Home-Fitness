@@ -282,7 +282,7 @@ test('admissions bulk: valid records pass and GRANTED records do not fail the re
   assert.match(out, /ADMISSION_GRANTED WORKOUT-V2-IMPL-01/);
   assert.match(out, /ADMISSION_GRANTED WP-06/);
   assert.match(out, /ADMISSION_GRANTED WP-07/);
-  assert.match(out, /granted: 10/); // parent + admitted Workout V2 work packages through Run 4
+  assert.match(out, /granted: 12/); // parent + admitted Workout V2 work packages through current product integration
 });
 test('admissions bulk: malformed record fails closed', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'admissions-'));
