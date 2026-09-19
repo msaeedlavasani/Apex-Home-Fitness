@@ -26,14 +26,57 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), []);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), []);
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), ['READY_DERIVED']);
   assert.ok(result.readyTasks.every((task) => task.eligibilityDerivedAutomatically === true));
   assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
+  assert.equal(result.checkpointGates[0]?.status, 'UNSATISFIED');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'));
+  assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
+});
+function baseCheckpoint(overrides = {}) {
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  return {
+    CHECKPOINT_ID: 'TEST-INTEGRATION-01', CHECKPOINT_KIND: 'INTEGRATION', STATUS: 'PASS', KNOWN_GOOD_SHA: sha,
+    VERIFICATION_EVIDENCE: [{ID: 'test', COMMAND: 'test command', STATUS: 'PASS', SUMMARY: 'machine evidence passed'}],
+    WORKTREE_CLEAN: 'YES', LOCAL_REMOTE_PARITY: 'YES', DEPLOYMENT_IDENTITY: 'NOT_APPLICABLE',
+    ...overrides,
+  };
+}
+test('checkpoint PASS establishes an auditable known-good SHA', () => {
+  const file = tempJson(baseCheckpoint());
+  assert.match(run('checkpoint', file), /CHECKPOINT_PASS TEST-INTEGRATION-01/);
+});
+test('checkpoint failure fails closed', () => {
+  const file = tempJson(baseCheckpoint({STATUS: 'FAIL'}));
+  assert.throws(() => run('checkpoint', file), /CHECKPOINT_NOT_PASS/);
+});
+test('checkpoint completion recalculates readiness and leaves the Human Gate downstream', () => {
+  const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');
+  const dagSource = readTaggedJson(path.join(root, 'docs/specs/0001-workout-experience/dependencies.md'), 'WORKOUT_V2_AUTONOMOUS_DAG');
+  const state = structuredClone(stateSource.value);
+  const checkpointState = state.items.find((item) => item.id === 'INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW');
+  assert.ok(checkpointState);
+  checkpointState.status = 'CLOSED';
+  checkpointState.frozen = true;
+  const checkpointFile = tempJson(baseCheckpoint({CHECKPOINT_ID: 'WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01'}));
+  const dag = structuredClone(dagSource.value);
+  const checkpointNode = dag.nodes.find((node) => node.id === 'INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW');
+  assert.ok(checkpointNode);
+  checkpointNode.checkpointEvidencePath = checkpointFile;
+  const stateFile = tempText(replaceTaggedJson(stateSource.content, 'WORKOUT_V2_AUTONOMOUS_STATE', state));
+  const dagFile = tempText(replaceTaggedJson(dagSource.content, 'WORKOUT_V2_AUTONOMOUS_DAG', dag));
+  const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
+  const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
+  assert.deepEqual(result.readyTasks, []);
+  assert.equal(result.checkpointGates[0]?.status, 'PASS');
+  const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));
+  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.some((item) => item.startsWith('CHECKPOINT_UNSATISFIED=')), false);
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');

@@ -19,6 +19,7 @@ Use the existing package scripts:
 npm run governance:check
 npm run governance:test
 npm run guardrail:test
+node scripts/governance-runtime.mjs checkpoint docs/checkpoints/<CHECKPOINT_ID>.json
 ```
 
 `scripts/governance-runtime.mjs` validates known task profiles, governance
@@ -78,6 +79,16 @@ Since 2026-09-01 (proposed, see
 
 `npm run governance:check` now runs `docs` + `ui` scans. `governance:test`
 covers the new contract fields and guards.
+
+## Integration checkpoints and known-good baselines
+
+`checkpoint <JSON>` validates the permanent checkpoint evidence contract in
+[`governance/INTEGRATION-CHECKPOINT-POLICY.md`](governance/INTEGRATION-CHECKPOINT-POLICY.md):
+an existing full `KNOWN_GOOD_SHA`, PASS evidence for every declared check,
+clean worktree, local/remote parity, and deployment identity when the
+checkpoint is deployable. Workout V2 checkpoint nodes are validated as part of
+`workout-v2-ready`; a downstream node cannot bypass an unsatisfied checkpoint
+dependency. The command records no state and creates no admission or task.
 
 ## CI
 

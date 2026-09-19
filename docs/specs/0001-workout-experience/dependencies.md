@@ -47,7 +47,8 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-13.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1","provider":"WP-03"}],"providesCapabilities":["V2_SHARED_PRESCRIPTION_CONTRACT_V1"]},
     {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE","status":"CLOSED","frozen":true,"verification":"PASS","reportPath":"reports/workout-v2-impl-01/GATE-01-completeness.json","blockCompleteness":"PASS"},
     {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","verification":"PASS","providesCapabilities":["V2_PROGRAM_DRIVEN_COMPOSITION_V1"]},
-    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
+    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json"},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
 ```
@@ -93,6 +94,10 @@ route now preserves Program-owned exercise order and passes the resolved
 prescription directly into the reusable shell/orchestrator path; no numbered
 or fixture-specific presentation flow was added. Its close-out is
 [`RUN-4-PROGRAM-COMPOSITION-closeout.json`](../../../reports/workout-v2-impl-01/RUN-4-PROGRAM-COMPOSITION-closeout.json).
+The canonical `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW` gate now sits
+immediately upstream of `RUN-5-OWNER-ACCEPTANCE`; it owns the machine evidence
+and `KNOWN_GOOD_SHA` in
+[`docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json`](../../../docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json).
 The complete-flow Owner visual gate remains downstream and has not been
 satisfied by this machine execution.
 

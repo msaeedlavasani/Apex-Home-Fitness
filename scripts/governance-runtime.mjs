@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 
 const root = process.cwd();
 const profiles = {
@@ -35,8 +36,61 @@ const enums = {
 const UI_KIT_ALLOWLIST = ['platform']; // dirs permitted under src/components/ui
 const MUI_ALLOWLIST = ['src/components/providers/MuiProvider.tsx', 'src/lib/ui/muiTheme.ts'];
 const UI_GATE_DOCS = ['docs/governance/UI-CONFORMANCE-GATE.md', 'docs/governance/REPORT-DELIVERY-CONTRACT.md'];
+const CHECKPOINT_KINDS = new Set(['INTEGRATION', 'DEPLOYMENT']);
 
 function fail(message) { console.error(`GOVERNANCE_FAIL: ${message}`); process.exitCode = 1; }
+
+function gitCommitExists(sha) {
+  if (!/^[0-9a-f]{40}$/.test(sha)) return false;
+  try {
+    execFileSync('git', ['cat-file', '-e', `${sha}^{commit}`], {cwd: root, stdio: 'ignore'});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate a machine-recorded integration/deployment checkpoint. This is an
+ * evidence gate, not a scheduler: it verifies the exact source identity and
+ * the declared checks, while DAG readiness decides whether downstream work
+ * may proceed.
+ */
+function validateCheckpoint(record, {requireCurrentSha = false, allowUnpassed = false} = {}) {
+  const required = ['CHECKPOINT_ID', 'CHECKPOINT_KIND', 'STATUS', 'KNOWN_GOOD_SHA', 'VERIFICATION_EVIDENCE', 'WORKTREE_CLEAN', 'LOCAL_REMOTE_PARITY', 'DEPLOYMENT_IDENTITY'];
+  for (const field of required) if (!(field in record)) throw new Error(`CHECKPOINT_INVALID: missing required field: ${field}`);
+  if (typeof record.CHECKPOINT_ID !== 'string' || !record.CHECKPOINT_ID.trim()) throw new Error('CHECKPOINT_INVALID: CHECKPOINT_ID must be non-empty');
+  if (!CHECKPOINT_KINDS.has(record.CHECKPOINT_KIND)) throw new Error('CHECKPOINT_INVALID: CHECKPOINT_KIND must be INTEGRATION or DEPLOYMENT');
+  if (!['PASS', 'FAIL', 'PENDING'].includes(record.STATUS)) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} status must be PASS, FAIL, or PENDING`);
+  if (!allowUnpassed && record.STATUS !== 'PASS') throw new Error(`CHECKPOINT_NOT_PASS: ${record.CHECKPOINT_ID} status is ${record.STATUS}`);
+  if (!/^[0-9a-f]{40}$/.test(record.KNOWN_GOOD_SHA) || !gitCommitExists(record.KNOWN_GOOD_SHA)) throw new Error(`CHECKPOINT_INVALID: KNOWN_GOOD_SHA is not an existing full commit SHA: ${record.KNOWN_GOOD_SHA}`);
+  if (!allowUnpassed && record.WORKTREE_CLEAN !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires WORKTREE_CLEAN=YES`);
+  if (!allowUnpassed && record.LOCAL_REMOTE_PARITY !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires LOCAL_REMOTE_PARITY=YES`);
+  if (!Array.isArray(record.VERIFICATION_EVIDENCE) || record.VERIFICATION_EVIDENCE.length === 0) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires non-empty VERIFICATION_EVIDENCE`);
+  for (const evidence of record.VERIFICATION_EVIDENCE) {
+    if (!evidence || typeof evidence.ID !== 'string' || typeof evidence.COMMAND !== 'string' || !['PASS', 'FAIL', 'PENDING'].includes(evidence.STATUS) || typeof evidence.SUMMARY !== 'string' || !evidence.SUMMARY.trim()) {
+      throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} evidence entries require ID, COMMAND, STATUS, and SUMMARY`);
+    }
+  }
+  if (record.CHECKPOINT_KIND === 'INTEGRATION' && record.DEPLOYMENT_IDENTITY !== 'NOT_APPLICABLE') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} integration checkpoints require DEPLOYMENT_IDENTITY=NOT_APPLICABLE`);
+  if (record.CHECKPOINT_KIND === 'DEPLOYMENT') {
+    if (record.DEPLOYMENT_AUTHORIZED !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} deployment checkpoint lacks canonical deployment authorization`);
+    if (!record.DEPLOYMENT_IDENTITY || typeof record.DEPLOYMENT_IDENTITY !== 'object' || record.DEPLOYMENT_IDENTITY.STATUS !== 'PASS' || record.DEPLOYMENT_IDENTITY.DEPLOYED_SHA !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} deployment identity does not match KNOWN_GOOD_SHA`);
+  }
+  if (requireCurrentSha) {
+    const current = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+    if (current !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_SOURCE_MISMATCH: ${record.CHECKPOINT_ID} verifies ${record.KNOWN_GOOD_SHA}, current HEAD is ${current}`);
+  }
+  return `CHECKPOINT_PASS ${record.CHECKPOINT_ID} ${record.KNOWN_GOOD_SHA}`;
+}
+
+function checkCheckpoint(file) {
+  try {
+    console.log(validateCheckpoint(readJson(file)));
+  } catch (err) {
+    fail(String(err.message || err));
+  }
+}
 
 // --- Development Admission Gate linkage (Stage 6, trust-boundary CHECK A) ---
 // Executable (code-class) tasks MUST carry a GRANTED admission record; its
@@ -355,6 +409,19 @@ function checkWorkoutV2Ready() {
     for (const id of items.keys()) {
       if (!nodes.has(id)) throw new Error(`execution state has no DAG node: ${id}`);
     }
+    const checkpointGates = [];
+    for (const node of nodes.values()) {
+      if (!CHECKPOINT_KINDS.has(node.kind)) continue;
+      if (typeof node.checkpointId !== 'string' || !node.checkpointId.trim()) throw new Error(`checkpoint node ${node.id} is missing checkpointId`);
+      if (typeof node.checkpointEvidencePath !== 'string' || !node.checkpointEvidencePath.trim()) throw new Error(`checkpoint node ${node.id} is missing checkpointEvidencePath`);
+      const item = items.get(node.id);
+      if (item.checkpointId !== node.checkpointId) throw new Error(`checkpoint state/node mismatch for ${node.id}`);
+      let evidence;
+      try { evidence = readJson(node.checkpointEvidencePath); } catch (err) { throw new Error(`checkpoint evidence unreadable for ${node.id}: ${String(err.message || err)}`); }
+      try { validateCheckpoint(evidence, {allowUnpassed: true}); } catch (err) { throw new Error(`checkpoint evidence invalid for ${node.id}: ${String(err.message || err)}`); }
+      if (evidence.CHECKPOINT_ID !== node.checkpointId) throw new Error(`checkpoint evidence ID mismatch for ${node.id}`);
+      checkpointGates.push({id: node.id, checkpointId: node.checkpointId, status: item.status === 'CLOSED' && item.frozen === true && evidence.STATUS === 'PASS' ? 'PASS' : 'UNSATISFIED', evidencePath: node.checkpointEvidencePath, knownGoodSha: evidence.KNOWN_GOOD_SHA});
+    }
     for (const node of nodes.values()) {
       for (const dependency of [...node.dependsOn, ...node.softDependsOn ?? []]) {
         if (!nodes.has(dependency)) throw new Error(`DAG dependency ${dependency} referenced by ${node.id} is missing`);
@@ -405,7 +472,10 @@ function checkWorkoutV2Ready() {
         const dependencyState = items.get(dependency);
         return dependencyState.status !== 'CLOSED' || dependencyState.frozen !== true;
       });
-      if (unmet.length) blockers.push(`DEPENDENCIES_UNSATISFIED=${unmet.join(',')}`);
+      const unmetCheckpoints = unmet.filter((dependency) => CHECKPOINT_KINDS.has(nodes.get(dependency).kind));
+      if (unmetCheckpoints.length) blockers.push(`CHECKPOINT_UNSATISFIED=${unmetCheckpoints.join(',')}`);
+      const unmetDependencies = unmet.filter((dependency) => !unmetCheckpoints.includes(dependency));
+      if (unmetDependencies.length) blockers.push(`DEPENDENCIES_UNSATISFIED=${unmetDependencies.join(',')}`);
       if (item.ownerDecisionRequired === true) blockers.push('OWNER_DECISION_REQUIRED');
       const unmetCapabilities = (node.requiresCapabilities ?? []).filter((requirement) => {
         const providerState = items.get(requirement.provider);
@@ -419,6 +489,7 @@ function checkWorkoutV2Ready() {
     console.log(JSON.stringify({
       milestone: state.program,
       parentAdmission: 'ADMISSION_GRANTED',
+      checkpointGates,
       readyTasks: ready,
       nextAdmissionCandidates: admissionCandidates,
       blockedWork: blocked,
@@ -433,6 +504,7 @@ function checkWorkoutV2Ready() {
 const [command, arg] = process.argv.slice(2);
 if (command === 'profile') checkProfile(arg);
 else if (command === 'report') checkReport(arg);
+else if (command === 'checkpoint') checkCheckpoint(arg);
 else if (command === 'receipt') checkReceipt(arg);
 else if (command === 'ui') checkUi(arg);
 else if (command === 'admission') checkAdmission(arg);
@@ -441,5 +513,5 @@ else if (command === 'workout-v2-ready') checkWorkoutV2Ready();
 else if (command === 'docs') {
   const index = fs.readFileSync(path.join(root, 'docs/INDEX.md'), 'utf8');
   for (const file of ['AGENTS.md', 'docs/governance/DOCUMENTATION-GOVERNANCE.md', 'docs/AI_CHANGE_TEMPLATE.md', 'docs/PITFALL_GUARDRAILS.md']) if (!index.includes(file.replace('docs/', ''))) fail(`INDEX missing governance route: ${file}`);
-} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | receipt <JSON> | docs | ui [TARGET] | admission <JSON> | admissions [DIR] | workout-v2-ready'); }
+} else { fail('usage: governance-runtime.mjs profile <PROFILE> | report <JSON> | checkpoint <JSON> | receipt <JSON> | docs | ui [TARGET] | admission <JSON> | admissions [DIR] | workout-v2-ready'); }
 if (!process.exitCode) console.log('GOVERNANCE_PASS');

@@ -83,6 +83,7 @@
 | Production incident index and reusable lessons | [`PRODUCTION_INCIDENT_LEDGER.md`](PRODUCTION_INCIDENT_LEDGER.md), [`PITFALLS/`](PITFALLS/) |
 | Change-report contract | [`AI_CHANGE_TEMPLATE.md`](AI_CHANGE_TEMPLATE.md) |
 | Runtime governance tooling | [`GOVERNANCE_RUNTIME.md`](GOVERNANCE_RUNTIME.md), [`PITFALL_GUARDRAILS.md`](PITFALL_GUARDRAILS.md) |
+| Integration/deployment checkpoint gates and known-good baseline evidence | [`governance/INTEGRATION-CHECKPOINT-POLICY.md`](governance/INTEGRATION-CHECKPOINT-POLICY.md), machine enforcement in [`../scripts/governance-runtime.mjs`](../scripts/governance-runtime.mjs) |
 | Supporting autonomous-development workflow | [`AI_DEVELOPMENT_SYSTEM.md`](AI_DEVELOPMENT_SYSTEM.md) |
 | Architecture & scale-readiness audit + Spec Kit decision brief (AUDIT RECORD — not an architecture decision; placed 2026-09-14) | [`architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md`](architecture/AHF-ARCHITECTURE-SCALE-READINESS-AUDIT.md), [`architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md`](architecture/AHF-ARCHITECTURE-SPECKIT-DECISION-BRIEF.md) |
 | Spec Kit brownfield adoption (ADOPTED 2026-09-14 — D1 OPTION A) + owner decision record + Stage-2 contradiction review | [`governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md`](governance/AHF-SPECKIT-BROWNFIELD-ADOPTION-DESIGN.md), [`governance/OWNER_DECISION_GATE.md`](governance/OWNER_DECISION_GATE.md), [`governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md`](governance/SPECKIT-CONSTITUTION-CONTRADICTION-REVIEW.md) |
