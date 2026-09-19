@@ -1,0 +1,32 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01",
+  "CHECKPOINT_KIND": "INTEGRATION",
+  "STATUS": "PENDING",
+  "KNOWN_GOOD_SHA": "04270515caf1bcaf2ff534cbfe96a1aea8c6b79e",
+  "VERIFIED_SOURCE_SHA": "a20e31f5979fae681cf0a1a4a6a44aa99a32a247",
+  "CHECKPOINT_EVIDENCE_SHA": "04270515caf1bcaf2ff534cbfe96a1aea8c6b79e",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PENDING",
+    "COMMIT_SHA": "04270515caf1bcaf2ff534cbfe96a1aea8c6b79e",
+    "RUN_ID": "PENDING",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions",
+    "BRANCH_STATUS": "PENDING",
+    "BRANCH_COMMIT_SHA": "04270515caf1bcaf2ff534cbfe96a1aea8c6b79e",
+    "BRANCH_RUN_ID": "PENDING",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions",
+    "PR_STATUS": "PENDING",
+    "PR_COMMIT_SHA": "04270515caf1bcaf2ff534cbfe96a1aea8c6b79e",
+    "PR_RUN_ID": "PENDING",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/pull/72"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"pending-product-integration","COMMAND":"canonical product-integration checkpoint","STATUS":"PENDING","SUMMARY":"Awaiting WP-15/WP-16 close-out and exact-SHA local plus authoritative branch/PR verification."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE",
+  "BETA_DEPLOYMENT_AUTHORIZED": "NO",
+  "BETA_DEPLOYMENT_CHECKPOINT": "NOT_AUTHORIZED"
+}

@@ -72,6 +72,8 @@ export interface IntroStageProps {
   mentorAriaLabel: string;
   /** Fires when the demonstration reaches visible-ready (final framing applied). */
   onMentorReady?: () => void;
+  /** Whether the current resolved identity has an honest Mentor asset. */
+  mentorSupported?: boolean;
   onDeferExercise?: (disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => void;
   onSkipExercise?: () => void;
   onResolveDeferredExercise?: (disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION') => void;
@@ -179,6 +181,7 @@ export function IntroStage({
   mentorUnavailableLabel,
   mentorAriaLabel,
   onMentorReady,
+  mentorSupported = true,
   onDeferExercise,
   onSkipExercise,
   onResolveDeferredExercise,
@@ -232,6 +235,7 @@ export function IntroStage({
       <div data-workout-v2-intro-mentor-host="" className="relative min-h-0 flex-1">
         <MentorStage
           paused={paused}
+          enabled={mentorSupported}
           strings={{
             ariaLabel: mentorAriaLabel,
             loading: mentorLoadingLabel,

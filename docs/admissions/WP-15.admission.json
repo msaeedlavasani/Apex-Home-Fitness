@@ -1,0 +1,19 @@
+{
+  "TASK_ID": "WP-15",
+  "TASK_CLASS": "CRITICAL",
+  "SCOPE_SUMMARY": "Promote the existing Workout Experience V2 implementation into the normal authenticated Dashboard-to-workout product path, preserving Program/Prescription authority, shared-contract consumption, normal result/exit persistence, localization, PWA shell behavior, and historical review-route compatibility.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/governance/OWNER_DECISION_GATE.md",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0001-workout-experience/dependencies.md",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}

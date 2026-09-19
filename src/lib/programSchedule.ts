@@ -1,5 +1,6 @@
 import {isRestDay, weekdayOf} from '@/lib/ai/restDays';
 import type { ExerciseId, ExerciseSlug } from '@/lib/exercise';
+import type {SessionExercise} from '@/lib/workout/sessionContracts';
 
 export type PersistedScheduleExercise = {
   id?: unknown;
@@ -10,6 +11,7 @@ export type PersistedScheduleExercise = {
   reps?: unknown;
   duration_seconds?: unknown;
   rest_seconds?: unknown;
+  fallback_duration_seconds?: unknown;
 };
 
 export type PersistedScheduleSession = {
@@ -85,7 +87,30 @@ export function generatedExerciseDefaults(exercise: PersistedScheduleExercise, i
     reps: toReps(exercise.reps),
     durationSeconds: toPositiveInt(exercise.duration_seconds, 0) || null,
     restSeconds: toPositiveInt(exercise.rest_seconds, 30) || null,
+    fallbackDurationSeconds: toPositiveInt(exercise.fallback_duration_seconds, 0) || null,
   };
+}
+
+/**
+ * Canonical Program → Workout route adapter. It preserves Program schedule
+ * order and prescription-owned values, then adds canonical Exercise identity
+ * only where the persisted relational ProgramExercise join resolves it.
+ */
+export function workoutSessionExercisesFromProgram(
+  schedule: unknown,
+  weekday: string,
+  restDays: readonly string[],
+  identityIndex: ExerciseIdentityIndex,
+): SessionExercise[] {
+  const exercises = workoutExercisesFromSchedule(schedule, weekday, restDays);
+  const enriched = enrichScheduleExercises(exercises, identityIndex);
+  return exercises.map((exercise, index) => {
+    const base = generatedExerciseDefaults(exercise, index);
+    const identity = enriched[index];
+    return identity?.exerciseId || identity?.slug
+      ? {...base, exerciseId: identity.exerciseId, slug: identity.slug}
+      : base;
+  });
 }
 
 export function scheduleHasRestDayViolation(schedule: unknown, restDays: readonly string[]): boolean {

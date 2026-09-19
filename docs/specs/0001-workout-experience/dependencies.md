@@ -48,7 +48,11 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE","status":"CLOSED","frozen":true,"verification":"PASS","reportPath":"reports/workout-v2-impl-01/GATE-01-completeness.json","blockCompleteness":"PASS"},
     {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","verification":"PASS","providesCapabilities":["V2_PROGRAM_DRIVEN_COMPOSITION_V1"]},
     {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS"},
-    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
+    {"id":"WP-15","dependsOn":["RUN-4-PROGRAM-COMPOSITION","WP-13"],"kind":"WORK_PACKAGE","workstream":"REAL_PRODUCT_ENTRY","readinessRule":"DAG_DERIVED","admissionPath":"docs/admissions/WP-15.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"requiresCapabilities":[{"id":"V2_PROGRAM_DRIVEN_COMPOSITION_V1","provider":"RUN-4-PROGRAM-COMPOSITION"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}],"providesCapabilities":["V2_NORMAL_PRODUCT_ENTRY_V1","V2_REAL_PROGRAM_LAUNCH_V1"]},
+    {"id":"WP-16","dependsOn":["WP-15","WP-13"],"kind":"WORK_PACKAGE","workstream":"QA_PROGRAM_DOMAIN_PATH","readinessRule":"DAG_DERIVED","admissionPath":"docs/admissions/WP-16.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"requiresCapabilities":[{"id":"V2_NORMAL_PRODUCT_ENTRY_V1","provider":"WP-15"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}],"providesCapabilities":["V2_QA_PROGRAM_DOMAIN_PATH_V1","V2_QA_PRESCRIPTION_COVERAGE_V1"]},
+    {"id":"PRODUCT-INTEGRATION-CHECKPOINT","dependsOn":["WP-15","WP-16","INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01.json","status":"PLANNED","frozen":false,"verification":"PENDING"},
+    {"id":"BETA-DEPLOYMENT-AUTHORIZATION","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":false,"ownerDecisionRequired":true,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","status":"HUMAN_GATE","gateScope":"BETA_DEPLOYMENT_AUTHORITY"},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["BETA-DEPLOYMENT-AUTHORIZATION"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
 ```
@@ -94,12 +98,16 @@ route now preserves Program-owned exercise order and passes the resolved
 prescription directly into the reusable shell/orchestrator path; no numbered
 or fixture-specific presentation flow was added. Its close-out is
 [`RUN-4-PROGRAM-COMPOSITION-closeout.json`](../../../reports/workout-v2-impl-01/RUN-4-PROGRAM-COMPOSITION-closeout.json).
-The canonical `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW` gate now sits
-immediately upstream of `RUN-5-OWNER-ACCEPTANCE`; it owns the machine evidence
+The canonical `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW` gate remains the
+historical Run-4 machine boundary. The downstream product-integration packages
+`WP-15` and `WP-16` now sit before a second complete-flow machine checkpoint;
+that checkpoint owns the machine evidence
 and `KNOWN_GOOD_SHA` in
 [`docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json`](../../../docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json).
 The complete-flow Owner visual gate remains downstream and has not been
-satisfied by this machine execution.
+satisfied by this machine execution. Beta deployment authorization is a
+separate existing governance gate because the repository currently provides
+no canonical Beta deployment authority.
 
 ## 2. Hard dependencies
 
@@ -152,7 +160,8 @@ predecessor is CLOSED when the required capability is absent or unrepresented.
 | 4 | WP-09 · WP-10 ∥ WP-13 ∥ WP-14 | mentor/a11y assertions and the shared prescription contract remain independently scoped; WP-14 reconciles the missing orchestration control-state boundary |
 | 5 | WP-08 (after WP-14) | controls consume the verified orchestration capability plus frozen SET/REST contracts |
 | 6 | WP-12 (after WP-06 + WP-07 + WP-13 + WP-14) | Run 2 result/Exit block follows the frozen Run 1 capabilities, shared contract, and control-state authority |
-| 7 | GATE-01 → program-driven Prototype Composition only after PASS | completeness is audited explicitly before composition |
+| 7 | GATE-01 → program-driven Product Composition only after PASS | completeness is audited explicitly before composition |
+| 8 | WP-15 → WP-16 → PRODUCT-INTEGRATION-CHECKPOINT → BETA-DEPLOYMENT-AUTHORIZATION → RUN-5 | normal product entry, QA domain-path evidence, and deployment authority are explicit downstream gates |
 
 Parallel work must never edit the same contract file concurrently; contract changes go through the owning WP. WP-04/WP-09 may start in wave 2 **only** because the view-model contract is a design output frozen at WP-02's design start — if that freeze slips, they wait (they never invent their own view-model).
 

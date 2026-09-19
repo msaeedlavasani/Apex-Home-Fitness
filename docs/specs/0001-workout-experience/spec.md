@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `FINALIZED — awaiting owner merge review` (product decision phase complete; implementation NOT authorized) |
+| STATUS | `CURRENT — Workout Experience V2 product implementation authorized; downstream product-integration work is staged before RUN-5 acceptance` |
 | SPEC_CLASS | `STANDARD` (docs-only artifact; the eventual implementation is expected to be CRITICAL — see §0.1) |
 | TASK_PROFILE | `CODE_NO_DEPLOY` |
-| OWNER_GATE | **D2 APPROVED** (2026-09-14) + owner product-decision phase **COMPLETE** — `SPEC_READINESS = READY`, remaining blocking product decisions = **NONE**; implementation **NOT authorized** |
+| OWNER_GATE | **D2 APPROVED** (2026-09-14) + product-integration decision **AUTHORIZED 2026-09-19** — `SPEC_READINESS = READY`, remaining blocking product decisions = **NONE** |
 | TASKS.md entry | [`../../TASKS.md`](../../TASKS.md) → `SPECKIT-PILOT-01` |
 | Date | 2026-09-14 · Baseline: main `80b6eb5` · Prototype evidence: DEV `prototype/workout-layout-blueprint` @ `a62a7ce` |
 
@@ -63,15 +63,17 @@ This illustration must not imply exactly 3 sets, mandatory REST after every set,
 
 **CONFIRMED — authority boundaries.** Program/Prescription owns *what is prescribed*. The Workout Session Orchestrator owns *where the session is and what comes next*. The Execution Engine owns *how the current Set executes*. The Pose/Skeleton Harness supplies physical movement evidence. Presentation modules render resolved state and do not own global sequencing.
 
-**CONFIRMED — program-driven composition.** The Workout V2 prototype is a resolved Workout Program supplied to the reusable Workout Experience; it is not a manually authored sequence of screens, Sets, Rests, or exercise-specific routes. The Orchestrator derives runtime topology from the resolved Program and reuses the same `INTRO`, `SET`, `SET_RESULT`, and `REST` capabilities for every Exercise and Set. Changing only resolved program/prescription data must be capable of changing the executed topology without adding capability or exercise-number-specific flow components.
+**CONFIRMED — program-driven composition.** Workout Experience V2 is the current product implementation. It consumes a resolved Workout Program through the reusable shared contract; it is not a manually authored sequence of screens, Sets, Rests, or exercise-specific routes. The Orchestrator derives runtime topology from the resolved Program and reuses the same `INTRO`, `SET`, `SET_RESULT`, and `REST` capabilities for every Exercise and Set. Changing only resolved program/prescription data must be capable of changing the executed topology without adding capability or exercise-number-specific flow components.
 
-**CONFIRMED — asymmetric validation fixture.** Final prototype composition must validate with two Exercises having different Set counts, initially `Exercise 1 = 2 Sets` and `Exercise 2 = 3 Sets`. A second program-only variant must be able to change this to `Exercise 1 = 3 Sets` and `Exercise 2 = 1 Set`. These are validation inputs, not architectural constants; exercise identity, mode, targets, duration and Set counts remain resolved from the Program/Prescription.
+**CONFIRMED — asymmetric validation fixture.** Product integration must validate with a small persisted QA Program containing multiple Exercises, asymmetric Set counts, both `REP_BASED` and `TIME_BASED` prescriptions, and applicable between-set/between-exercise rest. A second program-only variant must be able to change topology without changing presentation components. These are validation inputs, not architectural constants; exercise identity, order, mode, targets, duration, fallback duration and Set counts remain resolved from the Program/Prescription.
+
+**CONFIRMED — normal product entry.** An authenticated user reaches Workout Experience V2 through the existing Dashboard/Program/workout navigation and the persisted Program/Prescription domain path. An isolated review route is not an acceptance path, and product behavior must not branch on test identity.
 
 ## 3. Non-goals
 
 - No program-generation change (generator stays source-independent).
 - No camera/pose feature authorization — observation remains gated (CP-04/CP-05; TS-02; ADR-0021).
-- No implementation in this artifact.
+- No unrelated implementation or deployment in this artifact; the authorized downstream integration work is represented by `WP-15` and `WP-16` in the executable backlog.
 - No renderer, animation format, asset pipeline, or tracking-technology selection.
 - No schema/storage, event, persistence, or analytics representation decisions.
 - The §2 future module examples are **not** v1 scope.

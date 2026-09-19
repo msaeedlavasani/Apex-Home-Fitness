@@ -74,6 +74,8 @@ import {
 export interface MentorStageProps {
   /** Freezes the demonstration (orchestration pause authority). */
   paused: boolean;
+  /** False when the resolved identity has no matching demonstration asset. */
+  enabled?: boolean;
   /** Layout host the canvas absolutely fills (shell-controlled geometry). */
   fillHost?: boolean;
   /** Localized presentation strings (loading/failed/aria). */
@@ -97,7 +99,7 @@ const MOBILE_CUE_FRAMING_RESERVE_PX = 26;
 const MOBILE_PRESENTATION_OFFSET_Y = 0.125;
 const DESKTOP_PRESENTATION_OFFSET_Y = 0.1;
 
-export function MentorStage({paused, fillHost = true, strings, onReady, onFailed}: MentorStageProps) {
+export function MentorStage({paused, enabled = true, fillHost = true, strings, onReady, onFailed}: MentorStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
   const onReadyRef = useRef(onReady);
@@ -119,6 +121,11 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (!enabled) {
+      setStatus('failed');
+      onFailedRef.current?.();
+      return;
+    }
 
     // Mutable attach state shared by the boot phases (all mutations happen
     // on the main thread).
@@ -442,7 +449,7 @@ export function MentorStage({paused, fillHost = true, strings, onReady, onFailed
     };
     // Mount-once lifecycle: the stage exists exactly while INTRO presents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   return (
     <div

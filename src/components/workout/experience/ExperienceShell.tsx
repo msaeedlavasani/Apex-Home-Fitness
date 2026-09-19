@@ -17,8 +17,7 @@ import {createWorkoutMusic,
   type WorkoutMusicController,
 } from '@/lib/workout/experience/sessionMusic';
 import {
-  resolveMentorFixtureExercise,
-  UnsupportedMentorExerciseError,
+  isSquatMentorExercise,
 } from '@/lib/workout/experience/mentorBinding';
 import {
   disposeMentorPreparation,
@@ -41,6 +40,7 @@ import {
   WorkoutV2LanguageControl,
   WorkoutV2ThemeControl,
 } from './ShellControls';
+import type {SessionOrchestrationEffect, WorkoutResultSummary} from '@/lib/workout/sessionV2Contracts';
 
 function markExperiencePerformance(name: string): void {
   if (typeof performance === 'undefined') return;
@@ -110,6 +110,8 @@ export interface ExperienceShellProps {
   sessionTitle?: string;
   /** Fired when START commits (after the orchestration transition succeeds). */
   onSessionStarted?: () => void;
+  /** Fired once the orchestration enters the semantic result boundary. */
+  onWorkoutResultReady?: (summary: WorkoutResultSummary) => void;
   /** Extra classes on the shell surface. */
   className?: string;
 }
@@ -118,6 +120,7 @@ export function ExperienceShell({
   exercises,
   sessionTitle,
   onSessionStarted,
+  onWorkoutResultReady,
   className,
 }: ExperienceShellProps) {
   const t = useTranslations('WorkoutV2');
@@ -141,12 +144,13 @@ export function ExperienceShell({
     skipExercise,
   } = useWorkoutSession(exercises, {
     onEffect: useMemo(() => {
-      const handler = (effect: {kind: string}) => {
+      const handler = (effect: SessionOrchestrationEffect) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
+        if (effect.kind === 'WORKOUT_RESULT_READY') onWorkoutResultReady?.(effect.summary);
         if (effect.kind === 'EXIT_CONFIRMED') router.push('/dashboard');
       };
       return handler;
-    }, [onSessionStarted, router]),
+    }, [onSessionStarted, onWorkoutResultReady, router]),
   });
 
   // HANDOFF INSTRUMENTATION (owner device correction §1): performance marks
@@ -197,24 +201,13 @@ export function ExperienceShell({
     return {exercises: exercises.length, sets: setCount};
   }, [exercises]);
 
-  // MENTOR FIXTURE BINDING (owner device correction §3 — fail-closed):
-  // the current validation fixture demonstrates EXACTLY ONE exercise (the
-  // canonical Squat GLB + its squat-authored cues). The presented identity
-  // MUST be that exercise — the previous fallback silently bound an
-  // unsupported resolved exercise ("Plank Hold") to the Squat Mentor.
-  // The shell picks the first SUPPORTED plan exercise for the fixture
-  // presentation; a plan with no supported exercise fails HONESTLY (typed
-  // error surface, rendered AFTER all hooks below) instead of mismatching.
-  // Raw plan exercises (not the resolved prescription — nameKeys only exist
-  // there) feed the check.
-  const fixtureError = useMemo(() => {
-    try {
-      resolveMentorFixtureExercise(exercises.map((exercise) => ({exercise})));
-      return null;
-    } catch (error) {
-      return error instanceof UnsupportedMentorExerciseError ? error : null;
-    }
-  }, [exercises]);
+  // Mentor support is presentation capability, not prescription authority.
+  // Unsupported resolved identities use the canonical degraded mode; they are
+  // never renamed or silently bound to the Squat demonstration.
+  const mentorSupportedForActiveExercise = useMemo(() => {
+    const exercise = viewModel.introExercise ?? viewModel.activeExercise;
+    return exercise == null || isSquatMentorExercise(exercise.exercise);
+  }, [viewModel.introExercise, viewModel.activeExercise]);
 
   // Prescription context for the restored pill (correction §11): derived
   // from the RESOLVED exercise — the canonical plan contract carries no
@@ -371,31 +364,6 @@ export function ExperienceShell({
     [viewModel.activeExercise],
   );
 
-  // Fail-closed fixture surface — rendered only AFTER every hook above has
-  // run (React rules-of-hooks), never early-returned past them.
-  if (fixtureError) {
-    return (
-      <section
-        data-workout-v2-shell=""
-        aria-label={t('shellLabel')}
-        className={cn(
-          'relative isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[color:var(--app-background)]',
-          className,
-        )}
-      >
-        <BackstageBackdrop theme={theme} />
-        <div role="alert" className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <p className="max-w-md text-sm font-semibold text-[color:var(--apex-text)]">
-            {t('sessionLive')}
-          </p>
-          <p className="mt-2 max-w-md text-xs text-[color:var(--apex-text-secondary)]">
-            {fixtureError.message}
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section
       ref={shellRef}
@@ -484,6 +452,7 @@ export function ExperienceShell({
         {activeModule === 'EXERCISE_INTRO' && (
           <IntroStage
             viewModel={viewModel}
+            mentorSupported={mentorSupportedForActiveExercise}
             firstExerciseLabel={t('intro.firstExercise')}
             equipment={t('preparing.bodyweight')}
             cues={t.raw('intro.cues') as readonly string[]}

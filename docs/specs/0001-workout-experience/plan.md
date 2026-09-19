@@ -33,7 +33,7 @@ Modular composition with orchestration authority · `EXERCISE_IDENTITY != WORKOU
 
 **Workout Session = Resolved Prescription + Session Orchestration + Composed Experience Modules.**
 
-The final prototype is a **resolved Workout Program input** to this architecture,
+The current Workout Experience V2 product is a **resolved Workout Program input** to this architecture,
 not a manually authored screen/Set/REST sequence. The Orchestrator derives the
 runtime topology from the resolved Program and supplies each current state to the
 same reusable capabilities. Program-only topology changes must not require new

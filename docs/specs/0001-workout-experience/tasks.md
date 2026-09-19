@@ -202,11 +202,45 @@ re-review, and only then is the experience frozen.
 2. **Control-state prerequisite:** WP-14 (orchestration control-state capability reconciliation), then WP-08 (session controls + outcomes) with task-scoped machine/agent verification and freeze evidence.
 3. **RUN 2 prerequisite:** WP-13 (shared Program ↔ Workout prescription contract), then WP-12 (`WORKOUT_RESULT + EXIT`) with task-scoped machine/agent verification and freeze evidence.
 4. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
-5. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`; close-out evidence is recorded in the canonical execution projection and `RUN-4-PROGRAM-COMPOSITION-closeout.json`.
+5. **RUN 4:** program-driven Product Composition only after `BLOCK_COMPLETENESS = PASS`; the historical prototype label is retained only in evidence records. Close-out evidence is recorded in the canonical execution projection and `RUN-4-PROGRAM-COMPOSITION-closeout.json`.
 6. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.
 
-The prototype must prove that changing only resolved Program data changes topology
+The product implementation must prove that changing only resolved Program data changes topology
 (2/3 Sets → 3/1 Sets) through the same reusable capabilities.
+
+## Downstream product-integration packages (Owner-authorized 2026-09-19)
+
+### WP-15 — Real product entry and Workout V2 promotion *(CRITICAL product integration; single writer)*
+
+- **Purpose:** make the existing Workout Experience V2 implementation the normal authenticated workout experience reached from Dashboard/Program navigation, without creating a second product flow.
+- **Dependencies:** `RUN-4-PROGRAM-COMPOSITION`, `WP-13`; consumes the existing Program API, localized routing, AppShell/PWA shell, shared prescription adapter, and frozen orchestration/presentation capabilities.
+- **Ownership scope:** normal workout route adapter, real Program-derived V2 launch, session start/result persistence seam, normal exit back to the localized Dashboard, and compatibility treatment for the historical review route.
+- **Prohibited scope:** changing Program prescription semantics, test-identity conditionals, hidden QA links, new orchestration authority, Production/Beta deployment, or per-task Owner review.
+- **Verification:** route/navigation tests, persisted Program-to-shared-contract tests, result/exit persistence tests, EN/FA + RTL, dark/light, responsive/PWA-shell checks, and browser console/runtime evidence.
+- **Acceptance:** the normal authenticated product path launches V2 from the resolved Program; changing the Program changes topology without fixture-specific presentation code; no phone/user/account identity is read by product behavior.
+- **Real device:** installed-app semantics remain part of downstream complete-flow acceptance evidence; machine checks cover the route/service-worker/manifest contract where the environment permits.
+
+### WP-16 — QA Program through the real domain path *(CRITICAL data/verification integration; single writer)*
+
+- **Purpose:** provide a small repeatable QA Program input through the existing persisted Program/Prescription path so integration verification exercises multiple Exercises, asymmetric sets, `REP_BASED`, `TIME_BASED`, between-set/between-exercise rest, and explicit fallback duration where applicable.
+- **Dependencies:** `WP-15`, `WP-13`; uses existing Program persistence/seed/fixture mechanisms and the shared contract rather than a product-only fixture route.
+- **Ownership scope:** QA/test data and contract/domain verification only; Program-owned order and prescription values remain authoritative.
+- **Prohibited scope:** hardcoded test identities, product conditional branches, a second Workout implementation, adaptation policy, or schema migration unless a separately admitted DB_CHANGE becomes necessary.
+- **Verification:** persisted QA input resolves through the same API/domain adapter as ordinary Programs; contract invariants and topology proofs cover the required modes/rest/fallback/order semantics.
+- **Acceptance:** the QA Program is a data input to the real product path, not a numbered presentation flow; no product code depends on who receives it.
+- **Real device:** not required for the data package; it contributes evidence to the downstream complete-flow checkpoint.
+
+### PRODUCT-INTEGRATION-CHECKPOINT — Complete-flow machine integration gate
+
+- **Dependencies:** `WP-15`, `WP-16`, and the prior `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW`.
+- **Scope:** authoritative governance/admission checks, production build, relevant unit/contract/browser coverage, normal authenticated route evidence, QA Program topology proof, PWA shell checks where automatable, and branch/PR CI tied to the exact verified SHA.
+- **Rule:** PASS establishes a new auditable known-good baseline; FAIL blocks downstream progression and is repaired/rerun within authority.
+
+### BETA-DEPLOYMENT-AUTHORIZATION — existing deployment-authority Human Gate
+
+- **Dependencies:** `PRODUCT-INTEGRATION-CHECKPOINT`.
+- **Scope:** determine whether repository-authorized Beta deployment exists. The current permanent checkpoint policy says it does not; no deployment is inferred from this product decision.
+- **Rule:** this is a genuine deployment-authority gate, not a product scheduling choice and not Owner visual acceptance. RUN-5 remains downstream.
 
 ## Run 1 close-out — 2026-09-19
 
