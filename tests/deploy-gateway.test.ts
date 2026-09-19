@@ -58,7 +58,8 @@ test('Beta installer and service explicitly preserve Production isolation', () =
   const installer = readFileSync('ops/deploy-gateway/install-beta-path.sh', 'utf8');
   const service = readFileSync('ops/deploy-gateway/install-gateway.sh', 'utf8');
   assert.match(installer, /ahf_beta_db/);
-  assert.match(installer, /127\.0\.0\.1:3100/);
+  assert.match(installer, /host_ip.*127\.0\.0\.1/);
+  assert.match(installer, /published.*3100/);
   assert.match(installer, /apexhomefit_prod_db/);
   assert.match(service, /\/opt\/ahf-beta/);
 });
