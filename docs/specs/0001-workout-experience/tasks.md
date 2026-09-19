@@ -175,6 +175,17 @@ re-review, and only then is the experience frozen.
 - **Acceptance:** Workout consumes only the shared resolved contract; Program/Prescription owns WHAT, Orchestrator derives HOW/topology; the contract carries explicit mode/targets/set/rest semantics, versioning, and compatibility behavior without freezing an implementation storage schema prematurely.
 - **Real device:** not required; this is a pure architecture/contract prerequisite.
 
+## WP-14 — Orchestration control-state capability reconciliation *(CRITICAL follow-up; single writer)*
+
+- **Purpose:** complete the narrowly missing orchestration capability required by the approved control-surface boundary, without reopening or rewriting WP-02's historical CLOSED/FROZEN scope.
+- **Dependencies:** WP-02, WP-06, WP-07; consumes the frozen base orchestration/view-model contract plus the accepted SET_RESULT and REST capability boundaries.
+- **Ownership scope:** orchestration-authority extension only: approved control actions, session-scoped deferred/skipped state, completion eligibility, and the exit action contract required by downstream consumers.
+- **Outputs:** versioned orchestration capability contract and adapter seam exposing the approved actions/state to consumers; verification evidence that unresolved deferred work blocks completion.
+- **Prohibited scope:** modifying WP-02 historical close-out, presentation/control-surface UI, prescription writes, new global state machines, product scheduling policy, WORKOUT_RESULT presentation, or Owner-gate changes.
+- **Verification:** orchestration contract tests, capability-provider/consumer DAG validation, negative readiness test proving WP-08 remains blocked without this capability, and adapter contract tests.
+- **Acceptance:** the capability is CLOSED/FROZEN only after its contract/state/action boundary is verified; WP-08 can then become READY_DERIVED without owning orchestration state or transitions.
+- **Real device:** not required for this contract/orchestration prerequisite.
+
 ## GATE-01 — Workout Experience Block-Completeness Audit *(Run 3; non-executable gate)*
 
 - **Purpose:** audit the implemented and accepted reusable Workout Experience capabilities against `spec.md`, rather than inferring completeness from planned work-package completion.
@@ -188,10 +199,11 @@ re-review, and only then is the experience frozen.
 ## Roadmap overlay *(non-executable)*
 
 1. **RUN 1:** WP-06 (`SET + SET_RESULT`) ∥ WP-07 (`REST`), then task-scoped machine/agent verification and freeze evidence.
-2. **RUN 2 prerequisite:** WP-13 (shared Program ↔ Workout prescription contract), then WP-12 (`WORKOUT_RESULT + EXIT`) with task-scoped machine/agent verification and freeze evidence.
-3. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
-4. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`.
-5. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.
+2. **Control-state prerequisite:** WP-14 (orchestration control-state capability reconciliation), then WP-08 (session controls + outcomes) with task-scoped machine/agent verification and freeze evidence.
+3. **RUN 2 prerequisite:** WP-13 (shared Program ↔ Workout prescription contract), then WP-12 (`WORKOUT_RESULT + EXIT`) with task-scoped machine/agent verification and freeze evidence.
+4. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
+5. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`.
+6. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.
 
 The prototype must prove that changing only resolved Program data changes topology
 (2/3 Sets → 3/1 Sets) through the same reusable capabilities.
@@ -204,8 +216,10 @@ reports are [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-cl
 and [`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json);
 shared UI conformance evidence is in
 [`run-1-ui-conformance-evidence.md`](../../../reports/workout-v2-impl-01/run-1-ui-conformance-evidence.md).
-No Owner visual acceptance was required for either child. `WP-12` remains the
-next dependency node but is not READY in the canonical execution projection.
+No Owner visual acceptance was required for either child. The canonical
+execution projection now exposes WP-14 as the orchestration prerequisite;
+WP-08 and WP-12 remain blocked until their declared capability providers are
+verified and frozen.
 
 ## Convergence checklist (when implementation lands)
 
@@ -218,7 +232,7 @@ next dependency node but is not READY in the canonical execution projection.
 
 | Field | Value |
 |---|---|
-| CURRENT_STATUS | `RUN_1_CLOSED` — WP-06 and WP-07 are frozen after task-scoped verification |
-| NEXT_ACTION | No READY Workout V2 child exists; WP-12 remains canonical `NOT_YET` and requires its own admission when activated |
-| NEXT_ACTION_AUTONOMOUS | `NO` |
-| BLOCKERS | Canonical eligibility gate for the next slice; no unresolved Owner decision for Run 1 |
+| CURRENT_STATUS | `RUN_1_CLOSED` — WP-06 and WP-07 are frozen after task-scoped verification; WP-14 is the next orchestration prerequisite |
+| NEXT_ACTION | Repository-derived admission of WP-14 when autonomous execution resumes; WP-08 and WP-12 remain capability-gated |
+| NEXT_ACTION_AUTONOMOUS | `YES` |
+| BLOCKERS | WP-14 control-state capability is not yet verified/closed; no unresolved Owner decision |

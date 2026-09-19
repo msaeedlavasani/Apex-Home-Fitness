@@ -313,8 +313,8 @@ function checkWorkoutV2Ready() {
   try {
     const stateFile = 'docs/TASKS.md';
     const dagFile = 'docs/specs/0001-workout-experience/dependencies.md';
-    const state = readTaggedJsonBlock(stateFile, 'WORKOUT_V2_AUTONOMOUS_STATE');
-    const dag = readTaggedJsonBlock(dagFile, 'WORKOUT_V2_AUTONOMOUS_DAG');
+    const state = readTaggedJsonBlock(process.env.WORKOUT_V2_STATE_FILE || stateFile, 'WORKOUT_V2_AUTONOMOUS_STATE');
+    const dag = readTaggedJsonBlock(process.env.WORKOUT_V2_DAG_FILE || dagFile, 'WORKOUT_V2_AUTONOMOUS_DAG');
     if (state.schema !== 1 || dag.schema !== 1) throw new Error('unsupported Workout V2 execution projection schema');
     for (const file of [state.canonicalSpec, state.canonicalPlan, state.canonicalTasks, state.canonicalDependencies, state.parentAdmission]) {
       if (typeof file !== 'string' || !fs.existsSync(path.resolve(root, file))) throw new Error(`canonical execution reference missing: ${file}`);
@@ -337,6 +337,16 @@ function checkWorkoutV2Ready() {
     for (const node of dag.nodes ?? []) {
       if (!node.id || nodes.has(node.id)) throw new Error(`duplicate or missing DAG node: ${node.id}`);
       if (!Array.isArray(node.dependsOn) || !Array.isArray(node.softDependsOn ?? [])) throw new Error(`invalid dependency arrays for ${node.id}`);
+      if (!Array.isArray(node.providesCapabilities ?? [])) throw new Error(`invalid providesCapabilities for ${node.id}`);
+      if (!Array.isArray(node.requiresCapabilities ?? [])) throw new Error(`invalid requiresCapabilities for ${node.id}`);
+      for (const capability of node.providesCapabilities ?? []) {
+        if (typeof capability !== 'string' || !capability.trim()) throw new Error(`invalid provided capability for ${node.id}`);
+      }
+      for (const requirement of node.requiresCapabilities ?? []) {
+        if (!requirement || typeof requirement.id !== 'string' || !requirement.id.trim() || typeof requirement.provider !== 'string' || !requirement.provider.trim()) {
+          throw new Error(`invalid required capability for ${node.id}`);
+        }
+      }
       nodes.set(node.id, node);
     }
     for (const id of nodes.keys()) {
@@ -349,6 +359,15 @@ function checkWorkoutV2Ready() {
       for (const dependency of [...node.dependsOn, ...node.softDependsOn ?? []]) {
         if (!nodes.has(dependency)) throw new Error(`DAG dependency ${dependency} referenced by ${node.id} is missing`);
         if (dependency === node.id) throw new Error(`DAG self-dependency: ${node.id}`);
+      }
+      for (const requirement of node.requiresCapabilities ?? []) {
+        if (!nodes.has(requirement.provider)) throw new Error(`capability provider ${requirement.provider} referenced by ${node.id} is missing`);
+        if (![...node.dependsOn, ...node.softDependsOn ?? []].includes(requirement.provider)) {
+          throw new Error(`capability provider ${requirement.provider} is not a dependency of ${node.id}`);
+        }
+        if (!(nodes.get(requirement.provider).providesCapabilities ?? []).includes(requirement.id)) {
+          throw new Error(`capability ${requirement.id} is not provided by declared provider ${requirement.provider}`);
+        }
       }
     }
     const visit = new Set();
@@ -388,6 +407,11 @@ function checkWorkoutV2Ready() {
       });
       if (unmet.length) blockers.push(`DEPENDENCIES_UNSATISFIED=${unmet.join(',')}`);
       if (item.ownerDecisionRequired === true) blockers.push('OWNER_DECISION_REQUIRED');
+      const unmetCapabilities = (node.requiresCapabilities ?? []).filter((requirement) => {
+        const providerState = items.get(requirement.provider);
+        return providerState.status !== 'CLOSED' || providerState.frozen !== true;
+      });
+      if (unmetCapabilities.length) blockers.push(`CAPABILITIES_UNSATISFIED=${unmetCapabilities.map((requirement) => requirement.id).join(',')}`);
       if (blockers.length) blocked.push({id: node.id, blockers});
       else ready.push({id: node.id, workstream: node.workstream ?? null, eligibility: readinessRule === 'DAG_DERIVED' ? 'READY_DERIVED' : 'READY', eligibilityDerivedAutomatically: readinessRule === 'DAG_DERIVED', admissionRequired: item.admissionRequired === true, taskProfile: item.taskProfile ?? null, parallelSafety: item.parallelSafety ?? null, ownerVisualAcceptanceRequired: item.ownerVisualAcceptanceRequired === true});
     }

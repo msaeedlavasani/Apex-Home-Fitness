@@ -44,7 +44,7 @@ Implementation boundaries (mapped to the current codebase — **not** one compon
 | Layer | Implementation boundary (proposed) | Owns |
 |---|---|---|
 | **Session core (contract extension)** | `src/lib/workout/sessionCore.ts` evolved additively: module/phase vocabulary + progression policy (`AUTO` \| `CONFIRMATION_REQUIRED`) | Pure state transitions; no I/O, no React |
-| **Orchestration** | New pure module `src/lib/workout/orchestration.ts` (orchestrator contract) + adapter wiring in `useWorkoutEngine` | Applicability · module order · active exercise · set/rest progression · transitions · deferred/skipped resolution · completion eligibility · session actions |
+| **Orchestration** | WP-02 frozen base contract + the single-writer WP-14 follow-up extension | Applicability · module order · active exercise · set/rest progression · transitions · deferred/skipped resolution · completion eligibility · session actions |
 | **Experience presentation** | `src/components/workout/experience/*` (shell + stage components) | Rendering current state; per-module local behavior only |
 | **Mentor presentation** | Boundary component (lazy, capability-detected) | Demonstration + degraded presentation |
 | **Progress** | ONE mode-aware progress component | Display of prescription/session state |
@@ -110,6 +110,13 @@ Session states (implementation view): `LOADING → READY → (PREPARING) → [Ex
 - `WORKOUT_RESULT` is reachable **only** when no required unresolved Exercise obligation remains; there is no terminal REST after the final required Set.
 - Pause preserves position and execution context; exit is distinct from complete.
 - Confirmation gates are orchestration/prescription-applicability rules — never module-owned branches.
+
+Historical boundary: WP-02 was accepted and frozen for its admitted base
+orchestration/view-model scope. The later control-state contract was not
+delivered by that freeze. WP-14 is the single-writer follow-up extension for
+the approved session-control actions, deferred/skipped state, completion
+eligibility, and exit action seam. WP-08 consumes that verified capability;
+it must not recreate or own any orchestration transition logic.
 
 ## 6. Exercise Block contract
 
@@ -254,7 +261,10 @@ The roadmap from the current accepted START/PREPARING/INTRO boundary is:
 ```text
 RUN 1  → SET + SET_RESULT  ∥  REST
           → task-scoped machine/agent verification + freeze evidence
-RUN 2  → WORKOUT_RESULT + EXIT
+CONTROL → orchestration control-state capability reconciliation (WP-14)
+          → session controls + outcomes consumer (WP-08)
+          → task-scoped machine/agent verification + freeze evidence
+RUN 2  → WORKOUT_RESULT + EXIT (after WP-13 + WP-14)
           → task-scoped machine/agent verification + freeze evidence
 RUN 3  → WORKOUT EXPERIENCE BLOCK-COMPLETENESS AUDIT / GATE
           → if FAIL, admit only genuinely missing reusable capability/capabilities
