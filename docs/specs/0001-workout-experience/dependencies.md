@@ -108,10 +108,12 @@ and `KNOWN_GOOD_SHA` in
 [`docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json`](../../../docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json).
 The complete-flow Owner visual gate remains downstream and has not been
 satisfied by this machine execution. The Owner authorized establishment of the
-governed Beta path on 2026-09-19. The capability is now READY_DERIVED after
+governed Beta path on 2026-09-19. The capability is now CLOSED/FROZEN after
 reconciling the existing host, `beta.apexhomefit.ir` DNS/TLS/reverse-proxy
-path, isolated `ahf_beta_db` volume, and the constrained gateway extension into
-canonical repository work. Production remains unauthorized.
+path, isolated `ahf_beta_db` volume, constrained gateway extension, exact-SHA
+deployment, rollback, and authenticated QA Program entry evidence into
+canonical repository work. Production remains unauthorized; RUN-5 remains the
+downstream complete-flow Human Gate.
 
 ## 2. Hard dependencies
 
