@@ -2,7 +2,7 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {WallClockAccumulator} from '@/lib/workout/wallClock';
-import {resolvePrescription} from '@/lib/workout/resolvedPrescription';
+import {sharedPrescriptionFromPersistedPlan} from '@/lib/workout/prescriptionContract';
 import {
   type SessionAction,
   type SessionOrchestrationEffect,
@@ -66,6 +66,20 @@ export interface UseWorkoutSessionResult {
   recordRep: () => void;
   /** Ends only the active REST early; orchestration chooses the destination. */
   skipRest: () => void;
+  /** Requests the later WP-12 exit boundary; does not navigate by itself. */
+  exitWorkout: () => void;
+  /** Confirms the orchestration-owned exit request. */
+  confirmExit: () => void;
+  /** Cancels the exit request and restores the prior session context. */
+  cancelExit: () => void;
+  /** Restarts only the currently active Set through orchestration. */
+  restartCurrentSet: () => void;
+  /** Defers the current exercise or skips it for this session. */
+  deferExercise: (disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => void;
+  /** Resolves a surfaced deferred exercise without mutating its prescription. */
+  resolveDeferredExercise: (disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION') => void;
+  /** Skips the current exercise for this session through orchestration. */
+  skipExercise: () => void;
 }
 
 export function useWorkoutSession(
@@ -75,7 +89,7 @@ export function useWorkoutSession(
   const {onEffect, now = () => Date.now()} = options;
 
   // Resolve the prescription once per plan change (fail-closed resolver).
-  const prescription = useMemo(() => resolvePrescription(exercises), [exercises]);
+  const prescription = useMemo(() => sharedPrescriptionFromPersistedPlan(exercises), [exercises]);
 
   // The orchestrator is recreated when the resolved prescription changes
   // (e.g. the program finishes loading) — the same plan-identity semantics as
@@ -201,7 +215,64 @@ export function useWorkoutSession(
     emit(effects);
   }, [orchestrator, emit]);
 
-  return {viewModel: currentViewModel, startSession, pause, resume, beginWorkSet, recordRep, skipRest};
+  const exitWorkout = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'EXIT_WORKOUT'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const confirmExit = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'CONFIRM_EXIT'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const cancelExit = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'CANCEL_EXIT'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const restartCurrentSet = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'RESTART_CURRENT_SET'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const deferExercise = useCallback((disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => {
+    const {state, effects} = orchestrator.dispatch({type: 'DEFER_EXERCISE', disposition});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const resolveDeferredExercise = useCallback((disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION') => {
+    const {state, effects} = orchestrator.dispatch({type: 'RESOLVE_DEFERRED_EXERCISE', disposition});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const skipExercise = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'SKIP_EXERCISE'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  return {
+    viewModel: currentViewModel,
+    startSession,
+    pause,
+    resume,
+    beginWorkSet,
+    recordRep,
+    skipRest,
+    exitWorkout,
+    confirmExit,
+    cancelExit,
+    restartCurrentSet,
+    deferExercise,
+    resolveDeferredExercise,
+    skipExercise,
+  };
 }
 
 export default useWorkoutSession;

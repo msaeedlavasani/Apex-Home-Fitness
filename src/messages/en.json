@@ -240,7 +240,29 @@
       "musicOnShort": "Sound",
       "musicOffShort": "Sound",
       "more": "More",
-      "exit": "Exit workout"
+      "exit": "Exit workout",
+      "doLater": "Do exercise later",
+      "skipExercise": "Skip for this session",
+      "performNow": "Perform now",
+      "skipDeferred": "Skip for this session",
+      "restartSet": "Restart set",
+      "confirmExitTitle": "Leave this workout?",
+      "confirmExitDescription": "Your current session will end and return to the dashboard.",
+      "cancelExit": "Keep working out",
+      "confirmExit": "Leave workout"
+    },
+    "outcomes": {
+      "completed": "Completed",
+      "deferred": "Deferred",
+      "skipped": "Skipped"
+    },
+    "result": {
+      "title": "Workout complete",
+      "subtitle": "Your session is recorded as a completed workout experience.",
+      "completedSets": "Sets",
+      "exercises": "Exercises",
+      "skipped": "Skipped",
+      "exit": "Return to dashboard"
     },
     "exerciseDetails": {
       "title": "Exercise Details",

@@ -3,6 +3,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {cn} from '@/lib/cn';
 import {useTranslations} from 'next-intl';
+import {useRouter} from '@/i18n/navigation';
 import {BrandIcon} from '@/components/layout/BrandIcon';
 import {useTheme} from '@/components/providers/ThemeProvider';
 import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
@@ -31,6 +32,10 @@ import {PreparingStage} from './PreparingStage';
 import {IntroStage} from './IntroStage';
 import {WorkSetStage} from './WorkSetStage';
 import {RestStage} from './RestStage';
+import {SessionControlSurface} from './SessionControlSurface';
+import {SessionOutcomeSummary} from './SessionOutcomeSummary';
+import {WorkoutResultStage} from './WorkoutResultStage';
+import {ExitConfirmation} from './ExitConfirmation';
 import {
   WorkoutV2ExitControl,
   WorkoutV2LanguageControl,
@@ -116,16 +121,33 @@ export function ExperienceShell({
   className,
 }: ExperienceShellProps) {
   const t = useTranslations('WorkoutV2');
+  const router = useRouter();
   const {resolvedTheme} = useTheme();
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
 
-  const {viewModel, startSession, pause, resume, beginWorkSet, recordRep, skipRest} = useWorkoutSession(exercises, {
+  const {
+    viewModel,
+    startSession,
+    pause,
+    resume,
+    beginWorkSet,
+    recordRep,
+    skipRest,
+    exitWorkout,
+    confirmExit,
+    cancelExit,
+    restartCurrentSet,
+    deferExercise,
+    resolveDeferredExercise,
+    skipExercise,
+  } = useWorkoutSession(exercises, {
     onEffect: useMemo(() => {
       const handler = (effect: {kind: string}) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
+        if (effect.kind === 'EXIT_CONFIRMED') router.push('/dashboard');
       };
       return handler;
-    }, [onSessionStarted]),
+    }, [onSessionStarted, router]),
   });
 
   // Run 1 attaches the SET capability to the already-frozen hands-free INTRO
@@ -425,7 +447,7 @@ export function ExperienceShell({
           <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
           <WorkoutV2ThemeControl />
           <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
-          <WorkoutV2ExitControl />
+          <WorkoutV2ExitControl onExit={exitWorkout} />
         </div>
       </header>
 
@@ -479,6 +501,13 @@ export function ExperienceShell({
             mentorLoadingLabel={t('intro.mentorLoading')}
             mentorAriaLabel={t('intro.mentorAria')}
             onMentorReady={markMentorReady}
+            onDeferExercise={deferExercise}
+            onSkipExercise={skipExercise}
+            onResolveDeferredExercise={resolveDeferredExercise}
+            doLaterLabel={t('actions.doLater')}
+            skipExerciseLabel={t('actions.skipExercise')}
+            performNowLabel={t('actions.performNow')}
+            skipDeferredLabel={t('actions.skipDeferred')}
           />
         )}
         {(activeModule === 'WORK_SET' || activeModule === 'SET_RESULT') && (
@@ -490,6 +519,8 @@ export function ExperienceShell({
             repsLabel={t('set.reps')}
             secondsLabel={t('set.seconds')}
             resultLabel={t('set.result')}
+            restartCurrentSet={restartCurrentSet}
+            restartSetLabel={t('actions.restartSet')}
           />
         )}
         {activeModule === 'REST' && (
@@ -502,12 +533,48 @@ export function ExperienceShell({
             skipRestLabel={t('rest.skip')}
           />
         )}
+        {activeModule === 'WORKOUT_RESULT' && (
+          <WorkoutResultStage
+            viewModel={viewModel}
+            title={t('result.title')}
+            subtitle={t('result.subtitle')}
+            completedSetsLabel={t('result.completedSets')}
+            exercisesLabel={t('result.exercises')}
+            skippedLabel={t('result.skipped')}
+            exitLabel={t('result.exit')}
+            onExit={exitWorkout}
+          />
+        )}
         {activeModule === null && (
           <div role="status" className="flex flex-1 items-center justify-center px-4 text-center">
             <p className="text-sm text-[color:var(--apex-text-secondary)]">{t('sessionLive')}</p>
           </div>
         )}
+        <SessionOutcomeSummary
+          viewModel={viewModel}
+          completedLabel={t('outcomes.completed')}
+          deferredLabel={t('outcomes.deferred')}
+          skippedLabel={t('outcomes.skipped')}
+        />
+        <SessionControlSurface
+          viewModel={viewModel}
+          onPause={pause}
+          onResume={resume}
+          pauseLabel={t('actions.pause')}
+          resumeLabel={t('actions.resume')}
+        />
       </div>
+
+      {viewModel.exitRequested && (
+        <ExitConfirmation
+          title={t('actions.confirmExitTitle')}
+          description={t('actions.confirmExitDescription')}
+          cancelLabel={t('actions.cancelExit')}
+          confirmLabel={t('actions.confirmExit')}
+          onCancel={cancelExit}
+          onConfirm={confirmExit}
+        />
+      )}
 
       {/* MORE → Exercise Details (§34–§40): real surface, real data. */}
       {detailsOpen && detailsModel != null && (

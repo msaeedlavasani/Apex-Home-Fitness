@@ -12,6 +12,8 @@ export interface WorkSetStageProps {
   repsLabel?: string;
   secondsLabel?: string;
   resultLabel?: string;
+  restartCurrentSet?: () => void;
+  restartSetLabel?: string;
 }
 
 /**
@@ -27,6 +29,8 @@ export function WorkSetStage({
   repsLabel = 'reps',
   secondsLabel = 'seconds',
   resultLabel = 'Set complete',
+  restartCurrentSet = () => undefined,
+  restartSetLabel = 'Restart current set',
 }: WorkSetStageProps) {
   const exercise = viewModel.activeExercise;
   const progress = viewModel.setProgress;
@@ -46,6 +50,17 @@ export function WorkSetStage({
             ? `${result.completedReps} / ${result.targetReps ?? result.completedReps} ${repsLabel}`
             : `${result.targetSeconds ?? result.elapsedSeconds} ${secondsLabel}`}
         </p>
+        <Button
+          type="button"
+          data-workout-v2-restart-set=""
+          variant="outlined"
+          tone="primary"
+          size="sm"
+          className="mt-6"
+          onClick={restartCurrentSet}
+        >
+          {restartSetLabel}
+        </Button>
       </div>
     );
   }
@@ -80,6 +95,17 @@ export function WorkSetStage({
           {recordRepLabel}
         </Button>
       )}
+      <Button
+        type="button"
+        data-workout-v2-restart-set=""
+        variant="text"
+        tone="primary"
+        size="sm"
+        className="mt-3"
+        onClick={restartCurrentSet}
+      >
+        {restartSetLabel}
+      </Button>
     </div>
   );
 }

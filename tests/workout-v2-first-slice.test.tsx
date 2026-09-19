@@ -235,6 +235,10 @@ function preparingViewModel(seconds: number, exerciseName: string | null = 'Squa
     preparingSecondsRemaining: seconds,
     executionElapsedSeconds: 0,
     pausedFromModule: null,
+    exerciseOutcomes: exerciseName ? [{exerciseIndex: 0, status: 'ACTIVE'}] : [],
+    completionEligible: false,
+    exitRequested: false,
+    workoutResult: null,
   };
 }
 
@@ -249,7 +253,11 @@ function introViewModel(overrides: Partial<SessionViewModel> = {}): SessionViewM
     preparingSecondsRemaining: null,
     executionElapsedSeconds: 0,
     pausedFromModule: null,
+    exerciseOutcomes: [{exerciseIndex: 0, status: 'ACTIVE'}],
+    completionEligible: false,
+    exitRequested: false,
     ...overrides,
+    workoutResult: overrides.workoutResult ?? null,
   };
 }
 
@@ -264,6 +272,10 @@ function startViewModel(overrides: Partial<SessionViewModel> = {}): SessionViewM
     preparingSecondsRemaining: null,
     executionElapsedSeconds: 0,
     pausedFromModule: null,
+    exerciseOutcomes: [],
+    completionEligible: false,
+    exitRequested: false,
+    workoutResult: null,
     ...overrides,
   };
 }

@@ -26,20 +26,13 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['WP-14', 'WP-09', 'WP-10', 'WP-13']);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), ['READY_DERIVED', 'READY_DERIVED', 'READY_DERIVED', 'READY_DERIVED']);
+  assert.deepEqual(result.readyTasks.map((task) => task.id), []);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), []);
   assert.ok(result.readyTasks.every((task) => task.eligibilityDerivedAutomatically === true));
-  assert.deepEqual(result.nextAdmissionCandidates, ['WP-14', 'WP-09', 'WP-10', 'WP-13']);
+  assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
-  assert.ok(blocked.get('WP-08')?.includes('DEPENDENCIES_UNSATISFIED=WP-14'));
-  assert.ok(blocked.get('WP-08')?.includes('CAPABILITIES_UNSATISFIED=V2_SESSION_CONTROL_ACTIONS_V1,V2_DEFERRED_SKIPPED_STATE_V1,V2_COMPLETION_ELIGIBILITY_V1,V2_EXIT_ORCHESTRATION_ACTION_V1'));
-  assert.ok(blocked.get('WP-12')?.some((blocker) => blocker.startsWith('DEPENDENCIES_UNSATISFIED=WP-13')));
-  assert.ok(blocked.get('WP-12')?.includes('DEPENDENCIES_UNSATISFIED=WP-13,WP-14'));
-  assert.ok(!blocked.get('WP-12')?.some((blocker) => blocker.startsWith('AUTONOMOUS_ELIGIBILITY=')));
-  assert.ok(!blocked.get('GATE-01')?.some((blocker) => blocker.startsWith('AUTONOMOUS_ELIGIBILITY=')));
-  assert.ok(blocked.get('GATE-01')?.includes('DEPENDENCIES_UNSATISFIED=WP-12'));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {

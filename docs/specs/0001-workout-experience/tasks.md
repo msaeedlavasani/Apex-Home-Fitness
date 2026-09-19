@@ -202,7 +202,7 @@ re-review, and only then is the experience frozen.
 2. **Control-state prerequisite:** WP-14 (orchestration control-state capability reconciliation), then WP-08 (session controls + outcomes) with task-scoped machine/agent verification and freeze evidence.
 3. **RUN 2 prerequisite:** WP-13 (shared Program ↔ Workout prescription contract), then WP-12 (`WORKOUT_RESULT + EXIT`) with task-scoped machine/agent verification and freeze evidence.
 4. **RUN 3:** GATE-01. If it fails, admit only missing reusable capability/capabilities and repeat the gate.
-5. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`.
+5. **RUN 4:** program-driven Prototype Composition only after `BLOCK_COMPLETENESS = PASS`; close-out evidence is recorded in the canonical execution projection and `RUN-4-PROGRAM-COMPOSITION-closeout.json`.
 6. **RUN 5:** targeted machine/agent regression verification, complete-flow Owner visual acceptance, one consolidated correction batch if required, machine regression, complete-flow Owner re-review, and freeze.
 
 The prototype must prove that changing only resolved Program data changes topology

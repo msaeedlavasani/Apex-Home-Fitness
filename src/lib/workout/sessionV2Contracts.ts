@@ -19,9 +19,9 @@
  *     view-model shape (frozen at WP-02 design per dependencies.md §1).
  *
  * WHAT THIS MODULE IS NOT (first-slice discipline):
- *   - it does NOT define set/rest/deferral state, completion eligibility,
- *     mentor, audio or controls contracts — later work packages extend
- *     additively;
+ *   - it does not own presentation, mentor, audio or persistence contracts;
+ *     the WP-14 orchestration extension adds session-control state/actions
+ *     additively without changing the V1 session contract;
  *   - it does NOT change the shipped V1 session contracts
  *     (`./sessionContracts.ts`) — that engine is untouched operational
  *     fallback (plan §13);
@@ -55,6 +55,7 @@ export type ExperienceModuleId =
   | 'SET_RESULT'
   | 'REST'
   | 'EXERCISE_TRANSITION'
+  | 'WORKOUT_RESULT'
   | 'COMPLETE';
 
 /** Lifecycle state of one experience module (orchestration-owned). */
@@ -109,10 +110,10 @@ export interface ResolvedPrescription {
 export type ModuleProgressionPolicy = Partial<Record<ExperienceModuleId, ProgressionPolicy>>;
 
 /**
- * Orchestration commands (plan §17 `START_SHARED_CONTRACTS`). The set is
- * still the first-slice set (start/pause/resume) plus the INTRO extension's
- * `BEGIN_WORK_SET` — the deterministic INTRO → SET1 boundary (delta §C).
- * No SKIP/COMPLETE/deferral commands exist.
+ * Orchestration commands. WP-14 extends the frozen base with the approved
+ * session controls; every action remains a typed intent handled by the one
+ * orchestration authority. `DEFER_EXERCISE` is session-scoped and never
+ * writes back to the resolved prescription.
  */
 export type SessionAction =
   | {type: 'START_SESSION'}
@@ -120,7 +121,14 @@ export type SessionAction =
   | {type: 'RESUME'}
   | {type: 'BEGIN_WORK_SET'}
   | {type: 'RECORD_REP'}
-  | {type: 'SKIP_REST'};
+  | {type: 'SKIP_REST'}
+  | {type: 'EXIT_WORKOUT'}
+  | {type: 'CONFIRM_EXIT'}
+  | {type: 'CANCEL_EXIT'}
+  | {type: 'RESTART_CURRENT_SET'}
+  | {type: 'DEFER_EXERCISE'; disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION'}
+  | {type: 'RESOLVE_DEFERRED_EXERCISE'; disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION'}
+  | {type: 'SKIP_EXERCISE'};
 
 /**
  * Session lifecycle (plan §5 states — implementation view, INTRO slice):
@@ -137,7 +145,22 @@ export type SessionLifecycle =
   | 'RUNNING'
   | 'SET_RESULT'
   | 'RESTING'
-  | 'PAUSED';
+  | 'WORKOUT_RESULT'
+  | 'PAUSED'
+  | 'EXIT_REQUESTED';
+
+/** Session-scoped outcome state; none of these values mutate the prescription. */
+export type SessionExerciseOutcomeStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'OUTSTANDING_DEFERRED'
+  | 'SKIPPED_FOR_SESSION';
+
+export interface SessionExerciseOutcome {
+  readonly exerciseIndex: number;
+  readonly status: SessionExerciseOutcomeStatus;
+}
 
 /** Immutable progress snapshot owned by the reusable SET capability. */
 export interface SetProgress {
@@ -176,6 +199,16 @@ export interface SetResult {
   readonly isFinalSet: boolean;
   readonly isFinalExercise: boolean;
   readonly elapsedInResultSeconds: number;
+}
+
+/** Semantic result read-model; no persistence or adaptation policy. */
+export interface WorkoutResultSummary {
+  readonly totalExercises: number;
+  readonly completedExercises: number;
+  readonly skippedExercises: number;
+  readonly completedSets: number;
+  readonly totalSets: number;
+  readonly completionKind: 'COMPLETED_FULLY' | 'COMPLETED_PARTIALLY';
 }
 
 /**
@@ -217,6 +250,14 @@ export interface SessionViewModel {
   readonly completedSetCount?: number;
   /** Total Sets across the resolved session. */
   readonly totalSetCount?: number;
+  /** Session-scoped outcome status for every resolved exercise. */
+  readonly exerciseOutcomes: readonly SessionExerciseOutcome[];
+  /** True only when no unresolved exercise obligation remains. */
+  readonly completionEligible: boolean;
+  /** Result read-model, populated only at WORKOUT_RESULT. */
+  readonly workoutResult: WorkoutResultSummary | null;
+  /** Exit intent raised for the later WP-12 confirmation/return boundary. */
+  readonly exitRequested: boolean;
 }
 
 /**
@@ -231,7 +272,16 @@ export type SessionOrchestrationEffect =
   | {kind: 'SET_COMPLETED'; exerciseIndex: number; setNumber: number}
   | {kind: 'SET_RESULT_READY'; exerciseIndex: number; setNumber: number}
   | {kind: 'REST_STARTED'; restKind: RestKind; seconds: number}
-  | {kind: 'REST_COMPLETED'; restKind: RestKind};
+  | {kind: 'REST_COMPLETED'; restKind: RestKind}
+  | {kind: 'SET_RESTARTED'; exerciseIndex: number; setNumber: number}
+  | {kind: 'EXERCISE_DEFERRED'; exerciseIndex: number}
+  | {kind: 'DEFERRED_EXERCISE_RESOLVED'; exerciseIndex: number; disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION'}
+  | {kind: 'EXERCISE_SKIPPED'; exerciseIndex: number}
+  | {kind: 'EXERCISE_COMPLETED'; exerciseIndex: number}
+  | {kind: 'WORKOUT_RESULT_READY'; summary: WorkoutResultSummary}
+  | {kind: 'EXIT_REQUESTED'}
+  | {kind: 'EXIT_CONFIRMED'}
+  | {kind: 'EXIT_CANCELLED'};
 
 /** Neutral initial module map: nothing activated yet. */
 export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModuleState> {
@@ -243,6 +293,7 @@ export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModu
     SET_RESULT: 'PENDING',
     REST: 'PENDING',
     EXERCISE_TRANSITION: 'PENDING',
+    WORKOUT_RESULT: 'PENDING',
     COMPLETE: 'PENDING',
   };
 }

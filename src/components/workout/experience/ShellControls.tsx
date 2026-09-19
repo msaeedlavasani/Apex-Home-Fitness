@@ -23,11 +23,9 @@ import {useTheme} from '@/components/providers/ThemeProvider';
  *     the light/dark subset of the canonical ThemeProvider — SYSTEM is never
  *     offered here. Persistence flows through the existing provider storage
  *     (no second theme system). The icon shows the ACTIVE theme truthfully.
- *   - Exit is RESTORED with real semantics: it navigates to the locale
- *     dashboard through the same product navigation the brand mark uses —
- *     the safest existing exit mechanism. No destructive session semantics
- *     are invented (the first-slice session is intentionally non-persisted,
- *     `useWorkoutSession` — so navigation simply ends the review session).
+ *   - Exit dispatches the orchestration-owned EXIT_WORKOUT intent. The later
+ *     WP-12 result/Exit boundary owns confirmation and return navigation;
+ *     this control never routes around orchestration.
  *
  * Compact family: 44px circular buttons (≥ canonical touch target), shared
  * surface/border tokens, one design family — never dominant over content.
@@ -97,19 +95,18 @@ export function WorkoutV2ThemeControl() {
 }
 
 /**
- * Exit control — restored per the references with REAL semantics: navigates
- * to the locale dashboard (the existing product home for workouts). Not
- * decorative; asserted by E2E.
+ * Exit control — dispatches the orchestration-owned exit intent. Navigation
+ * and any confirmation belong to the later session-result boundary; this
+ * control never routes around the session authority.
  */
-export function WorkoutV2ExitControl() {
+export function WorkoutV2ExitControl({onExit}: {onExit: () => void}) {
   const t = useTranslations('WorkoutV2.actions');
-  const router = useRouter();
   return (
     <button
       type="button"
       data-workout-v2-exit={true}
       data-slot="workout-v2-control"
-      onClick={() => router.push('/dashboard')}
+      onClick={onExit}
       aria-label={t('exit')}
       title={t('exit')}
       className={CONTROL_BASE}

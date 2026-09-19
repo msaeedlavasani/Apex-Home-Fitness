@@ -72,34 +72,40 @@ choose the next Exercise, enter `WORKOUT_RESULT`, or declare completion.
 
 ### 4.1 Shared-boundary audit (2026-09-19)
 
-The repository audit found that the existing artifacts are only partial
-implementations of this boundary. `src/lib/ai/contracts.ts` is the validated
-generator-output contract, while `src/lib/workout/resolvedPrescription.ts`
-is a consumer-local in-memory resolver over `SessionExercise`; neither is the
-one shared, versioned Program ↔ Workout contract required by this plan. The
-persisted `ProgramExercise` representation also does not preserve explicit
-execution mode or duration semantics for every AI/rules source.
-The current V2 shape also has no explicit `fallbackDuration`, although the
-spec requires a resolved camera-less fallback for eligible `REP_BASED`
-prescriptions.
-
-Before `WP-12`, `GATE-01`, or program-driven composition, `WP-13` must define
-the minimum canonical boundary without prematurely selecting a storage schema:
+The repository audit found that the existing artifacts were only partial
+implementations of this boundary. `src/lib/ai/contracts.ts` remains the
+validated generator-output contract and `src/lib/workout/resolvedPrescription.ts`
+remains the pure semantic normalizer. WP-13 now establishes the shared
+boundary in `src/lib/workout/prescriptionContract.ts` without replacing either
+source authority or selecting a storage schema:
 
 - shared domain semantics for exercise identity/order, explicit
   `REP_BASED`/`TIME_BASED` mode, mutually exclusive targets, set count, rest,
-  and any required camera-less fallback duration;
-- a machine-readable versioned shape and source-independent AI/rules/persisted
-  adapters;
+  and an explicit `fallbackDurationSeconds` plus
+  `cameraLessExecution: SUPPORTED|UNSUPPORTED` for camera-less fallback;
+- a machine-readable `contractVersion: 1` shape with source-independent
+  AI/rules/persisted adapters and source adapter versions;
 - deterministic fail-closed validation invariants and compatibility rules;
 - no presentation topology fields (`INTRO`, `SET`, `REST`, etc.), because the
   Workout Session Orchestrator derives HOW from the resolved WHAT.
 
-The existing versioned AL-01 `WorkoutOutcomeRecord` is the downstream
-Progress/Adaptation-facing outcome authority. A separate durable adaptation
-policy or duplicate outcome schema is not authorized by this audit; `WP-13`
-must define only the narrow mapping seam from a future Workout Session Result
-to that existing record.
+Compatibility rule: a consumer accepts only a supported `contractVersion` and
+must reject an unknown source adapter version or invalid target pairing; a
+source adapter may be extended additively, but a breaking semantic change
+bumps the contract version. Legacy AI/rules strings are normalized once at
+this authority boundary (`"30 seconds"` is time-based and a numeric/range
+rep string preserves its authored lower bound); no UI or orchestrator performs
+that conversion. A REP_BASED item is camera-less-capable only when its source
+explicitly supplies `fallbackDurationSeconds`; the shared contract never
+invents a multiplier.
+
+The canonical runtime consumer is the V2 session adapter, which now receives
+the versioned shared prescription before creating the orchestrator. The
+existing versioned AL-01 `WorkoutOutcomeRecord` remains the downstream
+Progress/Adaptation-facing outcome authority. `mapPrescriptionToOutcomeInputs`
+is the narrow mapping seam for future result recording; it does not decide
+completion, feedback, persistence, or adaptation policy.
+
 
 ## 5. Session orchestration contract
 

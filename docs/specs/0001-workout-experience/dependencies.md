@@ -39,14 +39,14 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-05","dependsOn":["WP-02","WP-04"],"kind":"WORK_PACKAGE","providesCapabilities":["V2_START_PREPARING_INTRO_SURFACES_V1"]},
     {"id":"WP-06","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"A","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-06.admission.json","verification":"PASS","providesCapabilities":["V2_SET_RESULT_CAPABILITY_V1"]},
     {"id":"WP-07","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"B","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-07.admission.json","verification":"PASS","providesCapabilities":["V2_REST_CAPABILITY_V1"]},
-    {"id":"WP-14","dependsOn":["WP-02","WP-06","WP-07"],"kind":"WORK_PACKAGE","workstream":"ORCHESTRATION_RECONCILIATION","ownerVisualGate":false,"requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}],"providesCapabilities":["V2_SESSION_CONTROL_ACTIONS_V1","V2_DEFERRED_SKIPPED_STATE_V1","V2_COMPLETION_ELIGIBILITY_V1","V2_EXIT_ORCHESTRATION_ACTION_V1"]},
-    {"id":"WP-08","dependsOn":["WP-02","WP-06","WP-07","WP-14"],"kind":"WORK_PACKAGE","requiresCapabilities":[{"id":"V2_SESSION_CONTROL_ACTIONS_V1","provider":"WP-14"},{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}]},
-    {"id":"WP-09","dependsOn":["WP-02"],"softDependsOn":["WP-06"],"kind":"WORK_PACKAGE","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"}]},
-    {"id":"WP-10","dependsOn":["WP-05"],"kind":"WORK_PACKAGE","requiresCapabilities":[{"id":"V2_START_PREPARING_INTRO_SURFACES_V1","provider":"WP-05"}]},
-    {"id":"WP-12","dependsOn":["WP-06","WP-07","WP-13","WP-14"],"kind":"WORK_PACKAGE","requiresCapabilities":[{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}]},
-    {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false,"requiresCapabilities":[{"id":"V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1","provider":"WP-03"}],"providesCapabilities":["V2_SHARED_PRESCRIPTION_CONTRACT_V1"]},
-    {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE"},
-    {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION"},
+    {"id":"WP-14","dependsOn":["WP-02","WP-06","WP-07"],"kind":"WORK_PACKAGE","workstream":"ORCHESTRATION_RECONCILIATION","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-14.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}],"providesCapabilities":["V2_SESSION_CONTROL_ACTIONS_V1","V2_DEFERRED_SKIPPED_STATE_V1","V2_COMPLETION_ELIGIBILITY_V1","V2_EXIT_ORCHESTRATION_ACTION_V1"]},
+    {"id":"WP-08","dependsOn":["WP-02","WP-06","WP-07","WP-14"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-08.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_SESSION_CONTROL_ACTIONS_V1","provider":"WP-14"},{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}]},
+    {"id":"WP-09","dependsOn":["WP-02"],"softDependsOn":["WP-06"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-09.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"}]},
+    {"id":"WP-10","dependsOn":["WP-05"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-10.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_START_PREPARING_INTRO_SURFACES_V1","provider":"WP-05"}],"providesCapabilities":["V2_FUNCTIONAL_AUDIO_ACCESSIBILITY_V1"]},
+    {"id":"WP-12","dependsOn":["WP-06","WP-07","WP-13","WP-14"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-12.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}]},
+    {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-13.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1","provider":"WP-03"}],"providesCapabilities":["V2_SHARED_PRESCRIPTION_CONTRACT_V1"]},
+    {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE","status":"CLOSED","frozen":true,"verification":"PASS","reportPath":"reports/workout-v2-impl-01/GATE-01-completeness.json","blockCompleteness":"PASS"},
+    {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","verification":"PASS","providesCapabilities":["V2_PROGRAM_DRIVEN_COMPOSITION_V1"]},
     {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
@@ -69,12 +69,32 @@ providers, and governance state. `WP-02` remains historically CLOSED/FROZEN
 for its admitted scope; it does not claim the later control-state
 capabilities. `WP-14` is the explicit follow-up prerequisite for those
 capabilities, so `WP-08` is not READY until WP-14 is verified and frozen. The
-current derived candidates are `WP-09`, `WP-10`, `WP-13`, and `WP-14`;
-`WP-08` is deterministically blocked by WP-14 and its missing capability set,
-while `WP-12` is blocked by WP-13 and WP-14 rather than by a manual promotion
-field.
-Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json),
-[`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json).
+current derived candidate is `RUN-4-PROGRAM-COMPOSITION`; `WP-14` is
+CLOSED/FROZEN and its capabilities were consumed by the now CLOSED/FROZEN
+WP-08 and remain available to WP-12. WP-09 is also CLOSED/FROZEN after
+verification of the existing Mentor presentation boundary. WP-10 is
+CLOSED/FROZEN after verifying functional supplementary audio and the stage
+accessibility contract. WP-13 is CLOSED/FROZEN and its shared contract is now
+available to WP-12. WP-12 is CLOSED/FROZEN after implementing the semantic
+WORKOUT_RESULT and confirmed EXIT boundary. Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json),
+[`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json),
+[`WP-14-closeout.json`](../../../reports/workout-v2-impl-01/WP-14-closeout.json),
+[`WP-08-closeout.json`](../../../reports/workout-v2-impl-01/WP-08-closeout.json),
+[`WP-09-closeout.json`](../../../reports/workout-v2-impl-01/WP-09-closeout.json),
+[`WP-10-closeout.json`](../../../reports/workout-v2-impl-01/WP-10-closeout.json),
+[`WP-13-closeout.json`](../../../reports/workout-v2-impl-01/WP-13-closeout.json),
+[`WP-12-closeout.json`](../../../reports/workout-v2-impl-01/WP-12-closeout.json),
+and [`GATE-01-completeness.json`](../../../reports/workout-v2-impl-01/GATE-01-completeness.json).
+
+`GATE-01` is CLOSED/FROZEN with `BLOCK_COMPLETENESS=PASS`; it found no
+missing reusable capability. `RUN-4-PROGRAM-COMPOSITION` was then admitted,
+implemented, and verified by the asymmetric 2/3 and 3/1 topology proof. The
+route now preserves Program-owned exercise order and passes the resolved
+prescription directly into the reusable shell/orchestrator path; no numbered
+or fixture-specific presentation flow was added. Its close-out is
+[`RUN-4-PROGRAM-COMPOSITION-closeout.json`](../../../reports/workout-v2-impl-01/RUN-4-PROGRAM-COMPOSITION-closeout.json).
+The complete-flow Owner visual gate remains downstream and has not been
+satisfied by this machine execution.
 
 ## 2. Hard dependencies
 
@@ -97,11 +117,11 @@ that predecessor actually provides:
 
 | Node | Required capability boundary | Canonical provider | Readiness result |
 |---|---|---|---|
-| WP-08 | control actions, deferred/skipped state, completion eligibility, exit action | WP-14 | blocked until WP-14 closes; WP-02 alone is insufficient |
+| WP-08 | control actions, deferred/skipped state, completion eligibility, exit action | WP-14 | satisfied after WP-14 CLOSED/FROZEN; WP-02 alone was insufficient |
 | WP-09 | frozen presentation view-model | WP-02 | satisfied; mentor remains a consumer and owns no session logic |
 | WP-10 | existing START/PREPARING/INTRO stage surfaces | WP-05 | satisfied; later-stage assertions remain soft freeze evidence, not a hidden start blocker |
 | WP-13 | prescription-resolution authority | WP-03 | satisfied; this task does not add orchestration ownership |
-| WP-12 | deferred/skipped state, completion eligibility, exit action, shared prescription contract | WP-14 + WP-13 | blocked until both providers close |
+| WP-12 | deferred/skipped state, completion eligibility, exit action, shared prescription contract | WP-14 + WP-13 | blocked only until WP-13 closes |
 
 This prevents a task from becoming `READY_DERIVED` merely because a historical
 predecessor is CLOSED when the required capability is absent or unrepresented.

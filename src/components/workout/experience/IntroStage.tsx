@@ -2,6 +2,7 @@
 
 import React, {useLayoutEffect, useRef, useState} from 'react';
 import {Check} from 'lucide-react';
+import {Button} from '@/components/ui/platform';
 import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 import {MentorStage} from './mentor/MentorStage';
 
@@ -39,7 +40,9 @@ import {MentorStage} from './mentor/MentorStage';
  *     share rows when their measured content fits and wrap centered when it
  *     does not (the rejected three-large-pill layout is gone);
  *   - same semantic list for both platforms; only arrangement is
- *     responsive; safe areas + no overflow respected; no new controls.
+ *     responsive; safe areas + no overflow respected. Session controls are
+ *     rendered below the cue zone and dispatch only orchestration intents;
+ *     this stage still has no Start/Next/Continue CTA.
  *
  * MENTOR: the single approved capability (same GLB, same lifecycle) remains
  * visually central; the stage reserves the header strip and the compact cue
@@ -69,6 +72,13 @@ export interface IntroStageProps {
   mentorAriaLabel: string;
   /** Fires when the demonstration reaches visible-ready (final framing applied). */
   onMentorReady?: () => void;
+  onDeferExercise?: (disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => void;
+  onSkipExercise?: () => void;
+  onResolveDeferredExercise?: (disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION') => void;
+  doLaterLabel?: string;
+  skipExerciseLabel?: string;
+  performNowLabel?: string;
+  skipDeferredLabel?: string;
 }
 
 interface CueItemProps {
@@ -169,10 +179,19 @@ export function IntroStage({
   mentorUnavailableLabel,
   mentorAriaLabel,
   onMentorReady,
+  onDeferExercise,
+  onSkipExercise,
+  onResolveDeferredExercise,
+  doLaterLabel = 'Do exercise later',
+  skipExerciseLabel = 'Skip exercise for this session',
+  performNowLabel = 'Perform now',
+  skipDeferredLabel = 'Skip for this session',
 }: IntroStageProps) {
   // The demonstration is INTRO's content. Mentor readiness no longer gates
   // any control (there are none) — it only drives the loading/degraded text.
   const exercise = viewModel.introExercise ?? viewModel.activeExercise;
+  const outcome = viewModel.exerciseOutcomes.find((item) => item.exerciseIndex === viewModel.activeExerciseIndex)?.status;
+  const deferred = outcome === 'OUTSTANDING_DEFERRED';
   // While paused the demonstration freezes with the session (same authority).
   const paused = viewModel.lifecycle === 'PAUSED';
 
@@ -237,6 +256,61 @@ export function IntroStage({
           <div className="mx-auto flex w-full max-w-full justify-center">
             <CueList cues={cues} />
           </div>
+        </div>
+      )}
+
+      {(onDeferExercise || onSkipExercise || onResolveDeferredExercise) && exercise != null && (
+        <div
+          data-workout-v2-intro-controls=""
+          className="flex flex-wrap items-center justify-center gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 sm:px-6"
+        >
+          {deferred ? (
+            <>
+              <Button
+                type="button"
+                data-workout-v2-resolve-deferred="perform-now"
+                variant="outlined"
+                tone="primary"
+                size="sm"
+                onClick={() => onResolveDeferredExercise?.('PERFORM_NOW')}
+              >
+                {performNowLabel}
+              </Button>
+              <Button
+                type="button"
+                data-workout-v2-resolve-deferred="skip-for-session"
+                variant="text"
+                tone="primary"
+                size="sm"
+                onClick={() => onResolveDeferredExercise?.('SKIP_FOR_SESSION')}
+              >
+                {skipDeferredLabel}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                data-workout-v2-defer-exercise="move-to-end"
+                variant="outlined"
+                tone="primary"
+                size="sm"
+                onClick={() => onDeferExercise?.('MOVE_TO_END')}
+              >
+                {doLaterLabel}
+              </Button>
+              <Button
+                type="button"
+                data-workout-v2-skip-exercise=""
+                variant="text"
+                tone="primary"
+                size="sm"
+                onClick={onSkipExercise}
+              >
+                {skipExerciseLabel}
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>

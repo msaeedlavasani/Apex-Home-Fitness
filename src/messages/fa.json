@@ -237,7 +237,29 @@
       "musicOnShort": "صدا",
       "musicOffShort": "صدا",
       "more": "بیشتر",
-      "exit": "خروج از تمرین"
+      "exit": "خروج از تمرین",
+      "doLater": "انجام حرکت بعداً",
+      "skipExercise": "رد کردن برای این جلسه",
+      "performNow": "اکنون انجام بده",
+      "skipDeferred": "رد کردن برای این جلسه",
+      "restartSet": "شروع دوباره ست",
+      "confirmExitTitle": "از تمرین خارج می‌شوی؟",
+      "confirmExitDescription": "جلسه فعلی پایان می‌یابد و به داشبورد برمی‌گردی.",
+      "cancelExit": "ادامه تمرین",
+      "confirmExit": "خروج از تمرین"
+    },
+    "outcomes": {
+      "completed": "انجام‌شده",
+      "deferred": "به تعویق‌افتاده",
+      "skipped": "ردشده"
+    },
+    "result": {
+      "title": "تمرین کامل شد",
+      "subtitle": "جلسه‌ات به‌عنوان یک تجربه تمرینی کامل ثبت شد.",
+      "completedSets": "ست‌ها",
+      "exercises": "حرکت‌ها",
+      "skipped": "ردشده",
+      "exit": "بازگشت به داشبورد"
     },
     "exerciseDetails": {
       "title": "جزئیات حرکت",

@@ -19,7 +19,6 @@ import {
   resolveWorkoutKeyForDate,
   toWorkoutExercises,
 } from '@/lib/workout/samplePlan';
-import {isSquatMentorExercise} from '@/lib/workout/experience/mentorBinding';
 
 /**
  * V2 prototype/Owner-review exercise substitution (WORKOUT-V2 DELTA —
@@ -165,20 +164,6 @@ export default function WorkoutV2Page() {
   // localized sample plan otherwise (never an empty plan).
   const exercises: SessionExercise[] = program ? generatedExercises : fallbackExercises;
   //
-  // MENTOR FIXTURE BINDING (owner device correction §3): the validation
-  // fixture must PRESENT the exercise the single approved Mentor
-  // demonstration (AHF_Mentor_Squat.glb) actually shows — the owner observed
-  // "Plank Hold" over a Squat demonstration when the day's first exercise
-  // was unsupported (generated program on Beta). ONE stable re-order for
-  // BOTH plan sources: the Squat leads; every other real exercise keeps its
-  // plan position after it. No identity is invented or renamed. The shell's
-  // fail-closed gate backstops a plan with no supported exercise at all.
-  const fixtureExercises = useMemo<SessionExercise[]>(() => {
-    const supported = exercises.filter((exercise) => isSquatMentorExercise(exercise));
-    const rest = exercises.filter((exercise) => !isSquatMentorExercise(exercise));
-    return [...supported, ...rest];
-  }, [exercises]);
-
   // START hero workout context: the resolved workout title for the day
   // (generated plan label or the localized fallback plan name — resolved
   // data, never a hardcoded fixture).
@@ -202,7 +187,7 @@ export default function WorkoutV2Page() {
           </div>
         </div>
       ) : (
-        <ExperienceShell exercises={fixtureExercises} sessionTitle={subtitle} />
+        <ExperienceShell exercises={exercises} sessionTitle={subtitle} />
       )}
     </main>
   );

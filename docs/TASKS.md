@@ -24,9 +24,9 @@
 | Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; Run 1 `WP-06` + `WP-07` closed/frozen) |
 | Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
 | Branch | `feat/workout-v2-first-slice` — current feature branch; Run 1 changes are pushed and parity-verified |
-| State | `AUTHORIZED — Run 1 closed`; SET/SET_RESULT and typed REST are frozen; later slices remain admission-gated |
+| State | `AUTHORIZED — Run 4 composition closed`; all machine-verifiable Workout V2 capability blocks are frozen; complete-flow Owner acceptance remains the canonical human gate |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next selectable work | Repository-derived READY work: `WP-09`, `WP-10`, `WP-13`, and the new orchestration prerequisite `WP-14`; `WP-08` remains capability-gated on `WP-14`, and `WP-12` remains dependency-gated on `WP-13` + `WP-14` |
+| Next selectable work | No autonomous work; `RUN-5-OWNER-ACCEPTANCE` is the downstream complete-flow human gate |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 <!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
@@ -47,14 +47,14 @@
     {"id":"WP-05","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
     {"id":"WP-06","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-06.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"SET + SET_RESULT implemented and verified"},
     {"id":"WP-07","status":"CLOSED","frozen":true,"autonomousEligibility":"NOT_YET","admissionRequired":false,"admissionPath":"docs/admissions/WP-07.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SAFE","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Typed REST implemented and verified"},
-    {"id":"WP-14","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-08","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-09","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-10","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-12","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"WP-13","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
-    {"id":"GATE-01","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false},
-    {"id":"RUN-4-PROGRAM-COMPOSITION","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-14","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-14.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Orchestration control actions, deferred/skipped state, completion eligibility, set restart, and exit intent implemented and verified"},
+    {"id":"WP-08","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-08.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Control surface and orchestration-owned deferred/skipped outcome consumption implemented and verified"},
+    {"id":"WP-09","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-09.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Mentor presentation boundary, approved asset reuse, degraded mode, and reduced-motion-safe usability verified"},
+    {"id":"WP-10","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-10.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Functional supplementary audio, accessible timing/controls, and reduced-motion contract verified"},
+    {"id":"WP-12","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-12.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Semantic WORKOUT_RESULT and confirmed EXIT boundary implemented and verified"},
+    {"id":"WP-13","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WP-13.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Shared versioned Program-to-Workout prescription contract, source adapters, validation, compatibility rules, and outcome mapping seam implemented and verified"},
+    {"id":"GATE-01","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"BLOCK_COMPLETENESS=PASS; all required reusable Workout V2 capabilities and contracts audited"},
+    {"id":"RUN-4-PROGRAM-COMPOSITION","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Program-driven asymmetric 2/3 and 3/1 set topologies verified through the shared prescription contract and reusable orchestration/presentation path"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
   ]
 }
@@ -72,10 +72,13 @@ For planned autonomous work, `readinessRule: DAG_DERIVED` means the selector
 calculates eligibility from lifecycle, hard dependencies, declared capability
 providers, and governance gates; it must not be manually promoted from
 `NOT_YET`. `WP-02` remains CLOSED/FROZEN for its historical admitted scope and
-does not provide the later control-state capability. `WP-14` is the explicit
-follow-up prerequisite for that capability, after which `WP-08` can become
-READY_DERIVED. `RUN-5-OWNER-ACCEPTANCE` is the explicit complete-flow human
-gate.
+did not provide the later control-state capability. WP-14 was the explicit
+follow-up prerequisite for that capability and is now CLOSED/FROZEN with its
+delivered capabilities recorded in its close-out report. `WP-08` was then
+admitted after the WP-14 capability providers were satisfied,
+implemented as a consumer of those orchestration contracts, and is now
+CLOSED/FROZEN. `RUN-5-OWNER-
+ACCEPTANCE` is the explicit complete-flow human gate.
 
 ## Strategic basis
 
