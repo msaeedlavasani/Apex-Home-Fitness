@@ -26,21 +26,23 @@ test('known profile and docs route pass', () => { assert.match(run('profile', 'C
 test('Workout V2 ready-work selection is repository-driven and selection-only', () => {
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), []);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), []);
+  const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
+  assert.deepEqual(result.readyTasks.map((task) => task.id), checkpointPass ? [] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW']);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), checkpointPass ? [] : ['READY_DERIVED']);
   assert.deepEqual(result.nextAdmissionCandidates, []);
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
-  assert.equal(result.checkpointGates[0]?.status, 'PASS');
+  assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
-  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'), false);
+  assert.equal(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'), !checkpointPass);
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
   const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   return {
-    CHECKPOINT_ID: 'TEST-INTEGRATION-01', CHECKPOINT_KIND: 'INTEGRATION', STATUS: 'PASS', KNOWN_GOOD_SHA: sha,
+    CHECKPOINT_ID: 'TEST-INTEGRATION-01', CHECKPOINT_KIND: 'INTEGRATION', STATUS: 'PASS', KNOWN_GOOD_SHA: sha, VERIFIED_SOURCE_SHA: sha, CHECKPOINT_EVIDENCE_SHA: sha,
+    AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'PASS', COMMIT_SHA: sha, RUN_ID: 'local-test', URL: 'https://example.invalid/ci'},
     VERIFICATION_EVIDENCE: [{ID: 'test', COMMAND: 'test command', STATUS: 'PASS', SUMMARY: 'machine evidence passed'}],
     WORKTREE_CLEAN: 'YES', LOCAL_REMOTE_PARITY: 'YES', DEPLOYMENT_IDENTITY: 'NOT_APPLICABLE',
     ...overrides,
@@ -53,6 +55,11 @@ test('checkpoint PASS establishes an auditable known-good SHA', () => {
 test('checkpoint failure fails closed', () => {
   const file = tempJson(baseCheckpoint({STATUS: 'FAIL'}));
   assert.throws(() => run('checkpoint', file), /CHECKPOINT_NOT_PASS/);
+});
+test('checkpoint PASS fails closed without authoritative GitHub CI PASS', () => {
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  const file = tempJson(baseCheckpoint({AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'FAIL', COMMIT_SHA: sha, RUN_ID: 'failed-run', URL: 'https://example.invalid/failed'}}));
+  assert.throws(() => run('checkpoint', file), /AUTHORITATIVE_CI.STATUS=PASS/);
 });
 test('checkpoint completion recalculates readiness and leaves the Human Gate downstream', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');

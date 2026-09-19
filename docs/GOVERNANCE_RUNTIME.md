@@ -84,11 +84,13 @@ covers the new contract fields and guards.
 
 `checkpoint <JSON>` validates the permanent checkpoint evidence contract in
 [`governance/INTEGRATION-CHECKPOINT-POLICY.md`](governance/INTEGRATION-CHECKPOINT-POLICY.md):
-an existing full `KNOWN_GOOD_SHA`, PASS evidence for every declared check,
-clean worktree, local/remote parity, and deployment identity when the
-checkpoint is deployable. Workout V2 checkpoint nodes are validated as part of
+existing full source, known-good, and evidence SHAs; PASS evidence for every
+declared check; a GitHub Actions `CI` PASS tied to `KNOWN_GOOD_SHA`; clean
+worktree, local/remote parity, and deployment identity when the checkpoint is
+deployable. Workout V2 checkpoint nodes are validated as part of
 `workout-v2-ready`; a downstream node cannot bypass an unsatisfied checkpoint
-dependency. The command records no state and creates no admission or task.
+or failed authoritative CI. The command records no state and creates no
+admission or task.
 
 ## CI
 

@@ -57,13 +57,23 @@ function gitCommitExists(sha) {
  * may proceed.
  */
 function validateCheckpoint(record, {requireCurrentSha = false, allowUnpassed = false} = {}) {
-  const required = ['CHECKPOINT_ID', 'CHECKPOINT_KIND', 'STATUS', 'KNOWN_GOOD_SHA', 'VERIFICATION_EVIDENCE', 'WORKTREE_CLEAN', 'LOCAL_REMOTE_PARITY', 'DEPLOYMENT_IDENTITY'];
+  const required = ['CHECKPOINT_ID', 'CHECKPOINT_KIND', 'STATUS', 'KNOWN_GOOD_SHA', 'VERIFIED_SOURCE_SHA', 'CHECKPOINT_EVIDENCE_SHA', 'AUTHORITATIVE_CI', 'VERIFICATION_EVIDENCE', 'WORKTREE_CLEAN', 'LOCAL_REMOTE_PARITY', 'DEPLOYMENT_IDENTITY'];
   for (const field of required) if (!(field in record)) throw new Error(`CHECKPOINT_INVALID: missing required field: ${field}`);
   if (typeof record.CHECKPOINT_ID !== 'string' || !record.CHECKPOINT_ID.trim()) throw new Error('CHECKPOINT_INVALID: CHECKPOINT_ID must be non-empty');
   if (!CHECKPOINT_KINDS.has(record.CHECKPOINT_KIND)) throw new Error('CHECKPOINT_INVALID: CHECKPOINT_KIND must be INTEGRATION or DEPLOYMENT');
   if (!['PASS', 'FAIL', 'PENDING'].includes(record.STATUS)) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} status must be PASS, FAIL, or PENDING`);
   if (!allowUnpassed && record.STATUS !== 'PASS') throw new Error(`CHECKPOINT_NOT_PASS: ${record.CHECKPOINT_ID} status is ${record.STATUS}`);
-  if (!/^[0-9a-f]{40}$/.test(record.KNOWN_GOOD_SHA) || !gitCommitExists(record.KNOWN_GOOD_SHA)) throw new Error(`CHECKPOINT_INVALID: KNOWN_GOOD_SHA is not an existing full commit SHA: ${record.KNOWN_GOOD_SHA}`);
+  for (const [label, sha] of [['KNOWN_GOOD_SHA', record.KNOWN_GOOD_SHA], ['VERIFIED_SOURCE_SHA', record.VERIFIED_SOURCE_SHA], ['CHECKPOINT_EVIDENCE_SHA', record.CHECKPOINT_EVIDENCE_SHA]]) {
+    if (!/^[0-9a-f]{40}$/.test(sha) || !gitCommitExists(sha)) throw new Error(`CHECKPOINT_INVALID: ${label} is not an existing full commit SHA: ${sha}`);
+  }
+  const ci = record.AUTHORITATIVE_CI;
+  if (!ci || typeof ci !== 'object' || ci.PROVIDER !== 'GITHUB_ACTIONS' || ci.WORKFLOW !== 'CI' || !['PASS', 'FAIL', 'PENDING'].includes(ci.STATUS) || !/^[0-9a-f]{40}$/.test(ci.COMMIT_SHA) || !gitCommitExists(ci.COMMIT_SHA) || (typeof ci.RUN_ID !== 'string' && typeof ci.RUN_ID !== 'number') || typeof ci.URL !== 'string' || !ci.URL.trim()) {
+    throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires AUTHORITATIVE_CI with GitHub Actions CI identity, status, commit SHA, run ID, and URL`);
+  }
+  if (record.STATUS === 'PASS') {
+    if (ci.STATUS !== 'PASS') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires AUTHORITATIVE_CI.STATUS=PASS`);
+    if (ci.COMMIT_SHA !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} KNOWN_GOOD_SHA must equal AUTHORITATIVE_CI.COMMIT_SHA`);
+  }
   if (!allowUnpassed && record.WORKTREE_CLEAN !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires WORKTREE_CLEAN=YES`);
   if (!allowUnpassed && record.LOCAL_REMOTE_PARITY !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires LOCAL_REMOTE_PARITY=YES`);
   if (!Array.isArray(record.VERIFICATION_EVIDENCE) || record.VERIFICATION_EVIDENCE.length === 0) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires non-empty VERIFICATION_EVIDENCE`);

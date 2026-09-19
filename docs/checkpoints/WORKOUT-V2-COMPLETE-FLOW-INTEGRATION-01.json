@@ -1,8 +1,18 @@
 {
   "CHECKPOINT_ID": "WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01",
   "CHECKPOINT_KIND": "INTEGRATION",
-  "STATUS": "PASS",
+  "STATUS": "PENDING",
   "KNOWN_GOOD_SHA": "a20e31f5979fae681cf0a1a4a6a44aa99a32a247",
+  "VERIFIED_SOURCE_SHA": "a20e31f5979fae681cf0a1a4a6a44aa99a32a247",
+  "CHECKPOINT_EVIDENCE_SHA": "9ed35805591d46a153cadd215cd8ba9906235463",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "FAIL",
+    "COMMIT_SHA": "9ed35805591d46a153cadd215cd8ba9906235463",
+    "RUN_ID": "35452549387",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35452549387"
+  },
   "VERIFICATION_EVIDENCE": [
     {"ID":"governance","COMMAND":"npm run governance:check","STATUS":"PASS","SUMMARY":"Canonical docs and UI governance checks passed."},
     {"ID":"admission","COMMAND":"npm run admission:check","STATUS":"PASS","SUMMARY":"10 canonical admission records granted; 0 denied."},
@@ -13,7 +23,8 @@
     {"ID":"asset-audit","COMMAND":"npm run audit:assets","STATUS":"PASS","SUMMARY":"Asset audit passed with documented future-asset informational entries only."},
     {"ID":"workout-v2-unit","COMMAND":"node --import tsx --test tests/workout-v2-orchestration.test.ts tests/workout-v2-program-composition.test.ts tests/workout-v2-prescription-contract.test.ts tests/workout-v2-run1.test.ts tests/workout-v2-experience.test.ts tests/workout-v2-run1-ui.test.tsx tests/workout-v2-first-slice.test.tsx","STATUS":"PASS","SUMMARY":"64 Workout V2 unit, contract, orchestration, UI, and composition tests passed."},
     {"ID":"workout-v2-browser","COMMAND":"PLAYWRIGHT_PORT=52701 npx playwright test --config=infra/config/playwright.config.ts tests/workout-v2-start-reliability.spec.ts --workers=1","STATUS":"PASS","SUMMARY":"26 integrated Workout V2 browser reliability tests passed serially in EN and FA, including START, INTRO, Mentor, controls, responsive geometry, and theme checks."},
-    {"ID":"git-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"Verified HEAD and upstream both equal a20e31f5979fae681cf0a1a4a6a44aa99a32a247; ahead=0, behind=0, worktree clean."}
+    {"ID":"git-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"The prior evidence commit was pushed and clean before authoritative CI; the current reconciliation candidate is being reverified."},
+    {"ID":"github-ci","COMMAND":"GitHub Actions CI for pushed branch/PR commit 9ed35805591d46a153cadd215cd8ba9906235463","STATUS":"FAIL","SUMMARY":"Governance runtime tests failed because shallow CI checkout could not resolve the recorded full KNOWN_GOOD_SHA a20e31f5979fae681cf0a1a4a6a44aa99a32a247."}
   ],
   "WORKTREE_CLEAN": "YES",
   "LOCAL_REMOTE_PARITY": "YES",

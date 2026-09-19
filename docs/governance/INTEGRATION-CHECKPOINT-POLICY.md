@@ -57,6 +57,13 @@ Each PASS record is a JSON object validated by
 - `CHECKPOINT_KIND` — `INTEGRATION` or `DEPLOYMENT`;
 - `STATUS` — only `PASS` can satisfy a gate;
 - `KNOWN_GOOD_SHA` — the exact full commit SHA verified by the checkpoint;
+- `VERIFIED_SOURCE_SHA` — the product/source commit verified by local and
+  task-scoped integration checks;
+- `CHECKPOINT_EVIDENCE_SHA` — the existing commit that carries the recorded
+  checkpoint evidence; evidence-only commits may sit above the known-good
+  source commit and must not be presented as product verification;
+- `AUTHORITATIVE_CI` — a GitHub Actions `CI` PASS tied to `KNOWN_GOOD_SHA`,
+  including provider, workflow, run ID, URL, status, and commit SHA;
 - `VERIFICATION_EVIDENCE` — one or more named checks, each with a command,
   `STATUS: PASS`, and a concise evidence summary;
 - `WORKTREE_CLEAN: YES` and `LOCAL_REMOTE_PARITY: YES`;
@@ -64,13 +71,24 @@ Each PASS record is a JSON object validated by
   machine-checked deployed SHA/build identity for deployment checkpoints.
 
 The validator fails closed for missing evidence, non-existent SHAs, failed
-checks, dirty/parity failures, mismatched deployment identity, and malformed
-records. A later investigation can therefore bound a regression against the
-latest `KNOWN_GOOD_SHA` without relying on chat history.
+checks, failed or mismatched authoritative CI, dirty/parity failures,
+mismatched deployment identity, and malformed records. A later investigation
+can therefore bound a regression against the latest `KNOWN_GOOD_SHA` without
+relying on chat history.
+
+The SHA relationship is explicit: `VERIFIED_SOURCE_SHA` identifies the
+product candidate, `KNOWN_GOOD_SHA` identifies the candidate whose required
+authoritative CI passed, and `CHECKPOINT_EVIDENCE_SHA` identifies the commit
+that records that result. A later evidence-only commit may be above the
+known-good candidate; it does not silently change the product baseline.
+
+The authoritative branch/PR workflow checks out complete Git history because
+the validator must be able to prove that all recorded SHAs are real commits.
 
 ## Failure and continuation semantics
 
-An unsatisfied or failed checkpoint blocks every downstream DAG node that
+An unsatisfied or failed checkpoint, including missing or failing
+authoritative CI, blocks every downstream DAG node that
 depends on it. The executor may diagnose and repair technical failures within
 existing authority, then rerun the checkpoint. `OWNER_DECISION_REQUIRED` is
 reserved for a genuine product, architecture, deployment-authority, or human
