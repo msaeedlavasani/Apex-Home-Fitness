@@ -2,7 +2,7 @@
 /**
  * Bounded Beta-only QA Program data operation.
  *
- * The gateway supplies BETA_QA_PHONE from the protected Beta environment and
+ * The gateway supplies BETA_QA_PHONES from the protected Beta environment and
  * mounts only ahf_beta_db. The operation never prints the phone, user id, or
  * database contents. It ensures the repository's canonical persisted QA
  * Program is available to that authenticated account; Workout code remains
@@ -18,13 +18,13 @@ import {
 } from '../../src/lib/program/qaProgram.ts';
 
 const mode = process.env.DB_OPERATION_MODE;
-const phone = process.env.BETA_QA_PHONE?.trim();
+const phones = [...new Set((process.env.BETA_QA_PHONES ?? '').split(',').map((value) => value.trim()).filter(Boolean))];
 if (!['dry-run', 'apply'].includes(mode)) {
   console.error('DB_OPERATION_MODE must be dry-run or apply');
   process.exit(2);
 }
-if (!phone) {
-  console.error('BETA_QA_PHONE is required by the protected Beta configuration');
+if (phones.length === 0) {
+  console.error('BETA_QA_PHONES is required by the protected Beta configuration');
   process.exit(2);
 }
 
@@ -36,7 +36,8 @@ function sameJson(left, right) {
 }
 
 async function inspect() {
-  const user = await prisma.user.findFirst({where: {phone}, select: {id: true}});
+  const users = await prisma.user.findMany({where: {phone: {in: phones}}, select: {id: true}});
+  const user = users.length === 1 ? users[0] : null;
   const exercises = await prisma.exercise.findMany({
     where: {name: {in: names}},
     select: {id: true, name: true},
@@ -61,7 +62,8 @@ async function inspect() {
   const report = {
     operation: 'beta-qa-program-assign',
     mode,
-    qa_account_found: Boolean(user),
+    qa_account_found: users.length === 1,
+    qa_account_ambiguous: users.length > 1,
     canonical_exercises_present: exercises.length === names.length,
     program_present: Boolean(program),
     program_shape_valid: shapeValid,
@@ -72,7 +74,7 @@ async function inspect() {
   };
 
   if (!report.qa_account_found || !report.canonical_exercises_present || (!report.program_present && mode === 'dry-run' && !report.canonical_exercises_present)) {
-    report.verification = {status: 'FAIL', reason: 'required Beta QA data is unavailable'};
+    report.verification = {status: 'FAIL', reason: report.qa_account_ambiguous ? 'multiple protected QA accounts are persisted' : 'required Beta QA data is unavailable'};
     return {report, user, exerciseByName, program, shapeValid};
   }
   if (program && !shapeValid) {

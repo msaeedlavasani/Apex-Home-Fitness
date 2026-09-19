@@ -468,21 +468,21 @@ def _beta_build_id(app_image):
     return build_id
 
 
-def _beta_operation_command(opid, mode, image, qa_phone):
+def _beta_operation_command(opid, mode, image, qa_phones):
     operation = BETA_OPERATION_ALLOWLIST[opid]
     mount = f"{BETA_VOLUME}:/data:ro" if mode == "dry-run" else f"{BETA_VOLUME}:/data"
     return [
         "/usr/bin/docker", "run", "--rm", "--network", "none",
         "-e", "DATABASE_URL=file:/data/app.db",
         "-e", f"DB_OPERATION_MODE={mode}",
-        "-e", f"BETA_QA_PHONE={qa_phone}",
+        "-e", f"BETA_QA_PHONES={qa_phones}",
         "-v", mount, image,
         "sh", "-c", f"node --import tsx {operation['path']}",
     ]
 
 
-def _run_beta_operation(opid, mode, image, qa_phone):
-    return run(_beta_operation_command(opid, mode, image, qa_phone), quiet=True)
+def _run_beta_operation(opid, mode, image, qa_phones):
+    return run(_beta_operation_command(opid, mode, image, qa_phones), quiet=True)
 
 
 def _beta_dry_run_evidence_path(opid, sha):
@@ -637,8 +637,8 @@ def beta_db_operation(req):
     mode = req["mode"]
     sha = req["source_sha"]
     beta_env = beta_env_values()
-    qa_phone = beta_env.get("SMOKE_TEST_PHONE", "").strip()
-    if not qa_phone:
+    qa_phones = beta_env.get("SMOKE_TEST_PHONE", "").strip() or beta_env.get("AUTH_OTP_MOCK_PHONES", "").strip()
+    if not qa_phones:
         raise GateError("Beta QA identity configuration is absent")
     source_evidence = beta_authoritative_source(sha)
     app_image, migrate_image = beta_topology()
@@ -648,7 +648,7 @@ def beta_db_operation(req):
     acquire_op_lock()
     try:
         if mode == "dry-run":
-            raw = _run_beta_operation(opid, "dry-run", migrate_image, qa_phone)
+            raw = _run_beta_operation(opid, "dry-run", migrate_image, qa_phones)
             try:
                 report = json.loads(raw)
             except json.JSONDecodeError:
@@ -671,7 +671,7 @@ def beta_db_operation(req):
             run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_image,
                  "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{backup} && chown 100:101 /data/{backup}"], quiet=False)
             before = _beta_db_sha(migrate_image)
-            raw = _run_beta_operation(opid, "apply", migrate_image, qa_phone)
+            raw = _run_beta_operation(opid, "apply", migrate_image, qa_phones)
             try:
                 report = json.loads(raw)
             except json.JSONDecodeError:

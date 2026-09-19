@@ -48,12 +48,12 @@ The same constrained gateway also exposes the narrowly bounded
 `beta-db-operation` action for the canonical QA data setup. Its only
 allowlisted operation is `beta-qa-program-assign`: it runs from the exact
 deployed Beta migration image, mounts only `ahf_beta_db`, reads the protected
-`SMOKE_TEST_PHONE` configuration without returning it, and ensures the
-repository-seeded `Apex Workout V2 QA Program` is owned by that authenticated
-QA account. Dry-run evidence is required before apply; the Beta app is
-quiesced, backed up, hash-verified, restored on failure, and restarted. This
-is operational test data, not a product identity conditional, and it cannot
-select Production resources.
+Beta QA allowlist without returning it, and ensures the repository-seeded
+`Apex Workout V2 QA Program` is owned by the unique already-persisted account
+in that allowlist. Ambiguous or absent accounts fail closed. Dry-run evidence
+is required before apply; the Beta app is quiesced, backed up, hash-verified,
+restored on failure, and restarted. This is operational test data, not a
+product identity conditional, and it cannot select Production resources.
 
 ## Authorization and allowlist
 
