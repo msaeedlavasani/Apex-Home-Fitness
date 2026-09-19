@@ -158,7 +158,15 @@ def beta_topology(expected_app=None, expected_migrate=None):
     if app.get("image") != app_image or migrate.get("image") != migrate_image:
         raise GateError("Beta compose image drift")
     encoded = json.dumps(config)
-    if "127.0.0.1:3100" not in encoded or "127.0.0.1:3000" in encoded:
+    beta_port = any(
+        p.get("host_ip") == "127.0.0.1" and str(p.get("published")) == "3100" and str(p.get("target")) == "3000"
+        for p in app.get("ports", [])
+    )
+    production_port = any(
+        p.get("host_ip") == "127.0.0.1" and str(p.get("published")) == "3000"
+        for p in app.get("ports", [])
+    )
+    if not beta_port or production_port:
         raise GateError("Beta port boundary drift")
     if "apexhomefit_prod_db" in encoded or "apex-home-fit:release-" in encoded:
         raise GateError("Production resource appeared in Beta topology")
