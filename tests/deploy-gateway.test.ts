@@ -18,6 +18,13 @@ test('gateway accepts only the bounded non-DB release schema', () => {
   assert.equal(validate({...valid, source_sha:'main'}).stdout.trim(), 'GateError');
 });
 
+test('gateway accepts Beta only through the explicit isolated Beta schema', () => {
+  const valid = {action:'beta-release',schema_version:1,release_id:'beta-001',source_sha:'a'.repeat(40),expected_current_image:'ahf-home-fit:beta-current',db_change:false,phase:'beta'};
+  assert.equal(validate(valid).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, expected_current_image:'apex-home-fit:release-current'}).stdout.trim(), 'GateError');
+  assert.equal(validate({...valid, phase:'normal'}).stdout.trim(), 'GateError');
+});
+
 test('gateway allowlists the S02-E backfill and the MG-09 adoption operations', () => {
   const source = readFileSync(gateway, 'utf8');
   assert.match(source, /"s02e-exercise-identity-backfill"/);
@@ -39,8 +46,21 @@ test('gateway source is fixed to canonical host, repository, compose and volume'
   assert.match(source, /REPO = "msaeedlavasani\/Apex-Home-Fitness"/);
   assert.match(source, /COMPOSE = ROOT \/ "compose.yml"/);
   assert.match(source, /VOLUME = "apexhomefit_prod_db"/);
+  assert.match(source, /BETA_VOLUME = "ahf_beta_db"/);
+  assert.match(source, /BETA_HOSTNAME = "beta\.apexhomefit\.ir"/);
+  assert.match(source, /BETA_SOURCE_REF = "feat\/workout-v2-first-slice"/);
+  assert.match(source, /BETA_PR_NUMBER = 72/);
   assert.match(source, /PRISMA = "6\.19\.3"/);
   assert.doesNotMatch(source, /shell=True/);
+});
+
+test('Beta installer and service explicitly preserve Production isolation', () => {
+  const installer = readFileSync('ops/deploy-gateway/install-beta-path.sh', 'utf8');
+  const service = readFileSync('ops/deploy-gateway/install-gateway.sh', 'utf8');
+  assert.match(installer, /ahf_beta_db/);
+  assert.match(installer, /127\.0\.0\.1:3100/);
+  assert.match(installer, /apexhomefit_prod_db/);
+  assert.match(service, /\/opt\/ahf-beta/);
 });
 
 test('bootstrap preserves legacy privileges and hardening is proof-gated', () => {

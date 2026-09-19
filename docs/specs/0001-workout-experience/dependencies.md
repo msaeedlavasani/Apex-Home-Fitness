@@ -52,7 +52,7 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-16","dependsOn":["WP-15","WP-13"],"kind":"WORK_PACKAGE","workstream":"QA_PROGRAM_DOMAIN_PATH","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-16.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PASS","requiresCapabilities":[{"id":"V2_NORMAL_PRODUCT_ENTRY_V1","provider":"WP-15"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}],"providesCapabilities":["V2_QA_PROGRAM_DOMAIN_PATH_V1","V2_QA_PRESCRIPTION_COVERAGE_V1"]},
     {"id":"PRODUCT-INTEGRATION-CHECKPOINT","dependsOn":["WP-15","WP-16","INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS"},
     {"id":"BETA-DEPLOYMENT-AUTHORIZATION","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":false,"ownerDecisionRequired":false,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"verification":"PASS","gateScope":"BETA_DEPLOYMENT_AUTHORITY"},
-    {"id":"BETA-DEPLOYMENT-CAPABILITY","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-AUTHORIZATION"],"kind":"WORK_PACKAGE","workstream":"BETA_DEPLOYMENT","readinessRule":"DAG_DERIVED","status":"BLOCKED","frozen":false,"admissionRequired":true,"taskProfile":"RELEASE","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"BLOCKED","blocker":"BETA_DEPLOYMENT_PATH_UNAVAILABLE","providesCapabilities":["V2_BETA_DEPLOYMENT_PATH_V1"]},
+    {"id":"BETA-DEPLOYMENT-CAPABILITY","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-AUTHORIZATION"],"kind":"WORK_PACKAGE","workstream":"BETA_DEPLOYMENT","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"RELEASE","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PENDING","providesCapabilities":["V2_BETA_DEPLOYMENT_PATH_V1"]},
     {"id":"BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-BETA-DEPLOYMENT-01.json","status":"PLANNED","frozen":false,"verification":"PENDING","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
     {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
@@ -107,10 +107,11 @@ that checkpoint owns the machine evidence
 and `KNOWN_GOOD_SHA` in
 [`docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json`](../../../docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json).
 The complete-flow Owner visual gate remains downstream and has not been
-satisfied by this machine execution. The Owner authorized Beta-only
-deployment on 2026-09-19, but repository inspection found no canonical Beta
-workflow, target mapping, or gateway allowlist. The derived Beta deployment
-capability is therefore explicitly BLOCKED; Production remains unauthorized.
+satisfied by this machine execution. The Owner authorized establishment of the
+governed Beta path on 2026-09-19. The capability is now READY_DERIVED after
+reconciling the existing host, `beta.apexhomefit.ir` DNS/TLS/reverse-proxy
+path, isolated `ahf_beta_db` volume, and the constrained gateway extension into
+canonical repository work. Production remains unauthorized.
 
 ## 2. Hard dependencies
 

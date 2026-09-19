@@ -37,6 +37,14 @@
 - **Reconciliation result:** the repository contains no Beta deployment workflow, GitHub environment, deployment record, target mapping, or Beta-capable deployment gateway. The existing gateway is Production-only: it requires authoritative `main` HEAD and the Production compose/volume allowlist. The authorization is therefore persisted as accepted, but the derived Beta deployment capability remains BLOCKED until a canonical Beta path is established within deployment governance.
 - **No inference:** this decision does not authorize Production, PR merge, a new deployment authority, arbitrary host/compose/secret values, or bypass of the existing Production gateway security model.
 
+### WORKOUT-V2-BETA-CAPABILITY-01 — Establish canonical Beta deployment path (2026-09-19)
+
+- **Owner decision:** AUTHORIZE `BETA-DEPLOYMENT-CAPABILITY` to design, implement, configure, and verify the minimum governed AHF Beta deployment path required for Workout Experience V2 validation.
+- **Canonical target:** `beta.apexhomefit.ir` on the existing AHF host, with explicit Beta-only Compose, loopback port, persistent volume, environment boundary, deployment source/build identity, and rollback evidence.
+- **Reuse boundary:** extend the existing constrained Deployment Gateway and host patterns; do not create a parallel scheduler, weaken Production safeguards, or target Production resources.
+- **Safety boundary:** Beta must fail closed on ambiguous target identity, must preserve the Production app/volume/configuration, and must not expose secret values.
+- **Scope:** Beta only; Production deployment, PR #72 merge, and any bypass of CI/admission/checkpoint/rollback requirements remain unauthorized.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

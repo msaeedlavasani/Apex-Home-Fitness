@@ -13,21 +13,30 @@ from __future__ import annotations
 import hashlib, json, os, re, secrets, shutil, socket, struct, subprocess, tarfile, tempfile, time, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 HOST = "sabtbrooker"
 REPO = "msaeedlavasani/Apex-Home-Fitness"
 ROOT = Path("/opt/apex-home-fit")
 COMPOSE = ROOT / "compose.yml"
 ENV_FILE = ROOT / ".env"
+BETA_ROOT = Path("/opt/ahf-beta")
+BETA_COMPOSE = BETA_ROOT / "compose.yml"
+BETA_ENV_FILE = BETA_ROOT / ".env"
 STATE = Path("/var/lib/apex-deploy-gateway")
 SOCKET = Path("/run/apex-deploy-gateway/gateway.sock")
 AUDIT = Path("/var/log/apex-deploy-gateway.log")
 VOLUME = "apexhomefit_prod_db"
+BETA_VOLUME = "ahf_beta_db"
+BETA_HOSTNAME = "beta.apexhomefit.ir"
+BETA_PORT = "3100"
+BETA_SOURCE_REF = "feat/workout-v2-first-slice"
+BETA_PR_NUMBER = 72
 PRISMA = "6.19.3"
 BASE_DIGEST = "sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32"
-GATEWAY_VERSION = 2
+GATEWAY_VERSION = 3
 REQUEST_KEYS = {"action", "schema_version", "release_id", "source_sha", "expected_current_image", "db_change", "phase", "operation_id", "mode", "dry_run_evidence_sha"}
-ACTIONS = ("status", "release", "verify-rollback", "db-operation")
+ACTIONS = ("status", "release", "verify-rollback", "db-operation", "beta-status", "beta-release", "beta-verify-rollback")
 DB_OP_MODES = ("dry-run", "apply", "rehearsal")
 # Bounded operation allowlist. Each entry maps an operation identity to the
 # allowlisted runner inside the repository archive at the authoritative SHA.
@@ -98,11 +107,77 @@ def env_values():
     return values
 
 
+def beta_env_values():
+    if not BETA_COMPOSE.is_file() or not BETA_ENV_FILE.is_file():
+        raise GateError("canonical Beta deployment files missing")
+    st = BETA_ENV_FILE.stat()
+    if st.st_uid != 0 or st.st_mode & 0o077:
+        raise GateError("Beta protected environment invariant failed")
+    values = {}
+    for raw in BETA_ENV_FILE.read_text(encoding="utf-8").splitlines():
+        if not raw.strip() or raw.lstrip().startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    for key in ("NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SITE_URL"):
+        if not values.get(key):
+            raise GateError(f"required Beta configuration absent: {key}")
+    if values["NEXT_PUBLIC_SITE_URL"].rstrip("/") != f"https://{BETA_HOSTNAME}":
+        raise GateError("Beta NEXT_PUBLIC_SITE_URL does not match canonical Beta identity")
+    return values
+
+
 def compose_image():
     match = re.search(r"(?m)^\s+image:\s+(apex-home-fit:[A-Za-z0-9_.-]+)\s*$", COMPOSE.read_text())
     if not match:
         raise GateError("canonical compose image invariant failed")
     return match.group(1)
+
+
+def beta_compose_images():
+    text = BETA_COMPOSE.read_text(encoding="utf-8")
+    app = re.search(r"(?m)^\s+image:\s+(ahf-home-fit:beta-(?!migrate-)[A-Za-z0-9_.-]+)\s*$", text)
+    migrate = re.search(r"(?m)^\s+image:\s+(ahf-home-fit:beta-migrate-[A-Za-z0-9_.-]+)\s*$", text)
+    if not app or not migrate:
+        raise GateError("canonical Beta compose image invariant failed")
+    return app.group(1), migrate.group(1)
+
+
+def beta_topology(expected_app=None, expected_migrate=None):
+    app_image, migrate_image = beta_compose_images()
+    if expected_app and app_image != expected_app:
+        raise GateError("current Beta image drift")
+    if expected_migrate and migrate_image != expected_migrate:
+        raise GateError("current Beta migration image drift")
+    if run(["/usr/bin/docker", "volume", "ls", "-q", "--filter", f"name=^{BETA_VOLUME}$"]) != BETA_VOLUME:
+        raise GateError("Beta database volume drift")
+    config = json.loads(run(["/usr/bin/docker", "compose", "-f", str(BETA_COMPOSE), "config", "--format", "json"]))
+    services = config.get("services", {})
+    app = services.get("app", {})
+    migrate = services.get("migrate", {})
+    if app.get("image") != app_image or migrate.get("image") != migrate_image:
+        raise GateError("Beta compose image drift")
+    encoded = json.dumps(config)
+    if "127.0.0.1:3100" not in encoded or "127.0.0.1:3000" in encoded:
+        raise GateError("Beta port boundary drift")
+    if "apexhomefit_prod_db" in encoded or "apex-home-fit:release-" in encoded:
+        raise GateError("Production resource appeared in Beta topology")
+    for service in (app, migrate):
+        if not any(v.get("source") == BETA_VOLUME and v.get("target") == "/data" for v in service.get("volumes", [])):
+            raise GateError("Beta database volume mount drift")
+    return app_image, migrate_image
+
+
+def update_beta_images(app_target, migrate_target):
+    text = BETA_COMPOSE.read_text(encoding="utf-8")
+    updated, app_count = re.subn(r"(?m)^(\s+image:\s+)ahf-home-fit:beta-(?!migrate-)[A-Za-z0-9_.-]+\s*$", rf"\g<1>{app_target}", text, count=1)
+    updated, migrate_count = re.subn(r"(?m)^(\s+image:\s+)ahf-home-fit:beta-migrate-[A-Za-z0-9_.-]+\s*$", rf"\g<1>{migrate_target}", updated, count=1)
+    if app_count != 1 or migrate_count != 1:
+        raise GateError("Beta compose image update not singular")
+    temp = BETA_COMPOSE.with_suffix(".gateway-tmp")
+    temp.write_text(updated, encoding="utf-8")
+    os.chmod(temp, 0o644)
+    os.replace(temp, BETA_COMPOSE)
 
 
 def validate_request(req):
@@ -113,6 +188,8 @@ def validate_request(req):
     if req.get("action") not in ACTIONS:
         raise GateError("unsupported action")
     if req["action"] == "status":
+        return
+    if req["action"] == "beta-status":
         return
     if req["action"] == "db-operation":
         if req.get("operation_id") not in OPERATION_ALLOWLIST:
@@ -128,7 +205,19 @@ def validate_request(req):
         return
     if not isinstance(req.get("release_id"), str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,63}", req.get("release_id") or ""):
         raise GateError("invalid release id")
+    if req["action"] == "beta-verify-rollback":
+        return
     if req["action"] == "verify-rollback":
+        return
+    if req["action"] == "beta-release":
+        if req.get("db_change") is not False:
+            raise GateError("Beta database-changing releases unsupported")
+        if req.get("phase") != "beta":
+            raise GateError("invalid Beta acceptance phase")
+        if not isinstance(req.get("expected_current_image"), str) or not re.fullmatch(r"ahf-home-fit:beta-[A-Za-z0-9_.-]+", req["expected_current_image"]):
+            raise GateError("invalid current Beta image")
+        if not isinstance(req.get("source_sha"), str) or not re.fullmatch(r"[0-9a-f]{40}", req["source_sha"]):
+            raise GateError("invalid source SHA")
         return
     if req.get("db_change") is not False:
         raise GateError("database-changing releases unsupported")
@@ -147,6 +236,34 @@ def remote_main():
     if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise GateError("authoritative main unavailable")
     return sha
+
+
+def github_json(path):
+    request = urllib.request.Request(f"https://api.github.com/repos/{REPO}/{path}", headers={"User-Agent": "apex-gateway/3", "Accept": "application/vnd.github+json"})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.load(response)
+    except Exception as error:
+        raise GateError(f"GitHub authority unavailable: {type(error).__name__}") from error
+
+
+def beta_authoritative_source(sha):
+    ref = github_json(f"git/ref/heads/{quote(BETA_SOURCE_REF, safe='')}")
+    branch_sha = ((ref.get("object") or {}).get("sha")) if isinstance(ref, dict) else None
+    if branch_sha != sha:
+        raise GateError("Beta source SHA is not the canonical Workout V2 branch head")
+    pr = github_json(f"pulls/{BETA_PR_NUMBER}")
+    head = pr.get("head") if isinstance(pr, dict) else None
+    if pr.get("state") != "open" or not isinstance(head, dict) or head.get("sha") != sha or head.get("ref") != BETA_SOURCE_REF:
+        raise GateError("Beta source SHA is not the open canonical Workout V2 PR head")
+    runs = github_json(f"actions/runs?head_sha={quote(sha, safe='')}&per_page=100").get("workflow_runs", [])
+    authoritative = {}
+    for event in ("push", "pull_request"):
+        matches = [run_info for run_info in runs if run_info.get("name") == "CI" and run_info.get("event") == event and run_info.get("head_sha") == sha]
+        if not matches or matches[0].get("conclusion") != "success":
+            raise GateError(f"authoritative Beta CI is not PASS for event {event}")
+        authoritative[event] = {"run_id": matches[0].get("id"), "url": matches[0].get("html_url"), "conclusion": matches[0].get("conclusion")}
+    return {"branch": BETA_SOURCE_REF, "pr": BETA_PR_NUMBER, "sha": sha, "ci": authoritative}
 
 
 def topology(expected):
@@ -308,6 +425,138 @@ def _db_sha(op_image, db_path="app.db", ro=True):
 
 def _restart_app():
     run(["/usr/bin/docker", "compose", "-f", str(COMPOSE), "up", "-d", "--no-deps", "--force-recreate", "app"], quiet=False)
+
+
+def _restart_beta_app():
+    run(["/usr/bin/docker", "compose", "-f", str(BETA_COMPOSE), "up", "-d", "--no-deps", "--force-recreate", "app"], quiet=False)
+
+
+def _beta_db_sha(op_image, db_path="app.db", ro=True):
+    mount = f"{BETA_VOLUME}:/data:ro" if ro else f"{BETA_VOLUME}:/data"
+    return run(["/usr/bin/docker", "run", "--rm", "-v", mount, op_image, "sha256sum", f"/data/{db_path}"]).split()[0]
+
+
+def _beta_build_id(app_image):
+    build_id = run(["/usr/bin/docker", "run", "--rm", app_image, "sh", "-c", "cat /app/.next/BUILD_ID"])
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", build_id):
+        raise GateError("Beta build identity is invalid")
+    return build_id
+
+
+def beta_status():
+    beta_env_values()
+    app_image, migrate_image = beta_topology()
+    return {
+        "status": "READY", "version": GATEWAY_VERSION, "environment": "AHF_BETA",
+        "host": HOST, "url": f"https://{BETA_HOSTNAME}", "image": app_image,
+        "migration_image": migrate_image, "volume": BETA_VOLUME,
+        "port": f"127.0.0.1:{BETA_PORT}", "production_untouched": True,
+        "secret_boundary": "PROTECTED",
+    }
+
+
+def beta_release(req):
+    release_id = req["release_id"]
+    sha = req["source_sha"]
+    expected = req["expected_current_image"]
+    audit("beta-release-start", release_id)
+    acquire_op_lock()
+    try:
+        source_evidence = beta_authoritative_source(sha)
+        beta_env = beta_env_values()
+        beta_topology(expected)
+        target = f"ahf-home-fit:beta-{sha[:12]}"
+        migrate_target = f"ahf-home-fit:beta-migrate-{sha[:12]}"
+        rollback = BETA_ROOT / f"compose.yml.rollback-{release_id}"
+        backup = f"gateway-beta-backup-{release_id}.db"
+        stopped = False
+        migrated = False
+        with tempfile.TemporaryDirectory(prefix="apex-beta-gateway-") as td:
+            temp = Path(td)
+            archive = temp / "source.tar.gz"
+            urllib.request.urlretrieve(f"https://github.com/{REPO}/archive/{sha}.tar.gz", archive)
+            source = extract(archive, temp / "source")
+            args = ["--build-arg", "NPM_REGISTRY=https://package-mirror.liara.ir/repository/npm/",
+                    "--build-arg", f"NEXT_PUBLIC_SUPABASE_URL={beta_env['NEXT_PUBLIC_SUPABASE_URL']}",
+                    "--build-arg", f"NEXT_PUBLIC_SUPABASE_ANON_KEY={beta_env['NEXT_PUBLIC_SUPABASE_ANON_KEY']}",
+                    "--build-arg", f"NEXT_PUBLIC_SITE_URL={beta_env['NEXT_PUBLIC_SITE_URL']}"]
+            run(["/usr/bin/docker", "image", "inspect", f"node:22-alpine@{BASE_DIGEST}", "--format", "{{.Id}}"])
+            run(["/usr/bin/docker", "build", "--pull=false", "--target", "runner", "-t", target, *args, str(source)], quiet=False)
+            run(["/usr/bin/docker", "build", "--pull=false", "--target", "build", "-t", migrate_target, *args, str(source)], quiet=False)
+            image_id = run(["/usr/bin/docker", "image", "inspect", target, "--format", "{{.Id}}"])
+            migrate_image_id = run(["/usr/bin/docker", "image", "inspect", migrate_target, "--format", "{{.Id}}"])
+            version = run(["/usr/bin/docker", "run", "--rm", migrate_target, "./node_modules/.bin/prisma", "--version"])
+            if f"prisma                  : {PRISMA}" not in version:
+                raise GateError("pinned Beta migration tooling drift")
+            build_id = _beta_build_id(target)
+            shutil.copy2(BETA_COMPOSE, rollback)
+            os.chmod(rollback, 0o600)
+            try:
+                run(["/usr/bin/docker", "compose", "-f", str(BETA_COMPOSE), "stop", "app"], quiet=False)
+                stopped = True
+                run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                     "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{backup} && chown 100:101 /data/{backup}"], quiet=False)
+                before = _beta_db_sha(migrate_target)
+                run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-e", "DATABASE_URL=file:/data/app.db", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                     "sh", "-c", "./node_modules/.bin/prisma migrate deploy >/dev/null && chown -R 100:101 /data"], quiet=False)
+                migrated = True
+                after = _beta_db_sha(migrate_target)
+                if before != after:
+                    raise GateError("Beta database changed in DB_CHANGED=NO release")
+                update_beta_images(target, migrate_target)
+                _restart_beta_app()
+                for _ in range(20):
+                    try:
+                        run(["/usr/bin/curl", "--fail", "--silent", "--max-time", "5", f"http://127.0.0.1:{BETA_PORT}/en"])
+                        break
+                    except GateError:
+                        time.sleep(3)
+                else:
+                    raise GateError("Beta health verification failed")
+                beta_topology(target, migrate_target)
+            except Exception:
+                if stopped:
+                    shutil.copy2(rollback, BETA_COMPOSE)
+                    if migrated:
+                        run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                             "sh", "-c", f"test -f /data/{backup} && cp /data/{backup} /data/app.db && chown 100:101 /data/app.db"], quiet=False)
+                    _restart_beta_app()
+                audit("beta-release-rolled-back", release_id)
+                raise
+        proof = {
+            "release_id": release_id, "phase": req["phase"], "environment": "AHF_BETA",
+            "url": f"https://{BETA_HOSTNAME}", "source_sha": sha, "source": source_evidence,
+            "image": target, "image_id": image_id, "migration_image": migrate_target,
+            "migration_image_id": migrate_image_id, "build_id": build_id,
+            "rollback": rollback.name, "database_before_sha256": before,
+            "database_after_sha256": after, "status": "PASS",
+            "production_untouched": True,
+        }
+        proof_path = STATE / f"proof-beta-{release_id}.json"
+        proof_path.write_text(json.dumps(proof))
+        os.chmod(proof_path, 0o600)
+        marker = BETA_ROOT / ".deployed-commit"
+        marker.write_text(json.dumps({"source_sha": sha, "image": target, "image_id": image_id, "build_id": build_id}))
+        os.chmod(marker, 0o600)
+        audit("beta-release-pass", release_id)
+        return {**proof, "version": GATEWAY_VERSION, "health": "PASS", "secret_boundary": "PROTECTED"}
+    finally:
+        release_op_lock()
+
+
+def beta_verify_rollback(req):
+    beta_env_values()
+    proof_path = STATE / f"proof-beta-{req['release_id']}.json"
+    if not proof_path.is_file():
+        raise GateError("Beta release proof missing")
+    proof = json.loads(proof_path.read_text())
+    rollback = BETA_ROOT / proof["rollback"]
+    if not rollback.is_file() or rollback.stat().st_mode & 0o077:
+        raise GateError("Beta rollback compose evidence invalid")
+    previous = re.search(r"(?m)^\s+image:\s+(ahf-home-fit:beta-(?!migrate-)[^\s]+)", rollback.read_text()).group(1)
+    run(["/usr/bin/docker", "image", "inspect", previous, "--format", "{{.Id}}"])
+    audit("beta-rollback-verified", req["release_id"])
+    return {"status": "PASS", "version": GATEWAY_VERSION, "environment": "AHF_BETA", "rollback": "VERIFIED", "previous_image": "AVAILABLE"}
 
 
 def db_operation(req):
@@ -517,10 +766,16 @@ def handle(req):
     validate_request(req)
     if req["action"] == "status":
         return {"status": "READY", "version": GATEWAY_VERSION, "host": HOST, "image": compose_image(), "volume": VOLUME, "secret_boundary": "PROTECTED"}
+    if req["action"] == "beta-status":
+        return beta_status()
+    if req["action"] == "beta-verify-rollback":
+        return beta_verify_rollback(req)
     if req["action"] == "verify-rollback":
         return verify_rollback(req)
     if req["action"] == "db-operation":
         return db_operation(req)
+    if req["action"] == "beta-release":
+        return beta_release(req)
     return release(req)
 
 
@@ -586,6 +841,9 @@ def self_test():
     check("db-operation bad source sha rejected", lambda: invalid({"action": "db-operation", "schema_version": 1, "operation_id": "s02e-exercise-identity-backfill", "mode": "dry-run", "source_sha": "short"}))
     check("release db_change=true still rejected", lambda: invalid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": True, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
     check("release db_change=false valid", lambda: valid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
+    check("Beta release valid", lambda: valid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "beta"}))
+    check("Beta release cannot use Production image", lambda: invalid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:release-current", "phase": "beta"}))
+    check("Beta release requires Beta phase", lambda: invalid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "normal"}))
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
     check("canonical json stable", lambda: (_ for _ in ()).throw(AssertionError()) if _canonical({"a": 1, "b": [2, 3]}) != _canonical({"b": [2, 3], "a": 1}) else None)

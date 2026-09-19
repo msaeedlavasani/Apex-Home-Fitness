@@ -1,0 +1,34 @@
+# Canonical AHF Beta runtime topology.
+# Installed as /opt/ahf-beta/compose.yml by install-beta-path.sh.
+# Images are selected only by the constrained Beta gateway after exact-SHA
+# source, CI, build, and rollback checks pass.
+
+services:
+  migrate:
+    image: ahf-home-fit:beta-migrate-current
+    env_file:
+      - /opt/ahf-beta/.env
+    environment:
+      DATABASE_URL: file:/data/app.db
+    command: sh -c "./node_modules/.bin/prisma migrate deploy && chown -R 100:101 /data"
+    volumes:
+      - ahf_beta_db:/data
+
+  app:
+    image: ahf-home-fit:beta-current
+    env_file:
+      - /opt/ahf-beta/.env
+    environment:
+      DATABASE_URL: file:/data/app.db
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      - ahf_beta_db:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ahf_beta_db:
+    name: ahf_beta_db

@@ -108,9 +108,11 @@ This policy does not infer deployment permission. The existing Production
 gateway and `RELEASE_POLICY.md` remain authoritative for Production. The Owner
 has explicitly authorized Workout V2 Beta deployment in
 `OWNER_DECISION_GATE.md`, but that decision does not create a deployment path.
-The repository currently has no Beta workflow, GitHub environment, target
-mapping, or gateway allowlist. The existing gateway is Production-only and
-requires authoritative `main` plus the Production compose/volume topology.
-The canonical Beta capability and deployment checkpoint therefore remain
-blocked until a compatible Beta path is established and machine-verified.
-Production remains unauthorized.
+The Owner has now authorized `BETA-DEPLOYMENT-CAPABILITY` to establish the
+minimum governed Beta path. The canonical target is `beta.apexhomefit.ir` on
+the existing AHF host, isolated from Production by its explicit Compose path,
+loopback port, persistent volume, image namespace, and environment boundary.
+The existing constrained gateway is extended for this Beta action without
+changing its Production contract. Beta remains fail-closed on source, target,
+build identity, rollback, and runtime verification. Production remains
+unauthorized.

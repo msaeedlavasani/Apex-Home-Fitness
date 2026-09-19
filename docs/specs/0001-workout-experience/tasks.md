@@ -246,8 +246,10 @@ The product implementation must prove that changing only resolved Program data c
 ### BETA-DEPLOYMENT-CAPABILITY — canonical Beta path prerequisite
 
 - **Dependencies:** `BETA-DEPLOYMENT-AUTHORIZATION`, `PRODUCT-INTEGRATION-CHECKPOINT`.
-- **Purpose:** establish or expose a governed Beta deployment path using existing deployment security, exact-SHA identity, rollback, runtime, and environment controls.
-- **Status:** BLOCKED — no repository-authorized Beta target/workflow/gateway mapping exists; no values may be guessed.
+- **Purpose:** establish and verify a governed Beta deployment path using the existing constrained gateway, exact-SHA identity, rollback, runtime, and environment controls.
+- **Canonical target:** `beta.apexhomefit.ir` → existing AHF host → Nginx TLS/reverse proxy → `127.0.0.1:3100` → isolated `ahf_beta_db` volume. The repository-owned Beta Compose template and gateway action are the canonical deployment path; host configuration is verified without exposing secrets.
+- **Status:** READY_DERIVED — Owner authorized path establishment on 2026-09-19; the existing host already exposes the target DNS/TLS/proxy and isolated Beta container/volume, subject to repository governance reconciliation and exact-SHA deployment.
+- **Verification:** gateway source-ref/branch+PR CI checks, immutable Beta images, exact deployed SHA/build identity, protected Beta environment shape, Production topology non-interference, database hash stability, health/readiness, and rollback proof.
 - **Prohibited scope:** Production deployment, PR merge, bypassing the Production gateway, arbitrary host/compose/secret selection, or weakening deployment security.
 
 ### BETA-DEPLOYMENT-CHECKPOINT — deployed Beta identity and runtime gate
