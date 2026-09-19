@@ -23,7 +23,7 @@ app = services.get("app", {})
 migrate = services.get("migrate", {})
 if app.get("image") != "ahf-home-fit:beta-current": raise SystemExit("Beta app image invariant failed")
 if migrate.get("image") != "ahf-home-fit:beta-migrate-current": raise SystemExit("Beta migrate image invariant failed")
-if "127.0.0.1:3100" not in json.dumps(app.get("ports", [])): raise SystemExit("Beta port invariant failed")
+if not any(p.get("host_ip") == "127.0.0.1" and str(p.get("published")) == "3100" and str(p.get("target")) == "3000" for p in app.get("ports", [])): raise SystemExit("Beta port invariant failed")
 for service in (app, migrate):
     if not any(v.get("source") == "ahf_beta_db" and v.get("target") == "/data" for v in service.get("volumes", [])): raise SystemExit("Beta volume invariant failed")
 if "apexhomefit_prod_db" in json.dumps(c) or "127.0.0.1:3000" in json.dumps(c): raise SystemExit("Production boundary appeared in Beta topology")
