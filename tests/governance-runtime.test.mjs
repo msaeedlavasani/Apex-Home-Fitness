@@ -42,7 +42,7 @@ function baseCheckpoint(overrides = {}) {
   const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   return {
     CHECKPOINT_ID: 'TEST-INTEGRATION-01', CHECKPOINT_KIND: 'INTEGRATION', STATUS: 'PASS', KNOWN_GOOD_SHA: sha, VERIFIED_SOURCE_SHA: sha, CHECKPOINT_EVIDENCE_SHA: sha,
-    AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'PASS', COMMIT_SHA: sha, RUN_ID: 'local-test', URL: 'https://example.invalid/ci'},
+    AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'PASS', COMMIT_SHA: sha, RUN_ID: 'local-test', URL: 'https://example.invalid/ci', BRANCH_STATUS: 'PASS', BRANCH_COMMIT_SHA: sha, BRANCH_RUN_ID: 'branch-test', BRANCH_URL: 'https://example.invalid/branch-ci', PR_STATUS: 'PASS', PR_COMMIT_SHA: sha, PR_RUN_ID: 'pr-test', PR_URL: 'https://example.invalid/pr-ci'},
     VERIFICATION_EVIDENCE: [{ID: 'test', COMMAND: 'test command', STATUS: 'PASS', SUMMARY: 'machine evidence passed'}],
     WORKTREE_CLEAN: 'YES', LOCAL_REMOTE_PARITY: 'YES', DEPLOYMENT_IDENTITY: 'NOT_APPLICABLE',
     ...overrides,
@@ -60,6 +60,11 @@ test('checkpoint PASS fails closed without authoritative GitHub CI PASS', () => 
   const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   const file = tempJson(baseCheckpoint({AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'FAIL', COMMIT_SHA: sha, RUN_ID: 'failed-run', URL: 'https://example.invalid/failed'}}));
   assert.throws(() => run('checkpoint', file), /AUTHORITATIVE_CI.STATUS=PASS/);
+});
+test('checkpoint PASS fails closed when either branch or PR CI is not PASS', () => {
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  const file = tempJson(baseCheckpoint({AUTHORITATIVE_CI: {PROVIDER: 'GITHUB_ACTIONS', WORKFLOW: 'CI', STATUS: 'PASS', COMMIT_SHA: sha, RUN_ID: 'pass-run', URL: 'https://example.invalid/ci', BRANCH_STATUS: 'PASS', BRANCH_COMMIT_SHA: sha, BRANCH_RUN_ID: 'branch-pass', BRANCH_URL: 'https://example.invalid/branch-ci', PR_STATUS: 'FAIL', PR_COMMIT_SHA: sha, PR_RUN_ID: 'pr-fail', PR_URL: 'https://example.invalid/pr-ci'}}));
+  assert.throws(() => run('checkpoint', file), /branch and PR authoritative CI PASS/);
 });
 test('checkpoint completion recalculates readiness and leaves the Human Gate downstream', () => {
   const stateSource = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE');

@@ -62,8 +62,9 @@ Each PASS record is a JSON object validated by
 - `CHECKPOINT_EVIDENCE_SHA` — the existing commit that carries the recorded
   checkpoint evidence; evidence-only commits may sit above the known-good
   source commit and must not be presented as product verification;
-- `AUTHORITATIVE_CI` — a GitHub Actions `CI` PASS tied to `KNOWN_GOOD_SHA`,
-  including provider, workflow, run ID, URL, status, and commit SHA;
+- `AUTHORITATIVE_CI` — GitHub Actions `CI` PASS evidence tied to
+  `KNOWN_GOOD_SHA` for both the branch push and the synchronized PR check,
+  including provider, workflow, run IDs, URLs, statuses, and commit SHAs;
 - `VERIFICATION_EVIDENCE` — one or more named checks, each with a command,
   `STATUS: PASS`, and a concise evidence summary;
 - `WORKTREE_CLEAN: YES` and `LOCAL_REMOTE_PARITY: YES`;
@@ -84,6 +85,7 @@ known-good candidate; it does not silently change the product baseline.
 
 The authoritative branch/PR workflow checks out complete Git history because
 the validator must be able to prove that all recorded SHAs are real commits.
+Neither branch-only nor PR-only success satisfies a complete-flow checkpoint.
 
 ## Failure and continuation semantics
 

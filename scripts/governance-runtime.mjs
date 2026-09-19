@@ -73,6 +73,18 @@ function validateCheckpoint(record, {requireCurrentSha = false, allowUnpassed = 
   if (record.STATUS === 'PASS') {
     if (ci.STATUS !== 'PASS') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires AUTHORITATIVE_CI.STATUS=PASS`);
     if (ci.COMMIT_SHA !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} KNOWN_GOOD_SHA must equal AUTHORITATIVE_CI.COMMIT_SHA`);
+    const ciRuns = [
+      ['BRANCH_STATUS', ci.BRANCH_STATUS], ['BRANCH_COMMIT_SHA', ci.BRANCH_COMMIT_SHA], ['BRANCH_RUN_ID', ci.BRANCH_RUN_ID], ['BRANCH_URL', ci.BRANCH_URL],
+      ['PR_STATUS', ci.PR_STATUS], ['PR_COMMIT_SHA', ci.PR_COMMIT_SHA], ['PR_RUN_ID', ci.PR_RUN_ID], ['PR_URL', ci.PR_URL],
+    ];
+    if (ci.BRANCH_STATUS !== 'PASS' || ci.PR_STATUS !== 'PASS') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires branch and PR authoritative CI PASS`);
+    for (const [label, value] of ciRuns) {
+      if (label.endsWith('_STATUS') && !['PASS', 'FAIL', 'PENDING'].includes(value)) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} ${label} must be PASS, FAIL, or PENDING`);
+      if (label.endsWith('_COMMIT_SHA') && (!/^[0-9a-f]{40}$/.test(value) || !gitCommitExists(value))) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} ${label} is not an existing full commit SHA: ${value}`);
+      if (label.endsWith('_RUN_ID') && (typeof value !== 'string' && typeof value !== 'number')) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} ${label} must be a run ID`);
+      if (label.endsWith('_URL') && (typeof value !== 'string' || !value.trim())) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} ${label} must be a non-empty URL`);
+    }
+    if (ci.BRANCH_COMMIT_SHA !== record.KNOWN_GOOD_SHA || ci.PR_COMMIT_SHA !== record.KNOWN_GOOD_SHA) throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} branch and PR CI must both verify KNOWN_GOOD_SHA`);
   }
   if (!allowUnpassed && record.WORKTREE_CLEAN !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires WORKTREE_CLEAN=YES`);
   if (!allowUnpassed && record.LOCAL_REMOTE_PARITY !== 'YES') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} requires LOCAL_REMOTE_PARITY=YES`);
@@ -81,6 +93,7 @@ function validateCheckpoint(record, {requireCurrentSha = false, allowUnpassed = 
     if (!evidence || typeof evidence.ID !== 'string' || typeof evidence.COMMAND !== 'string' || !['PASS', 'FAIL', 'PENDING'].includes(evidence.STATUS) || typeof evidence.SUMMARY !== 'string' || !evidence.SUMMARY.trim()) {
       throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} evidence entries require ID, COMMAND, STATUS, and SUMMARY`);
     }
+    if (record.STATUS === 'PASS' && evidence.STATUS !== 'PASS') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} PASS records cannot contain non-PASS evidence`);
   }
   if (record.CHECKPOINT_KIND === 'INTEGRATION' && record.DEPLOYMENT_IDENTITY !== 'NOT_APPLICABLE') throw new Error(`CHECKPOINT_INVALID: ${record.CHECKPOINT_ID} integration checkpoints require DEPLOYMENT_IDENTITY=NOT_APPLICABLE`);
   if (record.CHECKPOINT_KIND === 'DEPLOYMENT') {
