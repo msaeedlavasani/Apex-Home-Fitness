@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {exerciseIdentityIndex, workoutSessionExercisesFromProgram} from '@/lib/programSchedule';
+import {exerciseSupportsSquatMentor} from '@/lib/exercise/passport';
+import {QA_PROGRAM_EXERCISES, QA_PROGRAM_WEEKLY_SCHEDULE} from '@/lib/program/qaProgram';
 import {sharedPrescriptionFromPersistedPlan} from '@/lib/workout/prescriptionContract';
+
+test('canonical QA fixture is exactly two Squat-Mentor entries without narrowing general topology', () => {
+  assert.equal(QA_PROGRAM_EXERCISES.length, 2);
+  assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.name), ['Jump Squats', 'Bodyweight Squat']);
+  assert.ok(QA_PROGRAM_EXERCISES.every((item) => exerciseSupportsSquatMentor({name: item.name})));
+  assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.sets), [2, 1]);
+  assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.reps), [8, null]);
+  assert.deepEqual(QA_PROGRAM_WEEKLY_SCHEDULE[0].exercises.map((item) => item.name), ['Jump Squats', 'Bodyweight Squat']);
+  assert.equal(QA_PROGRAM_WEEKLY_SCHEDULE[0].exercises[0].fallback_duration_seconds, 45);
+  assert.equal(QA_PROGRAM_WEEKLY_SCHEDULE[0].exercises[1].duration_seconds, 30);
+});
 
 test('QA Program input exercises the real persisted-program contract boundary', () => {
   const qaSchedule = [{

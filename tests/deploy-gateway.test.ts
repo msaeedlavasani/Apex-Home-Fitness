@@ -83,6 +83,9 @@ test('Beta QA operation uses canonical phone normalization and canonical data on
   const source = readFileSync('scripts/gateway-db-ops/beta-qa-program-assign.mjs', 'utf8');
   assert.match(source, /normalizePhone/);
   assert.match(source, /QA_PROGRAM_EXERCISE_RECORDS/);
+  assert.match(source, /shapeIssues/);
+  assert.match(source, /REPAIR_CANONICAL_PROGRAM/);
+  assert.match(source, /programExercise\.deleteMany/);
   assert.match(source, /exercise\.upsert/);
   assert.match(source, /users\.filter\(\(candidate\) => candidate\._count\.programs === 0\)/);
   assert.doesNotMatch(source, /SMOKE_TEST_PHONE/);

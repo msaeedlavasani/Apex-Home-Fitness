@@ -55,10 +55,17 @@ Beta QA allowlist without returning it, and ensures the repository-seeded
 `Apex Workout V2 QA Program` is owned by the unique available persisted account
 in that allowlist (or its existing owner on retry). Ambiguous or absent
 accounts fail closed. Missing canonical QA exercise rows are created only by
-this bounded operation. Dry-run evidence
-is required before apply; the Beta app is quiesced, backed up, hash-verified,
-restored on failure, and restarted. This is operational test data, not a
-product identity conditional, and it cannot select Production resources.
+this bounded operation. A stale existing Program is not an Owner decision: the
+dry-run reports sanitized field-level shape differences and plans the minimum
+idempotent canonical repair; apply replaces only that Program's scalar metadata
+and ordered `ProgramExercise` rows from the source-controlled fixture. Dry-run
+evidence is required before apply; the Beta app is quiesced, backed up,
+hash-verified, restored on failure, and restarted. This is operational test
+data, not a product identity conditional, and it cannot select Production
+resources. Because the operation executes from the deployed Beta migration
+image, changing the operation implementation requires the existing governed
+capability-install/release mechanism; direct host script replacement is not an
+approved activation path.
 
 ## Authorization and allowlist
 

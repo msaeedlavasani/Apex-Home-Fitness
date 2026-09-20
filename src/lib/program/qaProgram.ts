@@ -9,6 +9,10 @@
 
 export const QA_PROGRAM_NAME = 'Apex Workout V2 QA Program';
 export const QA_PROGRAM_DESCRIPTION = 'Small repeatable QA input for the real Workout V2 Program path.';
+export const QA_PROGRAM_LEVEL = 'BEGINNER' as const;
+export const QA_PROGRAM_DURATION_WEEKS = 1 as const;
+export const QA_PROGRAM_SESSIONS_PER_WEEK = 1 as const;
+export const QA_PROGRAM_REST_DAYS = [] as const;
 
 export const QA_PROGRAM_EXERCISES = [
   {name: 'Jump Squats', sets: 2, reps: 8, restSeconds: 20},

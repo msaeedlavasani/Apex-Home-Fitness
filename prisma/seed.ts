@@ -25,9 +25,13 @@ import {
 } from "@prisma/client";
 import {
   QA_PROGRAM_DESCRIPTION,
+  QA_PROGRAM_DURATION_WEEKS,
   QA_PROGRAM_EXERCISES,
   QA_PROGRAM_EXERCISE_RECORDS,
+  QA_PROGRAM_LEVEL,
   QA_PROGRAM_NAME,
+  QA_PROGRAM_REST_DAYS,
+  QA_PROGRAM_SESSIONS_PER_WEEK,
   QA_PROGRAM_WEEKLY_SCHEDULE,
 } from "../src/lib/program/qaProgram";
 
@@ -826,18 +830,20 @@ async function main() {
     where: {name: QA_PROGRAM_NAME},
     update: {
       description: QA_PROGRAM_DESCRIPTION,
-      sessionsPerWeek: 1,
-      restDays: [],
+      level: QA_PROGRAM_LEVEL,
+      durationWeeks: QA_PROGRAM_DURATION_WEEKS,
+      sessionsPerWeek: QA_PROGRAM_SESSIONS_PER_WEEK,
+      restDays: QA_PROGRAM_REST_DAYS,
       weeklySchedule: qaWeeklySchedule,
       ownerId: demoUser.id,
     },
     create: {
       name: QA_PROGRAM_NAME,
       description: QA_PROGRAM_DESCRIPTION,
-      level: DifficultyLevel.BEGINNER,
-      durationWeeks: 1,
-      sessionsPerWeek: 1,
-      restDays: [],
+      level: QA_PROGRAM_LEVEL,
+      durationWeeks: QA_PROGRAM_DURATION_WEEKS,
+      sessionsPerWeek: QA_PROGRAM_SESSIONS_PER_WEEK,
+      restDays: QA_PROGRAM_REST_DAYS,
       weeklySchedule: qaWeeklySchedule,
       ownerId: demoUser.id,
     },
