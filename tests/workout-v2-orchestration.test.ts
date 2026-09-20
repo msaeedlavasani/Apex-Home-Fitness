@@ -21,7 +21,7 @@ import {
 import type {ResolvedPrescription} from '../src/lib/workout/sessionV2Contracts';
 
 const PLAN: SessionExercise[] = [
-  {id: 's1', name: 'Squat', sets: 3, reps: 10, restSeconds: 30},
+  {id: 's1', name: 'Squat', sets: 3, reps: 10, restSeconds: 30, fallbackDurationSeconds: 45},
   {id: 's2', name: 'Plank', sets: 2, durationSeconds: 40, restSeconds: 20},
 ];
 

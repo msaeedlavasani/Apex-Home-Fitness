@@ -215,6 +215,7 @@
  "set": {
   "setLabel": "Set",
   "recordRep": "Record rep",
+  "tracking": "Tracking movement…",
   "reps": "reps",
   "seconds": "seconds",
   "result": "Set complete"

@@ -77,6 +77,8 @@ export interface IntroStageProps {
   onMentorFailed?: () => void;
   /** Whether the current resolved identity has an honest Mentor asset. */
   mentorSupported?: boolean;
+  /** ExperienceShell owns the session-level Mentor lifecycle when false. */
+  renderMentor?: boolean;
   onDeferExercise?: (disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => void;
   onSkipExercise?: () => void;
   onResolveDeferredExercise?: (disposition: 'PERFORM_NOW' | 'SKIP_FOR_SESSION') => void;
@@ -186,6 +188,7 @@ export function IntroStage({
   onMentorReady,
   onMentorFailed,
   mentorSupported = true,
+  renderMentor = true,
   onDeferExercise,
   onSkipExercise,
   onResolveDeferredExercise,
@@ -210,7 +213,7 @@ export function IntroStage({
     >
       {/* Header strip — eyebrow → identity → equipment. Fixed-height top
           zone so the Mentor's responsive framing can clear it entirely. */}
-      <div
+      {renderMentor && <div
         data-workout-v2-composition-zone={WORKOUT_COMPOSITION_ZONES.secondary}
         className="absolute inset-x-0 top-0 z-20 flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-0"
       >
@@ -238,7 +241,7 @@ export function IntroStage({
             {equipment}
           </p>
         )}
-      </div>
+      </div>}
 
       {/* Mentor demonstration — fills the space BETWEEN the header strip
           and the cue zone: the responsive framing keeps the full body

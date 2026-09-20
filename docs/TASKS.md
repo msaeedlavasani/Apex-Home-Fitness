@@ -21,12 +21,12 @@
 
 | Field | Value |
 |---|---|
-| Active task | `WORKOUT-V2-IMPL-01` — Workout Experience V2 implementation (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-15**; admission `ADMISSION_GRANTED`; Run 1 `WP-06` + `WP-07` closed/frozen) |
-| Profile | `PRODUCTION_BOUND` (implementation; release applies remain gated) |
+| Active task | `WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY` — recover the missing V2 runtime execution boundary (**CRITICAL**; **OWNER-AUTHORIZED 2026-09-20**; code/no-deploy) |
+| Profile | `CODE_NO_DEPLOY` (implementation; release applies remain gated) |
 | Branch | `feat/workout-v2-first-slice` — current feature branch; Run 1 changes are pushed and parity-verified |
-| State | `AUTHORIZED — real product integration and governed Beta deployment checkpoint PASS`; RUN-5 is the remaining complete-flow Human Gate |
+| State | `CLOSED locally — runtime strategy reachability is implemented and machine-verified; governed integration evidence is next`; RUN-5 remains blocked |
 | Production-bound | `NO` — autonomous execution covers READY `CODE_NO_DEPLOY`/docs tasks only; Production applies remain gated (OWNER_DECISION_GATE + gateway environment) |
-| Next selectable work | `NONE` — machine prerequisites are satisfied; `RUN-5-OWNER-ACCEPTANCE` is the remaining Human Gate |
+| Next selectable work | `WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT` — exact-commit branch/PR CI revalidation |
 | Pending owner review | Optional CP-03 measurement matrix; TS-03 Production deletion acceptance; MG-09 Production apply; **Workout V2 authorization-PR merge review**; later V2 slices activation; other gated items unchanged |
 
 <!-- WORKOUT_V2_AUTONOMOUS_STATE:BEGIN -->
@@ -67,8 +67,9 @@
     {"id":"WP-19","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-19.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Controlled QA fixture reconciled to exactly two ordered Squat-family entries; close-out: reports/workout-v2-impl-01/WP-19-closeout.json"},
     {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","status":"CLOSED","frozen":true,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerDecisionRequired":false,"ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Owner resolved all-skipped + zero-completed-set semantics as terminal ENDED_WITHOUT_COMPLETION with no completion/adherence/Dashboard credit"},
     {"id":"WP-20","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-20.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"All-skipped + zero-completed-set sessions persist as terminal ENDED_WITHOUT_COMPLETION without completed-workout/adherence/Dashboard credit; per-session skipped rows are retained; close-out: reports/workout-v2-impl-01/WP-20-closeout.json"},
-    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","verification":"PASS","result":"Corrected integrated Workout V2 checkpoint PASS at 161101e; authoritative branch and PR CI, unit, build, governance, gateway, and E2E evidence recorded"},
-    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","verification":"PASS","result":"Corrected Beta deployment checkpoint PASS after governed canonical QA data reconciliation; exact candidate ce1da7b5720c26e44c6ceaa741db72bf190caf13, Beta-only repair, storage hygiene cleanup, runtime/PWA checks, and Production boundary verification recorded"},
+    {"id":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"admissionPath":"docs/admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","requiresHistoricalReconciliation":["WP-03","WP-06","WP-09","WP-15","WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"result":"Runtime strategy boundary, pre-workout capability gate, normalized movement evidence, session Mentor lifecycle, active-SET presentation semantics, and machine coverage implemented; local validation passed; historical release evidence preserved"},
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","verification":"PENDING_REVALIDATION","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","result":"Historical PASS preserved as evidence only; revalidate the exact implementation commit with authoritative branch and PR CI before Beta admission"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","status":"BLOCKED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","verification":"HISTORICAL_PASS_SUPERSEDED","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","result":"Historical Beta PASS preserved, but no longer authorizes deployment until runtime strategies are reachable"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
   ]
 }
@@ -97,11 +98,16 @@ correction work: WP-17 repairs the orchestration handoff and lifecycle/read-
 model binding; WP-18 extends the existing Exercise/Movement authority into the
 Exercise Passport and protects the Mentor composition anchor; WP-19 reconciles
 the two-entry Squat-only QA visual fixture; WP-20 persists the resolved
-all-skipped non-credit terminal outcome. Corrected integration and Beta
-checkpoints gate RUN-5. The `SKIP-ALL-COMPLETION-SEMANTICS-DECISION` and
-WP-20 are now CLOSED/FROZEN with their decision, implementation, and
-verification evidence recorded. Historical work packages remain CLOSED/FROZEN;
-no Owner scheduling choice is required for the downstream checkpoints.
+all-skipped non-credit terminal outcome. The accepted execution-strategy audit
+adds `WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY` for the missing
+capability gate, runtime strategy resolution, normalized sensing boundary,
+session Mentor lifecycle, and active-SET presentation semantics. The recovery
+is now CLOSED after local machine verification; historical receipts remain
+evidence only, and the corrected integration checkpoint must be revalidated
+against an exact commit with authoritative branch/PR CI before Beta admission.
+RUN-5 is not ready.
+The `SKIP-ALL-COMPLETION-SEMANTICS-DECISION` and WP-20 remain CLOSED/FROZEN
+with their decision, implementation, and verification evidence recorded.
 
 ## GOVERNED-SERVER-STORAGE-HYGIENE-01 — release-integrated server storage hygiene
 

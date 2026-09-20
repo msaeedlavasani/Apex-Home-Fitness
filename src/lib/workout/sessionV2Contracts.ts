@@ -43,6 +43,11 @@
  */
 
 import type {SessionExercise} from './sessionContracts';
+import type {
+  NormalizedMovementEvidence,
+  RuntimeExecutionStrategy,
+  TrackingState,
+} from './executionStrategy';
 
 /**
  * Experience-module vocabulary (spec §2). The ordered composition the
@@ -99,6 +104,8 @@ export interface ResolvedExercisePrescription {
   readonly setCount: number;
   /** Rest seconds after each set (null = no rest — prescription-driven). */
   readonly restSeconds: number | null;
+  /** Program-resolved fallback for camera-less REP_BASED execution. */
+  readonly fallbackDurationSeconds?: number | null;
 }
 
 /** The resolved prescription the session consumes (plan §12 data flow). */
@@ -123,7 +130,10 @@ export type SessionAction =
   | {type: 'PAUSE'}
   | {type: 'RESUME'}
   | {type: 'BEGIN_WORK_SET'}
-  | {type: 'RECORD_REP'}
+  | {type: 'MOVEMENT_EVIDENCE'; evidence: NormalizedMovementEvidence}
+  | {type: 'TRACKING_LOST'}
+  | {type: 'TRACKING_REACQUIRED'}
+  | {type: 'TRACKING_UNRECOVERABLE'; fallbackRemainingSeconds: number}
   | {type: 'SKIP_REST'}
   | {type: 'EXIT_WORKOUT'}
   | {type: 'CONFIRM_EXIT'}
@@ -171,8 +181,12 @@ export interface SessionExerciseOutcome {
 export interface SetProgress {
   readonly status: 'ACTIVE' | 'COMPLETE';
   readonly executionMode: ExecutionMode;
+  readonly runtimeStrategy: RuntimeExecutionStrategy;
+  readonly trackingState: TrackingState | null;
   readonly setNumber: number;
   readonly setCount: number;
+  readonly performedRepCount: number;
+  readonly validRepCount: number;
   readonly completedReps: number;
   readonly targetReps: number | null;
   readonly elapsedSeconds: number;
@@ -197,6 +211,10 @@ export interface SetResult {
   readonly setNumber: number;
   readonly setCount: number;
   readonly executionMode: ExecutionMode;
+  readonly runtimeStrategy: RuntimeExecutionStrategy;
+  readonly trackingState: TrackingState | null;
+  readonly performedRepCount: number;
+  readonly validRepCount: number;
   readonly completedReps: number;
   readonly targetReps: number | null;
   readonly elapsedSeconds: number;

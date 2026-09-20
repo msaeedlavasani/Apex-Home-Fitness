@@ -75,6 +75,24 @@
   is satisfied.
 - **Canonical package:** [`../specs/0002-governed-storage-hygiene/spec.md`](../specs/0002-governed-storage-hygiene/spec.md), with the existing gateway and release policy as implementation authorities.
 
+### WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY — runtime boundary recovery (2026-09-20)
+
+- **Owner decision:** AUTHORIZE the minimum code/no-deploy recovery required by
+  the accepted execution-path provenance audit. Historical close-outs and
+  checkpoint receipts remain preserved evidence; they no longer authorize a
+  downstream Beta release or RUN-5 while the execution contract is unreachable.
+- **Canonical scope:** extend the existing shared prescription, session
+  orchestrator, SET capability, camera/MoveNet boundary, consent path, and
+  Mentor lifecycle. Resolve only `TRACKED_REP`, `TIMED_FALLBACK`, and `TIMED`;
+  do not create `MANUAL_REP` as a canonical runtime strategy.
+- **Required safety:** normalized movement evidence, no raw-frame orchestration
+  authority, no QA fixture change, no Production deployment or database
+  mutation, no schema push, no gateway bypass, and no PR #72 merge.
+- **Deferred boundary:** exact confidence/timeout thresholds and mid-set
+  fallback remaining-time policy remain unresolved unless existing authority
+  determines them; implementation must fail closed rather than invent values.
+- **Canonical package:** [`../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json`](../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json) and the recovery node in [`../specs/0001-workout-experience/dependencies.md`](../specs/0001-workout-experience/dependencies.md).
+
 ### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved Owner product decision (2026-09-20)
 
 - **Decision:** When every required Exercise obligation reaches

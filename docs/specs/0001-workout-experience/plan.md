@@ -79,6 +79,22 @@ per-session skipped outcomes remain available to history/analytics/adaptation.
 The decision does not define a new PARTIAL classification or adherence
 policy. The bounded persistence correction is downstream of the resolved gate.
 
+### 5.2 Execution-strategy completeness recovery (2026-09-20)
+
+The accepted manual-rep audit is implementation evidence that the earlier SET
+scaffold was promoted before its sensing/capability boundary existed. The
+recovery extends the existing seams only: the shared prescription carries the
+resolved fallback, a pure runtime resolver selects `TRACKED_REP`,
+`TIMED_FALLBACK`, or `TIMED`, the launch gate establishes capability before
+Workout Experience, and SET consumes normalized movement evidence rather than
+raw frames. Performed attempts and valid attempts remain distinct. The
+session-owned Mentor preparation/renderer remains mounted across INTRO→SET.
+
+Exact confidence/timeout thresholds and mid-set fallback remaining-time policy
+remain deferred by the canonical contract; an unrecoverable transition must
+receive an explicit remaining-time value and may not invent one. The QA
+fixture and arbitrary-N orchestration contract are unchanged.
+
 ## 4. Prescription contract
 
 - `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION`: identity says *what movement*; the prescription says *how it is prescribed here*.

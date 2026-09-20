@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `CURRENT — Workout Experience V2 product implementation authorized; downstream product-integration work is staged before RUN-5 acceptance` |
+| STATUS | `CURRENT — canonical execution contract retained; execution-strategy completeness recovery is active before any renewed Beta checkpoint or RUN-5 acceptance` |
 | SPEC_CLASS | `STANDARD` (docs-only artifact; the eventual implementation is expected to be CRITICAL — see §0.1) |
 | TASK_PROFILE | `CODE_NO_DEPLOY` |
 | OWNER_GATE | **D2 APPROVED** (2026-09-14) + product-integration decision **AUTHORIZED 2026-09-19** — `SPEC_READINESS = READY`, remaining blocking product decisions = **NONE** |
@@ -24,6 +24,17 @@ Labels: **CONFIRMED** (binding — owner decision or canonical authority) · **E
 ## 0.1 Classification rationale
 
 `STANDARD` for this artifact (specification/design documentation only — no source, schema, security-boundary, dependency, or deployment change). The **implementation** task is expected to be **CRITICAL**: it will touch the session-core contract (ADR-0002 boundary), the media/presentation boundary (MG-07), and possibly observation wiring.
+
+## 0.1.1 Implementation recovery status — 2026-09-20
+
+The accepted execution-path provenance audit proved that the previously
+deployed V2 route reached the correct shell but did not operationally reach
+the required runtime strategy boundary. The canonical contract in §5.11 and
+§5.12 is unchanged. Historical close-out and checkpoint evidence remains
+preserved; the new executable recovery node is
+`WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY`. No `MANUAL_REP` mode is
+introduced, and no Beta/Production release is authorized until the recovery
+node and renewed checkpoints pass.
 
 ## 0.2 Artifact set & template mapping
 

@@ -13,6 +13,7 @@ import {
   type SessionOrchestrator,
 } from '@/lib/workout/orchestration';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
+import type {NormalizedMovementEvidence, RuntimeCapabilitySnapshot} from '@/lib/workout/executionStrategy';
 
 function markWorkoutPerformance(name: string): void {
   if (typeof performance === 'undefined') return;
@@ -46,6 +47,7 @@ export interface UseWorkoutSessionOptions {
   onEffect?: (effect: SessionOrchestrationEffect) => void;
   /** Injectable clock (epoch ms) for deterministic tests. */
   now?: () => number;
+  executionCapability?: RuntimeCapabilitySnapshot;
 }
 
 export interface UseWorkoutSessionResult {
@@ -63,7 +65,10 @@ export interface UseWorkoutSessionResult {
    */
   beginWorkSet: () => void;
   /** Records one honest REP_BASED observation for the active SET. */
-  recordRep: () => void;
+  submitMovementEvidence: (evidence: NormalizedMovementEvidence) => void;
+  markTrackingLost: () => void;
+  markTrackingReacquired: () => void;
+  markTrackingUnrecoverable: (fallbackRemainingSeconds: number) => void;
   /** Ends only the active REST early; orchestration chooses the destination. */
   skipRest: () => void;
   /** Requests the later WP-12 exit boundary; does not navigate by itself. */
@@ -86,10 +91,11 @@ export function useWorkoutSession(
   exercises: readonly SessionExercise[],
   options: UseWorkoutSessionOptions = {},
 ): UseWorkoutSessionResult {
-  const {onEffect, now = () => Date.now()} = options;
+  const {onEffect, now = () => Date.now(), executionCapability} = options;
 
   // Resolve the prescription once per plan change (fail-closed resolver).
   const prescription = useMemo(() => sharedPrescriptionFromPersistedPlan(exercises), [exercises]);
+  const capabilityKey = JSON.stringify(executionCapability ?? null);
 
   // The orchestrator is recreated when the resolved prescription changes
   // (e.g. the program finishes loading) — the same plan-identity semantics as
@@ -98,10 +104,12 @@ export function useWorkoutSession(
   // adjustment during render).
   const orchestratorRef = useRef<SessionOrchestrator | null>(null);
   const prescriptionRef = useRef(prescription);
+  const capabilityKeyRef = useRef(capabilityKey);
   const [viewModel, setViewModel] = useState<SessionViewModel | null>(null);
-  if (orchestratorRef.current == null || prescriptionRef.current !== prescription) {
+  if (orchestratorRef.current == null || prescriptionRef.current !== prescription || capabilityKeyRef.current !== capabilityKey) {
     prescriptionRef.current = prescription;
-    orchestratorRef.current = createSessionOrchestrator(prescription);
+    capabilityKeyRef.current = capabilityKey;
+    orchestratorRef.current = createSessionOrchestrator(prescription, {capability: executionCapability});
     setViewModel(orchestratorRef.current.state);
   }
   const orchestrator = orchestratorRef.current;
@@ -203,8 +211,26 @@ export function useWorkoutSession(
     emit(effects);
   }, [orchestrator, emit]);
 
-  const recordRep = useCallback(() => {
-    const {state, effects} = orchestrator.dispatch({type: 'RECORD_REP'});
+  const submitMovementEvidence = useCallback((evidence: NormalizedMovementEvidence) => {
+    const {state, effects} = orchestrator.dispatch({type: 'MOVEMENT_EVIDENCE', evidence});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const markTrackingLost = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'TRACKING_LOST'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const markTrackingReacquired = useCallback(() => {
+    const {state, effects} = orchestrator.dispatch({type: 'TRACKING_REACQUIRED'});
+    setViewModel(state);
+    emit(effects);
+  }, [orchestrator, emit]);
+
+  const markTrackingUnrecoverable = useCallback((fallbackRemainingSeconds: number) => {
+    const {state, effects} = orchestrator.dispatch({type: 'TRACKING_UNRECOVERABLE', fallbackRemainingSeconds});
     setViewModel(state);
     emit(effects);
   }, [orchestrator, emit]);
@@ -263,7 +289,10 @@ export function useWorkoutSession(
     pause,
     resume,
     beginWorkSet,
-    recordRep,
+    submitMovementEvidence,
+    markTrackingLost,
+    markTrackingReacquired,
+    markTrackingUnrecoverable,
     skipRest,
     exitWorkout,
     confirmExit,

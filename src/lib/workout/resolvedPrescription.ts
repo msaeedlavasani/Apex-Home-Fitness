@@ -57,6 +57,7 @@ export function resolveExercisePrescription(exercise: SessionExercise): Resolved
     targetSeconds: executionMode === 'TIME_BASED' ? targetSeconds : null,
     setCount,
     restSeconds: normalizePositiveInt(exercise.restSeconds),
+    fallbackDurationSeconds: normalizePositiveInt(exercise.fallbackDurationSeconds),
   };
 }
 

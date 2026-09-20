@@ -20,6 +20,7 @@ import {
 } from './sessionV2Contracts';
 import {createRestCapability, type RestCapability} from './restCapability';
 import {createSetCapability, type SetCapability} from './setCapability';
+import {capabilityUnavailable, resolveRuntimeExecution, type NormalizedMovementEvidence, type RuntimeCapabilitySnapshot} from './executionStrategy';
 
 /** PREPARING remains the first-slice implementation decision. */
 export const PREPARING_DURATION_SECONDS = 5;
@@ -76,9 +77,12 @@ function initialViewModel(prescription: ResolvedPrescription): OrchestrationStat
 }
 
 /** Creates one session-level sequencing authority over a resolved prescription. */
-export function createSessionOrchestrator(prescription: ResolvedPrescription) {
+export interface SessionExecutionOptions { readonly capability?: RuntimeCapabilitySnapshot; }
+
+export function createSessionOrchestrator(prescription: ResolvedPrescription, options: SessionExecutionOptions = {}) {
   let state = initialViewModel(prescription);
   const exerciseOrder = prescription.exercises.map((_, exerciseIndex) => exerciseIndex);
+  const capability = options.capability ?? capabilityUnavailable();
   let setCapability: SetCapability | null = null;
   let restCapability: RestCapability | null = null;
 
@@ -166,7 +170,7 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
   const activateSet = (exerciseIndex: number, setNumber: number): OrchestrationTransition => {
     const exercise = prescription.exercises[exerciseIndex];
     if (!exercise) return {state, effects: []};
-    setCapability = createSetCapability(exercise, setNumber);
+    setCapability = createSetCapability(exercise, resolveRuntimeExecution(exercise, capability), setNumber);
     restCapability = null;
     const next: OrchestrationState = {
       ...state,
@@ -263,6 +267,10 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
       setNumber,
       setCount: exercise.setCount,
       executionMode: progress.executionMode,
+      runtimeStrategy: progress.runtimeStrategy,
+      trackingState: progress.trackingState,
+      performedRepCount: progress.performedRepCount,
+      validRepCount: progress.validRepCount,
       completedReps: progress.completedReps,
       targetReps: progress.targetReps,
       elapsedSeconds: progress.elapsedSeconds,
@@ -429,12 +437,33 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     return activateSet(state.activeExerciseIndex, state.currentSetNumber ?? 1);
   };
 
-  const recordRep = (): OrchestrationTransition => {
+  const movementEvidence = (evidence: NormalizedMovementEvidence): OrchestrationTransition => {
     if (state.lifecycle !== 'RUNNING' || !setCapability) return {state, effects: []};
-    const transition = setCapability.recordRep();
+    const transition = setCapability.recordMovementEvidence(evidence);
     const next = {...state, setProgress: transition.state};
     state = next;
     return transition.completed ? completeSet() : {state: next, effects: []};
+  };
+
+  const trackingLost = (): OrchestrationTransition => {
+    if (state.lifecycle !== 'RUNNING' || !setCapability) return {state, effects: []};
+    const transition = setCapability.markTrackingLost();
+    state = {...state, setProgress: transition.state};
+    return {state, effects: []};
+  };
+
+  const trackingReacquired = (): OrchestrationTransition => {
+    if (state.lifecycle !== 'RUNNING' || !setCapability) return {state, effects: []};
+    const transition = setCapability.markTrackingReacquired();
+    state = {...state, setProgress: transition.state};
+    return {state, effects: []};
+  };
+
+  const trackingUnrecoverable = (fallbackRemainingSeconds: number): OrchestrationTransition => {
+    if (state.lifecycle !== 'RUNNING' || !setCapability) return {state, effects: []};
+    const transition = setCapability.switchToTimedFallback(fallbackRemainingSeconds);
+    state = {...state, setProgress: transition.state};
+    return {state, effects: []};
   };
 
   const skipRest = (): OrchestrationTransition => {
@@ -494,7 +523,7 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     const exerciseIndex = state.activeExerciseIndex;
     const setNumber = state.currentSetNumber;
     const wasResult = state.lifecycle === 'SET_RESULT';
-    setCapability = createSetCapability(exercise, setNumber);
+    setCapability = createSetCapability(exercise, resolveRuntimeExecution(exercise, capability), setNumber);
     restCapability = null;
     const next: OrchestrationState = {
       ...state,
@@ -591,7 +620,10 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
         case 'PAUSE': return freeze(state.activeModule);
         case 'RESUME': return unfreeze();
         case 'BEGIN_WORK_SET': return beginWorkSet();
-        case 'RECORD_REP': return recordRep();
+        case 'MOVEMENT_EVIDENCE': return movementEvidence(action.evidence);
+        case 'TRACKING_LOST': return trackingLost();
+        case 'TRACKING_REACQUIRED': return trackingReacquired();
+        case 'TRACKING_UNRECOVERABLE': return trackingUnrecoverable(action.fallbackRemainingSeconds);
         case 'SKIP_REST': return skipRest();
         case 'EXIT_WORKOUT': return requestExit();
         case 'CONFIRM_EXIT': return confirmExit();

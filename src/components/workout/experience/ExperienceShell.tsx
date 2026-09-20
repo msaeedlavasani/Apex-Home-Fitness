@@ -7,6 +7,8 @@ import {useRouter} from '@/i18n/navigation';
 import {BrandIcon} from '@/components/layout/BrandIcon';
 import {useTheme} from '@/components/providers/ThemeProvider';
 import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
+import {useWorkoutCapabilityGate} from '@/components/workout/useWorkoutCapabilityGate';
+import {ConsentGatedCameraRuntime} from '@/services/cameraRuntime';
 import {PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
@@ -26,6 +28,7 @@ import {ExerciseDetailsSheet} from './ExerciseDetailsSheet';
 import {StartStage} from './StartStage';
 import {PreparingStage} from './PreparingStage';
 import {IntroStage} from './IntroStage';
+import {MentorStage} from './mentor/MentorStage';
 import {WorkSetStage} from './WorkSetStage';
 import {RestStage} from './RestStage';
 import {SessionControlSurface} from './SessionControlSurface';
@@ -124,13 +127,17 @@ export function ExperienceShell({
   const router = useRouter();
   const {resolvedTheme} = useTheme();
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const capabilityGate = useWorkoutCapabilityGate(exercises);
 
   const {
     viewModel,
     startSession,
     pause,
     resume,
-    recordRep,
+    submitMovementEvidence,
+    markTrackingLost,
+    markTrackingReacquired,
+    markTrackingUnrecoverable,
     beginWorkSet,
     skipRest,
     exitWorkout,
@@ -141,6 +148,7 @@ export function ExperienceShell({
     resolveDeferredExercise,
     skipExercise,
   } = useWorkoutSession(exercises, {
+    executionCapability: capabilityGate.state.capability,
     onEffect: useMemo(() => {
       const handler = (effect: SessionOrchestrationEffect) => {
         if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
@@ -366,6 +374,51 @@ export function ExperienceShell({
   const stageKey = `${viewModel.lifecycle}-${activeModule ?? 'none'}`;
   const preparing = activeModule === 'PREPARING';
 
+  // The provider-specific camera runtime is consumed only through its
+  // normalized evidence callback. It never receives orchestration authority
+  // and raw frames never cross this boundary.
+  const cameraRuntimeRef = useRef<ConsentGatedCameraRuntime | null>(null);
+  useEffect(() => {
+    cameraRuntimeRef.current?.stop();
+    cameraRuntimeRef.current = null;
+    const progress = viewModel.setProgress;
+    const exercise = viewModel.activeExercise;
+    if (
+      activeModule !== 'WORK_SET'
+      || progress?.runtimeStrategy !== 'TRACKED_REP'
+      || !capabilityGate.state.consented
+      || !exercise
+    ) return;
+    const runtime = new ConsentGatedCameraRuntime({
+      consented: capabilityGate.state.consented,
+      scope: 'poseTracking:squat',
+      exerciseIndex: viewModel.activeExerciseIndex ?? 0,
+      set: progress.setNumber,
+      plannedReps: progress.targetReps,
+      exerciseId: exercise.exercise.exerciseId,
+      slug: exercise.exercise.slug,
+      onUpdate: (update) => {
+        if (update.evidence) {
+          markTrackingReacquired();
+          submitMovementEvidence(update.evidence);
+        } else if (update.status === 'uncertain') {
+          markTrackingLost();
+        } else if (update.status === 'active') {
+          markTrackingReacquired();
+        } else if (update.status === 'error' || update.status === 'unsupported') {
+          const fallback = exercise.exercise.fallbackDurationSeconds;
+          if (typeof fallback === 'number' && fallback > 0) markTrackingUnrecoverable(fallback);
+        }
+      },
+    });
+    cameraRuntimeRef.current = runtime;
+    void runtime.start();
+    return () => {
+      runtime.stop();
+      if (cameraRuntimeRef.current === runtime) cameraRuntimeRef.current = null;
+    };
+  }, [activeModule, capabilityGate.state.consented, markTrackingLost, markTrackingReacquired, markTrackingUnrecoverable, submitMovementEvidence, viewModel.activeExercise, viewModel.activeExerciseIndex, viewModel.setProgress]);
+
   // PREPARING depth treatment (correction §14): a MILD veil recedes the
   // environment — the UI stays sharp, no blur, no modal surface. This is
   // the START↔PREPARING focus delta the references show.
@@ -381,6 +434,14 @@ export function ExperienceShell({
     () => (viewModel.activeExercise ? deriveExerciseDetails(viewModel.activeExercise) : null),
     [viewModel.activeExercise],
   );
+
+  if (capabilityGate.state.status !== 'READY') {
+    return (
+      <section data-workout-v2-capability-gate="" className="flex min-h-[100dvh] items-center justify-center bg-[color:var(--app-background)] px-4">
+        <div className="w-full max-w-lg">{capabilityGate.gate}</div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -426,6 +487,34 @@ export function ExperienceShell({
           <WorkoutV2ExitControl onExit={exitWorkout} />
         </div>
       </header>
+
+      {/* Session-owned Mentor: one renderer/asset lifecycle per exercise
+          identity, retained through INTRO → SET. The host is hidden during
+          SET but remains mounted so the parsed asset is not reloaded or
+          reparsed at the handoff. */}
+      {viewModel.activeExercise && ['EXERCISE_INTRO', 'WORK_SET', 'SET_RESULT'].includes(activeModule ?? '') && (
+        <div
+          key={`mentor-${viewModel.activeExerciseIndex ?? 'none'}`}
+          data-workout-v2-session-mentor=""
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-16 bottom-0 z-0 sm:top-14',
+            activeModule === 'EXERCISE_INTRO' ? 'opacity-100' : 'opacity-0',
+          )}
+          aria-hidden={activeModule !== 'EXERCISE_INTRO'}
+        >
+          <MentorStage
+            paused={viewModel.lifecycle === 'PAUSED'}
+            enabled={mentorSupportedForActiveExercise}
+            strings={{
+              ariaLabel: t('intro.mentorAria'),
+              loading: t('intro.mentorLoading'),
+              unavailable: t('intro.mentorUnavailable'),
+            }}
+            onReady={enterWorkSetFromIntro}
+            onFailed={beginWorkSet}
+          />
+        </div>
+      )}
 
       {/* STAGE — consumer of the orchestration view-model; central axis. */}
       <div
@@ -477,6 +566,7 @@ export function ExperienceShell({
             mentorUnavailableLabel={t('intro.mentorUnavailable')}
             mentorLoadingLabel={t('intro.mentorLoading')}
             mentorAriaLabel={t('intro.mentorAria')}
+            renderMentor={false}
             onMentorReady={enterWorkSetFromIntro}
             onMentorFailed={beginWorkSet}
             onDeferExercise={deferExercise}
@@ -491,11 +581,10 @@ export function ExperienceShell({
         {(activeModule === 'WORK_SET' || activeModule === 'SET_RESULT') && (
           <WorkSetStage
             viewModel={viewModel}
-            recordRep={recordRep}
             setLabel={t('set.setLabel')}
-            recordRepLabel={t('set.recordRep')}
             repsLabel={t('set.reps')}
             secondsLabel={t('set.seconds')}
+            trackingLabel={t('set.tracking')}
             resultLabel={t('set.result')}
             restartCurrentSet={restartCurrentSet}
             restartSetLabel={t('actions.restartSet')}

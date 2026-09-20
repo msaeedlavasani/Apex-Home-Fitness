@@ -212,6 +212,7 @@
     "set": {
       "setLabel": "ست",
       "recordRep": "ثبت تکرار",
+      "tracking": "در حال ردیابی حرکت…",
       "reps": "تکرار",
       "seconds": "ثانیه",
       "result": "ست کامل شد"

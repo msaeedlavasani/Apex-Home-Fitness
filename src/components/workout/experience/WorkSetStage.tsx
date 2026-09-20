@@ -6,28 +6,26 @@ import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 
 export interface WorkSetStageProps {
   viewModel: SessionViewModel;
-  recordRep?: () => void;
   setLabel?: string;
-  recordRepLabel?: string;
   repsLabel?: string;
   secondsLabel?: string;
+  trackingLabel?: string;
   resultLabel?: string;
   restartCurrentSet?: () => void;
   restartSetLabel?: string;
 }
 
 /**
- * SET + SET_RESULT presentation. The component renders the pure capability's
- * progress and dispatches only RECORD_REP; it never starts REST or chooses a
- * next destination.
+ * SET + SET_RESULT presentation. The component renders the resolved runtime
+ * strategy and receives progression through normalized movement evidence; it
+ * never starts REST or chooses a next destination.
  */
 export function WorkSetStage({
   viewModel,
-  recordRep = () => undefined,
   setLabel = 'Set',
-  recordRepLabel = 'Record rep',
   repsLabel = 'reps',
   secondsLabel = 'seconds',
+  trackingLabel = 'Tracking movement…',
   resultLabel = 'Set complete',
   restartCurrentSet = () => undefined,
   restartSetLabel = 'Restart current set',
@@ -65,9 +63,9 @@ export function WorkSetStage({
     );
   }
 
-  const isRepBased = progress?.executionMode === 'REP_BASED';
-  const progressLabel = isRepBased
-    ? `${progress?.completedReps ?? 0} / ${progress?.targetReps ?? 0} ${repsLabel}`
+  const isTrackedRep = progress?.runtimeStrategy === 'TRACKED_REP';
+  const progressLabel = isTrackedRep
+    ? `${progress?.performedRepCount ?? 0} / ${progress?.targetReps ?? 0} ${repsLabel}`
     : `${progress?.remainingSeconds ?? 0} ${secondsLabel}`;
 
   return (
@@ -81,19 +79,10 @@ export function WorkSetStage({
       <p data-workout-v2-set-progress="" role="status" aria-live="polite" className="mt-5 text-5xl font-black tabular-nums text-[color:var(--apex-text)]">
         {progressLabel}
       </p>
-      {isRepBased && (
-        <Button
-          type="button"
-          data-workout-v2-record-rep=""
-          variant="filled"
-          tone="primary"
-          size="lg"
-          className="mt-8 min-w-48"
-          onClick={recordRep}
-          disabled={progress?.status === 'COMPLETE'}
-        >
-          {recordRepLabel}
-        </Button>
+      {isTrackedRep && (
+        <p data-workout-v2-tracking-status="active" role="status" className="mt-8 text-sm text-[color:var(--apex-text-secondary)]">
+          {trackingLabel}
+        </p>
       )}
       <Button
         type="button"

@@ -346,6 +346,31 @@ the DAG and remain subject to the existing admission and checkpoint contracts.
 - **Prohibited scope:** reopening WP-02/WP-17, changing defer/skip mechanics,
   inventing adaptation policy, changing Production, or merging PR #72.
 
+### WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY — runtime boundary recovery *(CRITICAL; code/no-deploy)*
+
+- **Purpose:** recover the missing runtime capability boundary proven absent by
+  the accepted manual-rep provenance audit. This is additive completeness work;
+  historical close-out evidence is preserved and not rewritten.
+- **Dependencies:** WP-13, WP-15, WP-18.
+- **Ownership scope:** the existing shared prescription boundary, pure runtime
+  strategy resolver, pre-workout capability gate, normalized movement evidence
+  seam, SET/orchestrator consumption, bounded tracking-loss state, session-owned
+  Mentor lifecycle, and active-SET outcome presentation.
+- **Required evidence:** REP_BASED + usable capability reaches TRACKED_REP;
+  REP_BASED without capability reaches TIMED_FALLBACK using the resolved
+  fallback duration; TIME_BASED remains TIMED; physical attempts increment
+  performed count while valid count remains separate; no primary Record rep UI;
+  normal route passes the gate; no legacy WorkoutPlayer dependency; arbitrary-N
+  orchestration remains intact; Mentor is retained across INTRO→SET; active SET
+  does not render the rejected live Completed strip.
+- **Intentional boundary:** exact confidence/timeout thresholds and mid-set
+  fallback remaining-time policy remain unresolved by the current contract. The
+  implementation must require an explicit remaining-time value for an
+  unrecoverable mid-set transition rather than inventing one.
+- **Prohibited scope:** MANUAL_REP as a canonical strategy, QA fixture changes,
+  Production deployment or database mutation, schema push, gateway bypass,
+  PR #72 merge, raw-frame orchestration authority, or legacy player reuse.
+
 ### WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT — complete corrected-flow machine gate
 
 - **Dependencies:** WP-17, WP-18, WP-19, WP-20, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.

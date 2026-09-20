@@ -28,6 +28,8 @@ export function SessionOutcomeSummary({
     viewModel.lifecycle === 'READY_TO_START' ||
     viewModel.lifecycle === 'PREPARING' ||
     viewModel.lifecycle === 'AWAITING_WORK_SET' ||
+    viewModel.lifecycle === 'RUNNING' ||
+    viewModel.lifecycle === 'SET_RESULT' ||
     viewModel.lifecycle === 'WORKOUT_RESULT' ||
     viewModel.lifecycle === 'EXIT_REQUESTED' ||
     viewModel.exerciseOutcomes.length === 0

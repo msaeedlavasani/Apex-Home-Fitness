@@ -9,10 +9,14 @@ import {
   SET_RESULT_DURATION_SECONDS,
 } from '../src/lib/workout/orchestration';
 import type {SessionExercise} from '../src/lib/workout/sessionContracts';
+import type {NormalizedMovementEvidence} from '../src/lib/workout/executionStrategy';
+
+const TRACKING = {camera: 'USABLE', poseHarness: 'READY', calibration: 'VALID', supportedMovementKeys: ['*']} as const;
+let attempt = 0;
 
 function executedSetCounts(plan: readonly SessionExercise[]): number[] {
   const prescription = sharedPrescriptionFromPersistedPlan(plan);
-  const orchestrator = createSessionOrchestrator(prescription);
+  const orchestrator = createSessionOrchestrator(prescription, {capability: TRACKING});
   const completedSetsByExercise: number[] = [];
 
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
@@ -25,7 +29,9 @@ function executedSetCounts(plan: readonly SessionExercise[]): number[] {
     }
     if (state.activeModule === 'WORK_SET') {
       const transition = state.setProgress?.executionMode === 'REP_BASED'
-        ? orchestrator.dispatch({type: 'RECORD_REP'})
+        ? orchestrator.dispatch({type: 'MOVEMENT_EVIDENCE', evidence: {
+          kind: 'REP_ATTEMPT', attemptId: `composition-${attempt++}`, movementKey: 'test', quality: 'VALID', confidence: 1, observedAtMs: attempt,
+        } satisfies NormalizedMovementEvidence})
         : orchestrator.advance(state.setProgress?.targetSeconds ?? 1);
       if (transition.effects.some((effect) => effect.kind === 'SET_COMPLETED')) {
         const exerciseIndex = transition.state.setResult?.exerciseIndex;

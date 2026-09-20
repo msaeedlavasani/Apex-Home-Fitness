@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `RUN 1 CLOSED — dependency graph remains canonical for subsequent admission` |
+| STATUS | `EXECUTION STRATEGY COMPLETENESS RECOVERY ACTIVE — historical checkpoint evidence preserved, downstream release authority blocked until reachability is proven` |
 | SPEC | [`spec.md`](./spec.md) · PLAN: [`plan.md`](./plan.md) · WORK PACKAGES: [`tasks.md`](./tasks.md) |
 | Date | 2026-09-15 · Baseline: fresh main `897e376` |
 | IMPLEMENTATION | **AUTHORIZED by parent admission; WP-06/WP-07 Run 1 CLOSED/FROZEN** |
@@ -59,8 +59,9 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"WP-19","dependsOn":["WP-16","WP-18"],"kind":"WORK_PACKAGE","workstream":"QA_VISUAL_FIXTURE_CORRECTION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-19.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_QA_PROGRAM_DOMAIN_PATH_V1","provider":"WP-16"},{"id":"V2_EXERCISE_PASSPORT_V1","provider":"WP-18"}],"providesCapabilities":["V2_QA_VISUAL_FIXTURE_V2"]},
     {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","dependsOn":["WP-17"],"kind":"HUMAN_GATE","readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"ownerDecisionRequired":false,"ownerVisualGate":false,"gateScope":"SKIP_ALL_COMPLETION_SEMANTICS","verification":"PASS","providesCapabilities":["V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1"]},
     {"id":"WP-20","dependsOn":["WP-17","SKIP-ALL-COMPLETION-SEMANTICS-DECISION"],"kind":"WORK_PACKAGE","workstream":"SKIP_ALL_TERMINAL_NON_CREDIT_OUTCOME","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-20.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_LIFECYCLE_PRESENTATION_BINDING_V1","provider":"WP-17"},{"id":"V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1","provider":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION"}],"providesCapabilities":["V2_SKIP_ALL_TERMINAL_NON_CREDIT_V1"]},
-    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","WP-20","SKIP-ALL-COMPLETION-SEMANTICS-DECISION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS","knownGoodSha":"161101eecb3a81a90330b7ccdc4b5f09a4408906"},
-    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","dependsOn":["WP-13","WP-15","WP-18"],"kind":"WORK_PACKAGE","workstream":"EXECUTION_STRATEGY_COMPLETENESS_RECOVERY","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":false,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json","requiresHistoricalReconciliation":["WP-03","WP-06","WP-09","WP-15","WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"providesCapabilities":["V2_EXECUTION_STRATEGY_BOUNDARY_V1","V2_PRE_WORKOUT_CAPABILITY_GATE_V1","V2_NORMALIZED_MOVEMENT_EVIDENCE_V1","V2_SESSION_MENTOR_LIFECYCLE_V1"],"verification":"PASS"},
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","WP-20","SKIP-ALL-COMPLETION-SEMANTICS-DECISION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"PLANNED","frozen":false,"verification":"PENDING_REVALIDATION","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","knownGoodSha":"161101eecb3a81a90330b7ccdc4b5f09a4408906"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"BLOCKED","frozen":false,"verification":"HISTORICAL_PASS_SUPERSEDED","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
     {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
@@ -98,6 +99,31 @@ WP-18 Exercise Passport + Mentor map ───┼─► WP-19 QA visual fixture
 all correction prerequisites ─────────────► corrected integration checkpoint
 corrected integration checkpoint ─────────► corrected Beta deployment checkpoint
 corrected Beta checkpoint ────────────────► RUN-5 complete-flow Human Gate
+```
+
+### 2.3 Execution-strategy completeness recovery (Owner-authorized 2026-09-20)
+
+The accepted manual-rep provenance audit proved that the earlier CLOSED/PASS
+claims covered a presentation/set scaffold but not the required runtime
+strategy boundary. Historical close-out reports and checkpoint receipts remain
+unchanged evidence; they are not deleted or rewritten. The new
+`WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY` node therefore owns the
+minimum additive recovery of the pre-workout capability gate, runtime strategy
+resolution, normalized movement evidence, session-owned Mentor lifecycle, and
+active-SET presentation semantics. The corrected integration and Beta
+deployment checkpoint projections remain historically superseded until this
+node is verified. The recovery is now verified locally; the corrected
+integration checkpoint is the next DAG-derived revalidation node and still
+requires exact-commit authoritative branch/PR CI. RUN-5 is not ready while
+that release evidence is absent.
+
+```text
+historical WP-03/WP-06/WP-09/WP-15 evidence ─┐
+                                            ├─► execution-strategy recovery
+historical corrected checkpoints ──────────┘
+execution-strategy recovery ───────────────► corrected integration checkpoint
+corrected integration checkpoint ──────────► corrected Beta deployment
+corrected Beta deployment ─────────────────► RUN-5 Human Gate
 ```
 
 Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required

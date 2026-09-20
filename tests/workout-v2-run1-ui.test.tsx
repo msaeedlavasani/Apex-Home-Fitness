@@ -31,22 +31,20 @@ function viewModel(locale: 'en' | 'fa', activeModule: 'WORK_SET' | 'SET_RESULT' 
     currentSetNumber: 1,
     completedSetCount: activeModule === 'SET_RESULT' ? 1 : 0,
     totalSetCount: 2,
-    setProgress: {status: activeModule === 'SET_RESULT' ? 'COMPLETE' : 'ACTIVE', executionMode: 'REP_BASED', setNumber: 1, setCount: 2, completedReps: activeModule === 'SET_RESULT' ? 3 : 1, targetReps: 3, elapsedSeconds: 0, targetSeconds: null, remainingSeconds: null},
-    setResult: activeModule === 'SET_RESULT' ? {exerciseIndex: 0, setNumber: 1, setCount: 2, executionMode: 'REP_BASED', completedReps: 3, targetReps: 3, elapsedSeconds: 0, targetSeconds: null, isFinalSet: false, isFinalExercise: true, elapsedInResultSeconds: 0} : null,
+    setProgress: {status: activeModule === 'SET_RESULT' ? 'COMPLETE' : 'ACTIVE', executionMode: 'REP_BASED', runtimeStrategy: 'TRACKED_REP', trackingState: 'TRACKED', setNumber: 1, setCount: 2, performedRepCount: activeModule === 'SET_RESULT' ? 3 : 1, validRepCount: activeModule === 'SET_RESULT' ? 3 : 1, completedReps: activeModule === 'SET_RESULT' ? 3 : 1, targetReps: 3, elapsedSeconds: 0, targetSeconds: null, remainingSeconds: null},
+    setResult: activeModule === 'SET_RESULT' ? {exerciseIndex: 0, setNumber: 1, setCount: 2, executionMode: 'REP_BASED', runtimeStrategy: 'TRACKED_REP', trackingState: 'TRACKED', performedRepCount: 3, validRepCount: 3, completedReps: 3, targetReps: 3, elapsedSeconds: 0, targetSeconds: null, isFinalSet: false, isFinalExercise: true, elapsedInResultSeconds: 0} : null,
     restState: activeModule === 'REST' ? {status: 'ACTIVE', kind: 'BETWEEN_SETS', elapsedSeconds: 0, totalSeconds: 10, remainingSeconds: 10} : null,
   };
 }
 
-test('SET and SET_RESULT render localized REP_BASED progress and callback affordance', () => {
+test('SET and SET_RESULT render tracked REP_BASED progress without manual rep entry', () => {
   for (const locale of ['en', 'fa'] as const) {
-    let recorded = 0;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
-      renderer = TestRenderer.create(<WorkSetStage viewModel={viewModel(locale, 'WORK_SET')} recordRep={() => { recorded += 1; }} setLabel={locale === 'fa' ? 'ست' : 'Set'} recordRepLabel={locale === 'fa' ? 'ثبت تکرار' : 'Record rep'} repsLabel={locale === 'fa' ? 'تکرار' : 'reps'} />);
+      renderer = TestRenderer.create(<WorkSetStage viewModel={viewModel(locale, 'WORK_SET')} setLabel={locale === 'fa' ? 'ست' : 'Set'} repsLabel={locale === 'fa' ? 'تکرار' : 'reps'} />);
     });
-    const button = renderer!.root.findByProps({'data-workout-v2-record-rep': ''});
-    act(() => button.props.onClick());
-    assert.equal(recorded, 1);
+    assert.equal(renderer!.root.findAllByProps({'data-workout-v2-record-rep': ''}).length, 0);
+    assert.equal(renderer!.root.findByProps({'data-workout-v2-tracking-status': 'active'}).props.children, 'Tracking movement…');
     assert.ok(renderer!.root.findByProps({'data-workout-v2-set-progress': ''}));
     act(() => renderer!.unmount());
   }
@@ -108,7 +106,7 @@ test('WP-08 pause/resume and outcome surfaces consume canonical view-model state
     renderer = TestRenderer.create(
       <SessionOutcomeSummary
         viewModel={{
-          ...viewModel('en', 'WORK_SET'),
+          ...viewModel('en', 'REST'),
           exerciseOutcomes: [
             {exerciseIndex: 0, status: 'COMPLETED'},
             {exerciseIndex: 1, status: 'OUTSTANDING_DEFERRED'},
@@ -121,7 +119,7 @@ test('WP-08 pause/resume and outcome surfaces consume canonical view-model state
       />,
     );
   });
-  assert.equal(renderer!.root.findByProps({'data-workout-v2-outcome': 'completed'}).props.children[2], 1);
+  assert.equal(renderer!.root.findByProps({'data-workout-v2-outcomes': ''}).props['data-workout-v2-outcomes'], '');
   assert.equal(renderer!.root.findByProps({'data-workout-v2-outcome': 'deferred'}).props.children[2], 1);
   assert.equal(renderer!.root.findByProps({'data-workout-v2-outcome': 'skipped'}).props.children[2], 1);
   act(() => renderer!.unmount());

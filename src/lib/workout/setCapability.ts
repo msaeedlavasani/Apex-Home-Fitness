@@ -1,87 +1,77 @@
-/**
- * Reusable SET capability (Workout V2 WP-06).
- *
- * This module executes exactly one resolved Set. It owns mode-aware progress
- * and completion evidence, but never chooses REST, INTRO, the next Set, or a
- * global session destination. The orchestrator consumes its transitions.
- */
-
+/** Reusable SET capability; runtime strategy is resolved before creation. */
 import type {ResolvedExercisePrescription, SetProgress} from './sessionV2Contracts';
+import type {NormalizedMovementEvidence, RuntimeExecutionResolution, TrackingState} from './executionStrategy';
 
-export interface SetCapabilityTransition {
-  readonly state: SetProgress;
-  readonly completed: boolean;
+export interface SetCapabilityTransition { readonly state: SetProgress; readonly completed: boolean; }
+interface MutableState {
+  status: 'ACTIVE' | 'COMPLETE';
+  performedRepCount: number;
+  validRepCount: number;
+  elapsedSeconds: number;
+  trackingState: TrackingState | null;
 }
 
-function snapshot(
-  prescription: ResolvedExercisePrescription,
-  setNumber: number,
-  state: Pick<SetProgress, 'status' | 'completedReps' | 'elapsedSeconds'>,
-): SetProgress {
-  const targetSeconds = prescription.targetSeconds;
+function snapshot(prescription: ResolvedExercisePrescription, runtime: RuntimeExecutionResolution, setNumber: number, state: MutableState): SetProgress {
+  const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : prescription.targetSeconds;
   return {
     status: state.status,
     executionMode: prescription.executionMode,
+    runtimeStrategy: runtime.strategy,
+    trackingState: state.trackingState,
     setNumber,
     setCount: prescription.setCount,
-    completedReps: state.completedReps,
+    performedRepCount: state.performedRepCount,
+    validRepCount: state.validRepCount,
+    completedReps: state.performedRepCount,
     targetReps: prescription.targetReps,
     elapsedSeconds: state.elapsedSeconds,
     targetSeconds,
-    remainingSeconds:
-      targetSeconds == null ? null : Math.max(0, targetSeconds - state.elapsedSeconds),
+    remainingSeconds: targetSeconds == null ? null : Math.max(0, targetSeconds - state.elapsedSeconds),
   };
 }
 
-export function createSetCapability(
-  prescription: ResolvedExercisePrescription,
-  setNumber: number,
-) {
-  let state = snapshot(prescription, setNumber, {
-    status: 'ACTIVE',
-    completedReps: 0,
-    elapsedSeconds: 0,
-  });
+export function createSetCapability(prescription: ResolvedExercisePrescription, runtime: RuntimeExecutionResolution, setNumber: number) {
+  let state: MutableState = {status: 'ACTIVE', performedRepCount: 0, validRepCount: 0, elapsedSeconds: 0, trackingState: runtime.strategy === 'TRACKED_REP' ? 'TRACKED' : null};
+  const view = (): SetProgress => snapshot(prescription, runtime, setNumber, state);
 
   const advance = (elapsedSeconds: number): SetCapabilityTransition => {
-    if (state.status === 'COMPLETE' || elapsedSeconds <= 0) {
-      return {state, completed: state.status === 'COMPLETE'};
-    }
-    if (state.executionMode !== 'TIME_BASED' || state.targetSeconds == null) {
-      return {state, completed: false};
-    }
-    const elapsed = Math.min(state.targetSeconds, state.elapsedSeconds + Math.floor(elapsedSeconds));
-    const complete = elapsed >= state.targetSeconds;
-    state = snapshot(prescription, setNumber, {
-      status: complete ? 'COMPLETE' : 'ACTIVE',
-      completedReps: 0,
-      elapsedSeconds: elapsed,
-    });
-    return {state, completed: complete};
+    if (state.status === 'COMPLETE' || elapsedSeconds <= 0) return {state: view(), completed: state.status === 'COMPLETE'};
+    const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : prescription.targetSeconds;
+    if (targetSeconds == null || (runtime.strategy !== 'TIMED' && runtime.strategy !== 'TIMED_FALLBACK')) return {state: view(), completed: false};
+    const elapsed = Math.min(targetSeconds, state.elapsedSeconds + Math.floor(elapsedSeconds));
+    const complete = elapsed >= targetSeconds;
+    state = {...state, status: complete ? 'COMPLETE' : 'ACTIVE', elapsedSeconds: elapsed};
+    return {state: view(), completed: complete};
   };
 
-  const recordRep = (count = 1): SetCapabilityTransition => {
-    if (state.status === 'COMPLETE' || state.executionMode !== 'REP_BASED' || count <= 0) {
-      return {state, completed: state.status === 'COMPLETE'};
-    }
-    const target = state.targetReps ?? Number.MAX_SAFE_INTEGER;
-    const completedReps = Math.min(target, state.completedReps + Math.floor(count));
-    const complete = state.targetReps != null && completedReps >= state.targetReps;
-    state = snapshot(prescription, setNumber, {
-      status: complete ? 'COMPLETE' : 'ACTIVE',
-      completedReps,
-      elapsedSeconds: state.elapsedSeconds,
-    });
-    return {state, completed: complete};
+  const recordMovementEvidence = (evidence: NormalizedMovementEvidence): SetCapabilityTransition => {
+    if (state.status === 'COMPLETE' || runtime.strategy !== 'TRACKED_REP' || evidence.kind !== 'REP_ATTEMPT') return {state: view(), completed: state.status === 'COMPLETE'};
+    const performedRepCount = state.performedRepCount + 1;
+    const validRepCount = evidence.quality === 'VALID' ? state.validRepCount + 1 : state.validRepCount;
+    const complete = prescription.targetReps != null && performedRepCount >= prescription.targetReps;
+    state = {...state, status: complete ? 'COMPLETE' : 'ACTIVE', performedRepCount, validRepCount, trackingState: 'TRACKED'};
+    return {state: view(), completed: complete};
   };
 
-  return {
-    get state(): SetProgress {
-      return state;
-    },
-    advance,
-    recordRep,
+  const markTrackingLost = (): SetCapabilityTransition => {
+    if (state.status === 'COMPLETE' || runtime.strategy !== 'TRACKED_REP') return {state: view(), completed: false};
+    state = {...state, trackingState: 'TRACKING_LOST'};
+    return {state: view(), completed: false};
   };
+  const markTrackingReacquired = (): SetCapabilityTransition => {
+    if (state.status === 'COMPLETE' || runtime.strategy !== 'TRACKED_REP') return {state: view(), completed: false};
+    state = {...state, trackingState: 'TRACKED'};
+    return {state: view(), completed: false};
+  };
+  const switchToTimedFallback = (fallbackRemainingSeconds: number): SetCapabilityTransition => {
+    if (state.status === 'COMPLETE' || runtime.strategy !== 'TRACKED_REP' || fallbackRemainingSeconds < 1) return {state: view(), completed: state.status === 'COMPLETE'};
+    runtime.strategy = 'TIMED_FALLBACK';
+    runtime.fallbackDurationSeconds = Math.floor(fallbackRemainingSeconds);
+    state = {...state, trackingState: 'REACQUIRE', elapsedSeconds: 0};
+    return {state: view(), completed: false};
+  };
+
+  return {get state(): SetProgress { return view(); }, advance, recordMovementEvidence, markTrackingLost, markTrackingReacquired, switchToTimedFallback};
 }
 
 export type SetCapability = ReturnType<typeof createSetCapability>;

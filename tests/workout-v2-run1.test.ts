@@ -9,6 +9,10 @@ import {
   SET_RESULT_DURATION_SECONDS,
 } from '../src/lib/workout/orchestration';
 import type {SessionExercise} from '../src/lib/workout/sessionContracts';
+import {resolveRuntimeExecution, type NormalizedMovementEvidence} from '../src/lib/workout/executionStrategy';
+
+const TRACKING = {camera: 'USABLE', poseHarness: 'READY', calibration: 'VALID', supportedMovementKeys: ['*']} as const;
+const EVIDENCE: NormalizedMovementEvidence = {kind: 'REP_ATTEMPT', attemptId: 'test-attempt', movementKey: 'test', quality: 'VALID', confidence: 1, observedAtMs: 1};
 
 const PLAN: SessionExercise[] = [
   {id: 'time-1', name: 'Timed movement', sets: 2, durationSeconds: 3, restSeconds: 2},
@@ -17,19 +21,21 @@ const PLAN: SessionExercise[] = [
 
 test('SET capability keeps one mode-aware contract for REP_BASED progress', () => {
   const prescription = resolvePrescription([{id: 'r', name: 'Rep', sets: 1, reps: 3}]).exercises[0]!;
-  const set = createSetCapability(prescription, 1);
+  const set = createSetCapability(prescription, resolveRuntimeExecution(prescription, TRACKING), 1);
 
   assert.equal(set.state.executionMode, 'REP_BASED');
-  assert.equal(set.recordRep().completed, false);
-  assert.equal(set.state.completedReps, 1);
-  assert.equal(set.recordRep(2).completed, true);
+  assert.equal(set.state.runtimeStrategy, 'TRACKED_REP');
+  assert.equal(set.recordMovementEvidence(EVIDENCE).completed, false);
+  assert.equal(set.state.performedRepCount, 1);
+  assert.equal(set.recordMovementEvidence({...EVIDENCE, attemptId: 'test-attempt-2'}).completed, false);
+  assert.equal(set.recordMovementEvidence({...EVIDENCE, attemptId: 'test-attempt-3'}).completed, true);
   assert.equal(set.state.status, 'COMPLETE');
   assert.equal(set.state.targetReps, 3);
 });
 
 test('SET capability auto-completes TIME_BASED progress without a second architecture', () => {
   const prescription = resolvePrescription([{id: 't', name: 'Timed', sets: 1, durationSeconds: 4}]).exercises[0]!;
-  const set = createSetCapability(prescription, 1);
+  const set = createSetCapability(prescription, resolveRuntimeExecution(prescription, TRACKING), 1);
 
   assert.equal(set.advance(3).completed, false);
   assert.deepEqual(set.state.remainingSeconds, 1);
@@ -48,7 +54,7 @@ test('REST capability is typed, countdown-only, and SKIP REST completes locally'
 });
 
 test('orchestration owns SET_RESULT and typed REST destinations for asymmetric programs', () => {
-  const orchestrator = createSessionOrchestrator(resolvePrescription(PLAN));
+  const orchestrator = createSessionOrchestrator(resolvePrescription(PLAN), {capability: TRACKING});
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
   orchestrator.advance(PREPARING_DURATION_SECONDS);
   assert.equal(orchestrator.state.activeModule, 'EXERCISE_INTRO');
@@ -80,8 +86,8 @@ test('orchestration owns SET_RESULT and typed REST destinations for asymmetric p
   assert.equal(orchestrator.state.activeModule, 'EXERCISE_INTRO');
   assert.equal(orchestrator.state.activeExerciseIndex, 1);
   orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
-  orchestrator.dispatch({type: 'RECORD_REP'});
-  const final = orchestrator.dispatch({type: 'RECORD_REP'});
+  orchestrator.dispatch({type: 'MOVEMENT_EVIDENCE', evidence: EVIDENCE});
+  const final = orchestrator.dispatch({type: 'MOVEMENT_EVIDENCE', evidence: {...EVIDENCE, attemptId: 'final-attempt'}});
   assert.equal(final.state.activeModule, 'SET_RESULT');
   assert.equal(final.state.setResult?.isFinalSet, true);
   assert.equal(final.state.setResult?.isFinalExercise, true);
@@ -136,7 +142,7 @@ test('WP-14 owns deferred/skipped outcomes and blocks completion until obligatio
 
 test('WP-14 supports perform-now resolution, set restart, and exit intent without prescription mutation', () => {
   const prescription = resolvePrescription([{id: 'one', name: 'One', sets: 1, reps: 1}]);
-  const orchestrator = createSessionOrchestrator(prescription);
+  const orchestrator = createSessionOrchestrator(prescription, {capability: TRACKING});
   orchestrator.dispatch({type: 'START_SESSION'}, 1_000);
   orchestrator.advance(PREPARING_DURATION_SECONDS);
   orchestrator.dispatch({type: 'DEFER_EXERCISE', disposition: 'MOVE_TO_END'});
@@ -146,7 +152,7 @@ test('WP-14 supports perform-now resolution, set restart, and exit intent withou
   assert.equal(resolved.state.lifecycle, 'RUNNING');
   assert.equal(resolved.state.setProgress?.status, 'ACTIVE');
   orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
-  const completed = orchestrator.dispatch({type: 'RECORD_REP'});
+  const completed = orchestrator.dispatch({type: 'MOVEMENT_EVIDENCE', evidence: EVIDENCE});
   assert.equal(completed.state.activeModule, 'SET_RESULT');
   assert.equal(completed.state.exerciseOutcomes[0]?.status, 'COMPLETED');
   assert.equal(completed.state.completionEligible, true);
