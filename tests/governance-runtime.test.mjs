@@ -131,7 +131,10 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const expectedDownstreamCorrection = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
     ? 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT'
     : 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT';
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady, expectedDownstreamCorrection]);
+  const correctionCheckpointState = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT');
+  const expectedReady = ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady,
+    ...(correctionCheckpointState?.status === 'CLOSED' ? [] : [expectedDownstreamCorrection])];
+  assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
