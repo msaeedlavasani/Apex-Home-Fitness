@@ -38,11 +38,14 @@ The Beta action accepts only the canonical Workout V2 feature-branch/PR
 candidate and requires the requested full SHA to match the branch head, open
 PR head, and successful authoritative branch and PR CI runs. It builds from
 that exact archive, records image IDs and Next build identity, snapshots the
-Beta Compose/SQLite state, requires a no-op migration hash, switches only the
-Beta app, and retains an executable Beta rollback proof. Any ambiguous target,
-missing protected configuration, failed CI, changed database hash, or failed
-health check fails closed. Production is never stopped, recreated, mounted, or
-selected by a Beta request.
+Beta Compose/SQLite state, and switches only the Beta app. `DB_CHANGED=false`
+requires the existing no-op hash gate. `DB_CHANGED=true` is allowed only on
+Beta and first runs Prisma migration deploy against a byte-identical clone,
+requiring the clone to demonstrate a schema change before applying the same
+checked-in migration to the backed-up Beta volume. Any ambiguous target,
+missing protected configuration, failed CI, failed migration preflight,
+failed rollback, or failed health check fails closed. Production is never
+stopped, recreated, mounted, or selected by a Beta request.
 
 The same constrained gateway also exposes the narrowly bounded
 `beta-db-operation` action for the canonical QA data setup. Its only
@@ -84,6 +87,38 @@ returns only status/identity/invariant evidence, never values. `apexadmin`
 cannot provide commands, repositories, source archives, image names, compose
 paths, volumes, migration commands, environment, or health targets.
 
+## storage-hygiene — governed server storage lifecycle
+
+The existing gateway also exposes `storage-hygiene` with `mode=audit|cleanup`.
+It is not a second deployment system or a Docker-wide prune command. The daemon
+reconciles Production and Beta `CURRENT` plus `VERIFIED_ROLLBACK` from its
+root-only release-authority state, running-container identity, Compose rollback
+evidence, and existing proof records. It never selects rollback by age,
+`latest`, `beta-current`, or tag recency.
+
+Every relevant AHF image, migration/dbop image, failed candidate, stopped AHF
+container, dangling artifact, and builder cache is assigned exactly one of:
+`RETAIN_CURRENT`, `RETAIN_ROLLBACK`, `RETAIN_ACTIVE_TRANSACTION`,
+`SAFE_TO_DELETE`, or `AMBIGUOUS_DO_NOT_DELETE`. Cleanup removes only individual
+gateway-classified safe container/image IDs. Database volumes, unrelated
+services, ambiguous artifacts, and Docker storage-directory files are outside
+scope. Application release status is persisted separately from
+`STORAGE_HYGIENE_STATUS`.
+
+The host must provide a calibrated root-only
+`/var/lib/apex-deploy-gateway/storage-policy.json`, based on measured AHF
+builder scope and release peaks. Before any release or migration-image build,
+disk admission reserves current/rollback images, candidate app and migration
+peaks, database backup space, temporary Docker overhead, bounded cache growth,
+and emergency headroom. Missing or ambiguous policy/evidence blocks admission.
+After rollback verification the gateway runs bounded cleanup: useful recent
+cache is retained, expired cache is pruned with `buildx prune` limits, failed
+transaction containers/images are removed when safe, and final filesystem
+budget evidence is written to a sanitized `storage-hygiene-*.json` receipt.
+The checked-in `ops/deploy-gateway/storage-policy.example.json` contains
+explicit zero placeholders and is intentionally rejected until calibrated on
+the host.
+
 ## Transaction and rollback
 
 The gateway validates host, source, current image, rendered compose topology,
@@ -98,7 +133,9 @@ health.
 If a post-stop step fails, it restores the prior compose file, restores the DB
 backup if migration began, and recreates the prior app. Broad privileges are
 not a recovery mechanism. Old images, DB backups, and rollback compose files
-remain until separate cleanup authorization.
+remain until the separate post-rollback storage-hygiene checkpoint; that
+checkpoint may remove only artifacts it classifies `SAFE_TO_DELETE` and always
+preserves the rollback evidence itself.
 
 ## Proof-before-revocation sequence
 
@@ -157,4 +194,4 @@ Contract (bounded, fail-closed, mirrors the release security model):
 
 Upgrade/install: `ops/deploy-gateway/install-gateway.sh` (root, host-guarded,
 idempotent; runs `py_compile` + `--self-test`, restarts the service, verifies
-`version: 4`).
+`version: 5`).

@@ -32,17 +32,22 @@ The first governed Beta candidate is the current Workout V2 feature branch
 when the requested full SHA simultaneously matches the branch head, the open
 PR head, the branch CI run, and the PR CI run. It downloads that exact SHA
 archive, builds immutable app and migration images, and records image IDs plus
-the Next build identity.
+the Next build identity. A schema-changing Beta request is separately gated by
+`DB_CHANGED=true` and an in-volume byte-identical clone preflight; a no-op
+request retains the existing before/after hash invariant.
 
 ## Rollout and rollback
 
 The gateway acquires the existing exclusive deployment/DB lock, validates the
-Beta topology, builds from the exact archive, snapshots the Beta Compose file
-and SQLite database, runs the checked-in migration command, requires the DB
-hash to remain unchanged for this release, switches only the Beta app image,
-and verifies loopback health. On failure it restores the Beta Compose snapshot
-and database backup, then recreates only the Beta app. Production is never
-stopped, recreated, or mounted by the Beta action.
+Beta topology, performs disk admission, builds from the exact archive, and
+snapshots the Beta Compose file and SQLite database. For `DB_CHANGED=true`, it
+first runs the checked-in migration command against a byte-identical clone and
+requires that clone to change before applying the migration to the backed-up
+Beta database. For `DB_CHANGED=false`, the before/after hash must remain equal.
+It then switches only the Beta app image and verifies loopback health. On
+failure it restores the Beta Compose snapshot and database backup, then
+recreates only the Beta app. Production is never stopped, recreated, or
+mounted by the Beta action.
 
 Successful releases persist root-only proof containing source SHA, image IDs,
 Next build identity, database hashes, target identity, and rollback artifact.

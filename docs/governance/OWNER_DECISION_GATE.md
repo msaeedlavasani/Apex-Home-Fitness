@@ -57,6 +57,24 @@
 - **Skip-all completion semantics:** **OWNER DECISION REQUIRED.** Existing authorities distinguish terminal session obligation resolution from outcome completion kinds, but the persisted product path currently has no canonical `RESOLVED/ENDED` state distinct from success/adherence credit. Do not infer whether an all-skipped session should be recorded as an ended non-credit session, `DID_NOT_START`, `ABANDONED`, or another product outcome. The correction DAG must fail closed at this decision and must not begin RUN-5 acceptance until resolved.
 - **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate. No per-task visual review is introduced. Production remains unauthorized and PR #72 remains unmerged.
 
+### GOVERNED-SERVER-STORAGE-HYGIENE-01 — release-integrated storage hygiene (2026-09-20)
+
+- **Owner instruction:** AUTHORIZE implementation of the governed server-storage
+  hygiene capability described by the consolidated execution delta. Extend the
+  existing constrained Deployment Gateway only; do not create a parallel
+  deployment authority.
+- **Safety boundary:** Production runtime and database remain unchanged, both
+  database volumes are outside deletion scope, PR #72 remains unmerged, and
+  cleanup must fail closed on missing/ambiguous current or verified rollback
+  authority. The provided host `df` state is authoritative over dashboard
+  percentages.
+- **Execution boundary:** host cleanup may delete only artifacts classified
+  `SAFE_TO_DELETE` by the gateway. Application release status and storage
+  hygiene status remain separate. The corrected Beta candidate remains blocked
+  until storage authority is reconciled and its separate schema-migration gate
+  is satisfied.
+- **Canonical package:** [`../specs/0002-governed-storage-hygiene/spec.md`](../specs/0002-governed-storage-hygiene/spec.md), with the existing gateway and release policy as implementation authorities.
+
 ### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved Owner product decision (2026-09-20)
 
 - **Decision:** When every required Exercise obligation reaches

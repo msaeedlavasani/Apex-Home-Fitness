@@ -34,10 +34,14 @@ BETA_SOURCE_REF = "feat/workout-v2-first-slice"
 BETA_PR_NUMBER = 72
 PRISMA = "6.19.3"
 BASE_DIGEST = "sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32"
-GATEWAY_VERSION = 4
+GATEWAY_VERSION = 5
 REQUEST_KEYS = {"action", "schema_version", "release_id", "source_sha", "expected_current_image", "db_change", "phase", "operation_id", "mode", "dry_run_evidence_sha"}
-ACTIONS = ("status", "release", "verify-rollback", "db-operation", "beta-status", "beta-release", "beta-verify-rollback", "beta-db-operation")
+ACTIONS = ("status", "release", "verify-rollback", "db-operation", "beta-status", "beta-release", "beta-verify-rollback", "beta-db-operation", "storage-hygiene")
 DB_OP_MODES = ("dry-run", "apply", "rehearsal")
+STORAGE_MODES = ("audit", "cleanup")
+STORAGE_CLASSES = ("RETAIN_CURRENT", "RETAIN_ROLLBACK", "RETAIN_ACTIVE_TRANSACTION", "SAFE_TO_DELETE", "AMBIGUOUS_DO_NOT_DELETE")
+STORAGE_POLICY = STATE / "storage-policy.json"
+RELEASE_AUTHORITY = STATE / "release-authority.json"
 # Bounded operation allowlist. Each entry maps an operation identity to the
 # allowlisted runner inside the repository archive at the authoritative SHA.
 # The caller can only select an identity; the daemon executes the checked-in
@@ -204,6 +208,10 @@ def validate_request(req):
         return
     if req["action"] == "beta-status":
         return
+    if req["action"] == "storage-hygiene":
+        if req.get("mode") not in STORAGE_MODES:
+            raise GateError("invalid storage-hygiene mode")
+        return
     if req["action"] == "db-operation":
         if req.get("operation_id") not in OPERATION_ALLOWLIST:
             raise GateError("operation not allowlisted")
@@ -235,8 +243,8 @@ def validate_request(req):
     if req["action"] == "verify-rollback":
         return
     if req["action"] == "beta-release":
-        if req.get("db_change") is not False:
-            raise GateError("Beta database-changing releases unsupported")
+        if not isinstance(req.get("db_change"), bool):
+            raise GateError("Beta db_change must be boolean")
         if req.get("phase") != "beta":
             raise GateError("invalid Beta acceptance phase")
         if not isinstance(req.get("expected_current_image"), str) or not re.fullmatch(r"ahf-home-fit:beta-[A-Za-z0-9_.-]+", req["expected_current_image"]):
@@ -532,18 +540,22 @@ def beta_release(req):
     release_id = req["release_id"]
     sha = req["source_sha"]
     expected = req["expected_current_image"]
+    db_change = req["db_change"]
     audit("beta-release-start", release_id)
     acquire_op_lock()
     try:
+        admission = _disk_admission("beta-release")
         source_evidence = beta_authoritative_source(sha)
         beta_env = beta_env_values()
         beta_topology(expected)
+        previous_image_id = _image_inspect(expected)["id"]
         target = f"ahf-home-fit:beta-{sha[:12]}"
         migrate_target = f"ahf-home-fit:beta-migrate-{sha[:12]}"
         rollback = BETA_ROOT / f"compose.yml.rollback-{release_id}"
         backup = f"gateway-beta-backup-{release_id}.db"
         stopped = False
         migrated = False
+        preflight_report = {"status": "NOT_REQUIRED"}
         with tempfile.TemporaryDirectory(prefix="apex-beta-gateway-") as td:
             temp = Path(td)
             archive = temp / "source.tar.gz"
@@ -567,14 +579,30 @@ def beta_release(req):
             try:
                 run(["/usr/bin/docker", "compose", "-f", str(BETA_COMPOSE), "stop", "app"], quiet=False)
                 stopped = True
+                preflight = None
+                if db_change:
+                    preflight = f"gateway-beta-preflight-{release_id}.db"
+                    try:
+                        run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                             "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{preflight} && chown 100:101 /data/{preflight}"], quiet=False)
+                        pre_before = _beta_db_sha(migrate_target, preflight)
+                        run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-e", f"DATABASE_URL=file:/data/{preflight}", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                             "sh", "-c", "./node_modules/.bin/prisma migrate deploy >/dev/null && chown -R 100:101 /data"], quiet=False)
+                        pre_after = _beta_db_sha(migrate_target, preflight)
+                        if pre_before == pre_after:
+                            raise GateError("Beta schema migration preflight produced no schema change")
+                        preflight_report = {"status": "PASS", "before_sha256": pre_before, "after_sha256": pre_after}
+                    finally:
+                        run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_target,
+                             "sh", "-c", f"rm -f /data/{preflight} /data/{preflight}-wal /data/{preflight}-shm"], quiet=False)
                 run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_target,
                      "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{backup} && chown 100:101 /data/{backup}"], quiet=False)
                 before = _beta_db_sha(migrate_target)
+                migrated = True
                 run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-e", "DATABASE_URL=file:/data/app.db", "-v", f"{BETA_VOLUME}:/data", migrate_target,
                      "sh", "-c", "./node_modules/.bin/prisma migrate deploy >/dev/null && chown -R 100:101 /data"], quiet=False)
-                migrated = True
                 after = _beta_db_sha(migrate_target)
-                if before != after:
+                if not db_change and before != after:
                     raise GateError("Beta database changed in DB_CHANGED=NO release")
                 update_beta_images(target, migrate_target)
                 _restart_beta_app()
@@ -603,14 +631,28 @@ def beta_release(req):
             "migration_image_id": migrate_image_id, "build_id": build_id,
             "rollback": rollback.name, "database_before_sha256": before,
             "database_after_sha256": after, "status": "PASS",
-            "production_untouched": True,
+            "db_changed": db_change,
+            "migration_preflight": preflight_report,
+            "production_untouched": True, "application_release_status": "PASS",
+            "storage_hygiene_status": "PENDING_ROLLBACK_VERIFICATION", "disk_admission": admission,
+            "filesystem_after": _disk_state(),
         }
         proof_path = STATE / f"proof-beta-{release_id}.json"
         proof_path.write_text(json.dumps(proof))
         os.chmod(proof_path, 0o600)
         marker = BETA_ROOT / ".deployed-commit"
-        marker.write_text(json.dumps({"source_sha": sha, "image": target, "image_id": image_id, "build_id": build_id}))
+        marker.write_text(json.dumps({"source_sha": sha, "image": target, "image_id": image_id, "build_id": build_id, "release_id": release_id}))
         os.chmod(marker, 0o600)
+        _save_release_authority(
+            "beta",
+            {"image": target, "image_id": image_id, "source_sha": sha, "build_id": build_id},
+            {"image": expected, "image_id": previous_image_id},
+            rollback.name,
+            _compose_refs(BETA_COMPOSE),
+            _compose_refs(rollback),
+            rollback_verified=False,
+            release_id=release_id,
+        )
         audit("beta-release-pass", release_id)
         return {**proof, "version": GATEWAY_VERSION, "health": "PASS", "secret_boundary": "PROTECTED"}
     finally:
@@ -627,9 +669,17 @@ def beta_verify_rollback(req):
     if not rollback.is_file() or rollback.stat().st_mode & 0o077:
         raise GateError("Beta rollback compose evidence invalid")
     previous = re.search(r"(?m)^\s+image:\s+(ahf-home-fit:beta-(?!migrate-)[^\s]+)", rollback.read_text()).group(1)
-    run(["/usr/bin/docker", "image", "inspect", previous, "--format", "{{.Id}}"])
+    previous_info = _image_inspect(previous)
+    _save_release_authority(
+        "beta", {"image": proof["image"], "image_id": proof["image_id"], "source_sha": proof["source_sha"], "build_id": proof["build_id"]},
+        {"image": previous, "image_id": previous_info["id"]}, proof["rollback"],
+        _compose_refs(BETA_COMPOSE), _compose_refs(rollback), rollback_verified=True,
+        release_id=req["release_id"],
+    )
+    Path(BETA_ROOT / ".beta-rollback-verified").write_text(req["release_id"], encoding="utf-8")
+    storage = _storage_hygiene({"mode": "cleanup"})
     audit("beta-rollback-verified", req["release_id"])
-    return {"status": "PASS", "version": GATEWAY_VERSION, "environment": "AHF_BETA", "rollback": "VERIFIED", "previous_image": "AVAILABLE"}
+    return {"status": "PASS", "version": GATEWAY_VERSION, "environment": "AHF_BETA", "rollback": "VERIFIED", "previous_image": previous, "application_release_status": "UNCHANGED", "storage_hygiene_status": storage["status"], "storage_hygiene_report": storage}
 
 
 def beta_db_operation(req):
@@ -647,6 +697,7 @@ def beta_db_operation(req):
         raise GateError("Beta operation source SHA is not the deployed Beta candidate")
     acquire_op_lock()
     try:
+        _disk_admission("beta-db-operation")
         if mode == "dry-run":
             raw = _run_beta_operation(opid, "dry-run", migrate_image, qa_phones)
             try:
@@ -709,6 +760,7 @@ def db_operation(req):
         raise GateError("source SHA is not authoritative main")
     acquire_op_lock()
     try:
+        _disk_admission("production-db-operation")
         values = env_values()
         with tempfile.TemporaryDirectory(prefix="apex-gateway-") as td:
             temp = Path(td)
@@ -809,6 +861,493 @@ def db_operation(req):
         release_op_lock()
 
 
+# --- governed server-storage hygiene ---------------------------------------
+
+def _read_json(path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as error:
+        raise GateError(f"invalid or missing gateway state: {path.name}") from error
+
+
+def _write_json(path, value):
+    STATE.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(path.suffix + ".tmp")
+    temp.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+    os.chmod(temp, 0o600)
+    os.replace(temp, path)
+
+
+def _disk_state():
+    stat = os.statvfs("/")
+    total = stat.f_blocks * stat.f_frsize
+    available = stat.f_bavail * stat.f_frsize
+    return {
+        "path": "/",
+        "total_bytes": total,
+        "available_bytes": available,
+        "used_bytes": total - available,
+        "utilization_percent": round(((total - available) / total) * 100, 2) if total else None,
+    }
+
+
+def _load_storage_policy():
+    policy = _read_json(STORAGE_POLICY)
+    required = (
+        "schema_version", "filesystem", "builder", "builder_scope",
+        "emergency_headroom_bytes", "temporary_docker_overhead_bytes",
+        "max_build_cache_growth_bytes", "max_cache_bytes", "reserved_cache_bytes",
+        "cache_retention_hours", "pressure_cache_retention_hours",
+    )
+    if policy.get("schema_version") != 1 or policy.get("filesystem") != "/":
+        raise GateError("storage policy schema/filesystem mismatch")
+    if policy.get("builder_scope") != "AHF_ONLY":
+        raise GateError("builder scope is not proven AHF_ONLY")
+    if not isinstance(policy.get("builder"), str) or not policy["builder"].strip():
+        raise GateError("storage policy builder is missing")
+    for key in required[4:]:
+        if not isinstance(policy.get(key), int) or policy[key] <= 0:
+            raise GateError(f"storage policy value is invalid: {key}")
+    return policy
+
+
+def _image_inspect(ref):
+    data = json.loads(run(["/usr/bin/docker", "image", "inspect", ref]))[0]
+    return {
+        "id": data.get("Id"),
+        "size_bytes": int(data.get("Size") or 0),
+        "repo_tags": data.get("RepoTags") or [],
+        "labels": data.get("Config", {}).get("Labels") or {},
+    }
+
+
+def _compose_refs(path):
+    if not path.is_file():
+        return []
+    text = path.read_text(encoding="utf-8")
+    return sorted(set(re.findall(r"(?m)^\s+image:\s+((?:apex-home-fit|ahf-home-fit):[A-Za-z0-9_.-]+)\s*$", text)))
+
+
+def _compose_runtime_image(path):
+    result = run(["/usr/bin/docker", "compose", "-f", str(path), "ps", "-q", "app"])
+    container_id = result.splitlines()[0].strip() if result.splitlines() else ""
+    if not container_id:
+        raise GateError(f"app container is not running for {path}")
+    data = json.loads(run(["/usr/bin/docker", "inspect", container_id]))[0]
+    configured = ((data.get("Config") or {}).get("Image"))
+    image_id = data.get("Image")
+    if not configured or not image_id:
+        raise GateError("running app identity is incomplete")
+    return {"image": configured, "image_id": image_id}
+
+
+def _rollback_app_ref(path, prefix):
+    refs = [ref for ref in _compose_refs(path) if ref.startswith(prefix)]
+    app_refs = [ref for ref in refs if "migrate-" not in ref and ":dbop-" not in ref and ":migrate-" not in ref]
+    if len(app_refs) != 1:
+        raise GateError("rollback compose app identity is ambiguous")
+    return app_refs[0]
+
+
+def _authority_from_state(environment, compose_path, app_prefix):
+    state = _read_json(RELEASE_AUTHORITY).get(environment)
+    if not isinstance(state, dict) or state.get("rollback_verified") is not True:
+        raise GateError(f"{environment} rollback authority is not verified")
+    current = state.get("current") or {}
+    rollback = state.get("rollback") or {}
+    runtime = _compose_runtime_image(compose_path)
+    compose_current = compose_image() if environment == "production" else beta_compose_images()[0]
+    if current.get("image") != compose_current or runtime["image"] != compose_current:
+        raise GateError(f"{environment} current runtime identity drift")
+    if rollback.get("image") == compose_current or not rollback.get("image"):
+        raise GateError(f"{environment} rollback identity is invalid")
+    rollback_info = _image_inspect(rollback["image"])
+    if rollback_info["id"] != rollback.get("image_id"):
+        raise GateError(f"{environment} rollback image identity drift")
+    rollback_compose = compose_path.parent / rollback.get("compose_file", "")
+    if not rollback_compose.is_file():
+        raise GateError(f"{environment} rollback compose evidence is missing")
+    rollback_ref = _rollback_app_ref(rollback_compose, app_prefix)
+    if rollback_ref != rollback["image"]:
+        raise GateError(f"{environment} rollback compose identity drift")
+    return {
+        "status": "PASS",
+        "environment": environment,
+        "release_id": rollback.get("release_id"),
+        "current": {"image": compose_current, "image_id": runtime["image_id"]},
+        "rollback": {"image": rollback["image"], "image_id": rollback_info["id"]},
+        "current_refs": _compose_refs(compose_path),
+        "rollback_refs": _compose_refs(rollback_compose),
+        "rollback_compose": str(rollback_compose),
+    }
+
+
+def _legacy_authority(environment, compose_path, app_prefix):
+    """Recover a single unambiguous authority from existing gateway proof.
+
+    This deliberately does not select by recency. Multiple valid candidates
+    are a hard ambiguity until the new release-authority record is established.
+    """
+    runtime = _compose_runtime_image(compose_path)
+    marker_path = STATE / ("rollback-verified" if environment == "production" else ".beta-rollback-verified")
+    marker = marker_path.read_text(encoding="utf-8").strip() if marker_path.is_file() else None
+    deployed = {}
+    if environment == "beta" and not marker:
+        deployed_path = BETA_ROOT / ".deployed-commit"
+        if deployed_path.is_file():
+            deployed = _read_json(deployed_path)
+            marker = deployed.get("release_id")
+        if not marker:
+            marker = "__deployed-image-proof__"
+    if environment == "production":
+        proof_paths = sorted(STATE.glob("proof-*.json"))
+    else:
+        proof_paths = sorted(STATE.glob("proof-beta-*.json"))
+    candidates = []
+    for path in proof_paths:
+        try:
+            proof = _read_json(path)
+            matches_release = proof.get("release_id") == marker
+            if environment == "beta" and marker == "__deployed-image-proof__":
+                matches_release = proof.get("image") == deployed.get("image") == runtime["image"]
+                audit_text = AUDIT.read_text(encoding="utf-8") if AUDIT.is_file() else ""
+                matches_release = matches_release and f"event=beta-rollback-verified release={proof.get('release_id')}" in audit_text
+            if proof.get("status") != "PASS" or not matches_release or proof.get("image") != runtime["image"]:
+                continue
+            rollback_path = compose_path.parent / proof.get("rollback", "")
+            if not rollback_path.is_file():
+                continue
+            rollback_ref = _rollback_app_ref(rollback_path, app_prefix)
+            rollback_info = _image_inspect(rollback_ref)
+            candidates.append({
+                "status": "PASS", "environment": environment,
+                "current": {"image": runtime["image"], "image_id": runtime["image_id"]},
+                "rollback": {"image": rollback_ref, "image_id": rollback_info["id"]},
+                "current_refs": _compose_refs(compose_path),
+                "rollback_refs": _compose_refs(rollback_path),
+                "rollback_compose": str(rollback_path),
+                "release_id": proof.get("release_id"),
+            })
+        except GateError:
+            continue
+    unique = {(item["current"]["image"], item["rollback"]["image"]): item for item in candidates}
+    if len(unique) != 1:
+        raise GateError(f"{environment} rollback authority is ambiguous")
+    return next(iter(unique.values()))
+
+
+def _release_authority():
+    result = {}
+    for environment, compose_path, prefix in (
+        ("production", COMPOSE, "apex-home-fit:release-"),
+        ("beta", BETA_COMPOSE, "ahf-home-fit:beta-"),
+    ):
+        try:
+            result[environment] = _authority_from_state(environment, compose_path, prefix)
+        except GateError as error:
+            try:
+                result[environment] = _legacy_authority(environment, compose_path, prefix)
+            except GateError as legacy_error:
+                result[environment] = {
+                    "status": "AMBIGUOUS_DO_NOT_DELETE",
+                    "environment": environment,
+                    "blocker": f"{error}; legacy: {legacy_error}",
+                }
+    return result
+
+
+def _docker_image_records():
+    raw = run(["/usr/bin/docker", "image", "ls", "--all", "--no-trunc", "--format", "{{json .}}"])
+    records = {}
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        image_id = row.get("ID") or row.get("Id")
+        if not image_id:
+            continue
+        info = _image_inspect(image_id)
+        tags = sorted(set(info["repo_tags"] or ([] if row.get("Repository") in (None, "<none>") else [f"{row['Repository']}:{row.get('Tag', '<none>')}"])))
+        records[image_id] = {
+            "kind": "image", "identity": image_id, "image_id": image_id,
+            "tags": tags, "size_bytes": info["size_bytes"],
+            "labels": info["labels"],
+            "dangling": not tags,
+        }
+    return list(records.values())
+
+
+def _docker_container_records():
+    raw = run(["/usr/bin/docker", "ps", "-a", "--no-trunc", "--format", "{{json .}}"])
+    result = []
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        container_id = row.get("ID") or row.get("Id")
+        data = json.loads(run(["/usr/bin/docker", "inspect", container_id]))[0]
+        config = data.get("Config") or {}
+        state = data.get("State") or {}
+        result.append({
+            "kind": "container", "identity": container_id,
+            "name": str(data.get("Name") or "").lstrip("/"),
+            "image": config.get("Image"), "image_id": data.get("Image"),
+            "running": bool(state.get("Running")),
+            "labels": config.get("Labels") or {},
+            "size_rw_bytes": int(data.get("SizeRw") or 0),
+        })
+    return result
+
+
+def _artifact_owner(tags):
+    if any(tag.startswith("apex-home-fit:") for tag in tags):
+        return "production"
+    if any(tag.startswith("ahf-home-fit:") for tag in tags):
+        return "beta"
+    return None
+
+
+def _recognized_owner_tag(owner, tag):
+    if owner == "production":
+        return tag.startswith("apex-home-fit:release-") or tag.startswith("apex-home-fit:migrate-") or tag.startswith("apex-home-fit:dbop-")
+    if owner == "beta":
+        return tag.startswith("ahf-home-fit:beta-")
+    return False
+
+
+def _lock_state():
+    if not OP_LOCK.exists():
+        return "ABSENT"
+    try:
+        pid = int(_read_json(OP_LOCK).get("pid") or 0)
+        if pid == os.getpid():
+            return "SELF"
+        os.kill(pid, 0)
+        return "LIVE"
+    except (ProcessLookupError, ValueError, TypeError, json.JSONDecodeError, OSError):
+        return "STALE"
+
+
+def _cache_artifact(policy):
+    try:
+        raw = run(["/usr/bin/docker", "buildx", "du", "--builder", policy["builder"]])
+        cache_status = "SAFE_TO_DELETE" if policy.get("builder_scope") == "AHF_ONLY" else "AMBIGUOUS_DO_NOT_DELETE"
+        return {
+            "kind": "build-cache", "identity": f"builder:{policy['builder']}",
+            "class": cache_status, "evidence": raw[-4000:],
+            "retention_hours": policy["cache_retention_hours"],
+        }
+    except GateError as error:
+        return {"kind": "build-cache", "identity": f"builder:{policy.get('builder', 'unknown')}", "class": "AMBIGUOUS_DO_NOT_DELETE", "blocker": str(error)}
+
+
+def _storage_audit():
+    before = _disk_state()
+    blockers = []
+    try:
+        policy = _load_storage_policy()
+    except GateError as error:
+        policy = None
+        blockers.append(f"STORAGE_POLICY:{error}")
+    authority = _release_authority()
+    for environment in ("production", "beta"):
+        if authority[environment]["status"] != "PASS":
+            blockers.append(f"{environment.upper()}_AUTHORITY:{authority[environment].get('blocker', 'ambiguous')}")
+    lock = _lock_state()
+    if lock in ("LIVE", "STALE"):
+        blockers.append(f"ACTIVE_OR_INCOMPLETE_TRANSACTION_LOCK:{lock}")
+    images = _docker_image_records()
+    containers = _docker_container_records()
+    current_ids = set()
+    rollback_ids = set()
+    current_refs = set()
+    rollback_refs = set()
+    for environment in ("production", "beta"):
+        data = authority[environment]
+        if data["status"] != "PASS":
+            continue
+        current_refs.update(data.get("current_refs", []))
+        rollback_refs.update(data.get("rollback_refs", []))
+        current_ids.update({_image_inspect(ref)["id"] for ref in data.get("current_refs", [])})
+        rollback_ids.update({_image_inspect(ref)["id"] for ref in data.get("rollback_refs", [])})
+    active_ids = {item["image_id"] for item in containers if item["running"] and _artifact_owner([item.get("image", "")])}
+    artifacts = []
+    for image in images:
+        owner = _artifact_owner(image["tags"])
+        if image["image_id"] in current_ids or any(tag in current_refs for tag in image["tags"]):
+            classification = "RETAIN_CURRENT"
+        elif image["image_id"] in rollback_ids or any(tag in rollback_refs for tag in image["tags"]):
+            classification = "RETAIN_ROLLBACK"
+        elif image["image_id"] in active_ids:
+            classification = "RETAIN_ACTIVE_TRANSACTION"
+        elif owner and authority[owner]["status"] != "PASS":
+            classification = "AMBIGUOUS_DO_NOT_DELETE"
+        elif owner and all(_recognized_owner_tag(owner, tag) for tag in image["tags"]):
+            classification = "SAFE_TO_DELETE"
+        else:
+            classification = "AMBIGUOUS_DO_NOT_DELETE"
+        artifacts.append({**image, "owner": owner, "class": classification})
+    for container in containers:
+        owner = _artifact_owner([container.get("image", "")])
+        if not owner:
+            continue
+        if container["running"] and container["image_id"] in current_ids:
+            classification = "RETAIN_CURRENT"
+        elif container["running"]:
+            classification = "RETAIN_ACTIVE_TRANSACTION"
+        elif container.get("labels", {}).get("com.apexhomefit.recovery") == "required":
+            classification = "AMBIGUOUS_DO_NOT_DELETE"
+        else:
+            classification = "SAFE_TO_DELETE"
+        artifacts.append({**container, "owner": owner, "class": classification})
+    if policy:
+        cache_artifact = _cache_artifact(policy)
+        artifacts.append(cache_artifact)
+        if cache_artifact["class"] == "AMBIGUOUS_DO_NOT_DELETE":
+            blockers.append(f"BUILDER_CACHE:{cache_artifact.get('blocker', 'cache evidence unavailable')}")
+    else:
+        artifacts.append({"kind": "build-cache", "identity": "builder:unknown", "class": "AMBIGUOUS_DO_NOT_DELETE"})
+    return {"before": before, "authority": authority, "lock_state": lock, "artifacts": artifacts, "blockers": blockers, "policy": policy}
+
+
+def _disk_admission(operation):
+    audit_result = _storage_audit()
+    blockers = list(audit_result["blockers"])
+    if blockers:
+        raise GateError(f"disk admission blocked for {operation}: {'; '.join(blockers)}")
+    policy = audit_result["policy"]
+    images = [item for item in audit_result["artifacts"] if item["kind"] == "image"]
+    app_sizes = [item["size_bytes"] for item in images if any(tag.startswith(("apex-home-fit:release-", "ahf-home-fit:beta-")) and "migrate-" not in tag for tag in item.get("tags", []))]
+    transaction_sizes = [item["size_bytes"] for item in images if any(":migrate-" in tag or ":dbop-" in tag for tag in item.get("tags", []))]
+    if not app_sizes or not transaction_sizes:
+        raise GateError(f"disk admission blocked for {operation}: candidate size evidence is incomplete")
+    retained_ids = {item["identity"] for item in images if item["class"] in ("RETAIN_CURRENT", "RETAIN_ROLLBACK")}
+    retained_bytes = sum(item["size_bytes"] for item in images if item["identity"] in retained_ids)
+    candidate_app = max(app_sizes)
+    candidate_transaction = max(transaction_sizes)
+    volume_bytes = 0
+    for volume in (VOLUME, BETA_VOLUME):
+        mount = json.loads(run(["/usr/bin/docker", "volume", "inspect", volume]))[0].get("Mountpoint")
+        if not mount:
+            raise GateError(f"disk admission blocked for {operation}: volume mountpoint unavailable")
+        volume_bytes += int(run(["/usr/bin/du", "-sb", mount]).split()[0])
+    required = retained_bytes + candidate_app + candidate_transaction + volume_bytes + policy["temporary_docker_overhead_bytes"] + policy["max_build_cache_growth_bytes"] + policy["emergency_headroom_bytes"]
+    state = _disk_state()
+    if state["available_bytes"] < required:
+        raise GateError(f"disk admission blocked for {operation}: available={state['available_bytes']} required={required}")
+    return {"status": "PASS", "operation": operation, "before": state, "required_headroom_bytes": required, "components": {
+        "retained_current_and_rollback_bytes": retained_bytes,
+        "candidate_application_peak_bytes": candidate_app,
+        "candidate_migration_peak_bytes": candidate_transaction,
+        "database_backup_reserve_bytes": volume_bytes,
+        "temporary_docker_overhead_bytes": policy["temporary_docker_overhead_bytes"],
+        "max_build_cache_growth_bytes": policy["max_build_cache_growth_bytes"],
+        "emergency_headroom_bytes": policy["emergency_headroom_bytes"],
+    }, "build_cache": next((item for item in audit_result["artifacts"] if item["kind"] == "build-cache"), None)}
+
+
+def _bounded_cache_cleanup(policy, available_bytes):
+    retention = policy["cache_retention_hours"] if available_bytes >= policy["emergency_headroom_bytes"] else policy["pressure_cache_retention_hours"]
+    return {
+        "retention_hours": retention,
+        "result": run([
+            "/usr/bin/docker", "buildx", "prune", "--builder", policy["builder"], "--force",
+            "--filter", f"until={retention}h",
+            "--max-used-space", str(policy["max_cache_bytes"]),
+            "--min-free-space", str(policy["emergency_headroom_bytes"]),
+            "--reserved-space", str(policy["reserved_cache_bytes"]),
+        ], quiet=True),
+    }
+
+
+def _save_release_authority(environment, current, rollback, compose_file, current_refs, rollback_refs, rollback_verified=False, release_id=None):
+    try:
+        document = _read_json(RELEASE_AUTHORITY) if RELEASE_AUTHORITY.is_file() else {"schema_version": 1}
+    except GateError:
+        document = {"schema_version": 1}
+    document["schema_version"] = 1
+    document[environment] = {
+        "current": current, "rollback": {**rollback, "compose_file": compose_file, "release_id": release_id},
+        "current_refs": sorted(set(current_refs)), "rollback_refs": sorted(set(rollback_refs)),
+        "rollback_verified": rollback_verified,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _write_json(RELEASE_AUTHORITY, document)
+
+
+def _storage_hygiene(req):
+    audit_event = "storage-hygiene-audit" if req["mode"] == "audit" else "storage-hygiene-cleanup"
+    acquire_op_lock()
+    try:
+        result = _storage_audit()
+        # A read-only audit may canonicalize a single, evidence-backed legacy
+        # proof into the new authority record. It never invents or selects by
+        # age; ambiguity remains a blocker.
+        for environment in ("production", "beta"):
+            authority = result["authority"][environment]
+            if authority.get("status") != "PASS" or not authority.get("release_id"):
+                continue
+            existing = {}
+            if RELEASE_AUTHORITY.is_file():
+                try:
+                    existing = _read_json(RELEASE_AUTHORITY)
+                except GateError:
+                    existing = {}
+            if not (existing.get(environment) or {}).get("rollback_verified"):
+                _save_release_authority(
+                    environment, authority["current"], authority["rollback"],
+                    Path(authority["rollback_compose"]).name,
+                    authority.get("current_refs", []), authority.get("rollback_refs", []),
+                    rollback_verified=True, release_id=authority["release_id"],
+                )
+        removed = []
+        errors = []
+        if req["mode"] == "cleanup":
+            safe_containers = [item for item in result["artifacts"] if item["kind"] == "container" and item["class"] == "SAFE_TO_DELETE"]
+            safe_images = [item for item in result["artifacts"] if item["kind"] == "image" and item["class"] == "SAFE_TO_DELETE"]
+            for item in safe_containers:
+                try:
+                    run(["/usr/bin/docker", "container", "rm", item["identity"]], quiet=False)
+                    removed.append({"kind": "container", "identity": item["identity"], "class": item["class"], "size_rw_bytes": item.get("size_rw_bytes", 0)})
+                except GateError as error:
+                    errors.append({"kind": "container", "identity": item["identity"], "error": str(error)})
+            for item in safe_images:
+                try:
+                    run(["/usr/bin/docker", "image", "rm", item["identity"]], quiet=False)
+                    removed.append({"kind": "image", "identity": item["identity"], "tags": item.get("tags", []), "class": item["class"], "size_bytes": item.get("size_bytes", 0)})
+                except GateError as error:
+                    errors.append({"kind": "image", "identity": item["identity"], "error": str(error)})
+            cache_artifact = next((item for item in result["artifacts"] if item["kind"] == "build-cache"), None)
+            if result["policy"] and result["policy"].get("builder_scope") == "AHF_ONLY" and cache_artifact and cache_artifact.get("class") == "SAFE_TO_DELETE":
+                try:
+                    cache = _bounded_cache_cleanup(result["policy"], result["before"]["available_bytes"])
+                except GateError as error:
+                    cache = {"status": "BLOCKED", "reason": str(error)}
+                    errors.append({"kind": "build-cache", "identity": f"builder:{result['policy']['builder']}", "error": str(error)})
+            else:
+                cache = {"status": "BLOCKED", "reason": "builder scope is not proven AHF_ONLY"}
+        else:
+            cache = next((item for item in result["artifacts"] if item["kind"] == "build-cache"), None)
+        after = _disk_state()
+        status = "PASS" if not result["blockers"] and not errors else "BLOCKED"
+        report = {
+            "status": status, "version": GATEWAY_VERSION, "mode": req["mode"],
+            "application_release_status": "UNCHANGED", "storage_hygiene_status": status,
+            "filesystem_before": result["before"], "filesystem_after": after,
+            "authority": result["authority"], "lock_state": result["lock_state"],
+            "artifacts": result["artifacts"], "removed": removed,
+            "actual_storage_reclaimed_bytes": sum(item.get("size_bytes", 0) for item in removed),
+            "filesystem_available_delta_bytes": after["available_bytes"] - result["before"]["available_bytes"],
+            "build_cache": cache, "blockers": result["blockers"], "errors": errors,
+        }
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        _write_json(STATE / f"storage-hygiene-{stamp}.json", report)
+        audit(audit_event, status)
+        return report
+    finally:
+        release_op_lock()
+
+
 def release(req):
     release_id = req["release_id"]
     sha = req["source_sha"]
@@ -816,12 +1355,14 @@ def release(req):
     audit("release-start", release_id)
     acquire_op_lock()
     try:
+        admission = _disk_admission("production-release")
         if remote_main() != sha:
             raise GateError("source SHA is not authoritative main")
         topology(expected)
         values = env_values()
         target = f"apex-home-fit:release-{sha[:12]}"
         ops = f"apex-home-fit:migrate-{sha[:12]}"
+        previous_image_id = _image_inspect(expected)["id"]
         rollback = ROOT / f"compose.yml.rollback-{release_id}"
         backup = f"gateway-backup-{release_id}.db"
         stopped = False
@@ -850,9 +1391,9 @@ def release(req):
                 run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{VOLUME}:/data", ops,
                      "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{backup} && chown 100:101 /data/{backup}"], quiet=False)
                 before = run(["/usr/bin/docker", "run", "--rm", "-v", f"{VOLUME}:/data:ro", ops, "sha256sum", "/data/app.db"]).split()[0]
+                migrated = True
                 run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-e", "DATABASE_URL=file:/data/app.db", "-v", f"{VOLUME}:/data", ops,
                      "sh", "-c", "./node_modules/.bin/prisma migrate deploy >/dev/null && chown -R 100:101 /data"], quiet=False)
-                migrated = True
                 after = run(["/usr/bin/docker", "run", "--rm", "-v", f"{VOLUME}:/data:ro", ops, "sha256sum", "/data/app.db"]).split()[0]
                 if before != after:
                     raise GateError("database changed in DB_CHANGED=NO release")
@@ -876,9 +1417,19 @@ def release(req):
                     run(["/usr/bin/docker", "compose", "-f", str(COMPOSE), "up", "-d", "--no-deps", "--force-recreate", "app"], quiet=False)
                 audit("release-rolled-back", release_id)
                 raise
-        proof = {"release_id": release_id, "phase": req["phase"], "source_sha": sha, "image": target, "rollback": rollback.name, "status": "PASS"}
+        proof = {"release_id": release_id, "phase": req["phase"], "source_sha": sha, "image": target, "rollback": rollback.name, "status": "PASS", "application_release_status": "PASS", "storage_hygiene_status": "PENDING_ROLLBACK_VERIFICATION", "disk_admission": admission, "filesystem_after": _disk_state()}
         (STATE / f"proof-{req['phase']}.json").write_text(json.dumps(proof))
         os.chmod(STATE / f"proof-{req['phase']}.json", 0o600)
+        _save_release_authority(
+            "production",
+            {"image": target, "image_id": image_id, "source_sha": sha},
+            {"image": expected, "image_id": previous_image_id},
+            rollback.name,
+            _compose_refs(COMPOSE),
+            _compose_refs(rollback),
+            rollback_verified=False,
+            release_id=release_id,
+        )
         audit("release-pass", release_id)
         return {**proof, "version": GATEWAY_VERSION, "image_id": image_id, "db_changed": False, "health": "PASS", "secret_boundary": "PROTECTED"}
     finally:
@@ -887,6 +1438,27 @@ def release(req):
 
 def verify_rollback(req):
     proof = STATE / "proof-pre-hardening.json"
+    if RELEASE_AUTHORITY.is_file():
+        authority_doc = _read_json(RELEASE_AUTHORITY)
+        authority = authority_doc.get("production") or {}
+        rollback_state = authority.get("rollback") or {}
+        if rollback_state.get("release_id") != req["release_id"]:
+            raise GateError("Production rollback release identity mismatch")
+        data = {"image": (authority.get("current") or {}).get("image"), "rollback": rollback_state.get("compose_file")}
+        rollback = ROOT / data["rollback"]
+        previous = rollback_state.get("image")
+        previous_info = _image_inspect(previous)
+        if previous_info["id"] != rollback_state.get("image_id"):
+            raise GateError("Production rollback image identity drift")
+        _save_release_authority(
+            "production", authority.get("current") or {}, rollback_state, rollback_state.get("compose_file"),
+            _compose_refs(COMPOSE), _compose_refs(rollback), rollback_verified=True,
+            release_id=req["release_id"],
+        )
+        (STATE / "rollback-verified").write_text(req["release_id"], encoding="utf-8")
+        storage = _storage_hygiene({"mode": "cleanup"})
+        audit("rollback-verified", req["release_id"])
+        return {"status": "PASS", "version": GATEWAY_VERSION, "rollback": "VERIFIED", "previous_image": previous, "application_release_status": "UNCHANGED", "storage_hygiene_status": storage["status"], "storage_hygiene_report": storage}
     if not proof.is_file():
         raise GateError("pre-hardening release proof missing")
     data = json.loads(proof.read_text())
@@ -894,12 +1466,13 @@ def verify_rollback(req):
     if not rollback.is_file() or rollback.stat().st_mode & 0o077:
         raise GateError("rollback compose evidence invalid")
     previous = compose_image() if data["image"] != compose_image() else re.search(r"(?m)^\s+image:\s+(apex-home-fit:[^\s]+)", rollback.read_text()).group(1)
-    run(["/usr/bin/docker", "image", "inspect", previous, "--format", "{{.Id}}"])
+    _image_inspect(previous)
     marker = STATE / "rollback-verified"
-    marker.write_text(req["release_id"])
+    marker.write_text(req["release_id"], encoding="utf-8")
     os.chmod(marker, 0o600)
+    storage = _storage_hygiene({"mode": "cleanup"})
     audit("rollback-verified", req["release_id"])
-    return {"status": "PASS", "version": GATEWAY_VERSION, "rollback": "VERIFIED", "previous_image": "AVAILABLE"}
+    return {"status": "PASS", "version": GATEWAY_VERSION, "rollback": "VERIFIED", "previous_image": previous, "application_release_status": "UNCHANGED", "storage_hygiene_status": storage["status"], "storage_hygiene_report": storage}
 
 
 def handle(req):
@@ -909,6 +1482,8 @@ def handle(req):
         return {"status": "READY", "version": GATEWAY_VERSION, "host": HOST, "image": compose_image(), "volume": VOLUME, "secret_boundary": "PROTECTED"}
     if req["action"] == "beta-status":
         return beta_status()
+    if req["action"] == "storage-hygiene":
+        return _storage_hygiene(req)
     if req["action"] == "beta-verify-rollback":
         return beta_verify_rollback(req)
     if req["action"] == "beta-db-operation":
@@ -992,12 +1567,20 @@ def self_test():
     check("release db_change=true still rejected", lambda: invalid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": True, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
     check("release db_change=false valid", lambda: valid({"action": "release", "schema_version": 1, "release_id": "x-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:x", "phase": "normal"}))
     check("Beta release valid", lambda: valid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "beta"}))
+    check("Beta schema-changing release valid", lambda: valid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": True, "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "beta"}))
+    check("Beta release requires boolean db_change", lambda: invalid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": "yes", "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "beta"}))
     check("Beta release cannot use Production image", lambda: invalid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "apex-home-fit:release-current", "phase": "beta"}))
     check("Beta release requires Beta phase", lambda: invalid({"action": "beta-release", "schema_version": 1, "release_id": "beta-1", "db_change": False, "source_sha": "a" * 40, "expected_current_image": "ahf-home-fit:beta-current", "phase": "normal"}))
     check("Beta db-operation dry-run valid", lambda: valid({"action": "beta-db-operation", "schema_version": 1, "operation_id": "beta-qa-program-assign", "mode": "dry-run", "source_sha": "a" * 40}))
     check("Beta db-operation apply requires evidence", lambda: valid({"action": "beta-db-operation", "schema_version": 1, "operation_id": "beta-qa-program-assign", "mode": "apply", "source_sha": "a" * 40, "dry_run_evidence_sha": "b" * 64}))
     check("Beta db-operation unknown operation rejected", lambda: invalid({"action": "beta-db-operation", "schema_version": 1, "operation_id": "drop-tables", "mode": "dry-run", "source_sha": "a" * 40}))
     check("Beta db-operation rehearsal rejected", lambda: invalid({"action": "beta-db-operation", "schema_version": 1, "operation_id": "beta-qa-program-assign", "mode": "rehearsal", "source_sha": "a" * 40}))
+    check("storage hygiene audit valid", lambda: valid({"action": "storage-hygiene", "schema_version": 1, "mode": "audit"}))
+    check("storage hygiene cleanup valid", lambda: valid({"action": "storage-hygiene", "schema_version": 1, "mode": "cleanup"}))
+    check("storage hygiene invalid mode rejected", lambda: invalid({"action": "storage-hygiene", "schema_version": 1, "mode": "delete-all"}))
+    check("storage recognizes only governed Production tags", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("production", "apex-home-fit:migrate-a") or _recognized_owner_tag("production", "apex-home-fit:latest") else None)
+    check("storage recognizes Beta migration namespace", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("beta", "ahf-home-fit:beta-migrate-a") else None)
+    check("storage has exactly five operational classes", lambda: (_ for _ in ()).throw(AssertionError()) if set(STORAGE_CLASSES) != {"RETAIN_CURRENT", "RETAIN_ROLLBACK", "RETAIN_ACTIVE_TRANSACTION", "SAFE_TO_DELETE", "AMBIGUOUS_DO_NOT_DELETE"} else None)
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
     check("canonical json stable", lambda: (_ for _ in ()).throw(AssertionError()) if _canonical({"a": 1, "b": [2, 3]}) != _canonical({"b": [2, 3], "a": 1}) else None)

@@ -103,6 +103,27 @@ WP-20 are now CLOSED/FROZEN with their decision, implementation, and
 verification evidence recorded. Historical work packages remain CLOSED/FROZEN;
 no Owner scheduling choice is required for the downstream checkpoints.
 
+## GOVERNED-SERVER-STORAGE-HYGIENE-01 — release-integrated server storage hygiene
+
+| Field | Value |
+|---|---|
+| Status | **ACTIVE — OWNER-AUTHORIZED 2026-09-20** |
+| Admission | [`docs/admissions/GOVERNED-SERVER-STORAGE-HYGIENE-01.admission.json`](admissions/GOVERNED-SERVER-STORAGE-HYGIENE-01.admission.json) |
+| Canonical spec | [`docs/specs/0002-governed-storage-hygiene/spec.md`](specs/0002-governed-storage-hygiene/spec.md) |
+| Profile | `RELEASE` / `CRITICAL` |
+| Scope | Existing Production/Beta Deployment Gateway only; no Production deploy or database mutation, no volume deletion, PR #72 merge, or runtime replacement |
+| Dependency | Existing release proof and rollback authority; host-calibrated storage policy required for admission |
+| Next autonomous node | Host audit/cleanup when authoritative access and calibrated policy are available → corrected Beta schema-migration/deployment checkpoint if READY |
+| Owner decision required | None for repository implementation; host execution blocks fail closed on authority/policy ambiguity |
+
+The task is the canonical execution record for the consolidated storage
+hygiene delta. It extends the existing release authority, keeps application
+release and storage hygiene status separate, and requires DAG recalculation
+before the corrected Beta schema-migration/deployment work is considered. The
+existing Beta gateway path now accepts `DB_CHANGED=true` only after a
+byte-identical clone preflight proves the checked-in schema migration changes
+the clone; Production remains `DB_CHANGED=false`.
+
 ## Strategic basis
 
 The recomposition uses the proposed product promise as the prioritization

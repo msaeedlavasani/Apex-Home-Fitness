@@ -1,0 +1,20 @@
+{
+  "TASK_ID": "GOVERNED-SERVER-STORAGE-HYGIENE-01",
+  "TASK_CLASS": "CRITICAL",
+  "SCOPE_SUMMARY": "Extend the existing constrained AHF Deployment Gateway with fail-closed disk admission, authoritative server-storage classification, bounded builder-cache hygiene, safe historical cleanup, and separate sanitized evidence for application release versus storage hygiene.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "NEW_SPEC_JUSTIFIED",
+  "NEW_SPEC_JUSTIFICATION": "No existing canonical storage-hygiene specification owns the release-integrated server-storage retention contract; the new spec is the single canonical owner rather than a parallel deployment system.",
+  "SPEC_PATH": "docs/specs/0002-governed-storage-hygiene/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/governance/OWNER_DECISION_GATE.md",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0002-governed-storage-hygiene/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0002-governed-storage-hygiene/tasks.md",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0002-governed-storage-hygiene/dependencies.md",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}

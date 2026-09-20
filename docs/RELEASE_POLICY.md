@@ -29,6 +29,25 @@ Every independently deployable task must pass, in order:
 6. Production deployment
 7. Production post-deploy smoke
 
+For the existing gateway lifecycle, release closure additionally requires:
+
+```text
+DISK PREFLIGHT
+→ candidate validation → build → governed migration if authorized
+→ deploy → health verification → build-identity verification
+→ establish CURRENT → establish VERIFIED ROLLBACK
+→ persist release evidence → cleanup disposable transaction artifacts
+→ cleanup expired historical images → bounded build-cache cleanup
+→ dangling-image audit → final disk-budget verification
+→ release checkpoint close
+```
+
+`APPLICATION_RELEASE_STATUS` and `STORAGE_HYGIENE_STATUS` are independent.
+A successful application release may retain `STORAGE_HYGIENE_STATUS=BLOCKED`
+when storage policy, builder scope, or current/rollback authority is missing or
+ambiguous. Ambiguous artifacts are never deleted and host dashboard percentages
+do not override authoritative filesystem `df` evidence.
+
 A task is authoritative only after Production deployment and post-deploy smoke
 pass. A dependent task must not begin before that checkpoint.
 
@@ -175,6 +194,12 @@ image/container/rollback package until ALL of:
 For high-risk releases, retain longer. Cleanup is always a separate
 maintenance action; do not automatically delete rollback artifacts during
 task closure.
+
+The gateway automates that separate action only after rollback verification,
+and records its result independently. Historical migration/dbop artifacts are
+transaction-scoped unless a current/rollback Compose recovery contract
+references them. Builder cleanup is bounded by the host-calibrated policy; the
+gateway never uses broad `docker system prune` operations.
 
 ### RULE 14 — HOTFIX / EMERGENCY WORKFLOW
 Production incidents use the documented hotfix path

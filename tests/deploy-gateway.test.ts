@@ -21,6 +21,8 @@ test('gateway accepts only the bounded non-DB release schema', () => {
 test('gateway accepts Beta only through the explicit isolated Beta schema', () => {
   const valid = {action:'beta-release',schema_version:1,release_id:'beta-001',source_sha:'a'.repeat(40),expected_current_image:'ahf-home-fit:beta-current',db_change:false,phase:'beta'};
   assert.equal(validate(valid).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, db_change:true}).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, db_change:'yes'}).stdout.trim(), 'GateError');
   assert.equal(validate({...valid, expected_current_image:'apex-home-fit:release-current'}).stdout.trim(), 'GateError');
   assert.equal(validate({...valid, phase:'normal'}).stdout.trim(), 'GateError');
 });
@@ -48,6 +50,25 @@ test('gateway accepts only the bounded Beta QA data operation', () => {
   assert.equal(validate(valid).stdout.trim(), 'PASS');
   assert.equal(validate({...valid, mode:'rehearsal'}).stdout.trim(), 'GateError');
   assert.equal(validate({...valid, mode:'apply'}).stdout.trim(), 'GateError');
+});
+
+test('storage hygiene is a bounded gateway action with five fail-closed classes', () => {
+  const source = readFileSync(gateway, 'utf8');
+  assert.equal(validate({action:'storage-hygiene', schema_version:1, mode:'audit'}).stdout.trim(), 'PASS');
+  assert.equal(validate({action:'storage-hygiene', schema_version:1, mode:'cleanup'}).stdout.trim(), 'PASS');
+  assert.equal(validate({action:'storage-hygiene', schema_version:1, mode:'delete-all'}).stdout.trim(), 'GateError');
+  for (const classification of ['RETAIN_CURRENT', 'RETAIN_ROLLBACK', 'RETAIN_ACTIVE_TRANSACTION', 'SAFE_TO_DELETE', 'AMBIGUOUS_DO_NOT_DELETE']) {
+    assert.match(source, new RegExp(classification));
+  }
+  assert.match(source, /docker.*image.*rm/);
+  assert.match(source, /docker.*container.*rm/);
+  assert.match(source, /buildx.*prune/);
+  assert.doesNotMatch(source, /system prune/);
+  assert.match(source, /storage_hygiene_status/);
+  assert.match(source, /_disk_admission\("production-release"\)/);
+  assert.match(source, /_disk_admission\("beta-release"\)/);
+  assert.match(source, /Beta schema migration preflight produced no schema change/);
+  assert.match(source, /"db_changed": db_change/);
 });
 
 test('Beta QA operation uses canonical phone normalization and canonical data only', () => {
