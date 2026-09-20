@@ -474,18 +474,24 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     expect(glbAfter).toBe(1);
   });
 
-  test('INTRO is hands-free: no progression control and no auto SET1 handoff', async ({page}) => {
+  test('INTRO is hands-free: no progression control and auto-hands off to the real SET', async ({page}) => {
     await reachIntro(page);
     // The hands-free contract excludes Start/Next/Continue progression CTAs.
     // The approved v1 exception controls (Do Later / Skip for this session)
     // remain available through orchestration-owned session outcomes.
     await expect(page.locator('[data-workout-v2-intro-begin]')).toHaveCount(0);
     await expect(page.locator('[data-workout-v2-intro-controls] button')).toHaveCount(2);
-    // The handoff contract intentionally terminates at the INTRO boundary:
-    // no timeout-driven SET1 entry may occur on its own.
-    await page.waitForTimeout(3_000);
-    await expect(page.locator('[data-workout-v2-workset-stage]')).toHaveCount(0);
-    await expect(page.locator('[data-workout-v2-intro-stage]')).toBeVisible();
+    // The Mentor ready/degraded signal dispatches the typed orchestration
+    // handoff. No presentation CTA or timeout-driven navigation is involved.
+    await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible({timeout: 30_000});
+    await expect(page.locator('[data-workout-v2-intro-stage]')).toHaveCount(0);
+  });
+
+  test('canonical journey crosses INTRO → SET through the execution engine', async ({page}) => {
+    await reachIntro(page);
+    await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible({timeout: 30_000});
+    await expect(page.locator('[data-workout-v2-record-rep]')).toBeVisible();
+    await expect(page.locator('[data-workout-v2-set-progress]')).toBeVisible();
   });
 
   test('INTRO cue zone sits below the mentor host, outside the demonstration area', async ({page}) => {
