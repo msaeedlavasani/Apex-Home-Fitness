@@ -1328,7 +1328,15 @@ def _storage_hygiene(req):
                     run(["/usr/bin/docker", "image", "rm", item["identity"]], quiet=False)
                     removed.append({"kind": "image", "identity": item["identity"], "tags": item.get("tags", []), "class": item["class"], "size_bytes": item.get("size_bytes", 0)})
                 except GateError as error:
-                    errors.append({"kind": "image", "identity": item["identity"], "error": str(error)})
+                    try:
+                        # The first attempt preserves Docker's normal parent
+                        # checks. Force is permitted only after this exact
+                        # image was classified SAFE_TO_DELETE; retained
+                        # current/rollback IDs never reach this branch.
+                        run(["/usr/bin/docker", "image", "rm", "--force", item["identity"]], quiet=False)
+                        removed.append({"kind": "image", "identity": item["identity"], "tags": item.get("tags", []), "class": item["class"], "size_bytes": item.get("size_bytes", 0), "forced": True})
+                    except GateError as forced_error:
+                        errors.append({"kind": "image", "identity": item["identity"], "error": f"normal={error}; forced={forced_error}"})
             cache_artifact = next((item for item in result["artifacts"] if item["kind"] == "build-cache"), None)
             if result["policy"] and result["policy"].get("builder_scope") == "AHF_ONLY" and cache_artifact and cache_artifact.get("class") == "SAFE_TO_DELETE":
                 try:

@@ -61,6 +61,7 @@ test('storage hygiene is a bounded gateway action with five fail-closed classes'
     assert.match(source, new RegExp(classification));
   }
   assert.match(source, /docker.*image.*rm/);
+  assert.match(source, /image.*rm.*--force/);
   assert.match(source, /docker.*container.*rm/);
   assert.match(source, /builder.*prune/);
   assert.match(source, /buildx.*prune/);
