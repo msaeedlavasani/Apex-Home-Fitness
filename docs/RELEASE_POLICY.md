@@ -48,6 +48,14 @@ when storage policy, builder scope, or current/rollback authority is missing or
 ambiguous. Ambiguous artifacts are never deleted and host dashboard percentages
 do not override authoritative filesystem `df` evidence.
 
+Authority and disk admission are scoped to the environment being changed.
+Production release/DB work requires Production authority; isolated Beta
+release/DB work requires Beta authority and shared-host headroom. Unresolved
+authority in the other environment does not by itself block the operation,
+but its ambiguous/active artifacts remain reserved in shared disk accounting
+and remain protected from deletion. Global storage-hygiene status may still be
+`BLOCKED` while an environment-scoped release is independently admitted.
+
 A task is authoritative only after Production deployment and post-deploy smoke
 pass. A dependent task must not begin before that checkpoint.
 

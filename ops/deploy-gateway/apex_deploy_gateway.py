@@ -280,6 +280,16 @@ def github_json(path):
         raise GateError(f"GitHub authority unavailable: {type(error).__name__}") from error
 
 
+def github_text(path, ref):
+    url = f"https://raw.githubusercontent.com/{REPO}/{quote(ref, safe='')}/{path}"
+    request = urllib.request.Request(url, headers={"User-Agent": "apex-gateway/5"})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return response.read().decode("utf-8")
+    except Exception as error:
+        raise GateError(f"GitHub authority unavailable: {type(error).__name__}") from error
+
+
 def beta_authoritative_source(sha):
     ref = github_json(f"git/ref/heads/{quote(BETA_SOURCE_REF, safe='')}")
     branch_sha = ((ref.get("object") or {}).get("sha")) if isinstance(ref, dict) else None
@@ -949,6 +959,68 @@ def _rollback_app_ref(path, prefix):
     return app_refs[0]
 
 
+def _checkpoint_key(value):
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+
+
+def _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, ledger):
+    """Prove a current release's rollback from the immutable release ledger.
+
+    This is intentionally exact: the ledger must identify the current release
+    and source, the host snapshot must be the named rollback reference, and
+    that snapshot's image must be independently listed as a PASS checkpoint.
+    No ordering, age, or tag alias is used.
+    """
+    release_id = proof.get("release_id")
+    source_sha = proof.get("source_sha")
+    current_image = proof.get("image")
+    if proof.get("status") != "PASS" or not all(isinstance(value, str) and value for value in (release_id, source_sha, current_image)):
+        raise GateError("Production release proof is incomplete")
+    current_marker = re.search(r"(?im)^>\s*\*\*CURRENT VERIFIED PRODUCTION CHECKPOINT:\s*([^*]+)\*\*", ledger)
+    if not current_marker or _checkpoint_key(current_marker.group(1)) != _checkpoint_key(release_id):
+        raise GateError("repository Production current checkpoint does not match release proof")
+    sections = re.findall(r"(?ms)^##\s+([^\n]+)\n(.*?)(?=^##\s+|\Z)", ledger)
+    current_section = None
+    for heading, body in sections:
+        if _checkpoint_key(heading) == _checkpoint_key(release_id):
+            current_section = (heading, body)
+            break
+    if not current_section:
+        raise GateError("repository Production current checkpoint section is missing")
+    _, current_body = current_section
+    if not re.search(r"(?im)^-\s+\*\*Status:\*\*\s+PASS\b", current_body):
+        raise GateError("repository Production current checkpoint is not PASS")
+    if not re.search(rf"(?m)^-\s+\*\*Source:\*\*\s+{re.escape(source_sha)}\b", current_body):
+        raise GateError("repository Production source evidence does not match release proof")
+    if not re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+{re.escape(current_image)}(?:\s|\(|$)", current_body):
+        raise GateError("repository Production image evidence does not match runtime proof")
+    if rollback_path.name not in current_body:
+        raise GateError("repository Production rollback snapshot is not named by current checkpoint")
+    rollback_checkpoint = None
+    for heading, body in sections:
+        if _checkpoint_key(heading) == _checkpoint_key(release_id):
+            continue
+        if re.search(r"(?im)^-\s+\*\*Status:\*\*\s+PASS\b", body) and re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+{re.escape(rollback_ref)}(?:\s|\(|$)", body):
+            rollback_checkpoint = heading.strip()
+            break
+    if not rollback_checkpoint:
+        raise GateError("Production rollback image is not an independently verified checkpoint")
+    return {
+        "kind": "repository-production-checkpoint-ledger",
+        "document": "docs/PRODUCTION_CHECKPOINTS.md",
+        "ref": source_sha,
+        "current_checkpoint": release_id,
+        "rollback_checkpoint": rollback_checkpoint,
+        "rollback_image": rollback_ref,
+        "rollback_snapshot": rollback_path.name,
+    }
+
+
+def _repository_production_authority(proof, rollback_path, rollback_ref):
+    ledger = github_text("docs/PRODUCTION_CHECKPOINTS.md", proof["source_sha"])
+    return _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, ledger)
+
+
 def _authority_from_state(environment, compose_path, app_prefix):
     state = _read_json(RELEASE_AUTHORITY).get(environment)
     if not isinstance(state, dict) or state.get("rollback_verified") is not True:
@@ -979,6 +1051,7 @@ def _authority_from_state(environment, compose_path, app_prefix):
         "current_refs": _compose_refs(compose_path),
         "rollback_refs": _compose_refs(rollback_compose),
         "rollback_compose": str(rollback_compose),
+        "authority_evidence": state.get("authority_evidence"),
     }
 
 
@@ -1008,14 +1081,22 @@ def _legacy_authority(environment, compose_path, app_prefix):
         try:
             proof = _read_json(path)
             matches_release = proof.get("release_id") == marker
+            rollback_path = compose_path.parent / proof.get("rollback", "")
+            if not rollback_path.is_file():
+                continue
+            authority_evidence = None
             if environment == "beta" and marker == "__deployed-image-proof__":
                 matches_release = proof.get("image") == deployed.get("image") == runtime["image"]
                 audit_text = AUDIT.read_text(encoding="utf-8") if AUDIT.is_file() else ""
                 matches_release = matches_release and f"event=beta-rollback-verified release={proof.get('release_id')}" in audit_text
+            if environment == "production" and proof.get("status") == "PASS" and proof.get("image") == runtime["image"] and not matches_release:
+                rollback_ref = _rollback_app_ref(rollback_path, app_prefix)
+                try:
+                    authority_evidence = _repository_production_authority(proof, rollback_path, rollback_ref)
+                    matches_release = True
+                except GateError:
+                    matches_release = False
             if proof.get("status") != "PASS" or not matches_release or proof.get("image") != runtime["image"]:
-                continue
-            rollback_path = compose_path.parent / proof.get("rollback", "")
-            if not rollback_path.is_file():
                 continue
             rollback_ref = _rollback_app_ref(rollback_path, app_prefix)
             rollback_info = _image_inspect(rollback_ref)
@@ -1027,6 +1108,7 @@ def _legacy_authority(environment, compose_path, app_prefix):
                 "rollback_refs": _compose_refs(rollback_path),
                 "rollback_compose": str(rollback_path),
                 "release_id": proof.get("release_id"),
+                "authority_evidence": authority_evidence,
             })
         except GateError:
             continue
@@ -1144,7 +1226,7 @@ def _cache_artifact(policy):
         return {"kind": "build-cache", "identity": f"builder:{policy.get('builder', 'unknown')}", "class": "AMBIGUOUS_DO_NOT_DELETE", "blocker": str(error)}
 
 
-def _storage_audit():
+def _storage_audit(required_environments=("production", "beta")):
     before = _disk_state()
     blockers = []
     try:
@@ -1153,7 +1235,7 @@ def _storage_audit():
         policy = None
         blockers.append(f"STORAGE_POLICY:{error}")
     authority = _release_authority()
-    for environment in ("production", "beta"):
+    for environment in required_environments:
         if authority[environment]["status"] != "PASS":
             blockers.append(f"{environment.upper()}_AUTHORITY:{authority[environment].get('blocker', 'ambiguous')}")
     lock = _lock_state()
@@ -1214,7 +1296,8 @@ def _storage_audit():
 
 
 def _disk_admission(operation):
-    audit_result = _storage_audit()
+    required_environment = "beta" if operation.startswith("beta-") else "production"
+    audit_result = _storage_audit((required_environment,))
     blockers = list(audit_result["blockers"])
     if blockers:
         raise GateError(f"disk admission blocked for {operation}: {'; '.join(blockers)}")
@@ -1225,6 +1308,14 @@ def _disk_admission(operation):
     if not app_sizes or not transaction_sizes:
         raise GateError(f"disk admission blocked for {operation}: candidate size evidence is incomplete")
     retained_ids = {item["identity"] for item in images if item["class"] in ("RETAIN_CURRENT", "RETAIN_ROLLBACK")}
+    for item in images:
+        if item.get("owner") == required_environment:
+            continue
+        if item.get("class") in ("AMBIGUOUS_DO_NOT_DELETE", "RETAIN_ACTIVE_TRANSACTION"):
+            # An unresolved authority in the other environment must remain a
+            # disk reserve on the shared host. It is never assumed reclaimable
+            # merely because this admission targets a different environment.
+            retained_ids.add(item["identity"])
     retained_bytes = sum(item["size_bytes"] for item in images if item["identity"] in retained_ids)
     candidate_app = max(app_sizes)
     candidate_transaction = max(transaction_sizes)
@@ -1272,7 +1363,7 @@ def _bounded_cache_cleanup(policy, available_bytes):
     }
 
 
-def _save_release_authority(environment, current, rollback, compose_file, current_refs, rollback_refs, rollback_verified=False, release_id=None):
+def _save_release_authority(environment, current, rollback, compose_file, current_refs, rollback_refs, rollback_verified=False, release_id=None, authority_evidence=None):
     try:
         document = _read_json(RELEASE_AUTHORITY) if RELEASE_AUTHORITY.is_file() else {"schema_version": 1}
     except GateError:
@@ -1284,6 +1375,8 @@ def _save_release_authority(environment, current, rollback, compose_file, curren
         "rollback_verified": rollback_verified,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    if authority_evidence is not None:
+        document[environment]["authority_evidence"] = authority_evidence
     _write_json(RELEASE_AUTHORITY, document)
 
 
@@ -1311,7 +1404,12 @@ def _storage_hygiene(req):
                     Path(authority["rollback_compose"]).name,
                     authority.get("current_refs", []), authority.get("rollback_refs", []),
                     rollback_verified=True, release_id=authority["release_id"],
+                    authority_evidence=authority.get("authority_evidence"),
                 )
+                if environment == "production":
+                    marker = STATE / "rollback-verified"
+                    marker.write_text(authority["release_id"], encoding="utf-8")
+                    os.chmod(marker, 0o600)
         removed = []
         errors = []
         if req["mode"] == "cleanup":
@@ -1604,6 +1702,22 @@ def self_test():
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
     check("canonical json stable", lambda: (_ for _ in ()).throw(AssertionError()) if _canonical({"a": 1, "b": [2, 3]}) != _canonical({"b": [2, 3], "a": 1}) else None)
+    ledger_fixture = """> **CURRENT VERIFIED PRODUCTION CHECKPOINT: CURRENT-ONE**
+
+## CURRENT-ONE
+
+- **Status:** PASS
+- **Source:** aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- **Image:** apex-home-fit:release-current (ID `sha256:current`)
+- **DB_STATE:** rollback snapshot `compose.yml.rollback-current-one` (root-only)
+
+## PRIOR-ONE
+
+- **Status:** PASS
+- **Source:** bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+- **Image:** apex-home-fit:release-prior (ID `sha256:prior`)
+"""
+    check("Production ledger reconciles exact current and prior checkpoint", lambda: (_ for _ in ()).throw(AssertionError()) if _parse_production_checkpoint_evidence({"release_id": "current-one", "source_sha": "a" * 40, "image": "apex-home-fit:release-current", "status": "PASS"}, Path("/opt/apex-home-fit/compose.yml.rollback-current-one"), "apex-home-fit:release-prior", ledger_fixture)["rollback_checkpoint"] != "PRIOR-ONE" else None)
 
     # Mount contract: dry-run is ALWAYS read-only; apply/rehearsal are RW and
     # rehearsal points DATABASE_URL at the clone.

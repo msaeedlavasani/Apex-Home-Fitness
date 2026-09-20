@@ -96,6 +96,13 @@ root-only release-authority state, running-container identity, Compose rollback
 evidence, and existing proof records. It never selects rollback by age,
 `latest`, `beta-current`, or tag recency.
 
+When a current Production proof names a root-only rollback snapshot, the
+gateway may reconcile that snapshot against the immutable
+`docs/PRODUCTION_CHECKPOINTS.md` ledger at the proof's source SHA. This is
+valid only when the ledger identifies the same current checkpoint and source,
+the snapshot names the same rollback image, and that image is independently a
+PASS checkpoint. A stale legacy marker alone is never enough.
+
 Every relevant AHF image, migration/dbop image, failed candidate, stopped AHF
 container, dangling artifact, and builder cache is assigned exactly one of:
 `RETAIN_CURRENT`, `RETAIN_ROLLBACK`, `RETAIN_ACTIVE_TRANSACTION`,
@@ -120,6 +127,13 @@ budget evidence is written to a sanitized `storage-hygiene-*.json` receipt.
 The checked-in `ops/deploy-gateway/storage-policy.example.json` contains
 explicit zero placeholders and is intentionally rejected until calibrated on
 the host.
+
+Storage hygiene remains cross-environment and therefore reports Production
+ambiguity as `BLOCKED`. Release admission is environment-scoped: Production
+release/DB admission requires Production authority, while isolated Beta
+release/DB admission requires Beta authority plus the shared disk policy. For
+the Beta path, every ambiguous or active Production-owned image remains a
+conservative disk reserve; it is never deleted or treated as reclaimable.
 
 ## Transaction and rollback
 
