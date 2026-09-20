@@ -533,8 +533,9 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
     await expect(start).toBeVisible();
     await start.tap();
     await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible({timeout: 30_000});
-    await expect(page.locator('[data-workout-v2-record-rep]')).toBeVisible();
     await expect(page.locator('[data-workout-v2-set-progress]')).toBeVisible();
+    await expect(page.locator('[data-workout-v2-record-rep]')).toHaveCount(0);
+    await expect(page.locator('[data-workout-v2-restart-set]')).toBeVisible();
   });
 
   test('INTRO cue zone sits below the mentor host, outside the demonstration area', async ({page}) => {
