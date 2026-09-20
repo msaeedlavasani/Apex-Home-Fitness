@@ -65,7 +65,12 @@ data, not a product identity conditional, and it cannot select Production
 resources. Because the operation executes from the deployed Beta migration
 image, changing the operation implementation requires the existing governed
 capability-install/release mechanism; direct host script replacement is not an
-approved activation path.
+approved activation path. The bounded request may carry an
+`operation_source_sha` distinct from the deployed application `source_sha`.
+The gateway verifies that operation SHA against the canonical Beta branch/PR
+and CI, builds an ephemeral `ahf-home-fit:beta-dbop-*` image, and uses it only
+for this allowlisted operation; the running Beta application image and
+Production remain unchanged.
 
 ## Authorization and allowlist
 

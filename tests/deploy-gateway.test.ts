@@ -48,6 +48,8 @@ test('gateway accepts only the bounded Beta QA data operation', () => {
   assert.match(source, /scripts\/gateway-db-ops\/beta-qa-program-assign\.mjs/);
   const valid = {action:'beta-db-operation',schema_version:1,operation_id:'beta-qa-program-assign',mode:'dry-run',source_sha:'a'.repeat(40)};
   assert.equal(validate(valid).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, operation_source_sha:'b'.repeat(40)}).stdout.trim(), 'PASS');
+  assert.equal(validate({...valid, operation_source_sha:'not-a-sha'}).stdout.trim(), 'GateError');
   assert.equal(validate({...valid, mode:'rehearsal'}).stdout.trim(), 'GateError');
   assert.equal(validate({...valid, mode:'apply'}).stdout.trim(), 'GateError');
 });
@@ -81,11 +83,14 @@ test('storage hygiene is a bounded gateway action with five fail-closed classes'
 
 test('Beta QA operation uses canonical phone normalization and canonical data only', () => {
   const source = readFileSync('scripts/gateway-db-ops/beta-qa-program-assign.mjs', 'utf8');
+  const gatewaySource = readFileSync(gateway, 'utf8');
   assert.match(source, /normalizePhone/);
   assert.match(source, /QA_PROGRAM_EXERCISE_RECORDS/);
   assert.match(source, /shapeIssues/);
   assert.match(source, /REPAIR_CANONICAL_PROGRAM/);
   assert.match(source, /programExercise\.deleteMany/);
+  assert.match(gatewaySource, /operation_source_sha/);
+  assert.match(gatewaySource, /beta-dbop-/);
   assert.match(source, /exercise\.upsert/);
   assert.match(source, /users\.filter\(\(candidate\) => candidate\._count\.programs === 0\)/);
   assert.doesNotMatch(source, /SMOKE_TEST_PHONE/);

@@ -35,7 +35,7 @@ BETA_PR_NUMBER = 72
 PRISMA = "6.19.3"
 BASE_DIGEST = "sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32"
 GATEWAY_VERSION = 5
-REQUEST_KEYS = {"action", "schema_version", "release_id", "source_sha", "expected_current_image", "db_change", "phase", "operation_id", "mode", "dry_run_evidence_sha"}
+REQUEST_KEYS = {"action", "schema_version", "release_id", "source_sha", "operation_source_sha", "expected_current_image", "db_change", "phase", "operation_id", "mode", "dry_run_evidence_sha"}
 ACTIONS = ("status", "release", "verify-rollback", "db-operation", "beta-status", "beta-release", "beta-verify-rollback", "beta-db-operation", "storage-hygiene")
 DB_OP_MODES = ("dry-run", "apply", "rehearsal")
 STORAGE_MODES = ("audit", "cleanup")
@@ -231,6 +231,8 @@ def validate_request(req):
             raise GateError("invalid Beta db-operation mode")
         if not isinstance(req.get("source_sha"), str) or not re.fullmatch(r"[0-9a-f]{40}", req["source_sha"]):
             raise GateError("invalid source SHA")
+        if req.get("operation_source_sha") is not None and not re.fullmatch(r"[0-9a-f]{40}", req["operation_source_sha"]):
+            raise GateError("invalid operation source SHA")
         if req["mode"] == "apply":
             evidence = req.get("dry_run_evidence_sha")
             if not isinstance(evidence, str) or not re.fullmatch(r"[0-9a-f]{64}", evidence):
@@ -503,34 +505,48 @@ def _run_beta_operation(opid, mode, image, qa_phones):
     return run(_beta_operation_command(opid, mode, image, qa_phones), quiet=True)
 
 
-def _beta_dry_run_evidence_path(opid, sha):
-    return STATE / f"beta-db-op-dryrun-{opid}-{sha[:12]}.json"
+def _build_beta_operation_image(sha, source, opid, values):
+    target = f"ahf-home-fit:beta-dbop-{sha[:12]}-{opid}"
+    args = ["--build-arg", "NPM_REGISTRY=https://package-mirror.liara.ir/repository/npm/",
+            "--build-arg", f"NEXT_PUBLIC_SUPABASE_URL={values['NEXT_PUBLIC_SUPABASE_URL']}",
+            "--build-arg", f"NEXT_PUBLIC_SUPABASE_ANON_KEY={values['NEXT_PUBLIC_SUPABASE_ANON_KEY']}",
+            "--build-arg", f"NEXT_PUBLIC_SITE_URL={values['NEXT_PUBLIC_SITE_URL']}"]
+    run(["/usr/bin/docker", "image", "inspect", f"node:22-alpine@{BASE_DIGEST}", "--format", "{{.Id}}"])
+    run(["/usr/bin/docker", "build", "--pull=false", "--target", "build", "-t", target, *args, str(source)], quiet=False)
+    return target
 
 
-def _store_beta_dry_run_evidence(opid, sha, report):
+def _beta_dry_run_evidence_path(opid, deployed_sha, operation_sha):
+    return STATE / f"beta-db-op-dryrun-{opid}-{deployed_sha[:12]}-{operation_sha[:12]}.json"
+
+
+def _store_beta_dry_run_evidence(opid, deployed_sha, operation_sha, report):
     canonical = _canonical(report)
     report_sha = hashlib.sha256(canonical.encode()).hexdigest()
     evidence = {
         "operation_id": opid,
-        "source_sha": sha,
+        "source_sha": deployed_sha,
+        "operation_source_sha": operation_sha,
         "environment": "AHF_BETA",
         "mode": "dry-run",
         "report_sha": report_sha,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    path = _beta_dry_run_evidence_path(opid, sha)
+    path = _beta_dry_run_evidence_path(opid, deployed_sha, operation_sha)
     path.write_text(json.dumps(evidence))
     os.chmod(path, 0o600)
     return report_sha, evidence
 
 
-def _load_beta_dry_run_evidence(opid, sha, expected_sha):
-    path = _beta_dry_run_evidence_path(opid, sha)
+def _load_beta_dry_run_evidence(opid, deployed_sha, operation_sha, expected_sha):
+    path = _beta_dry_run_evidence_path(opid, deployed_sha, operation_sha)
     if not path.is_file():
         raise GateError("Beta dry-run evidence missing — run mode=dry-run first")
     evidence = json.loads(path.read_text())
     if evidence.get("report_sha") != expected_sha:
         raise GateError("Beta dry-run evidence SHA mismatch")
+    if evidence.get("source_sha") != deployed_sha or evidence.get("operation_source_sha") != operation_sha:
+        raise GateError("Beta dry-run evidence source mismatch")
     return evidence
 
 
@@ -695,67 +711,87 @@ def beta_verify_rollback(req):
 def beta_db_operation(req):
     opid = req["operation_id"]
     mode = req["mode"]
-    sha = req["source_sha"]
+    deployed_sha = req["source_sha"]
+    operation_sha = req.get("operation_source_sha") or deployed_sha
     beta_env = beta_env_values()
     qa_phones = beta_env.get("SMOKE_TEST_PHONE", "").strip() or beta_env.get("AUTH_OTP_MOCK_PHONES", "").strip()
     if not qa_phones:
         raise GateError("Beta QA identity configuration is absent")
-    source_evidence = beta_authoritative_source(sha)
     app_image, migrate_image = beta_topology()
     marker = BETA_ROOT / ".deployed-commit"
-    if not marker.is_file() or json.loads(marker.read_text()).get("source_sha") != sha:
+    if not marker.is_file() or json.loads(marker.read_text()).get("source_sha") != deployed_sha:
         raise GateError("Beta operation source SHA is not the deployed Beta candidate")
+    if operation_sha == deployed_sha:
+        operation_source = {"sha": operation_sha, "kind": "deployed-beta-migration-image", "image": migrate_image}
+    else:
+        operation_source = beta_authoritative_source(operation_sha)
     acquire_op_lock()
     try:
         _disk_admission("beta-db-operation")
+        operation_image = migrate_image
+        if operation_sha != deployed_sha:
+            operation_image = f"ahf-home-fit:beta-dbop-{operation_sha[:12]}-{opid}"
+            try:
+                _image_inspect(operation_image)
+            except (GateError, IndexError, json.JSONDecodeError):
+                with tempfile.TemporaryDirectory(prefix="apex-beta-operation-") as td:
+                    temp = Path(td)
+                    archive = temp / "source.tar.gz"
+                    urllib.request.urlretrieve(f"https://github.com/{REPO}/archive/{operation_sha}.tar.gz", archive)
+                    source = extract(archive, temp / "source")
+                    if not (source / BETA_OPERATION_ALLOWLIST[opid]["path"]).is_file():
+                        raise GateError("Beta operation script missing from authoritative operation source")
+                    operation_image = _build_beta_operation_image(operation_sha, source, opid, beta_env)
         if mode == "dry-run":
-            raw = _run_beta_operation(opid, "dry-run", migrate_image, qa_phones)
+            raw = _run_beta_operation(opid, "dry-run", operation_image, qa_phones)
             try:
                 report = json.loads(raw)
             except json.JSONDecodeError:
                 report = {"operation_id": opid, "mode": "dry-run", "report": raw}
-            report_sha, evidence = _store_beta_dry_run_evidence(opid, sha, report)
-            audit("beta-db-op-dry-run-pass", f"{opid}:{sha[:12]}")
+            report_sha, evidence = _store_beta_dry_run_evidence(opid, deployed_sha, operation_sha, report)
+            audit("beta-db-op-dry-run-pass", f"{opid}:{operation_sha[:12]}")
             return {
                 "status": "PASS", "version": GATEWAY_VERSION, "environment": "AHF_BETA",
-                "mode": "dry-run", "operation_id": opid, "source_sha": sha,
-                "source": source_evidence, "dry_run_evidence_sha": report_sha,
+                "mode": "dry-run", "operation_id": opid, "source_sha": deployed_sha,
+                "operation_source_sha": operation_sha, "source": {"deployed": deployed_sha, "operation": operation_source},
+                "dry_run_evidence_sha": report_sha,
                 "operation_report": report, "secret_boundary": "PROTECTED",
             }
 
-        evidence = _load_beta_dry_run_evidence(opid, sha, req["dry_run_evidence_sha"])
-        backup = f"gateway-beta-dbop-{opid}-{sha[:12]}.db"
+        evidence = _load_beta_dry_run_evidence(opid, deployed_sha, operation_sha, req["dry_run_evidence_sha"])
+        backup = f"gateway-beta-dbop-{opid}-{operation_sha[:12]}.db"
         stopped = False
         try:
             run(["/usr/bin/docker", "compose", "-f", str(BETA_COMPOSE), "stop", "app"], quiet=False)
             stopped = True
-            run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_image,
+            run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", operation_image,
                  "sh", "-c", f"test -f /data/app.db && cp /data/app.db /data/{backup} && chown 100:101 /data/{backup}"], quiet=False)
-            before = _beta_db_sha(migrate_image)
-            raw = _run_beta_operation(opid, "apply", migrate_image, qa_phones)
+            before = _beta_db_sha(operation_image)
+            raw = _run_beta_operation(opid, "apply", operation_image, qa_phones)
             try:
                 report = json.loads(raw)
             except json.JSONDecodeError:
                 report = {"operation_id": opid, "mode": "apply", "report": raw}
-            after = _beta_db_sha(migrate_image)
+            after = _beta_db_sha(operation_image)
             _restart_beta_app()
             stopped = False
             result = {
                 "status": "PASS", "version": GATEWAY_VERSION, "environment": "AHF_BETA",
-                "mode": "apply", "operation_id": opid, "source_sha": sha,
+                "mode": "apply", "operation_id": opid, "source_sha": deployed_sha,
+                "operation_source_sha": operation_sha, "operation_image": operation_image,
                 "dry_run_evidence_sha": evidence["report_sha"], "backup": backup,
                 "db_before_hash": before, "db_after_hash": after,
                 "operation_report": report, "production_untouched": True,
                 "secret_boundary": "PROTECTED",
             }
-            audit("beta-db-op-pass", f"{opid}:{sha[:12]}")
+            audit("beta-db-op-pass", f"{opid}:{operation_sha[:12]}")
             return result
         except Exception:
             if stopped:
-                run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", migrate_image,
+                run(["/usr/bin/docker", "run", "--rm", "--user", "0:0", "-v", f"{BETA_VOLUME}:/data", operation_image,
                      "sh", "-c", f"test -f /data/{backup} && cp /data/{backup} /data/app.db && chown 100:101 /data/app.db"], quiet=False)
             _restart_beta_app()
-            audit("beta-db-op-fail", f"{opid}:{sha[:12]}")
+            audit("beta-db-op-fail", f"{opid}:{operation_sha[:12]}")
             raise
     finally:
         release_op_lock()
@@ -1201,7 +1237,7 @@ def _recognized_owner_tag(owner, tag):
 
 
 def _is_transaction_tag(tag):
-    return ":migrate-" in tag or ":dbop-" in tag or ":beta-migrate-" in tag or tag.startswith("ahf-beta-migrate:")
+    return ":migrate-" in tag or ":dbop-" in tag or ":beta-migrate-" in tag or ":beta-dbop-" in tag or tag.startswith(("ahf-beta-migrate:", "ahf-beta-dbop:"))
 
 
 def _lock_state():
