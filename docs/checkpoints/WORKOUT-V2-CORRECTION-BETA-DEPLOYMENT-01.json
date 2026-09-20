@@ -1,31 +1,51 @@
 {
   "CHECKPOINT_ID": "WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01",
   "CHECKPOINT_KIND": "DEPLOYMENT",
-  "STATUS": "PENDING",
-  "KNOWN_GOOD_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
-  "VERIFIED_SOURCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
-  "CHECKPOINT_EVIDENCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+  "VERIFIED_SOURCE_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+  "CHECKPOINT_EVIDENCE_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
   "AUTHORITATIVE_CI": {
     "PROVIDER": "GITHUB_ACTIONS",
     "WORKFLOW": "CI",
     "STATUS": "PASS",
-    "COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
-    "RUN_ID": "35469621918",
-    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "COMMIT_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+    "RUN_ID": "35509406407",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35509406407",
     "BRANCH_STATUS": "PASS",
-    "BRANCH_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
-    "BRANCH_RUN_ID": "35469621918",
-    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "BRANCH_COMMIT_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+    "BRANCH_RUN_ID": "35509406407",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35509406407",
     "PR_STATUS": "PASS",
-    "PR_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
-    "PR_RUN_ID": "35469623886",
-    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469623886"
+    "PR_COMMIT_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+    "PR_RUN_ID": "35509409014",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35509409014"
   },
   "VERIFICATION_EVIDENCE": [
-    {"ID":"beta-correction-deployment","COMMAND":"existing governed Beta deployment checkpoint","STATUS":"PENDING","SUMMARY":"The corrected source has not yet been integrated or deployed; this record remains pending and cannot satisfy RUN-5."}
+    {"ID":"beta-deployment","COMMAND":"apex-deploy beta-release beta-correction-ce1da7b","STATUS":"PASS","SUMMARY":"The exact authorized candidate was deployed through gateway v5 with db_changed=true, migration preflight PASS, health PASS, and production_untouched=true."},
+    {"ID":"beta-build-identity","COMMAND":"gateway proof and running-container identity","STATUS":"PASS","SUMMARY":"Beta image ahf-home-fit:beta-ce1da7b5720c, migration image ahf-home-fit:beta-migrate-ce1da7b5720c, and build identity uigfNOaT1Nw0ZKwtHpj90 match the proof."},
+    {"ID":"beta-rollback","COMMAND":"apex-deploy beta-verify-rollback beta-correction-ce1da7b","STATUS":"PASS","SUMMARY":"The preserved rollback compose and previous Beta image beta-0260074ced5d were verified without restarting Production."},
+    {"ID":"qa-repair-dry-run","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign dry-run","STATUS":"PASS","SUMMARY":"The protected QA account was unique; the stale shape was deterministically repairable with exact issues weeklySchedule, exercises.length expected 2 actual 3, exercises[1].exercise.name, exercises[1].sets, and exercises[1].reps. Evidence SHA 53630dcf997409f6b2eb4d0851660bbb32d374b18f0849688e7197a5264d6493."},
+    {"ID":"qa-repair-apply","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign apply","STATUS":"PASS","SUMMARY":"The existing allowlisted Beta operation repaired only the protected Beta QA Program and canonical exercise rows; before/after database hashes were recorded, owner_matches=true, program_shape_valid=true, and production_untouched=true."},
+    {"ID":"qa-post-repair-dry-run","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign post-repair dry-run","STATUS":"PASS","SUMMARY":"The post-repair dry-run returned planned_change=NONE, program_shape_valid=true, owner_matches=true, canonical_exercises_present=true, and shape_issues=[]."},
+    {"ID":"fixture-contract","COMMAND":"canonical QA fixture and Workout contract tests","STATUS":"PASS","SUMMARY":"Exactly two ordered Squat-Mentor entries remain source-controlled: Jump Squats (2 reps-based sets) and Bodyweight Squat (1 time-based set); arbitrary-N Program semantics remain unchanged."},
+    {"ID":"beta-runtime","COMMAND":"HTTPS Beta route, PWA, isolation, and container checks","STATUS":"PASS","SUMMARY":"Beta /en, /fa, manifest.json, and service-worker.js returned 200; /en/workout redirected through the normal auth boundary; Beta remained on ahf_beta_db and 127.0.0.1:3100 while Production remained unchanged."},
+    {"ID":"storage-cleanup","COMMAND":"apex-deploy storage-hygiene cleanup","STATUS":"PASS","SUMMARY":"Only the classified SAFE_TO_DELETE beta-dbop operation image was removed; 509854187 bytes reclaimed. Ambiguous artifacts and database volumes were untouched."}
   ],
   "WORKTREE_CLEAN": "YES",
   "LOCAL_REMOTE_PARITY": "YES",
   "DEPLOYMENT_AUTHORIZED": "YES",
-  "DEPLOYMENT_IDENTITY": {"STATUS":"PENDING","ENVIRONMENT":"AHF_BETA","URL":"https://beta.apexhomefit.ir","DEPLOYED_SHA":"PENDING"}
+  "DEPLOYMENT_IDENTITY": {
+    "STATUS":"PASS",
+    "DEPLOYED_SHA":"ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+    "ENVIRONMENT":"AHF_BETA",
+    "URL":"https://beta.apexhomefit.ir",
+    "BUILD_ID":"uigfNOaT1Nw0ZKwtHpj90",
+    "IMAGE":"ahf-home-fit:beta-ce1da7b5720c",
+    "MIGRATION_IMAGE":"ahf-home-fit:beta-migrate-ce1da7b5720c",
+    "ROLLBACK":"compose.yml.rollback-beta-correction-ce1da7b",
+    "ROLLBACK_VERIFIED":"YES",
+    "PRODUCTION_UNTOUCHED":"YES",
+    "QA_OPERATION_SOURCE_SHA":"566cf518f0f875fa32034bf23c43031de9e62764"
+  }
 }
