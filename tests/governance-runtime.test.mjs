@@ -28,7 +28,6 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const state = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE').value;
   const expectedReady = [
-    'WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION',
     'WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION',
   ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
@@ -115,7 +114,6 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const expectedReady = [
     'PRODUCT-INTEGRATION-CHECKPOINT',
-    'WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION',
     'WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION',
   ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);

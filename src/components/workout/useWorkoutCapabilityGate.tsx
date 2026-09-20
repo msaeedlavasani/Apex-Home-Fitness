@@ -29,8 +29,9 @@ export function useWorkoutCapabilityGate(exercises: readonly SessionExercise[]) 
         if (permission?.state === 'granted') {
           setState((current) => ({...current, status: 'INITIALIZING', consented: true, scopes}));
           try {
-            await preparePoseHarness();
-            if (!cancelled) setState({status: 'READY', capability: capabilityUsableForSquat(), consented: true, scopes, reason: null});
+            setState((current) => ({...current, status: 'CALIBRATING'}));
+            const readiness = await preparePoseHarness();
+            if (!cancelled) setState({status: 'READY', capability: {...capabilityUsableForSquat(), ...readiness}, consented: true, scopes, reason: null});
           } catch (error) {
             if (!cancelled) setState(cameraCapabilityUnavailable(error instanceof Error ? error.message : 'camera-unavailable'));
           }
@@ -52,8 +53,9 @@ export function useWorkoutCapabilityGate(exercises: readonly SessionExercise[]) 
   const enableCamera = useCallback(async (snapshot: {consented: boolean; scopes: readonly ConsentScope[]; version: number}) => {
     setState((current) => ({...current, status: 'INITIALIZING', consented: snapshot.consented, scopes: snapshot.scopes}));
     try {
-      await preparePoseHarness();
-      setState({status: 'READY', capability: capabilityUsableForSquat(), consented: true, scopes: snapshot.scopes, reason: null});
+      setState((current) => ({...current, status: 'CALIBRATING', consented: true, scopes: snapshot.scopes}));
+      const readiness = await preparePoseHarness();
+      setState({status: 'READY', capability: {...capabilityUsableForSquat(), ...readiness}, consented: true, scopes: snapshot.scopes, reason: null});
     } catch (error) {
       setState(cameraCapabilityUnavailable(error instanceof Error ? error.message : 'camera-initialization-failed'));
     }

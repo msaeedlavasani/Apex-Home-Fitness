@@ -4,7 +4,7 @@ import {
   type RuntimeCapabilitySnapshot,
 } from './executionStrategy';
 
-export type CapabilityGateStatus = 'CHECKING' | 'CHOICE_REQUIRED' | 'INITIALIZING' | 'READY';
+export type CapabilityGateStatus = 'CHECKING' | 'CHOICE_REQUIRED' | 'INITIALIZING' | 'CALIBRATING' | 'READY';
 
 export interface CapabilityGateState {
   readonly status: CapabilityGateStatus;
