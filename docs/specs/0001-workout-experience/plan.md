@@ -114,6 +114,26 @@ separate simulated normalized-sensor reachability from real camera, pose,
 calibration, rep-detection, and device evidence. RUN-5 remains downstream of
 the resulting integration and deployed-authenticated-flow checkpoints.
 
+### 5.4 Persisted prescribed-Entry identity correction (2026-09-21)
+
+The governed Beta QA repair exposed a persistence-boundary defect after the
+generic Entry/Passport contract had already been reconciled: the current
+`ProgramExercise @@id([programId, exerciseId])` key conflates prescribed Entry
+identity with canonical Exercise identity. The existing contract already
+requires distinct ordered Entries to be able to reference one canonical
+Exercise, so this is a technical correction and not an Owner product choice.
+
+The successor package `WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION` owns the
+generic persistence correction and its migration/backfill audit. Its acceptance
+must prove independent Entry addressability, deterministic per-Program order,
+independent per-entry prescription data, compatibility with existing unique-
+exercise Programs, canonical Exercise/Passport resolution, arbitrary-N topology,
+and a governed Beta QA persistence verification. The package may extend the
+existing schema/migration boundary but may not duplicate Exercise records,
+special-case the QA fixture, or mutate Production. The canonical Beta
+checkpoint depends on this capability and must retain the prior failed-closed
+receipt as historical evidence.
+
 ## 4. Prescription contract
 
 - `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION`: identity says *what movement*; the prescription says *how it is prescribed here*.

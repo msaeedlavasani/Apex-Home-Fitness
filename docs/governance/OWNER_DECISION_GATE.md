@@ -158,6 +158,31 @@
   the existing Development Admission Gate and remains downstream of this
   resolved decision.
 
+### WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION — generic repeated-entry persistence (2026-09-21)
+
+- **Owner direction:** AUTHORIZE the smallest governed persistence correction
+  required by the already-resolved Workout V2 Entry/Exercise identity contract.
+  This is technical remediation, not a new product decision.
+- **Established blocker:** the governed Beta QA repair failed closed because
+  `ProgramExercise @@id([programId, exerciseId])` cannot represent two distinct
+  prescribed Entries referencing one canonical Exercise.
+- **Binding invariant:** prescribed Entry identity is independent from canonical
+  Exercise identity. The correction must support repeated canonical references,
+  deterministic ordering, independent per-entry dosage/context, entry-scoped
+  session semantics where applicable, canonical Passport resolution, arbitrary-N
+  topology, compatibility with unique-exercise Programs, and auditable migration
+  or backfill behavior. It must not duplicate canonical Exercise rows, special-
+  case QA, or restore a different exercise identity.
+- **Execution boundary:** use the existing admission, migration, Beta gateway,
+  and QA data-operation authorities only. Production mutation/deployment, PR #72
+  merge, manual SQL, and gateway bypass remain unauthorized.
+- **Canonical package:**
+  `WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION` in the Workout V2 DAG and
+  `docs/admissions/WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION.admission.json`.
+- **Downstream rule:** the canonical Beta checkpoint remains unsatisfied until
+  this capability is delivered and governed Beta QA persistence verification
+  proves the approved two-entry fixture without fake Exercise identities.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

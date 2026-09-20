@@ -462,14 +462,43 @@ are selected by the DAG, not by conversational ordering.
 
 ### WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT — post-reconciliation Beta gate
 
-- **Dependencies:** `WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT` and
-  `BETA-DEPLOYMENT-CAPABILITY`.
+- **Dependencies:** `WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT`,
+  `BETA-DEPLOYMENT-CAPABILITY`, and
+  `WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION`.
 - **Scope:** exact CI-verified source through gateway v5, Beta build identity,
-  authenticated normal product journey, derived fixture oracle, rollback,
-  storage hygiene, and Production non-interference. No Production deployment
-  or database mutation.
-- **Rule:** PASS is required before RUN-5. It does not itself close Owner
-  visual/device acceptance.
+  authenticated normal product journey, governed Beta schema migration when
+  admitted, canonical QA persistence repair/verification, derived fixture
+  oracle, rollback, storage hygiene, and Production non-interference. No
+  Production deployment or database mutation.
+- **Rule:** PASS requires the persistence capability and a post-migration
+  governed QA proof of two distinct ordered prescribed Entries referencing the
+  same canonical Exercise without fake identities. It is required before RUN-5
+  and does not itself close Owner visual/device acceptance.
+
+### WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION — generic persistence boundary *(CRITICAL; DB_CHANGE)*
+
+- **Purpose:** correct the generic persisted Program/Prescription boundary so
+  a Program can contain multiple distinct prescribed Exercise Entries that refer
+  to one canonical Exercise, without changing the canonical Exercise authority
+  or special-casing QA.
+- **Dependencies:** `WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT`,
+  `WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION`, and
+  `WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION`.
+- **Ownership scope:** Prisma persistence model, migration/backfill contract,
+  Program persistence mapping, and focused invariant/migration verification.
+  The existing governed Beta gateway/data-operation path owns any authorized
+  Beta migration or QA apply after this package is admitted.
+- **Required acceptance:** repeated canonical references are independently
+  addressable as prescribed Entries; ordering is deterministic; per-entry
+  dosage/context is independent; entry-scoped progress/defer/skip semantics
+  remain representable where applicable; Passport resolution still uses the
+  canonical Exercise identity; arbitrary-N orchestration remains intact;
+  unique-exercise Programs remain compatible; the canonical two-entry QA
+  fixture is representable without duplicate Exercise rows; migration/backfill
+  is deterministic, auditable, and verified.
+- **Prohibited scope:** duplicate or fake Exercise identities, QA-only schema
+  branches, Jump Squats substitution, manual SQL, Production mutation/deploy,
+  gateway bypass, PR #72 merge, or rewriting historical receipts.
 
 ### WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT — complete corrected-flow machine gate
 
