@@ -2,22 +2,36 @@
   "CHECKPOINT_ID": "WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01",
   "CHECKPOINT_KIND": "DEPLOYMENT",
   "STATUS": "PENDING",
-  "KNOWN_GOOD_SHA": "e91830fec818b610da0745d80694678b7826e630",
-  "VERIFIED_SOURCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
-  "CHECKPOINT_EVIDENCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "KNOWN_GOOD_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
+  "VERIFIED_SOURCE_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
+  "CHECKPOINT_EVIDENCE_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
   "AUTHORITATIVE_CI": {
     "PROVIDER": "GITHUB_ACTIONS",
     "WORKFLOW": "CI",
-    "STATUS": "PENDING",
-    "COMMIT_SHA": "e91830fec818b610da0745d80694678b7826e630",
-    "RUN_ID": "PENDING",
-    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions"
+    "STATUS": "PASS",
+    "COMMIT_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
+    "RUN_ID": "35533659617",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533659617",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
+    "BRANCH_RUN_ID": "35533657850",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533657850",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "8818e81dbe025a7058db412299a4d25ea51eda31",
+    "PR_RUN_ID": "35533659617",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533659617"
   },
   "VERIFICATION_EVIDENCE": [
-    {"ID":"beta-deployment","COMMAND":"pending canonical integration checkpoint and governed Beta release","STATUS":"PENDING","SUMMARY":"The clarified source, authenticated complete journey, rollback, and storage-hygiene evidence are not yet verified."}
+    {"ID":"source-authority","COMMAND":"apex-deploy beta-release beta-canonical-8818e81","STATUS":"PASS","SUMMARY":"Gateway v5 accepted exact branch/PR-head SHA 8818e81dbe025a7058db412299a4d25ea51eda31 with successful push and pull_request CI."},
+    {"ID":"beta-deployment","COMMAND":"apex-deploy beta-release beta-canonical-8818e81","STATUS":"PASS","SUMMARY":"Exact SHA deployed to AHF Beta; build identity _oyc4VTWFCEoyAzHMVmor, health PASS, DB_CHANGED=false, database before/after SHA-256 equal, and production_untouched=true."},
+    {"ID":"beta-rollback-storage","COMMAND":"apex-deploy beta-verify-rollback beta-canonical-8818e81","STATUS":"PASS","SUMMARY":"Beta rollback beta-033bb6748002 was verified and storage hygiene PASS reclaimed 632147571 bytes by removing only SAFE_TO_DELETE superseded Beta images; ambiguous artifacts and database volumes remained protected."},
+    {"ID":"qa-dry-run","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign dry-run","STATUS":"PASS","SUMMARY":"Governed dry-run identified a deterministic canonical repair, but the persisted Beta Program shape was invalid: weeklySchedule, first entry identity, and second-entry sets/reps."},
+    {"ID":"qa-apply","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign apply","STATUS":"FAIL","SUMMARY":"Gateway failed closed and restored the Beta database when the canonical two-entry fixture hit Prisma unique constraint (programId, exerciseId) on ProgramExercise."},
+    {"ID":"qa-failure-reconciliation","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign dry-run (post-failure)","STATUS":"PASS","SUMMARY":"The identical dry-run evidence SHA 442848880bbfa955ea958415c579b279c02fc34d0ec897d0e4ed6656494c8365 was reproduced after failure, confirming the canonical repair did not partially apply."},
+    {"ID":"architecture-blocker","COMMAND":"prisma/schema.prisma ProgramExercise @@id([programId, exerciseId])","STATUS":"FAIL","SUMMARY":"Current persistence authority cannot represent two distinct prescribed entries referencing one canonical Bodyweight Squat; resolving this requires a separately governed persistence/schema correction before the authenticated fixture journey can pass."}
   ],
-  "WORKTREE_CLEAN": "PENDING",
-  "LOCAL_REMOTE_PARITY": "PENDING",
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
   "DEPLOYMENT_AUTHORIZED": "YES",
-  "DEPLOYMENT_IDENTITY": {"STATUS":"PENDING","DEPLOYED_SHA":"PENDING"}
+  "DEPLOYMENT_IDENTITY": {"STATUS":"PASS","DEPLOYED_SHA":"8818e81dbe025a7058db412299a4d25ea51eda31","ENVIRONMENT":"AHF_BETA","URL":"https://beta.apexhomefit.ir","BUILD_ID":"_oyc4VTWFCEoyAzHMVmor","IMAGE":"ahf-home-fit:beta-8818e81dbe02","MIGRATION_IMAGE":"ahf-home-fit:beta-migrate-8818e81dbe02","ROLLBACK":"compose.yml.rollback-beta-canonical-8818e81","ROLLBACK_VERIFIED":"YES","PRODUCTION_UNTOUCHED":"YES","DATABASE_CHANGED":"NO","STORAGE_HYGIENE_STATUS":"PASS","QA_DATA_STATUS":"BLOCKED"}
 }
