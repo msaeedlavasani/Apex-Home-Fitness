@@ -15,13 +15,14 @@
  *     exercises       ProgramExercise[]
  *   }
  *   model ProgramExercise {
+ *     id          String   @id @default(cuid())
  *     programId   String
  *     exerciseId  String
  *     order       Int
  *     sets        Int?
  *     reps        Int?
  *     restSeconds Int?
- *     @@id([programId, exerciseId])
+ *     @@unique([programId, order])
  *   }
  *   model Exercise {
  *     name       String          @unique
@@ -67,6 +68,7 @@
  * `createServerSupabaseClient` and use Prisma. Call them from Route
  * Handlers, Server Actions or Server Components.
  */
+import { randomUUID } from 'node:crypto';
 import {
   DifficultyLevel,
   ExerciseCategory,
@@ -260,9 +262,9 @@ export interface ProgramDraft {
 /**
  * Transforms a validated AI program into the Prisma write shape.
  *
- * `ProgramExercise` uses the composite key `@@id([programId, exerciseId])`,
- * so the same exercise can appear at most once per program — when the AI
- * repeats an exercise across sessions, only its first occurrence is linked.
+ * `ProgramExercise` has independent Entry identity and deterministic
+ * `(programId, order)` uniqueness, so repeated references to one canonical
+ * exercise remain separate prescribed obligations.
  *
  * Rest-day enforcement: sessions that must not carry a workout are SKIPPED
  * entirely — they contribute no exercise links, and `sessionsPerWeek` counts
@@ -289,8 +291,6 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
 
   for (const session of trainingSessions) {
     for (const ex of session.exercises ?? []) {
-      if (seen.has(ex.name)) continue; // composite PK — one row per exercise per program
-      seen.add(ex.name);
       order += 1;
 
       // S02-C: best-effort canonical resolution. When the incoming exercise
@@ -301,25 +301,28 @@ export function buildProgramDraft(input: SaveGeneratedProgramInput): ProgramDraf
       const resolution = resolveWithAmbiguity({ kind: 'name', name: ex.name }, CANONICAL_CATALOG);
       const resolvedSlug =
         resolution.status === 'RESOLVED' && resolution.entry ? resolution.entry.slug : undefined;
-      const createInput: Prisma.ExerciseCreateInput = {
-        name: ex.name,
-        description: ex.instruction_cue || `AI-generated exercise: ${ex.name}.`,
-        category: methodToCategory(ex.method, ex.equipment),
-        equipment: equipmentToJson(ex.equipment),
-        difficulty: levelToDifficulty(input.level),
-        durationSeconds: null,
-        reps: parseReps(ex.reps),
-        sets: ex.sets,
-        restSeconds: ex.rest_seconds,
-        instructions: buildInstructions(ex),
-        imageUrl: null,
-      };
-      if (resolvedSlug) {
-        // Slug is the identity anchor; faName is intentionally NOT populated
-        // (no Persian corpus — Step 5 faName policy).
-        createInput.slug = resolvedSlug;
+      if (!seen.has(ex.name)) {
+        seen.add(ex.name);
+        const createInput: Prisma.ExerciseCreateInput = {
+          name: ex.name,
+          description: ex.instruction_cue || `AI-generated exercise: ${ex.name}.`,
+          category: methodToCategory(ex.method, ex.equipment),
+          equipment: equipmentToJson(ex.equipment),
+          difficulty: levelToDifficulty(input.level),
+          durationSeconds: null,
+          reps: parseReps(ex.reps),
+          sets: ex.sets,
+          restSeconds: ex.rest_seconds,
+          instructions: buildInstructions(ex),
+          imageUrl: null,
+        };
+        if (resolvedSlug) {
+          // Slug is the identity anchor; faName is intentionally NOT populated
+          // (no Persian corpus — Step 5 faName policy).
+          createInput.slug = resolvedSlug;
+        }
+        exercises.push(createInput);
       }
-      exercises.push(createInput);
 
       programExercises.push({
         exerciseName: ex.name,
@@ -636,6 +639,7 @@ async function persistProgramTransaction(
 
     await tx.programExercise.createMany({
       data: draft.programExercises.map((row) => ({
+        id: randomUUID(),
         programId: program.id,
         exerciseId: exerciseIdFor(row),
         order: row.order,

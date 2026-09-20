@@ -330,6 +330,7 @@ model Program {
 // Join table: which exercises a program contains, in what order,
 // and with which prescription (sets / reps / rest).
 model ProgramExercise {
+  id          String   @id @default(cuid())
   programId   String
   exerciseId  String
   order       Int
@@ -340,7 +341,9 @@ model ProgramExercise {
   program  Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
 
-  @@id([programId, exerciseId])
+  // Entry identity is distinct from canonical Exercise identity. A Program may
+  // prescribe the same Exercise more than once as separate ordered obligations.
+  @@unique([programId, order])
   @@index([exerciseId])
   // `programWithDetails` (programService) loads a program's exercises ordered
   // by `order` — (programId, order) turns that into an ordered index scan and
