@@ -713,7 +713,7 @@ test('INTRO cue zone: compact group OUTSIDE the mentor host (placement law)', ()
     );
   });
   const zone = renderer!.root.findByProps({'data-workout-v2-intro-cue-zone': ''});
-  assert.match(String(zone.props.className), /pb-\[max/, 'cue zone respects the safe area');
+  assert.match(String(zone.props.className), /bottom-14/, 'cue zone reserves the controls/safe-area band');
   // Owner device correction §2: NO surface band behind the cues.
   const zoneClass = String(zone.props.className);
   assert.doesNotMatch(zoneClass, /backdrop-blur/, 'no full-width blurred band (owner-rejected dark strip)');
@@ -788,7 +788,7 @@ test('INTRO wires the mentor visible-ready callback (T4 instrumentation seam)', 
   assert.ok(readyFired === 0, 'callback is wired, not fired by the presentation itself');
 });
 
-test('INTRO → SET1 through the full adapter chain: BEGIN_WORK_SET is the only exit', () => {
+test('INTRO → SET1 exposes the orchestration handoff through the adapter', () => {
   const h = mountHarness('en', () => 1_000, true);
   act(() => {
     h.renderer.root.findByProps({'data-workout-v2-start': true}).props.onClick();
@@ -803,13 +803,40 @@ test('INTRO → SET1 through the full adapter chain: BEGIN_WORK_SET is the only 
       h.session();
     }
   });
-  // The harness clock is static, so drive the transition directly through
-  // the adapter's exposed controls: no timeout path exists, BEGIN_WORK_SET
-  // is the only exit (asserted at the orchestration layer; here we verify
-  // the presentation contract wires the SAME adapter function).
+  // The harness clock is static and the Mentor renderer is not exercised in
+  // this unit test. The production adapter receives the Mentor ready/degraded
+  // signal and dispatches this same orchestration intent; the pure
+  // orchestrator regression covers the actual RUNNING transition.
   const session = h.session();
   assert.equal(typeof session.beginWorkSet, 'function', 'adapter exposes the INTRO exit control');
   h.unmount();
+});
+
+test('INTRO composition protects the Mentor zone from secondary UI flow', () => {
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  act(() => {
+    renderer = TestRenderer.create(
+      <IntroStage
+        viewModel={introViewModel()}
+        firstExerciseLabel={COPY.en.introFirst}
+        equipment={COPY.en.prescription}
+        cues={COPY.en.introCues}
+        mentorLoadingLabel={COPY.en.mentorLoading}
+        mentorUnavailableLabel={COPY.en.mentorUnavailable}
+        mentorAriaLabel={COPY.en.mentorAria}
+        onDeferExercise={() => undefined}
+        onSkipExercise={() => undefined}
+      />,
+    );
+  });
+  const mentor = renderer!.root.findByProps({'data-workout-v2-intro-mentor-host': ''});
+  assert.equal(mentor.props['data-workout-v2-composition-zone'], 'PROTECTED_MENTOR_STAGE');
+  assert.match(String(mentor.props.className), /absolute/);
+  assert.match(String(mentor.props.className), /top-16/);
+  assert.match(String(mentor.props.className), /bottom-0/);
+  for (const zone of renderer!.root.findAllByProps({'data-workout-v2-composition-zone': 'ADAPTIVE_SECONDARY_UI'})) {
+    assert.match(String(zone.props.className), /absolute/);
+  }
 });
 
 test('INTRO without a resolvable exercise renders no identity (never faked)', () => {

@@ -62,6 +62,12 @@
     {"id":"BETA-DEPLOYMENT-AUTHORIZATION","status":"CLOSED","frozen":true,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerDecisionRequired":false,"ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Owner authorized Beta-only deployment on 2026-09-19; Production and PR merge remain unauthorized"},
     {"id":"BETA-DEPLOYMENT-CAPABILITY","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/BETA-DEPLOYMENT-CAPABILITY.admission.json","taskProfile":"RELEASE","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Governed Beta path established and deployed through the existing constrained gateway at beta.apexhomefit.ir with isolated ahf_beta_db resources; close-out verified exact source/build identity and rollback"},
     {"id":"BETA-DEPLOYMENT-CHECKPOINT","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-BETA-DEPLOYMENT-01.json","verification":"PASS","result":"Beta deployment checkpoint PASS for source 0260074ced5dc9b491923fa5060cbed593e4173c; exact build/marker identity, rollback, isolated QA data operation, authenticated normal entry, route/runtime/CSP, and Production boundary evidence recorded"},
+    {"id":"WP-17","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-17.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"WP-18","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-18.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"uiChanged":true},
+    {"id":"WP-19","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-19.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false},
+    {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerDecisionRequired":true,"ownerVisualAcceptanceRequired":false},
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","verification":"PENDING"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","verification":"PENDING"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
   ]
 }
@@ -84,8 +90,18 @@ follow-up prerequisite for that capability and is now CLOSED/FROZEN with its
 delivered capabilities recorded in its close-out report. `WP-08` was then
 admitted after the WP-14 capability providers were satisfied,
 implemented as a consumer of those orchestration contracts, and is now
-CLOSED/FROZEN. `RUN-5-OWNER-
-ACCEPTANCE` is the explicit complete-flow human gate.
+CLOSED/FROZEN. `RUN-5-OWNER-ACCEPTANCE` remains the explicit complete-flow
+human gate. The 2026-09-20 rejected review is canonicalized as downstream
+correction work: WP-17 repairs the orchestration handoff and lifecycle/read-
+model binding; WP-18 extends the existing Exercise/Movement authority into the
+Exercise Passport and protects the Mentor composition anchor; WP-19 reconciles
+the two-entry Squat-only QA visual fixture. Corrected integration and Beta
+checkpoints gate RUN-5. The `SKIP-ALL-COMPLETION-SEMANTICS-DECISION` node is a
+genuine Owner decision gate because the current AL-01 vocabulary distinguishes
+outcome kinds, but persisted `WorkoutSession` has no canonical ended/non-credit
+state distinct from successful completion/adherence credit. Historical work
+packages remain CLOSED/FROZEN; no Owner scheduling choice is required for the
+otherwise READY_DERIVED correction nodes.
 
 ## Strategic basis
 

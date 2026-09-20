@@ -1,4 +1,8 @@
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
+import {
+  exerciseSupportsSquatMentor,
+  SUPPORTED_SQUAT_MENTOR_ASSET,
+} from '@/lib/exercise/passport';
 
 /**
  * Mentor demonstration binding (owner device correction §3).
@@ -28,14 +32,7 @@ import type {SessionExercise} from '@/lib/workout/sessionContracts';
  */
 
 /** The single canonical demonstration asset of the current fixture. */
-export const MENTOR_DEMONSTRATION_ASSET = 'AHF_Mentor_Squat.glb';
-
-/** Canonical Squat identity tokens across plan sources (EN + FA). */
-const SQUAT_IDENTITY_TOKENS = [
-  'squat', // canonical slug / nameKey (the V2 substitution target)
-  'اسکات', // canonical FA message key content (Library.exercises.squat)
-  'اسکوات', // V1 legacy FA squat naming (e.g. "اسکوات با وزن بدن")
-] as const;
+export const MENTOR_DEMONSTRATION_ASSET = SUPPORTED_SQUAT_MENTOR_ASSET;
 
 /** Plan-item identity fields the binding can consume (see `SessionExercise`). */
 interface BindableExercise {
@@ -51,12 +48,7 @@ interface BindableExercise {
 export function isSquatMentorExercise(
   exercise: BindableExercise,
 ): boolean {
-  const candidates = [exercise.slug, exercise.nameKey, exercise.name, exercise.id];
-  return candidates.some(
-    (value) =>
-      typeof value === 'string' &&
-      SQUAT_IDENTITY_TOKENS.some((token) => value.toLowerCase().includes(token)),
-  );
+  return exerciseSupportsSquatMentor(exercise);
 }
 
 /** The resolved fixture plan item: an exercise plus its localized nameKey. */

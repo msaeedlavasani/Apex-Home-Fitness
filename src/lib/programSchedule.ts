@@ -1,5 +1,6 @@
 import {isRestDay, weekdayOf} from '@/lib/ai/restDays';
 import type { ExerciseId, ExerciseSlug } from '@/lib/exercise';
+import {exercisePassportFromAuthority, exerciseSupportsSquatMentor} from '@/lib/exercise/passport';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 
 export type PersistedScheduleExercise = {
@@ -107,9 +108,13 @@ export function workoutSessionExercisesFromProgram(
   return exercises.map((exercise, index) => {
     const base = generatedExerciseDefaults(exercise, index);
     const identity = enriched[index];
-    return identity?.exerciseId || identity?.slug
-      ? {...base, exerciseId: identity.exerciseId, slug: identity.slug}
-      : base;
+    const authority = identityIndex.byName.get(base.name) ??
+      (typeof exercise.slug === 'string' ? identityIndex.bySlug.get(exercise.slug) : undefined);
+    return {
+      ...base,
+      ...(identity?.exerciseId || identity?.slug ? {exerciseId: identity.exerciseId, slug: identity.slug} : {}),
+      ...(authority ? {exercisePassport: passportForRelationalExercise(authority)} : {}),
+    };
   });
 }
 
@@ -160,6 +165,8 @@ export type RelationalExercise = {
     name: string;
     /** Canonical resolution slug when the row has been resolved (S02-C). */
     slug?: string | null;
+    instructions?: unknown;
+    movement?: {coachingCues?: unknown} | null;
   };
 };
 
@@ -256,4 +263,18 @@ export function enrichScheduleExercises(
   return scheduleExercises.map((exercise, index) =>
     enrichExerciseIdentity(exercise, index, identityIndex),
   );
+}
+
+/** Adds the Exercise Passport projection without mixing it with prescription. */
+export function passportForRelationalExercise(
+  exercise: RelationalExercise['exercise'],
+): ReturnType<typeof exercisePassportFromAuthority> {
+  return exercisePassportFromAuthority({
+    exerciseId: exercise.id as ExerciseId,
+    slug: exercise.slug ? exercise.slug as ExerciseSlug : undefined,
+    name: exercise.name,
+    instructions: exercise.instructions,
+    coachingCues: exercise.movement?.coachingCues,
+    mentorSupported: exerciseSupportsSquatMentor({name: exercise.name, slug: exercise.slug ?? undefined}),
+  });
 }

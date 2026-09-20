@@ -103,10 +103,37 @@ try {
   } else {
     const {user, exerciseByName, program} = before;
     if (!user) throw new Error('QA account disappeared during bounded operation');
+    for (const exercise of QA_PROGRAM_EXERCISE_RECORDS) {
+      await prisma.exercise.upsert({
+        where: {name: exercise.name},
+        update: exercise,
+        create: exercise,
+      });
+    }
     if (program) {
-      if (program.ownerId !== user.id) {
-        await prisma.program.update({where: {id: program.id}, data: {ownerId: user.id}});
-      }
+      await prisma.program.update({
+        where: {id: program.id},
+        data: {
+          description: QA_PROGRAM_DESCRIPTION,
+          sessionsPerWeek: 1,
+          restDays: [],
+          weeklySchedule: QA_PROGRAM_WEEKLY_SCHEDULE,
+          ownerId: user.id,
+        },
+      });
+      await prisma.programExercise.deleteMany({where: {programId: program.id}});
+      const persistedExercises = await prisma.exercise.findMany({where: {name: {in: names}}, select: {id: true, name: true}});
+      const byName = new Map(persistedExercises.map((exercise) => [exercise.name, exercise]));
+      await prisma.programExercise.createMany({
+        data: QA_PROGRAM_EXERCISES.map((exercise, index) => ({
+          programId: program.id,
+          exerciseId: byName.get(exercise.name).id,
+          order: index + 1,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          restSeconds: exercise.restSeconds,
+        })),
+      });
     } else {
       for (const exercise of QA_PROGRAM_EXERCISE_RECORDS) {
         await prisma.exercise.upsert({

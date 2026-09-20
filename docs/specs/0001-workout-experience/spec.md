@@ -69,6 +69,41 @@ This illustration must not imply exactly 3 sets, mandatory REST after every set,
 
 **CONFIRMED — normal product entry.** An authenticated user reaches Workout Experience V2 through the existing Dashboard/Program/workout navigation and the persisted Program/Prescription domain path. An isolated review route is not an acceptance path, and product behavior must not branch on test identity.
 
+**CONFIRMED — current product classification.** The Run-4 Program-Driven
+Composition is the current Workout Experience V2 product implementation. The
+prototype label remains valid only for historical validation artifacts,
+isolated historical routes/assets, and superseded evidence; it is not a current
+classification of the normal product path.
+
+**CONFIRMED — protected Mentor composition.** For a given responsive layout
+class, the Mentor stage is a centered, grounded, reserved composition zone.
+Secondary coaching, actions, counters, and optional controls must reflow,
+compact, use another available zone, collapse, or use controlled overlay/scroll
+before changing that anchor. Breakpoint-specific geometry is allowed; runtime
+addition/removal of secondary UI within one class must not translate the
+Mentor stage.
+
+**CONFIRMED — Exercise Passport authority.** The existing canonical
+Exercise/Movement authority may expose a minimum versioned Passport read-model
+for identity, localized presentation cues, Mentor capability, and future
+execution/sensing capability references. This is an extension of the existing
+authority, not a duplicate Exercise store. Program/Prescription still owns
+exercise order and dosage; Workout consumes the Passport and resolved
+prescription.
+
+**CONFIRMED — controlled QA fixture.** The next visual-validation input is
+exactly two ordered entries, both resolving through the supported Squat Mentor
+path. This is fixture data only and does not constrain arbitrary-N Programs or
+independently resolved set counts/modes.
+
+**OPEN OWNER DECISION — skip-all outcome credit.** Terminal
+`SKIPPED_FOR_SESSION` obligation resolution is not treated as successful
+completion/adherence credit by inference. The current domain vocabulary
+contains outcome kinds, but the persisted WorkoutSession path does not expose
+a canonical ended/non-credit state distinct from success. The correction DAG
+therefore carries an explicit Owner gate before corrected integrated
+acceptance; no product semantics are invented here.
+
 ## 3. Non-goals
 
 - No program-generation change (generator stays source-independent).

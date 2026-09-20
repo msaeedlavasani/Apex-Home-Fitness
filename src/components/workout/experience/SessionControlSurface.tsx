@@ -20,7 +20,12 @@ export function SessionControlSurface({
   pauseLabel,
   resumeLabel,
 }: SessionControlSurfaceProps) {
-  if (viewModel.lifecycle === 'READY_TO_START' || viewModel.lifecycle === 'EXIT_REQUESTED' || viewModel.activeModule == null) return null;
+  if (
+    viewModel.lifecycle === 'READY_TO_START' ||
+    viewModel.lifecycle === 'EXIT_REQUESTED' ||
+    viewModel.activeModule == null ||
+    viewModel.activeModule === 'WORKOUT_RESULT'
+  ) return null;
   const paused = viewModel.lifecycle === 'PAUSED';
   return (
     <div data-workout-v2-session-controls="" className="flex justify-center px-4 pb-2">

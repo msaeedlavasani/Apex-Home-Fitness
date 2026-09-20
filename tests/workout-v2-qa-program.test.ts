@@ -8,22 +8,20 @@ test('QA Program input exercises the real persisted-program contract boundary', 
     day_name: 'Monday',
     exercises: [
       {id: 'qa-squat', name: 'Jump Squats', sets: 2, reps: '8', duration_seconds: null, fallback_duration_seconds: 45, rest_seconds: 20},
-      {id: 'qa-push-up', name: 'Push-Up', sets: 3, reps: '10', duration_seconds: null, fallback_duration_seconds: 50, rest_seconds: 25},
-      {id: 'qa-plank', name: 'Plank Hold', sets: 1, reps: null, duration_seconds: 30, fallback_duration_seconds: null, rest_seconds: 30},
+      {id: 'qa-bodyweight-squat', name: 'Bodyweight Squat', sets: 1, reps: null, duration_seconds: 30, fallback_duration_seconds: null, rest_seconds: 25},
     ],
   }];
   const identityIndex = exerciseIdentityIndex([
     {order: 1, exercise: {id: 'ex-squat', name: 'Jump Squats', slug: 'jump-squats'}},
-    {order: 2, exercise: {id: 'ex-push-up', name: 'Push-Up', slug: 'push-up'}},
-    {order: 3, exercise: {id: 'ex-plank', name: 'Plank Hold', slug: 'plank-hold'}},
+    {order: 2, exercise: {id: 'ex-bodyweight-squat', name: 'Bodyweight Squat', slug: 'bodyweight-squat'}},
   ]);
   const prescription = sharedPrescriptionFromPersistedPlan(
     workoutSessionExercisesFromProgram(qaSchedule, 'monday', [], identityIndex),
   );
 
-  assert.deepEqual(prescription.exercises.map((item) => item.exercise.name), ['Jump Squats', 'Push-Up', 'Plank Hold']);
-  assert.deepEqual(prescription.exercises.map((item) => item.executionMode), ['REP_BASED', 'REP_BASED', 'TIME_BASED']);
-  assert.deepEqual(prescription.exercises.map((item) => item.setCount), [2, 3, 1]);
-  assert.deepEqual(prescription.exercises.map((item) => item.restSeconds), [20, 25, 30]);
-  assert.deepEqual(prescription.exercises.map((item) => item.fallbackDurationSeconds), [45, 50, null]);
+  assert.deepEqual(prescription.exercises.map((item) => item.exercise.name), ['Jump Squats', 'Bodyweight Squat']);
+  assert.deepEqual(prescription.exercises.map((item) => item.executionMode), ['REP_BASED', 'TIME_BASED']);
+  assert.deepEqual(prescription.exercises.map((item) => item.setCount), [2, 1]);
+  assert.deepEqual(prescription.exercises.map((item) => item.restSeconds), [20, 25]);
+  assert.deepEqual(prescription.exercises.map((item) => item.fallbackDurationSeconds), [45, null]);
 });

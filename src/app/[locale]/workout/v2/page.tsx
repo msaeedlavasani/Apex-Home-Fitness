@@ -13,6 +13,7 @@ import {
   type PersistedScheduleExercise,
   type RelationalExercise,
   type ExerciseIdentityIndex,
+  passportForRelationalExercise,
 } from '@/lib/programSchedule';
 import {
   SAMPLE_WORKOUT_EXERCISES,
@@ -21,9 +22,9 @@ import {
 } from '@/lib/workout/samplePlan';
 
 /**
- * V2 prototype/Owner-review exercise substitution (WORKOUT-V2 DELTA —
+ * V2 Owner-review exercise substitution (WORKOUT-V2 DELTA —
  * PREPARING first-exercise identity): the Owner's representative exercise
- * for this V2 prototype/Mentor review is the Squat, so the sample-plan
+ * for this V2 Mentor review is the Squat, so the sample-plan
  * fallback (the shared V1 fixture) leads with the Squat on the PREPARING
  * surface. Scoped strictly to this V2 review route — the shipped V1
  * `/workout` player keeps the untouched sample plan. The substitution uses
@@ -80,7 +81,14 @@ function generatedExercisesForShell(
     const base = generatedExerciseDefaults(exercise, index);
     const identity = enriched[index];
     if (identity?.exerciseId || identity?.slug) {
-      return {...base, exerciseId: identity.exerciseId, slug: identity.slug};
+      const authority = identityIndex.byName.get(base.name) ??
+        (typeof exercise.slug === 'string' ? identityIndex.bySlug.get(exercise.slug) : undefined);
+      return {
+        ...base,
+        exerciseId: identity.exerciseId,
+        slug: identity.slug,
+        ...(authority ? {exercisePassport: passportForRelationalExercise(authority)} : {}),
+      };
     }
     return base;
   });
@@ -90,8 +98,8 @@ function generatedExercisesForShell(
  * Workout V2 review surface (`/[locale]/workout/v2`) — WORKOUT-V2-IMPL-01
  * first slice on the frozen design delta.
  *
- * ROUTE ADAPTER (delta §2): this page is the only prototype/review-specific
- * layer — plan loading, day selection and rest-day copy live HERE, while the
+ * ROUTE ADAPTER (delta §2): this page is the current product's V2 review
+ * adapter — plan loading, day selection and rest-day copy live HERE, while the
  * ExperienceShell/stages stay route-independent, fixture-independent and
  * promotion-ready. The shipped `/[locale]/workout` route and the V1 player
  * are UNTOUCHED operational fallback (plan §13).

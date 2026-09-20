@@ -26,6 +26,7 @@ import {
 import {
   QA_PROGRAM_DESCRIPTION,
   QA_PROGRAM_EXERCISES,
+  QA_PROGRAM_EXERCISE_RECORDS,
   QA_PROGRAM_NAME,
   QA_PROGRAM_WEEKLY_SCHEDULE,
 } from "../src/lib/program/qaProgram";
@@ -805,6 +806,13 @@ async function main() {
   // not product behavior: normal Program resolution selects it by ownership
   // and the Workout route consumes the same persisted schedule/contract as
   // every other Program. No phone, user, or account conditional is involved.
+  for (const exercise of QA_PROGRAM_EXERCISE_RECORDS) {
+    await prisma.exercise.upsert({
+      where: {name: exercise.name},
+      update: exercise,
+      create: exercise,
+    });
+  }
   const qaExerciseNames = QA_PROGRAM_EXERCISES.map((exercise) => exercise.name);
   const qaExercises = await prisma.exercise.findMany({
     where: {name: {in: qaExerciseNames}},

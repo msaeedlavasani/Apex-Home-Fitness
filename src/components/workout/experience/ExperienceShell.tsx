@@ -17,9 +17,6 @@ import {createWorkoutMusic,
   type WorkoutMusicController,
 } from '@/lib/workout/experience/sessionMusic';
 import {
-  isSquatMentorExercise,
-} from '@/lib/workout/experience/mentorBinding';
-import {
   disposeMentorPreparation,
   prepareMentorAsset,
 } from './mentor/mentorPreparation';
@@ -134,6 +131,7 @@ export function ExperienceShell({
     pause,
     resume,
     recordRep,
+    beginWorkSet,
     skipRest,
     exitWorkout,
     confirmExit,
@@ -206,8 +204,20 @@ export function ExperienceShell({
   // never renamed or silently bound to the Squat demonstration.
   const mentorSupportedForActiveExercise = useMemo(() => {
     const exercise = viewModel.introExercise ?? viewModel.activeExercise;
-    return exercise == null || isSquatMentorExercise(exercise.exercise);
+    return exercise?.exercise.exercisePassport?.mentor.supported === true;
   }, [viewModel.introExercise, viewModel.activeExercise]);
+
+  const introCues = useMemo(() => {
+    const exercise = viewModel.introExercise ?? viewModel.activeExercise;
+    return exercise?.exercise.exercisePassport?.introCues ?? [];
+  }, [viewModel.introExercise, viewModel.activeExercise]);
+
+  const introPosition = viewModel.activeExerciseIndex == null
+    ? t('intro.firstExercise')
+    : t('intro.exerciseOf', {
+      current: viewModel.activeExerciseIndex + 1,
+      total: viewModel.exerciseOutcomes.length,
+    });
 
   // Prescription context for the restored pill (correction §11): derived
   // from the RESOLVED exercise — the canonical plan contract carries no
@@ -291,6 +301,14 @@ export function ExperienceShell({
       performance.mark('v2:t4-mentor-ready');
     }
   }, []);
+
+  // The stage reports readiness only; the orchestrator owns the global
+  // INTRO→SET transition. This keeps degraded Mentor mode usable while
+  // preventing presentation code from routing the session itself.
+  const enterWorkSetFromIntro = useCallback(() => {
+    markMentorReady();
+    beginWorkSet();
+  }, [beginWorkSet, markMentorReady]);
 
   const handleStart = useCallback(() => {
     // START dispatch (§25) — the session's first, gesture-backed user
@@ -453,13 +471,14 @@ export function ExperienceShell({
           <IntroStage
             viewModel={viewModel}
             mentorSupported={mentorSupportedForActiveExercise}
-            firstExerciseLabel={t('intro.firstExercise')}
+            firstExerciseLabel={introPosition}
             equipment={t('preparing.bodyweight')}
-            cues={t.raw('intro.cues') as readonly string[]}
+            cues={introCues}
             mentorUnavailableLabel={t('intro.mentorUnavailable')}
             mentorLoadingLabel={t('intro.mentorLoading')}
             mentorAriaLabel={t('intro.mentorAria')}
-            onMentorReady={markMentorReady}
+            onMentorReady={enterWorkSetFromIntro}
+            onMentorFailed={beginWorkSet}
             onDeferExercise={deferExercise}
             onSkipExercise={skipExercise}
             onResolveDeferredExercise={resolveDeferredExercise}
@@ -526,8 +545,8 @@ export function ExperienceShell({
 
       {viewModel.exitRequested && (
         <ExitConfirmation
-          title={t('actions.confirmExitTitle')}
-          description={t('actions.confirmExitDescription')}
+          title={viewModel.pausedFromModule === 'WORKOUT_RESULT' ? t('result.exitTitle') : t('actions.confirmExitTitle')}
+          description={viewModel.pausedFromModule === 'WORKOUT_RESULT' ? t('result.exitDescription') : t('actions.confirmExitDescription')}
           cancelLabel={t('actions.cancelExit')}
           confirmLabel={t('actions.confirmExit')}
           onCancel={cancelExit}

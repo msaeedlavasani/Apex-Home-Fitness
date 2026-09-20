@@ -24,7 +24,14 @@ export function SessionOutcomeSummary({
   const completed = viewModel.exerciseOutcomes.filter((outcome) => outcome.status === 'COMPLETED').length;
   const deferred = viewModel.exerciseOutcomes.filter((outcome) => outcome.status === 'OUTSTANDING_DEFERRED').length;
   const skipped = viewModel.exerciseOutcomes.filter((outcome) => outcome.status === 'SKIPPED_FOR_SESSION').length;
-  if (viewModel.lifecycle === 'READY_TO_START' || viewModel.exerciseOutcomes.length === 0) return null;
+  if (
+    viewModel.lifecycle === 'READY_TO_START' ||
+    viewModel.lifecycle === 'PREPARING' ||
+    viewModel.lifecycle === 'AWAITING_WORK_SET' ||
+    viewModel.lifecycle === 'WORKOUT_RESULT' ||
+    viewModel.lifecycle === 'EXIT_REQUESTED' ||
+    viewModel.exerciseOutcomes.length === 0
+  ) return null;
 
   return (
     <div

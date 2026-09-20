@@ -161,6 +161,33 @@ test('WP-12 renders semantic result and confirms exit through callbacks', () => 
 
   act(() => {
     renderer = TestRenderer.create(
+      <SessionControlSurface
+        viewModel={resultView}
+        onPause={() => undefined}
+        onResume={() => undefined}
+        pauseLabel="Pause"
+        resumeLabel="Resume"
+      />,
+    );
+  });
+  assert.equal(renderer!.root.findAllByProps({'data-workout-v2-session-controls': ''}).length, 0, 'result has no active Pause surface');
+  act(() => renderer!.unmount());
+
+  act(() => {
+    renderer = TestRenderer.create(
+      <SessionOutcomeSummary
+        viewModel={resultView}
+        completedLabel="Completed"
+        deferredLabel="Deferred"
+        skippedLabel="Skipped"
+      />,
+    );
+  });
+  assert.equal(renderer!.root.findAllByProps({'data-workout-v2-outcomes': ''}).length, 0, 'result does not expose implementation-facing live counts');
+  act(() => renderer!.unmount());
+
+  act(() => {
+    renderer = TestRenderer.create(
       <ExitConfirmation
         title="Leave?"
         description="The session will end."

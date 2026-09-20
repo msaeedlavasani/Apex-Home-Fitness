@@ -560,10 +560,14 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     if (!isIntroModule(state.activeModule) || state.lifecycle !== 'AWAITING_WORK_SET' || state.activeExerciseIndex == null || outcomeStatus(state.activeExerciseIndex) !== 'OUTSTANDING_DEFERRED') return {state, effects: []};
     const exerciseIndex = state.activeExerciseIndex;
     if (disposition === 'SKIP_FOR_SESSION') return skipExercise();
-    const outcomes = withOutcome(exerciseIndex, 'ACTIVE');
-    const next: OrchestrationState = {...state, exerciseOutcomes: outcomes, completionEligible: false};
-    state = next;
-    return {state: next, effects: [{kind: 'DEFERRED_EXERCISE_RESOLVED', exerciseIndex, disposition: 'PERFORM_NOW'}]};
+    // Resolution is an orchestration boundary, not a presentation-only state
+    // change. A deferred exercise that is explicitly performed now must enter
+    // the real first Set in the same transition; otherwise the view returns to
+    // INTRO with an ACTIVE outcome but no execution engine, which was the
+    // rejected Beta behavior.
+    const activated = activateSet(exerciseIndex, state.currentSetNumber ?? 1);
+    activated.effects.unshift({kind: 'DEFERRED_EXERCISE_RESOLVED', exerciseIndex, disposition: 'PERFORM_NOW'});
+    return activated;
   };
 
   return {

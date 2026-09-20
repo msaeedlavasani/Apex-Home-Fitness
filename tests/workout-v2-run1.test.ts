@@ -139,7 +139,10 @@ test('WP-14 supports perform-now resolution, set restart, and exit intent withou
   orchestrator.advance(PREPARING_DURATION_SECONDS);
   orchestrator.dispatch({type: 'DEFER_EXERCISE', disposition: 'MOVE_TO_END'});
   assert.equal(orchestrator.dispatch({type: 'BEGIN_WORK_SET'}).state.lifecycle, 'AWAITING_WORK_SET');
-  orchestrator.dispatch({type: 'RESOLVE_DEFERRED_EXERCISE', disposition: 'PERFORM_NOW'});
+  const resolved = orchestrator.dispatch({type: 'RESOLVE_DEFERRED_EXERCISE', disposition: 'PERFORM_NOW'});
+  assert.equal(resolved.state.activeModule, 'WORK_SET');
+  assert.equal(resolved.state.lifecycle, 'RUNNING');
+  assert.equal(resolved.state.setProgress?.status, 'ACTIVE');
   orchestrator.dispatch({type: 'BEGIN_WORK_SET'});
   const completed = orchestrator.dispatch({type: 'RECORD_REP'});
   assert.equal(completed.state.activeModule, 'SET_RESULT');

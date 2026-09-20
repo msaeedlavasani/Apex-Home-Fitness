@@ -59,6 +59,26 @@ must evaluate remaining Sets, eligible next Exercises, deferred obligations,
 skipped-for-session Exercises and completed Exercises; array position alone cannot
 choose the next Exercise, enter `WORKOUT_RESULT`, or declare completion.
 
+## 5.1 Consolidated RUN-5 correction architecture (2026-09-20)
+
+The rejected integrated review exposed a cross-layer binding defect rather than
+an isolated screenshot issue. The correction chain remains single-writer:
+
+| Correction boundary | Canonical owner | Required result |
+|---|---|---|
+| INTRO action → SET activation | Session Orchestrator + thin adapter | `PERFORM_NOW` and the canonical INTRO handoff activate the real current SET; presentation does not route globally |
+| Current exercise/state → presentation | Session view-model | title, ordinal, coaching, result copy, and active controls derive from one lifecycle/current-exercise read-model |
+| Exercise knowledge | Existing Exercise/Movement authority | minimum Exercise Passport read-model; no duplicate catalog or exercise-specific INTRO conditionals |
+| Mentor layout | Experience composition contract | Mentor stage is reserved/centered/grounded within a layout class; secondary UI adapts around it |
+| QA visual input | persisted QA Program path | exactly two Squat-path entries for the acceptance fixture only; general topology remains arbitrary |
+
+`SKIP-ALL-COMPLETION-SEMANTICS-DECISION` is intentionally a human gate. The
+current persisted model has `completedAt` but no separate canonical
+`RESOLVED/ENDED` non-credit state, so the implementation must not select
+`DID_NOT_START`, `ABANDONED`, partial credit, or another outcome without the
+Owner's product decision. The corrected integration checkpoint is downstream
+of that gate and therefore fails closed until it is resolved.
+
 ## 4. Prescription contract
 
 - `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION`: identity says *what movement*; the prescription says *how it is prescribed here*.

@@ -32,7 +32,10 @@
  * module is now AUTHORED as the deterministic boundary between PREPARING
  * and WORK_SET. The contract-level entry point is `activeModule =
  * 'EXERCISE_INTRO'` with `introExercise` exposed from the view-model; the
- * exit action `BEGIN_WORK_SET` hands control to the SET1 entry contract.
+ * the typed `BEGIN_WORK_SET` intent hands control to the SET1 entry contract;
+ * the Workout Experience adapter dispatches that intent when the Mentor
+ * presentation boundary reports ready/degraded, while explicit deferred
+ * resolution may enter SET in the same orchestration transition.
  * NO set execution, completion, REST or progression logic is implemented
  * here — WORK_SET remains a PENDING module and a later slice.
  *
@@ -134,8 +137,10 @@ export type SessionAction =
  * Session lifecycle (plan §5 states — implementation view, INTRO slice):
  * `READY_TO_START → PREPARING → AWAITING_WORK_SET (INTRO) → RUNNING`.
  * `AWAITING_WORK_SET` is the INTRO presentation window: orchestration
- * presentation is parked there until the explicit `BEGIN_WORK_SET` action
- * moves the session to `RUNNING` at the SET1 entry boundary (delta §C).
+ * presentation is parked there until the typed `BEGIN_WORK_SET` action moves
+ * the session to `RUNNING` at the SET1 entry boundary (delta §C). The action
+ * is orchestration-owned; the adapter may dispatch it from the Mentor
+ * ready/degraded signal so the user does not need a presentation CTA.
  * `PAUSED` freezes the current execution context (spec FR-9 posture).
  */
 export type SessionLifecycle =
@@ -299,15 +304,16 @@ export function initialModuleStates(): Record<ExperienceModuleId, ExperienceModu
 }
 
 /**
- * Progression policy defaults for the authorized slice (spec §5.5). INTRO's
- * user-controlled exit (BEGIN_WORK_SET) is `CONFIRMATION_REQUIRED` — the
- * user decides when the movement is understood; NO timeout auto-completes
- * INTRO (delta §C).
+ * Progression policy defaults for the authorized slice (spec §5.5). INTRO is
+ * an automatic readiness boundary: the orchestrator receives a typed Mentor
+ * ready/degraded signal and owns the transition into SET. Deferred
+ * `PERFORM_NOW` resolution uses the same single-writer boundary. No
+ * presentation component routes globally.
  */
 export const SLICE_PROGRESSION_POLICY: ModuleProgressionPolicy = {
   START: 'AUTO',
   PREPARING: 'AUTO',
-  EXERCISE_INTRO: 'CONFIRMATION_REQUIRED',
+  EXERCISE_INTRO: 'AUTO',
 };
 
 /** Positive-integer normalizer (0/undefined → null). Pure. */

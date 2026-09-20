@@ -5,6 +5,7 @@ import {Check} from 'lucide-react';
 import {Button} from '@/components/ui/platform';
 import type {SessionViewModel} from '@/lib/workout/sessionV2Contracts';
 import {MentorStage} from './mentor/MentorStage';
+import {WORKOUT_COMPOSITION_ZONES} from '@/lib/workout/experience/compositionContract';
 
 /**
  * IntroStage — the EXERCISE_INTRO product state presentation (owner polish
@@ -19,10 +20,10 @@ import {MentorStage} from './mentor/MentorStage';
  * HANDS-FREE PROGRESSION LAW (correction delta §4): INTRO is part of the
  * hands-free Workout Experience — there is NO "Start Set 1" (or any
  * Start/Next/Continue) control, and NO reserved CTA layout space. The
- * automatic handoff contract terminates at the INTRO boundary for now: the
- * orchestration still owns the `BEGIN_WORK_SET` typed boundary (tests +
- * adapter unchanged), but presentation never dispatches it. The SET slice
- * will attach its own auto-handoff to that boundary later.
+ * orchestration owns the typed handoff into SET and receives the Mentor
+ * ready/degraded signal from this presentation boundary; presentation never
+ * decides the destination. Explicit deferred Perform-now resolution enters
+ * SET directly through the same orchestration authority.
  *
  * CUE ZONE LAW (owner device correction §2 — cue presentation): the cues
  * are a COMPACT, visually-integrated coaching group — NOT a surface band.
@@ -72,6 +73,8 @@ export interface IntroStageProps {
   mentorAriaLabel: string;
   /** Fires when the demonstration reaches visible-ready (final framing applied). */
   onMentorReady?: () => void;
+  /** Fires when Mentor is unavailable so orchestration can use degraded mode. */
+  onMentorFailed?: () => void;
   /** Whether the current resolved identity has an honest Mentor asset. */
   mentorSupported?: boolean;
   onDeferExercise?: (disposition: 'MOVE_TO_END' | 'SKIP_FOR_SESSION') => void;
@@ -181,6 +184,7 @@ export function IntroStage({
   mentorUnavailableLabel,
   mentorAriaLabel,
   onMentorReady,
+  onMentorFailed,
   mentorSupported = true,
   onDeferExercise,
   onSkipExercise,
@@ -199,10 +203,17 @@ export function IntroStage({
   const paused = viewModel.lifecycle === 'PAUSED';
 
   return (
-    <div data-workout-v2-intro-stage="" className="flex h-full w-full flex-col">
+    <div
+      data-workout-v2-intro-stage=""
+      data-workout-v2-composition="protected-mentor"
+      className="relative h-full w-full overflow-hidden"
+    >
       {/* Header strip — eyebrow → identity → equipment. Fixed-height top
           zone so the Mentor's responsive framing can clear it entirely. */}
-      <div className="flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-0">
+      <div
+        data-workout-v2-composition-zone={WORKOUT_COMPOSITION_ZONES.secondary}
+        className="absolute inset-x-0 top-0 z-20 flex flex-col items-center px-4 pt-1 text-center sm:px-6 sm:pt-0"
+      >
         <p
           data-workout-v2-intro-eyebrow=""
           className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--apex-text-secondary)] rtl:normal-case rtl:tracking-normal sm:text-sm"
@@ -232,7 +243,11 @@ export function IntroStage({
       {/* Mentor demonstration — fills the space BETWEEN the header strip
           and the cue zone: the responsive framing keeps the full body
           grounded and clear of both. One lifecycle, one asset. */}
-      <div data-workout-v2-intro-mentor-host="" className="relative min-h-0 flex-1">
+      <div
+        data-workout-v2-intro-mentor-host=""
+        data-workout-v2-composition-zone={WORKOUT_COMPOSITION_ZONES.mentor}
+        className="absolute inset-x-0 bottom-0 top-16 z-0 sm:top-14"
+      >
         <MentorStage
           paused={paused}
           enabled={mentorSupported}
@@ -242,7 +257,7 @@ export function IntroStage({
             unavailable: mentorUnavailableLabel,
           }}
           onReady={onMentorReady}
-          onFailed={() => undefined}
+          onFailed={onMentorFailed}
         />
       </div>
 
@@ -255,9 +270,10 @@ export function IntroStage({
       {cues.length > 0 && (
         <div
           data-workout-v2-intro-cue-zone=""
-          className="w-full px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-1.5 sm:px-6 sm:pb-2.5 sm:pt-2"
+          data-workout-v2-composition-zone={WORKOUT_COMPOSITION_ZONES.secondary}
+          className="pointer-events-none absolute inset-x-0 bottom-14 z-10 w-full px-4 pb-1.5 pt-1.5 sm:px-6 sm:pb-2.5 sm:pt-2"
         >
-          <div className="mx-auto flex w-full max-w-full justify-center">
+          <div className="pointer-events-auto mx-auto flex w-full max-w-full justify-center">
             <CueList cues={cues} />
           </div>
         </div>
@@ -266,7 +282,8 @@ export function IntroStage({
       {(onDeferExercise || onSkipExercise || onResolveDeferredExercise) && exercise != null && (
         <div
           data-workout-v2-intro-controls=""
-          className="flex flex-wrap items-center justify-center gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 sm:px-6"
+          data-workout-v2-composition-zone={WORKOUT_COMPOSITION_ZONES.secondary}
+          className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center justify-center gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 sm:px-6"
         >
           {deferred ? (
             <>

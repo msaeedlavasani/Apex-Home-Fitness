@@ -45,6 +45,18 @@
 - **Safety boundary:** Beta must fail closed on ambiguous target identity, must preserve the Production app/volume/configuration, and must not expose secret values.
 - **Scope:** Beta only; Production deployment, PR #72 merge, and any bypass of CI/admission/checkpoint/rollback requirements remain unauthorized.
 
+### WORKOUT-V2-RUN-5-CORRECTION-01 — consolidated Owner acceptance correction cycle (2026-09-20)
+
+- **Owner decision:** REJECT the first integrated Desktop + real-iPhone RUN-5 review and authorize one consolidated correction cycle before the next complete-flow acceptance. The current Workout Experience V2 implementation remains the product implementation; historical work packages remain CLOSED/FROZEN.
+- **Canonical correction scope:** derive and execute repository-owned correction work for the INTRO→SET orchestration boundary and state binding, the existing Exercise/Movement authority extension into an Exercise Passport read-model, protected Mentor-stage/adaptive composition invariants, the controlled two-entry Squat-only QA validation fixture, and the required integrated machine regression/deployment checkpoints.
+- **Authorized correction work packages:** `WP-17`, `WP-18`, and `WP-19` are authorized within the existing Spec Kit, DAG, admission, and checkpoint authorities; their order is repository-derived, not prompt-scheduled.
+- **Preserved boundaries:** Program/Prescription owns WHAT; the Session Orchestrator owns sequencing and lifecycle; Workout Experience owns HOW/presentation; no test-identity conditional, fixed topology, parallel scheduler, second Exercise authority, Production deployment, or PR #72 merge is authorized.
+- **MENTOR_STAGE_ANCHOR_AND_ADAPTIVE_COMPOSITION:** ACCEPTED for this correction cycle. Within a layout class, the Mentor stage is a protected centered/grounded composition zone; secondary UI reflows/compacts/collapses/overlays before changing that anchor. Breakpoints may define different valid geometries; runtime control changes may not translate the anchor within one class.
+- **EXERCISE_PASSPORT:** ACCEPTED as a semantic extension of the existing canonical Exercise/Movement authority, not a duplicate database. Stable exercise identity, coaching/setup metadata, Mentor capability, and future sensing references belong to that authority; Program/Prescription remains dosage/order authority.
+- **QA visual fixture:** ACCEPTED as validation data only: exactly two exercise entries, both resolving through the supported Squat Mentor path. This does not constrain arbitrary Program topology.
+- **Skip-all completion semantics:** **OWNER DECISION REQUIRED.** Existing authorities distinguish terminal session obligation resolution from outcome completion kinds, but the persisted product path currently has no canonical `RESOLVED/ENDED` state distinct from success/adherence credit. Do not infer whether an all-skipped session should be recorded as an ended non-credit session, `DID_NOT_START`, `ABANDONED`, or another product outcome. The correction DAG must fail closed at this decision and must not begin RUN-5 acceptance until resolved.
+- **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate. No per-task visual review is introduced. Production remains unauthorized and PR #72 remains unmerged.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

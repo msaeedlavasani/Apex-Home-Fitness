@@ -1,0 +1,31 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01",
+  "CHECKPOINT_KIND": "DEPLOYMENT",
+  "STATUS": "PENDING",
+  "KNOWN_GOOD_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "VERIFIED_SOURCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "CHECKPOINT_EVIDENCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "RUN_ID": "35469621918",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "BRANCH_RUN_ID": "35469621918",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "PR_RUN_ID": "35469623886",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469623886"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"beta-correction-deployment","COMMAND":"existing governed Beta deployment checkpoint","STATUS":"PENDING","SUMMARY":"The corrected source has not yet been integrated or deployed; this record remains pending and cannot satisfy RUN-5."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_AUTHORIZED": "YES",
+  "DEPLOYMENT_IDENTITY": {"STATUS":"PENDING","ENVIRONMENT":"AHF_BETA","URL":"https://beta.apexhomefit.ir","DEPLOYED_SHA":"PENDING"}
+}

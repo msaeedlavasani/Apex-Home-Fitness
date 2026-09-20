@@ -54,7 +54,13 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"BETA-DEPLOYMENT-AUTHORIZATION","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":false,"ownerDecisionRequired":false,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"verification":"PASS","gateScope":"BETA_DEPLOYMENT_AUTHORITY"},
     {"id":"BETA-DEPLOYMENT-CAPABILITY","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-AUTHORIZATION"],"kind":"WORK_PACKAGE","workstream":"BETA_DEPLOYMENT","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"RELEASE","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PASS","providesCapabilities":["V2_BETA_DEPLOYMENT_PATH_V1"]},
     {"id":"BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
-    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
+    {"id":"WP-17","dependsOn":["WP-14","WP-12","WP-15"],"kind":"WORK_PACKAGE","workstream":"INTRO_SET_AND_LIFECYCLE_CORRECTION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-17.admission.json","requiresCapabilities":[{"id":"V2_SESSION_CONTROL_ACTIONS_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_REAL_PROGRAM_LAUNCH_V1","provider":"WP-15"}],"providesCapabilities":["V2_INTRO_SET_EXECUTION_V2","V2_LIFECYCLE_PRESENTATION_BINDING_V1"]},
+    {"id":"WP-18","dependsOn":["WP-02","WP-09","WP-15"],"kind":"WORK_PACKAGE","workstream":"EXERCISE_PASSPORT_AND_COMPOSITION_CORRECTION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-18.admission.json","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"},{"id":"V2_NORMAL_PRODUCT_ENTRY_V1","provider":"WP-15"}],"providesCapabilities":["V2_EXERCISE_PASSPORT_V1","V2_MENTOR_STAGE_COMPOSITION_V2"]},
+    {"id":"WP-19","dependsOn":["WP-16","WP-18"],"kind":"WORK_PACKAGE","workstream":"QA_VISUAL_FIXTURE_CORRECTION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-19.admission.json","requiresCapabilities":[{"id":"V2_QA_PROGRAM_DOMAIN_PATH_V1","provider":"WP-16"},{"id":"V2_EXERCISE_PASSPORT_V1","provider":"WP-18"}],"providesCapabilities":["V2_QA_VISUAL_FIXTURE_V2"]},
+    {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","dependsOn":["WP-17"],"kind":"HUMAN_GATE","readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","status":"PLANNED","frozen":false,"ownerDecisionRequired":true,"ownerVisualGate":false,"gateScope":"SKIP_ALL_COMPLETION_SEMANTICS"},
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","SKIP-ALL-COMPLETION-SEMANTICS-DECISION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"PLANNED","frozen":false,"verification":"PENDING"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"PLANNED","frozen":false,"verification":"PENDING","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
 ```
@@ -66,6 +72,32 @@ Owner visual acceptance is a milestone gate, not a work-package dependency:
 WP-06 and WP-07 have no Owner visual gate. The only Owner visual gate in this
 DAG is `RUN-5-OWNER-ACCEPTANCE`, and its scope is the complete program-driven
 experience after composition and machine/integration verification.
+
+### 2.2 Consolidated RUN-5 correction dependencies (Owner-authorized 2026-09-20)
+
+The rejected integrated review is represented as downstream correction work;
+historical CLOSED/FROZEN nodes are not reopened. `WP-17` owns the missing
+INTRO→SET orchestration handoff and lifecycle/read-model binding. `WP-18`
+extends the existing Exercise/Movement authority into the minimum Exercise
+Passport and protects the Mentor composition zone. `WP-19` reconciles only the
+controlled QA visual fixture. The explicit
+`SKIP-ALL-COMPLETION-SEMANTICS-DECISION` Human Gate is a genuine product
+decision because current persistence exposes `completedAt` but no canonical
+ended/non-credit state distinct from successful completion/adherence credit.
+The corrected integration checkpoint and corrected Beta deployment checkpoint
+are downstream of that gate, so RUN-5 cannot become the next Human Gate until
+the semantics are resolved and the machine evidence is regenerated.
+
+Capability chain:
+
+```
+WP-17 INTRO/SET + lifecycle correction ─┐
+WP-18 Exercise Passport + Mentor map ───┼─► WP-19 QA visual fixture
+                                        └─► SKIP-ALL decision gate
+all correction prerequisites ─────────────► corrected integration checkpoint
+corrected integration checkpoint ─────────► corrected Beta deployment checkpoint
+corrected Beta checkpoint ────────────────► RUN-5 complete-flow Human Gate
+```
 
 Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required
 child admissions, task-scoped verification, and report validation. The

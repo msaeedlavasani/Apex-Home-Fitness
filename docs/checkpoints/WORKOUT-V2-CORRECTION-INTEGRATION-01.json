@@ -1,0 +1,30 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-CORRECTION-INTEGRATION-01",
+  "CHECKPOINT_KIND": "INTEGRATION",
+  "STATUS": "PENDING",
+  "KNOWN_GOOD_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "VERIFIED_SOURCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "CHECKPOINT_EVIDENCE_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "RUN_ID": "35469621918",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "BRANCH_RUN_ID": "35469621918",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469621918",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "5cffcbaa9d8fb143162f840bbd71659a61487aea",
+    "PR_RUN_ID": "35469623886",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35469623886"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"correction-scope","COMMAND":"canonical correction DAG","STATUS":"PENDING","SUMMARY":"The corrected integrated flow has not yet been rerun; this pending record fails closed until all correction work and the skip-all decision gate are satisfied."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE"
+}

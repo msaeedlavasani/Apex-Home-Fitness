@@ -201,6 +201,7 @@
  },
  "intro": {
   "firstExercise": "First exercise",
+  "exerciseOf": "Exercise {current} of {total}",
   "cues": [
    "Keep your chest up",
    "Track your knees over your toes",
@@ -259,6 +260,8 @@
     "result": {
       "title": "Workout complete",
       "subtitle": "Your session is recorded as a completed workout experience.",
+      "exitTitle": "Return to your dashboard?",
+      "exitDescription": "This workout is complete. You can safely return to your dashboard.",
       "completedSets": "Sets",
       "exercises": "Exercises",
       "skipped": "Skipped",

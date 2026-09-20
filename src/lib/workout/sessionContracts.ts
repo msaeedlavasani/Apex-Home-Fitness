@@ -30,6 +30,7 @@
  */
 
 import type {ExerciseId, ExerciseSlug} from '../exercise';
+import type {ExercisePassport} from '../exercise/passport';
 
 /** Canonical Exercise identity (S02): opaque branded `Exercise.id`/`Exercise.slug`. */
 
@@ -57,6 +58,8 @@ export interface SessionExercise {
   exerciseId?: ExerciseId;
   /** Canonical Exercise identity: `Exercise.slug` (branded). Present for program-derived plans. */
   slug?: ExerciseSlug;
+  /** Stable Exercise knowledge consumed by presentation; never prescription data. */
+  exercisePassport?: ExercisePassport;
 }
 
 /** Current phases ONLY (no PREPARE/TRANSITION — V2 product questions open). */

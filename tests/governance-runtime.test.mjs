@@ -30,10 +30,14 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const betaCapabilityClosed = state.items.find((item) => item.id === 'BETA-DEPLOYMENT-CAPABILITY')?.status === 'CLOSED';
   const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
   const productCheckpointPass = result.checkpointGates.find((gate) => gate.id === 'PRODUCT-INTEGRATION-CHECKPOINT')?.status === 'PASS';
-  const expectedReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
+  const correctionReady = state.items
+    .filter((item) => ['WP-17', 'WP-18'].includes(item.id) && item.status !== 'CLOSED')
+    .map((item) => item.id);
+  const legacyReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
+  const expectedReady = [...legacyReady, ...correctionReady];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), expectedReady.length === 0 ? [] : ['READY_DERIVED']);
-  assert.deepEqual(result.nextAdmissionCandidates, betaCapabilityClosed || !productCheckpointPass ? [] : ['BETA-DEPLOYMENT-CAPABILITY']);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), expectedReady.map(() => 'READY_DERIVED'));
+  assert.deepEqual(result.nextAdmissionCandidates, result.readyTasks.filter((task) => task.admissionRequired).map((task) => task.id));
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
   assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
@@ -114,8 +118,8 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const dagFile = tempText(replaceTaggedJson(dagSource.content, 'WORKOUT_V2_AUTONOMOUS_DAG', dag));
   const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT']);
-  assert.equal(result.readyTasks[0]?.eligibility, 'READY_DERIVED');
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', 'WP-17', 'WP-18']);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), ['READY_DERIVED', 'READY_DERIVED', 'READY_DERIVED']);
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));

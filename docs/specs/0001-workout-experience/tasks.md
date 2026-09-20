@@ -258,6 +258,96 @@ The product implementation must prove that changing only resolved Program data c
 - **Scope:** exact deployed SHA/build identity, deployment success, rollback identity, route/runtime/assets/CSP/network verification, and the Beta authenticated entry boundary; complete-flow visual/device acceptance remains RUN-5.
 - **Rule:** PASS is recorded only with authoritative branch/PR CI, exact deployed identity, rollback, health, and Beta route evidence; PASS unblocks RUN-5 without satisfying its Human Gate.
 
+## Consolidated RUN-5 correction cycle — Owner-authorized 2026-09-20
+
+The first integrated Desktop + real-iPhone review rejected the candidate. The
+following downstream packages are correction work, not reopening of historical
+WP-02/WP-08/WP-09/WP-12/WP-13/WP-15/WP-16 truth. The packages are selected by
+the DAG and remain subject to the existing admission and checkpoint contracts.
+
+### WP-17 — INTRO→SET execution and lifecycle binding correction *(CRITICAL; single writer)*
+
+- **Purpose:** repair the orchestration/state-binding defect that leaves INTRO
+  in a deferred/demo state after `PERFORM_NOW`, and reconcile stage-aware result
+  and Exit controls from the canonical session lifecycle.
+- **Dependencies:** WP-14, WP-12, WP-15.
+- **Ownership scope:** the existing Session Orchestrator and its thin adapter;
+  current-exercise/current-set resolution; lifecycle-derived presentation
+  read-model; persisted session completion handoff only where its existing
+  contract is already determined.
+- **Required evidence:** INTRO action crosses into the actual SET through the
+  orchestrator; SET→SET_RESULT→REST/next obligation reaches normal result;
+  deferred resurfacing, skip routing, no terminal REST, restart, and Exit
+  semantics remain intact; no stale ordinal, active-control, or result copy is
+  rendered from independent stage state. Audit scheduledFor/performedAt/date
+  attribution and document evidence or derive a bounded repair.
+- **Prohibited scope:** presentation-owned routing, prescription mutation,
+  fixed fixture sequencing, test identity logic, and inventing skip-all credit.
+
+### WP-18 — Exercise Passport and protected Mentor composition correction *(CRITICAL; UI + domain read-model)*
+
+- **Purpose:** extend the existing Exercise/Movement authority into the
+  minimum canonical Exercise Passport consumed by Workout presentation, and
+  establish the protected Mentor-stage/adaptive composition contract.
+- **Dependencies:** WP-09, WP-15.
+- **Ownership scope:** existing Exercise/Movement metadata adapter and the
+  reusable INTRO composition boundary; exercise-specific coaching/setup and
+  Mentor capability resolution; structural responsive invariants.
+- **Required evidence:** coaching resolves from the current canonical Exercise
+  authority (no Squat copy on unrelated identities); unsupported Mentor assets
+  degrade honestly; adding/removing secondary INTRO controls does not translate
+  the Mentor anchor within one layout class; safe-area, RTL/LTR, theme, reduced
+  motion, and 360px behavior remain covered.
+- **Prohibited scope:** duplicate Exercise storage, per-exercise INTRO
+  conditionals, root-motion assumptions without evidence, renderer replacement,
+  camera/tracking authorization, and fixed QA topology.
+
+### WP-19 — controlled QA visual-validation fixture correction *(STANDARD; data/fixture only)*
+
+- **Purpose:** reconcile the persisted QA input used by the next Owner review
+  to exactly two ordered exercise entries, both supported by the Squat Mentor
+  path, while retaining arbitrary-N Program semantics.
+- **Dependencies:** WP-16, WP-18.
+- **Ownership scope:** canonical QA data/fixture and its bounded Beta data
+  operation; exercise count/order, independently resolved set/mode/rest,
+  duration/fallback, calories/labels, and schedule/session association.
+- **Required evidence:** the same normal Program/Prescription path resolves
+  the two-entry fixture; no stale three-exercise metadata remains; no product
+  code branches on the QA identity or assumes two Squats globally.
+- **Prohibited scope:** new workout implementation, identity shortcuts,
+  production data mutation, or changes to the general Program contract.
+
+### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — downstream Owner decision gate
+
+- **Purpose:** resolve the genuine product boundary between terminal
+  `SKIPPED_FOR_SESSION` obligation resolution and successful workout
+  completion/adherence credit.
+- **Dependencies:** WP-17.
+- **Owner gate:** required. Existing AL-01 completion vocabulary is evidence,
+  not an inferred persistence policy. The DAG remains blocked until the Owner
+  defines the canonical ended/non-credit outcome and its Dashboard/adherence
+  attribution.
+
+### WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT — complete corrected-flow machine gate
+
+- **Dependencies:** WP-17, WP-18, WP-19, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.
+- **Scope:** authoritative CI, build/typecheck/tests, full canonical Dashboard
+  → START → PREPARING → INTRO → SET → SET_RESULT → REST/next → result path,
+  alternate defer/skip routing, passport/coaching resolution, protected Mentor
+  composition invariants, date attribution evidence, and fail-closed lifecycle
+  controls.
+- **Rule:** PASS establishes a new known-good source SHA; FAIL blocks downstream
+  deployment and is repaired/rerun within authority.
+
+### WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT — corrected Beta gate
+
+- **Dependencies:** WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT,
+  BETA-DEPLOYMENT-CAPABILITY.
+- **Scope:** deploy the exact CI-verified source through the existing governed
+  Beta gateway, verify deployed SHA/build identity, rollback identity, runtime
+  assets/CSP/network/route behavior, and the normal authenticated product path.
+- **Rule:** PASS is required before RUN-5; Production remains untouched.
+
 ## Run 1 close-out — 2026-09-19
 
 `WP-06` and `WP-07` were admitted as the two repository-selected Run 1 child
