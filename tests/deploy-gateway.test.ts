@@ -62,7 +62,9 @@ test('storage hygiene is a bounded gateway action with five fail-closed classes'
   }
   assert.match(source, /docker.*image.*rm/);
   assert.match(source, /docker.*container.*rm/);
+  assert.match(source, /builder.*prune/);
   assert.match(source, /buildx.*prune/);
+  assert.match(source, /builder_type.*legacy/);
   assert.doesNotMatch(source, /system prune/);
   assert.match(source, /storage_hygiene_status/);
   assert.match(source, /_disk_admission\("production-release"\)/);

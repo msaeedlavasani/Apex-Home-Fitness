@@ -112,7 +112,9 @@ disk admission reserves current/rollback images, candidate app and migration
 peaks, database backup space, temporary Docker overhead, bounded cache growth,
 and emergency headroom. Missing or ambiguous policy/evidence blocks admission.
 After rollback verification the gateway runs bounded cleanup: useful recent
-cache is retained, expired cache is pruned with `buildx prune` limits, failed
+cache is retained, expired cache is pruned with the host builder's bounded
+prune controls (Buildx when available, legacy `docker builder prune` on the
+current host), failed
 transaction containers/images are removed when safe, and final filesystem
 budget evidence is written to a sanitized `storage-hygiene-*.json` receipt.
 The checked-in `ops/deploy-gateway/storage-policy.example.json` contains

@@ -1130,7 +1130,10 @@ def _lock_state():
 
 def _cache_artifact(policy):
     try:
-        raw = run(["/usr/bin/docker", "buildx", "du", "--builder", policy["builder"]])
+        if policy.get("builder_type", "buildx") == "legacy":
+            raw = run(["/usr/bin/docker", "system", "df"])
+        else:
+            raw = run(["/usr/bin/docker", "buildx", "du", "--builder", policy["builder"]])
         cache_status = "SAFE_TO_DELETE" if policy.get("builder_scope") == "AHF_ONLY" else "AMBIGUOUS_DO_NOT_DELETE"
         return {
             "kind": "build-cache", "identity": f"builder:{policy['builder']}",
@@ -1248,6 +1251,15 @@ def _disk_admission(operation):
 
 def _bounded_cache_cleanup(policy, available_bytes):
     retention = policy["cache_retention_hours"] if available_bytes >= policy["emergency_headroom_bytes"] else policy["pressure_cache_retention_hours"]
+    if policy.get("builder_type", "buildx") == "legacy":
+        return {
+            "retention_hours": retention,
+            "result": run([
+                "/usr/bin/docker", "builder", "prune", "--force",
+                "--filter", f"until={retention}h",
+                "--keep-storage", str(policy["max_cache_bytes"]),
+            ], quiet=True),
+        }
     return {
         "retention_hours": retention,
         "result": run([
