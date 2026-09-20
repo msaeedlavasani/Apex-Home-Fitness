@@ -29,7 +29,7 @@
     {"ID":"evidence-provenance","COMMAND":"node --import tsx --test tests/workout-v2-evidence-provenance.test.ts","STATUS":"PASS","SUMMARY":"Evidence classes remain distinct; simulated sensing and source identity are not promoted to real-device or deployed-runtime proof."},
     {"ID":"authoritative-ci","COMMAND":"GitHub Actions CI branch + PR synchronization","STATUS":"PASS","SUMMARY":"Push branch run 35533061529 and PR run 35533064035 both pass for exact SHA 70bb270c4c33c97c62a43437991c12bd67b70588."}
   ],
-  "WORKTREE_CLEAN": "PENDING",
-  "LOCAL_REMOTE_PARITY": "PENDING",
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
   "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE"
 }
