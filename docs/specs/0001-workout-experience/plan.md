@@ -72,12 +72,12 @@ an isolated screenshot issue. The correction chain remains single-writer:
 | Mentor layout | Experience composition contract | Mentor stage is reserved/centered/grounded within a layout class; secondary UI adapts around it |
 | QA visual input | persisted QA Program path | exactly two Squat-path entries for the acceptance fixture only; general topology remains arbitrary |
 
-`SKIP-ALL-COMPLETION-SEMANTICS-DECISION` is intentionally a human gate. The
-current persisted model has `completedAt` but no separate canonical
-`RESOLVED/ENDED` non-credit state, so the implementation must not select
-`DID_NOT_START`, `ABANDONED`, partial credit, or another outcome without the
-Owner's product decision. The corrected integration checkpoint is downstream
-of that gate and therefore fails closed until it is resolved.
+`SKIP-ALL-COMPLETION-SEMANTICS-DECISION` is resolved. The all-skipped,
+zero-completed-set case must persist a terminal non-credit outcome
+(`ENDED_WITHOUT_COMPLETION`) separately from successful completion credit;
+per-session skipped outcomes remain available to history/analytics/adaptation.
+The decision does not define a new PARTIAL classification or adherence
+policy. The bounded persistence correction is downstream of the resolved gate.
 
 ## 4. Prescription contract
 

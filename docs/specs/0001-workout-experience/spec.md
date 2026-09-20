@@ -96,13 +96,14 @@ exactly two ordered entries, both resolving through the supported Squat Mentor
 path. This is fixture data only and does not constrain arbitrary-N Programs or
 independently resolved set counts/modes.
 
-**OPEN OWNER DECISION — skip-all outcome credit.** Terminal
-`SKIPPED_FOR_SESSION` obligation resolution is not treated as successful
-completion/adherence credit by inference. The current domain vocabulary
-contains outcome kinds, but the persisted WorkoutSession path does not expose
-a canonical ended/non-credit state distinct from success. The correction DAG
-therefore carries an explicit Owner gate before corrected integrated
-acceptance; no product semantics are invented here.
+**RESOLVED OWNER DECISION — skip-all outcome credit.** When every required
+Exercise reaches `SKIPPED_FOR_SESSION` and zero Sets are completed, terminal
+session resolution is distinct from successful completion/adherence credit.
+The persisted outcome is `ENDED_WITHOUT_COMPLETION`, per-session skipped
+outcomes are retained, and completed-session projections exclude it. The
+canonical vocabulary therefore distinguishes `COMPLETED_FULLY`,
+`COMPLETED_PARTIALLY`, and `ENDED_WITHOUT_COMPLETION`. This decision does not
+define a new PARTIAL classification or adherence policy.
 
 ## 3. Non-goals
 

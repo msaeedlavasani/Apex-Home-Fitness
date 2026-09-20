@@ -134,7 +134,9 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription) {
     totalSets: state.totalSetCount ?? 0,
     completionKind: outcomes.every((outcome) => outcome.status === 'COMPLETED')
       ? 'COMPLETED_FULLY'
-      : 'COMPLETED_PARTIALLY',
+      : outcomes.every((outcome) => outcome.status === 'SKIPPED_FOR_SESSION') && state.completedSetCount === 0
+        ? 'ENDED_WITHOUT_COMPLETION'
+        : 'COMPLETED_PARTIALLY',
   });
 
   const enterWorkoutResult = (): OrchestrationTransition => {

@@ -6,6 +6,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {ExperienceShell} from '@/components/workout/experience/ExperienceShell';
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import type {WorkoutResultSummary} from '@/lib/workout/sessionV2Contracts';
+import {completionKindForPersistence} from '@/lib/workout/completionSemantics';
 import {
   exerciseIdentityIndex,
   workoutSessionExercisesFromProgram,
@@ -121,7 +122,7 @@ export default function WorkoutPage() {
       await fetch('/api/workout/session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action: 'complete', sessionId, completedSets: summary.completedSets}),
+        body: JSON.stringify({action: 'complete', sessionId, completedSets: summary.completedSets, completionKind: completionKindForPersistence(summary)}),
       });
     } catch {
       // Completion remains available locally; a later sync can be added without blocking UX.

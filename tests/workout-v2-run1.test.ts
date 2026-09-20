@@ -130,6 +130,8 @@ test('WP-14 owns deferred/skipped outcomes and blocks completion until obligatio
   assert.equal(resolved.state.activeModule, 'WORKOUT_RESULT');
   assert.equal(resolved.state.completionEligible, true);
   assert.deepEqual(resolved.state.exerciseOutcomes.map((outcome) => outcome.status), ['SKIPPED_FOR_SESSION', 'SKIPPED_FOR_SESSION']);
+  assert.equal(resolved.state.workoutResult?.completionKind, 'ENDED_WITHOUT_COMPLETION');
+  assert.equal(resolved.state.workoutResult?.completedSets, 0);
 });
 
 test('WP-14 supports perform-now resolution, set restart, and exit intent without prescription mutation', () => {

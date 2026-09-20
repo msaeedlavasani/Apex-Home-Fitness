@@ -57,6 +57,33 @@
 - **Skip-all completion semantics:** **OWNER DECISION REQUIRED.** Existing authorities distinguish terminal session obligation resolution from outcome completion kinds, but the persisted product path currently has no canonical `RESOLVED/ENDED` state distinct from success/adherence credit. Do not infer whether an all-skipped session should be recorded as an ended non-credit session, `DID_NOT_START`, `ABANDONED`, or another product outcome. The correction DAG must fail closed at this decision and must not begin RUN-5 acceptance until resolved.
 - **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate. No per-task visual review is introduced. Production remains unauthorized and PR #72 remains unmerged.
 
+### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved Owner product decision (2026-09-20)
+
+- **Decision:** When every required Exercise obligation reaches
+  `SKIPPED_FOR_SESSION` and zero Sets are completed, the session is terminal /
+  resolved but is **not** a successfully completed workout.
+- **Canonical outcome:** record `ENDED_WITHOUT_COMPLETION` as the session
+  outcome. Preserve the per-session skipped Exercise outcomes for history,
+  analytics, and future adaptation; do not award completed-workout or
+  adherence credit and do not increment Dashboard completed-session counts.
+- **Lifecycle boundary:** `SESSION_TERMINALITY != WORKOUT_COMPLETION_CREDIT`.
+  The persisted session must be terminal without using the success-credit
+  marker. The outcome vocabulary therefore distinguishes
+  `COMPLETED_FULLY`, `COMPLETED_PARTIALLY`, and
+  `ENDED_WITHOUT_COMPLETION`.
+- **Scope limit:** this decision resolves only the all-skipped + zero-set
+  case. It does not define a new PARTIAL classification or adherence policy;
+  existing PARTIAL behavior remains unchanged unless a later canonical
+  decision changes it.
+- **Execution authorization:** the bounded downstream capability work needed
+  to persist and project this distinction is authorized through the existing
+  Spec Kit / DAG / admission / checkpoint authorities. No Production deploy,
+  PR #72 merge, or per-task Owner visual gate is authorized.
+- **Canonical work package:** `WP-20` is the repository-derived bounded
+  implementation package for this decision; it may be admitted only within
+  the existing Development Admission Gate and remains downstream of this
+  resolved decision.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

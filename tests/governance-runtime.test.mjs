@@ -31,7 +31,7 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
   const productCheckpointPass = result.checkpointGates.find((gate) => gate.id === 'PRODUCT-INTEGRATION-CHECKPOINT')?.status === 'PASS';
   const correctionReady = state.items
-    .filter((item) => ['WP-17', 'WP-18'].includes(item.id) && item.status !== 'CLOSED')
+    .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
     .map((item) => item.id);
   const legacyReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
   const expectedReady = [...legacyReady, ...correctionReady];
@@ -119,7 +119,7 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const expectedCorrectionReady = state.items
-    .filter((item) => ['WP-17', 'WP-18'].includes(item.id) && item.status !== 'CLOSED')
+    .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
     .map((item) => item.id);
   assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady]);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));

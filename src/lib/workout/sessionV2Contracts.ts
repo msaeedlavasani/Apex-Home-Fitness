@@ -213,7 +213,7 @@ export interface WorkoutResultSummary {
   readonly skippedExercises: number;
   readonly completedSets: number;
   readonly totalSets: number;
-  readonly completionKind: 'COMPLETED_FULLY' | 'COMPLETED_PARTIALLY';
+  readonly completionKind: 'COMPLETED_FULLY' | 'COMPLETED_PARTIALLY' | 'ENDED_WITHOUT_COMPLETION';
 }
 
 /**

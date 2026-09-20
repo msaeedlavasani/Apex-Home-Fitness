@@ -355,6 +355,11 @@ model WorkoutSession {
   userId          String
   programId       String?
   startedAt       DateTime   @default(now())
+  // Terminality is distinct from completion credit. ENDED_WITHOUT_COMPLETION
+  // sets endedAt and leaves completedAt null; successful/partial credit sets
+  // both markers. Nullable for historical rows created before this contract.
+  endedAt         DateTime?
+  completionKind  String?
   completedAt     DateTime?
   durationSeconds Int?
   caloriesBurned  Int?

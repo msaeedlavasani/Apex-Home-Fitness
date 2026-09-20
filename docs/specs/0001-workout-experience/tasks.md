@@ -317,20 +317,38 @@ the DAG and remain subject to the existing admission and checkpoint contracts.
 - **Prohibited scope:** new workout implementation, identity shortcuts,
   production data mutation, or changes to the general Program contract.
 
-### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — downstream Owner decision gate
+### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved downstream Owner decision gate
 
 - **Purpose:** resolve the genuine product boundary between terminal
   `SKIPPED_FOR_SESSION` obligation resolution and successful workout
   completion/adherence credit.
 - **Dependencies:** WP-17.
-- **Owner gate:** required. Existing AL-01 completion vocabulary is evidence,
-  not an inferred persistence policy. The DAG remains blocked until the Owner
-  defines the canonical ended/non-credit outcome and its Dashboard/adherence
-  attribution.
+- **Owner gate:** resolved 2026-09-20. The all-skipped + zero-completed-set
+  case is terminal/resolved with `ENDED_WITHOUT_COMPLETION`, retains skipped
+  Exercise outcomes, and receives no completed-workout/adherence/Dashboard
+  completion credit. Existing PARTIAL behavior is unchanged; no new PARTIAL
+  policy is inferred.
+
+### WP-20 — persist terminal non-credit outcome semantics *(CRITICAL; bounded domain/persistence correction)*
+
+- **Purpose:** implement the resolved all-skipped + zero-completed-set
+  distinction without reopening historical Workout V2 work: terminal session
+  resolution is durable, but successful completion/adherence credit is not
+  recorded.
+- **Dependencies:** WP-17, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.
+- **Ownership scope:** existing AL-01 completion vocabulary, WorkoutSession
+  persistence/route, Dashboard completed-session projection, and focused
+  contract/regression evidence. Preserve per-session skipped Exercise rows.
+- **Required evidence:** `ENDED_WITHOUT_COMPLETION` is persisted with a
+  terminal marker distinct from `completedAt`; completed-session queries and
+  counts exclude it; completed and existing partial paths remain unchanged;
+  no PARTIAL policy is added.
+- **Prohibited scope:** reopening WP-02/WP-17, changing defer/skip mechanics,
+  inventing adaptation policy, changing Production, or merging PR #72.
 
 ### WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT — complete corrected-flow machine gate
 
-- **Dependencies:** WP-17, WP-18, WP-19, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.
+- **Dependencies:** WP-17, WP-18, WP-19, WP-20, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.
 - **Scope:** authoritative CI, build/typecheck/tests, full canonical Dashboard
   → START → PREPARING → INTRO → SET → SET_RESULT → REST/next → result path,
   alternate defer/skip routing, passport/coaching resolution, protected Mentor

@@ -65,7 +65,8 @@
     {"id":"WP-17","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-17.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"INTRO→SET orchestration handoff and lifecycle-derived presentation binding corrected; close-out: reports/workout-v2-impl-01/WP-17-closeout.json"},
     {"id":"WP-18","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-18.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Exercise Passport and protected Mentor/adaptive composition contract established; close-out: reports/workout-v2-impl-01/WP-18-closeout.json","uiChanged":true},
     {"id":"WP-19","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-19.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Controlled QA fixture reconciled to exactly two ordered Squat-family entries; close-out: reports/workout-v2-impl-01/WP-19-closeout.json"},
-    {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerDecisionRequired":true,"ownerVisualAcceptanceRequired":false},
+    {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","status":"CLOSED","frozen":true,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","admissionRequired":false,"ownerDecisionRequired":false,"ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"Owner resolved all-skipped + zero-completed-set semantics as terminal ENDED_WITHOUT_COMPLETION with no completion/adherence/Dashboard credit"},
+    {"id":"WP-20","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","admissionRequired":true,"admissionPath":"docs/admissions/WP-20.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualAcceptanceRequired":false,"verification":"PASS","result":"All-skipped + zero-completed-set sessions persist as terminal ENDED_WITHOUT_COMPLETION without completed-workout/adherence/Dashboard credit; per-session skipped rows are retained; close-out: reports/workout-v2-impl-01/WP-20-closeout.json"},
     {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","verification":"PENDING"},
     {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","admissionRequired":false,"ownerVisualAcceptanceRequired":false,"checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","verification":"PENDING"},
     {"id":"RUN-5-OWNER-ACCEPTANCE","status":"PLANNED","frozen":false,"readinessRule":"EXPLICIT","autonomousEligibility":"HUMAN_GATE","admissionRequired":false,"ownerVisualAcceptanceRequired":true}
@@ -95,13 +96,12 @@ human gate. The 2026-09-20 rejected review is canonicalized as downstream
 correction work: WP-17 repairs the orchestration handoff and lifecycle/read-
 model binding; WP-18 extends the existing Exercise/Movement authority into the
 Exercise Passport and protects the Mentor composition anchor; WP-19 reconciles
-the two-entry Squat-only QA visual fixture. Corrected integration and Beta
-checkpoints gate RUN-5. The `SKIP-ALL-COMPLETION-SEMANTICS-DECISION` node is a
-genuine Owner decision gate because the current AL-01 vocabulary distinguishes
-outcome kinds, but persisted `WorkoutSession` has no canonical ended/non-credit
-state distinct from successful completion/adherence credit. Historical work
-packages remain CLOSED/FROZEN; no Owner scheduling choice is required for the
-otherwise READY_DERIVED correction nodes.
+the two-entry Squat-only QA visual fixture; WP-20 persists the resolved
+all-skipped non-credit terminal outcome. Corrected integration and Beta
+checkpoints gate RUN-5. The `SKIP-ALL-COMPLETION-SEMANTICS-DECISION` and
+WP-20 are now CLOSED/FROZEN with their decision, implementation, and
+verification evidence recorded. Historical work packages remain CLOSED/FROZEN;
+no Owner scheduling choice is required for the downstream checkpoints.
 
 ## Strategic basis
 

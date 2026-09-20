@@ -55,6 +55,7 @@ export type OutcomeContractVersion = typeof OUTCOME_CONTRACT_VERSION;
 export type WorkoutCompletionKind =
   | 'COMPLETED_FULLY'
   | 'COMPLETED_PARTIALLY'
+  | 'ENDED_WITHOUT_COMPLETION'
   | 'ABANDONED'
   | 'DID_NOT_START';
 
@@ -62,6 +63,7 @@ export type WorkoutCompletionKind =
 export const WORKOUT_COMPLETION_KINDS = [
   'COMPLETED_FULLY',
   'COMPLETED_PARTIALLY',
+  'ENDED_WITHOUT_COMPLETION',
   'ABANDONED',
   'DID_NOT_START',
 ] as const;

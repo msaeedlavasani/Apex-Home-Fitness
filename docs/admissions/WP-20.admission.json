@@ -1,0 +1,19 @@
+{
+  "TASK_ID": "WP-20",
+  "TASK_CLASS": "CRITICAL",
+  "SCOPE_SUMMARY": "Persist the resolved all-skipped plus zero-completed-set Workout Session outcome as terminal ENDED_WITHOUT_COMPLETION without completed-workout, adherence, or Dashboard completion credit, while preserving per-session skipped Exercise outcomes and existing PARTIAL behavior.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "EVOLVED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/governance/OWNER_DECISION_GATE.md",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0001-workout-experience/dependencies.md",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}
