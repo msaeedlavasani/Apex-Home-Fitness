@@ -118,8 +118,11 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const dagFile = tempText(replaceTaggedJson(dagSource.content, 'WORKOUT_V2_AUTONOMOUS_DAG', dag));
   const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', 'WP-17', 'WP-18']);
-  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), ['READY_DERIVED', 'READY_DERIVED', 'READY_DERIVED']);
+  const expectedCorrectionReady = state.items
+    .filter((item) => ['WP-17', 'WP-18'].includes(item.id) && item.status !== 'CLOSED')
+    .map((item) => item.id);
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady]);
+  assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('HUMAN_GATE'));
