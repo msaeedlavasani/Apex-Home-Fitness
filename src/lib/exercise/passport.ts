@@ -12,13 +12,12 @@ import type {ExerciseId, ExerciseSlug} from './contracts';
 export const EXERCISE_PASSPORT_VERSION = 1 as const;
 export const SUPPORTED_SQUAT_MENTOR_ASSET = 'AHF_Mentor_Squat.glb';
 
-const SQUAT_IDENTITY_TOKENS = ['squat', 'اسکات', 'اسکوات'] as const;
+/** Stable identity for the only currently supported Squat Mentor capability. */
+export const CANONICAL_BODYWEIGHT_SQUAT_SLUG = 'bodyweight-squat' as ExerciseSlug;
 
 /** Capability lookup owned by the canonical Exercise knowledge boundary. */
 export function exerciseSupportsSquatMentor(source: {readonly name: string; readonly slug?: unknown; readonly id?: unknown; readonly nameKey?: unknown}): boolean {
-  return [source.slug, source.nameKey, source.name, source.id].some(
-    (value) => typeof value === 'string' && SQUAT_IDENTITY_TOKENS.some((token) => value.toLowerCase().includes(token)),
-  );
+  return source.slug === CANONICAL_BODYWEIGHT_SQUAT_SLUG;
 }
 
 export interface ExercisePassport {

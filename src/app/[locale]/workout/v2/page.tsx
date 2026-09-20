@@ -21,33 +21,6 @@ import {
   toWorkoutExercises,
 } from '@/lib/workout/samplePlan';
 
-/**
- * V2 Owner-review exercise substitution (WORKOUT-V2 DELTA —
- * PREPARING first-exercise identity): the Owner's representative exercise
- * for this V2 Mentor review is the Squat, so the sample-plan
- * fallback (the shared V1 fixture) leads with the Squat on the PREPARING
- * surface. Scoped strictly to this V2 review route — the shipped V1
- * `/workout` player keeps the untouched sample plan. The substitution uses
- * the dedicated canonical message key `Library.exercises.squat`
- * ("Squat" / "اسکات" — the Owner-specified identity), not the pre-existing
- * `squats` key ("Air Squats" / "اسکوات با وزن بدن"), which remains exactly
- * as-is for the V1 dashboard/library. Bodyweight-coherent, no hardcoded
- * display strings in code, no invented fixture.
- */
-const V2_FALLBACK_EXERCISE_SUBSTITUTION: Record<string, string> = {
-  // pushUps → squat: the Owner-designated representative movement.
-  pushUps: 'squat',
-  // squats → squat: collapse the V1 "Air Squats" key onto the SAME
-  // Owner-specified canonical squat identity so every squat-family item of
-  // the review fixture presents the ONE identity the Mentor demonstrates.
-  squats: 'squat',
-  // The date-based mobility fallback can lead with hipMobility. The current
-  // approved V2 Mentor fixture demonstrates Squat only, so keep this
-  // validation plan internally consistent until multi-exercise Mentor
-  // selection is authorized.
-  hipMobility: 'squat',
-};
-
 type CurrentProgramResponse = {
   program: {
     id: string;
@@ -150,16 +123,7 @@ export default function WorkoutV2Page() {
   // freeze remains on this route).
   const fallbackKey = useMemo(() => resolveWorkoutKeyForDate(new Date()), []);
   const fallbackExercises = useMemo<SessionExercise[]>(
-    () => toWorkoutExercises(
-      (SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? []).map((exercise) => (
-        // V2 review substitution (see constant): Owner-designated first
-        // exercise. Plan structure, sets/reps and other exercises untouched.
-        V2_FALLBACK_EXERCISE_SUBSTITUTION[exercise.nameKey]
-          ? {...exercise, nameKey: V2_FALLBACK_EXERCISE_SUBSTITUTION[exercise.nameKey]!}
-          : exercise
-      )),
-      (nameKey) => tLibrary(`exercises.${nameKey}`),
-    ),
+    () => toWorkoutExercises(SAMPLE_WORKOUT_EXERCISES[fallbackKey] ?? [], (nameKey) => tLibrary(`exercises.${nameKey}`)),
     [fallbackKey, tLibrary],
   );
 

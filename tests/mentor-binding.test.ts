@@ -27,15 +27,11 @@ const squat = (overrides: Partial<SessionExercise> = {}): SessionExercise => ({
   ...overrides,
 });
 
-test('binding: canonical Squat identities bind across plan sources (EN + FA)', () => {
-  assert.equal(isSquatMentorExercise(squat({name: 'Squat'})), true);
-  assert.equal(isSquatMentorExercise(squat({name: 'اسکات', id: 'fbi-3'})), true);
-  // The V1 legacy FA squat naming ("اسکوات با وزن بدن") still binds.
-  assert.equal(isSquatMentorExercise(squat({name: 'اسکوات با وزن بدن'})), true);
-  // Canonical slug identity binds (program-derived plans).
-  assert.equal(isSquatMentorExercise(squat({name: 'Anything display', slug: 'squat' as never})), true);
-  // The sample-plan nameKey identity binds (pre-resolution fixture items).
-  assert.equal(isSquatMentorExercise({...squat(), nameKey: 'squat'}), true);
+test('binding requires the explicit canonical Bodyweight Squat identity', () => {
+  assert.equal(isSquatMentorExercise(squat({name: 'Anything display', slug: 'bodyweight-squat' as never})), true);
+  assert.equal(isSquatMentorExercise(squat({name: 'Bodyweight Squat'})), false);
+  assert.equal(isSquatMentorExercise(squat({name: 'اسکات', id: 'fbi-3'})), false);
+  assert.equal(isSquatMentorExercise({...squat(), nameKey: 'squat'}), false);
 });
 
 test('binding: unsupported exercises NEVER bind to the Squat Mentor', () => {
@@ -43,15 +39,13 @@ test('binding: unsupported exercises NEVER bind to the Squat Mentor', () => {
   assert.equal(isSquatMentorExercise(squat({name: 'نگه‌داشتن پلانک', id: 'cp-1'})), false);
   assert.equal(isSquatMentorExercise(squat({name: 'Push-Ups'})), false);
   assert.equal(isSquatMentorExercise(squat({name: 'Burpees'})), false);
-  // A plan item named only "Air Squats" (V1 squats key) still binds — it IS
-  // a squat-family identity; only non-squat exercises are excluded.
-  assert.equal(isSquatMentorExercise(squat({name: 'اسکوات با وزن بدن'})), true);
+  assert.equal(isSquatMentorExercise(squat({name: 'Jump Squats', slug: 'jump-squats' as never})), false);
 });
 
 test('fixture resolver: picks the FIRST supported (Squat) plan exercise', () => {
   const resolved = resolveMentorFixtureExercise([
     {exercise: squat({name: 'Plank Hold', id: 'cp-1'})},
-    {exercise: squat({name: 'Squat', id: 'cp-5'})},
+    {exercise: squat({name: 'Squat', slug: 'bodyweight-squat' as never, id: 'cp-5'})},
     {exercise: squat({name: 'Glute Bridge', id: 'cp-2'})},
   ]);
   assert.equal(resolved.exercise.id, 'cp-5');
@@ -77,11 +71,11 @@ test('fixture resolver: FAILS CLOSED when no plan exercise is supported', () => 
   }
 });
 
-test('fixture resolver: canonical fa/en names both satisfy the fixture', () => {
-  const fa = resolveMentorFixtureExercise([{exercise: squat({name: 'اسکات', id: 'x9'})}]);
+test('fixture resolver: resolved canonical identity satisfies the fixture', () => {
+  const fa = resolveMentorFixtureExercise([{exercise: squat({name: 'Anything', slug: 'bodyweight-squat' as never, id: 'x9'})}]);
   assert.equal(fa.exercise.id, 'x9');
   const slug = resolveMentorFixtureExercise([
-    {exercise: squat({name: 'نیروی پایین', slug: 'squat' as never})},
+    {exercise: squat({name: 'نیروی پایین', slug: 'bodyweight-squat' as never})},
   ]);
-  assert.equal(slug.exercise.slug, 'squat');
+  assert.equal(slug.exercise.slug, 'bodyweight-squat');
 });

@@ -1,5 +1,6 @@
 import type {SessionExercise} from '@/lib/workout/sessionContracts';
 import {
+  CANONICAL_BODYWEIGHT_SQUAT_SLUG,
   exerciseSupportsSquatMentor,
   SUPPORTED_SQUAT_MENTOR_ASSET,
 } from '@/lib/exercise/passport';
@@ -42,13 +43,20 @@ interface BindableExercise {
   readonly slug?: unknown;
   /** Localized plan `nameKey` (sample-plan items only; not on the canonical contract). */
   readonly nameKey?: string;
+  readonly exercisePassport?: SessionExercise['exercisePassport'];
 }
 
 /** True when the exercise's identity resolves to the canonical Squat. */
 export function isSquatMentorExercise(
   exercise: BindableExercise,
 ): boolean {
-  return exerciseSupportsSquatMentor(exercise);
+  return exercise.exercisePassport?.mentor.supported === true ||
+    exerciseSupportsSquatMentor({
+      name: exercise.name,
+      slug: exercise.slug ?? (exercise.exercisePassport?.slug === CANONICAL_BODYWEIGHT_SQUAT_SLUG
+        ? CANONICAL_BODYWEIGHT_SQUAT_SLUG
+        : undefined),
+    });
 }
 
 /** The resolved fixture plan item: an exercise plus its localized nameKey. */

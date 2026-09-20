@@ -5,10 +5,11 @@ import {exerciseSupportsSquatMentor} from '@/lib/exercise/passport';
 import {QA_PROGRAM_EXERCISES, QA_PROGRAM_WEEKLY_SCHEDULE} from '@/lib/program/qaProgram';
 import {sharedPrescriptionFromPersistedPlan} from '@/lib/workout/prescriptionContract';
 
-test('canonical QA fixture is exactly two Squat-Mentor entries without narrowing general topology', () => {
+test('current QA fixture remains a separate data concern from Passport capability authority', () => {
   assert.equal(QA_PROGRAM_EXERCISES.length, 2);
   assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.name), ['Jump Squats', 'Bodyweight Squat']);
-  assert.ok(QA_PROGRAM_EXERCISES.every((item) => exerciseSupportsSquatMentor({name: item.name})));
+  assert.equal(exerciseSupportsSquatMentor({name: 'Bodyweight Squat', slug: 'bodyweight-squat'}), true);
+  assert.equal(exerciseSupportsSquatMentor({name: 'Jump Squats', slug: 'jump-squats'}), false);
   assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.sets), [2, 1]);
   assert.deepEqual(QA_PROGRAM_EXERCISES.map((item) => item.reps), [8, null]);
   assert.deepEqual(QA_PROGRAM_WEEKLY_SCHEDULE[0].exercises.map((item) => item.name), ['Jump Squats', 'Bodyweight Squat']);
