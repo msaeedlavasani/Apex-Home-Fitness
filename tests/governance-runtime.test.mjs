@@ -28,7 +28,7 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const state = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE').value;
   const expectedReady = [
-    'WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION',
+    'WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT',
   ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), expectedReady.map(() => 'READY_DERIVED'));
@@ -41,7 +41,7 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization is not a remaining scheduling gate');
   assert.equal(blocked.has('BETA-DEPLOYMENT-CAPABILITY'), false, 'authorized Beta capability is derived READY when product prerequisites pass');
   assert.equal(blocked.has('WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION'), false);
-  assert.ok(blocked.get('WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION,WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION,WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION'));
+  assert.equal(blocked.has('WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT'), false);
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT'));
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
@@ -114,7 +114,7 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const expectedReady = [
     'PRODUCT-INTEGRATION-CHECKPOINT',
-    'WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION',
+    'WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT',
   ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));

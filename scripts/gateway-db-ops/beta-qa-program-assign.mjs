@@ -40,6 +40,7 @@ if (phones.length === 0) {
 
 const prisma = new PrismaClient();
 const names = QA_PROGRAM_EXERCISES.map((exercise) => exercise.name);
+const canonicalNames = [...new Set(names)];
 
 function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -85,13 +86,13 @@ async function inspect() {
   const candidates = programOwner ? [programOwner] : users.filter((candidate) => candidate._count.programs === 0);
   const user = candidates.length === 1 ? candidates[0] : null;
   const exercises = await prisma.exercise.findMany({
-    where: {name: {in: names}},
+    where: {name: {in: canonicalNames}},
     select: {id: true, name: true},
   });
   const exerciseByName = new Map(exercises.map((exercise) => [exercise.name, exercise]));
   const issues = shapeIssues(program);
   const shapeValid = Boolean(program) && issues.length === 0;
-  const repairable = Boolean(user) && (issues.length > 0 || exercises.length !== names.length ||
+  const repairable = Boolean(user) && (issues.length > 0 || exercises.length !== canonicalNames.length ||
     !program || program.ownerId !== user.id);
 
   const report = {
@@ -145,7 +146,7 @@ try {
         },
       });
       await prisma.programExercise.deleteMany({where: {programId: program.id}});
-      const persistedExercises = await prisma.exercise.findMany({where: {name: {in: names}}, select: {id: true, name: true}});
+      const persistedExercises = await prisma.exercise.findMany({where: {name: {in: canonicalNames}}, select: {id: true, name: true}});
       const byName = new Map(persistedExercises.map((exercise) => [exercise.name, exercise]));
       await prisma.programExercise.createMany({
         data: QA_PROGRAM_EXERCISES.map((exercise, index) => ({

@@ -817,7 +817,7 @@ async function main() {
       create: exercise,
     });
   }
-  const qaExerciseNames = QA_PROGRAM_EXERCISES.map((exercise) => exercise.name);
+  const qaExerciseNames = [...new Set(QA_PROGRAM_EXERCISES.map((exercise) => exercise.name))];
   const qaExercises = await prisma.exercise.findMany({
     where: {name: {in: qaExerciseNames}},
   });

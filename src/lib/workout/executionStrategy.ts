@@ -42,10 +42,18 @@ export function movementKeyForExercise(exercise: ResolvedExercisePrescription): 
 export function resolveRuntimeExecution(
   exercise: RuntimePrescriptionExercise,
   capability: RuntimeCapabilitySnapshot,
+  setNumber = 1,
 ): RuntimeExecutionResolution {
+  const set = exercise.sets?.[setNumber - 1] ?? exercise.sets?.[0] ?? {
+    executionMode: exercise.executionMode,
+    targetReps: exercise.targetReps,
+    targetSeconds: exercise.targetSeconds,
+    restSeconds: exercise.restSeconds,
+    fallbackDurationSeconds: exercise.fallbackDurationSeconds ?? null,
+  };
   const movementKey = movementKeyForExercise(exercise);
-  const fallbackDurationSeconds = exercise.fallbackDurationSeconds ?? null;
-  if (exercise.executionMode === 'TIME_BASED') {
+  const fallbackDurationSeconds = set.fallbackDurationSeconds;
+  if (set.executionMode === 'TIME_BASED') {
     return {prescriptionMode: 'TIME_BASED', strategy: 'TIMED', fallbackDurationSeconds: null, movementKey};
   }
 

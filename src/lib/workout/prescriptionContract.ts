@@ -134,6 +134,22 @@ export function validateSharedWorkoutPrescription(
     if (item.executionMode === 'TIME_BASED' && item.fallbackDurationSeconds != null) {
       issue(issues, 'BAD_FALLBACK', `${path}.fallbackDurationSeconds`, 'TIME_BASED execution must not carry a REP fallback duration');
     }
+    if (item.sets && item.sets.length !== item.setCount) {
+      issue(issues, 'BAD_SET_COUNT', `${path}.sets`, 'resolved per-set dosage must match setCount');
+    }
+    item.sets?.forEach((set, setIndex) => {
+      const setPath = `${path}.sets[${setIndex}]`;
+      const setTarget = set.executionMode === 'REP_BASED' ? set.targetReps : set.targetSeconds;
+      if (setTarget == null || !Number.isInteger(setTarget) || setTarget < 1) {
+        issue(issues, 'BAD_TARGET', `${setPath}.target`, 'each resolved set must have a positive active target');
+      }
+      if (set.executionMode === 'REP_BASED' && item.cameraLessExecution === 'SUPPORTED' && set.fallbackDurationSeconds == null) {
+        issue(issues, 'BAD_FALLBACK', `${setPath}.fallbackDurationSeconds`, 'REP_BASED sets require an explicit fallback duration');
+      }
+      if (set.executionMode === 'TIME_BASED' && set.fallbackDurationSeconds != null) {
+        issue(issues, 'BAD_FALLBACK', `${setPath}.fallbackDurationSeconds`, 'TIME_BASED sets must not carry a REP fallback duration');
+      }
+    });
   });
   return {valid: issues.length === 0, issues};
 }

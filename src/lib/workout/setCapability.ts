@@ -12,10 +12,15 @@ interface MutableState {
 }
 
 function snapshot(prescription: ResolvedExercisePrescription, runtime: RuntimeExecutionResolution, setNumber: number, state: MutableState): SetProgress {
-  const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : prescription.targetSeconds;
+  const setPrescription = prescription.sets?.[setNumber - 1] ?? prescription.sets?.[0] ?? {
+    executionMode: prescription.executionMode,
+    targetReps: prescription.targetReps,
+    targetSeconds: prescription.targetSeconds,
+  };
+  const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : setPrescription.targetSeconds;
   return {
     status: state.status,
-    executionMode: prescription.executionMode,
+    executionMode: setPrescription.executionMode,
     runtimeStrategy: runtime.strategy,
     trackingState: state.trackingState,
     setNumber,
@@ -23,7 +28,7 @@ function snapshot(prescription: ResolvedExercisePrescription, runtime: RuntimeEx
     performedRepCount: state.performedRepCount,
     validRepCount: state.validRepCount,
     completedReps: state.performedRepCount,
-    targetReps: prescription.targetReps,
+    targetReps: setPrescription.targetReps,
     elapsedSeconds: state.elapsedSeconds,
     targetSeconds,
     remainingSeconds: targetSeconds == null ? null : Math.max(0, targetSeconds - state.elapsedSeconds),
@@ -36,7 +41,12 @@ export function createSetCapability(prescription: ResolvedExercisePrescription, 
 
   const advance = (elapsedSeconds: number): SetCapabilityTransition => {
     if (state.status === 'COMPLETE' || elapsedSeconds <= 0) return {state: view(), completed: state.status === 'COMPLETE'};
-    const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : prescription.targetSeconds;
+    const setPrescription = prescription.sets?.[setNumber - 1] ?? prescription.sets?.[0] ?? {
+      executionMode: prescription.executionMode,
+      targetReps: prescription.targetReps,
+      targetSeconds: prescription.targetSeconds,
+    };
+    const targetSeconds = runtime.strategy === 'TIMED_FALLBACK' ? runtime.fallbackDurationSeconds : setPrescription.targetSeconds;
     if (targetSeconds == null || (runtime.strategy !== 'TIMED' && runtime.strategy !== 'TIMED_FALLBACK')) return {state: view(), completed: false};
     const elapsed = Math.min(targetSeconds, state.elapsedSeconds + Math.floor(elapsedSeconds));
     const complete = elapsed >= targetSeconds;
@@ -48,7 +58,12 @@ export function createSetCapability(prescription: ResolvedExercisePrescription, 
     if (state.status === 'COMPLETE' || runtime.strategy !== 'TRACKED_REP' || evidence.kind !== 'REP_ATTEMPT') return {state: view(), completed: state.status === 'COMPLETE'};
     const performedRepCount = state.performedRepCount + 1;
     const validRepCount = evidence.quality === 'VALID' ? state.validRepCount + 1 : state.validRepCount;
-    const complete = prescription.targetReps != null && performedRepCount >= prescription.targetReps;
+    const setPrescription = prescription.sets?.[setNumber - 1] ?? prescription.sets?.[0] ?? {
+      executionMode: prescription.executionMode,
+      targetReps: prescription.targetReps,
+      targetSeconds: prescription.targetSeconds,
+    };
+    const complete = setPrescription.targetReps != null && performedRepCount >= setPrescription.targetReps;
     state = {...state, status: complete ? 'COMPLETE' : 'ACTIVE', performedRepCount, validRepCount, trackingState: 'TRACKED'};
     return {state: view(), completed: complete};
   };

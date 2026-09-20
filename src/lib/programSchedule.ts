@@ -1,7 +1,7 @@
 import {isRestDay, weekdayOf} from '@/lib/ai/restDays';
 import type { ExerciseId, ExerciseSlug } from '@/lib/exercise';
 import {exercisePassportFromAuthority, exerciseSupportsSquatMentor} from '@/lib/exercise/passport';
-import type {SessionExercise} from '@/lib/workout/sessionContracts';
+import type {SessionExercise, SessionSetPrescription} from '@/lib/workout/sessionContracts';
 
 export type PersistedScheduleExercise = {
   id?: unknown;
@@ -13,6 +13,7 @@ export type PersistedScheduleExercise = {
   duration_seconds?: unknown;
   rest_seconds?: unknown;
   fallback_duration_seconds?: unknown;
+  set_prescriptions?: unknown;
 };
 
 export type PersistedScheduleSession = {
@@ -40,6 +41,25 @@ function toReps(value: unknown): number | null {
   if (typeof value !== 'string') return null;
   const match = /^\s*(\d+)/.exec(value);
   return match ? Number(match[1]) : null;
+}
+
+function setPrescriptions(value: unknown): readonly SessionSetPrescription[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const resolved = value.flatMap((item): SessionSetPrescription[] => {
+    if (!item || typeof item !== 'object') return [];
+    const raw = item as Record<string, unknown>;
+    const mode = raw.execution_mode === 'TIME_BASED' || raw.executionMode === 'TIME_BASED' ? 'TIME_BASED' :
+      raw.execution_mode === 'REP_BASED' || raw.executionMode === 'REP_BASED' ? 'REP_BASED' : null;
+    if (!mode) return [];
+    return [{
+      executionMode: mode,
+      reps: toReps(raw.reps),
+      durationSeconds: toPositiveInt(raw.duration_seconds, 0) || null,
+      fallbackDurationSeconds: toPositiveInt(raw.fallback_duration_seconds, 0) || null,
+      restSeconds: toPositiveInt(raw.rest_seconds, 0) || null,
+    }];
+  });
+  return resolved.length === value.length ? resolved : undefined;
 }
 
 export function dashboardPlanFromSchedule(
@@ -81,6 +101,7 @@ export function workoutExercisesFromSchedule(
 }
 
 export function generatedExerciseDefaults(exercise: PersistedScheduleExercise, index: number) {
+  const resolvedSetPrescriptions = setPrescriptions(exercise.set_prescriptions);
   return {
     id: typeof exercise.id === 'string' ? exercise.id : `generated-${index}`,
     name: typeof exercise.name === 'string' && exercise.name.trim() ? exercise.name : `Exercise ${index + 1}`,
@@ -89,6 +110,7 @@ export function generatedExerciseDefaults(exercise: PersistedScheduleExercise, i
     durationSeconds: toPositiveInt(exercise.duration_seconds, 0) || null,
     restSeconds: toPositiveInt(exercise.rest_seconds, 30) || null,
     fallbackDurationSeconds: toPositiveInt(exercise.fallback_duration_seconds, 0) || null,
+    ...(resolvedSetPrescriptions ? {setPrescriptions: resolvedSetPrescriptions} : {}),
   };
 }
 

@@ -23,10 +23,11 @@
  * PURE: no React, no I/O.
  */
 
-import type {SessionExercise} from './sessionContracts';
+import type {SessionExercise, SessionSetPrescription} from './sessionContracts';
 import {
   type ExecutionMode,
   type ResolvedExercisePrescription,
+  type ResolvedSetPrescription,
   type ResolvedPrescription,
   normalizePositiveInt,
 } from './sessionV2Contracts';
@@ -45,19 +46,44 @@ export class UnresolvedPrescriptionError extends Error {
  * rep target defines `REP_BASED`. A step with neither target fails closed.
  */
 export function resolveExercisePrescription(exercise: SessionExercise): ResolvedExercisePrescription {
-  const targetSeconds = normalizePositiveInt(exercise.durationSeconds);
-  const targetReps = normalizePositiveInt(exercise.reps);
-  const executionMode: ExecutionMode = targetSeconds != null ? 'TIME_BASED' : 'REP_BASED';
-  if (targetSeconds == null && targetReps == null) throw new UnresolvedPrescriptionError(exercise.id);
   const setCount = Math.max(1, Math.floor(exercise.sets ?? 1));
+  const authoredSets = Array.isArray(exercise.setPrescriptions) && exercise.setPrescriptions.length > 0
+    ? exercise.setPrescriptions
+    : Array.from({length: setCount}, () => ({
+      executionMode: (normalizePositiveInt(exercise.durationSeconds) != null ? 'TIME_BASED' : 'REP_BASED') as ExecutionMode,
+      reps: exercise.reps,
+      durationSeconds: exercise.durationSeconds,
+      fallbackDurationSeconds: exercise.fallbackDurationSeconds,
+      restSeconds: exercise.restSeconds,
+    }));
+  const sets = authoredSets.map((set, index) => resolveSetPrescription(exercise.id, set as SessionSetPrescription, index));
+  const first = sets[0]!;
   return {
     exercise: {...exercise},
+    executionMode: first.executionMode,
+    targetReps: first.targetReps,
+    targetSeconds: first.targetSeconds,
+    setCount: sets.length,
+    restSeconds: first.restSeconds,
+    fallbackDurationSeconds: first.fallbackDurationSeconds,
+    sets,
+  };
+}
+
+function resolveSetPrescription(stepId: string, set: SessionSetPrescription, index: number): ResolvedSetPrescription {
+  const targetSeconds = normalizePositiveInt(set.durationSeconds);
+  const targetReps = normalizePositiveInt(set.reps);
+  const executionMode: ExecutionMode = set.executionMode ?? (targetSeconds != null ? 'TIME_BASED' : 'REP_BASED');
+  const resolvedTarget = executionMode === 'TIME_BASED' ? targetSeconds : targetReps;
+  if (resolvedTarget == null || (executionMode === 'REP_BASED' && targetSeconds != null) || (executionMode === 'TIME_BASED' && targetReps != null)) {
+    throw new UnresolvedPrescriptionError(`${stepId}.sets[${index}]`);
+  }
+  return {
     executionMode,
     targetReps: executionMode === 'REP_BASED' ? targetReps : null,
     targetSeconds: executionMode === 'TIME_BASED' ? targetSeconds : null,
-    setCount,
-    restSeconds: normalizePositiveInt(exercise.restSeconds),
-    fallbackDurationSeconds: normalizePositiveInt(exercise.fallbackDurationSeconds),
+    restSeconds: normalizePositiveInt(set.restSeconds),
+    fallbackDurationSeconds: normalizePositiveInt(set.fallbackDurationSeconds),
   };
 }
 

@@ -106,6 +106,16 @@ export interface ResolvedExercisePrescription {
   readonly restSeconds: number | null;
   /** Program-resolved fallback for camera-less REP_BASED execution. */
   readonly fallbackDurationSeconds?: number | null;
+  /** Resolved per-set dosage; the first slice keeps exercise-level fields for compatibility. */
+  readonly sets?: readonly ResolvedSetPrescription[];
+}
+
+export interface ResolvedSetPrescription {
+  readonly executionMode: ExecutionMode;
+  readonly targetReps: number | null;
+  readonly targetSeconds: number | null;
+  readonly restSeconds: number | null;
+  readonly fallbackDurationSeconds: number | null;
 }
 
 /** The resolved prescription the session consumes (plan §12 data flow). */

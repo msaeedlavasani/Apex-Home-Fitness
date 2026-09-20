@@ -170,7 +170,7 @@ export function createSessionOrchestrator(prescription: ResolvedPrescription, op
   const activateSet = (exerciseIndex: number, setNumber: number): OrchestrationTransition => {
     const exercise = prescription.exercises[exerciseIndex];
     if (!exercise) return {state, effects: []};
-    setCapability = createSetCapability(exercise, resolveRuntimeExecution(exercise, capability), setNumber);
+    setCapability = createSetCapability(exercise, resolveRuntimeExecution(exercise, capability, setNumber), setNumber);
     restCapability = null;
     const next: OrchestrationState = {
       ...state,
