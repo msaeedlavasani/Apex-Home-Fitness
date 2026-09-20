@@ -528,7 +528,10 @@ test.describe('Workout V2 — EXERCISE_INTRO state (owner polish delta §C)', ()
   });
 
   test('canonical journey crosses INTRO → SET through the execution engine', async ({page}) => {
-    await reachIntro(page);
+    await page.goto('/en/workout/v2?day=monday');
+    const start = page.getByRole('button', {name: 'Start Workout', exact: true});
+    await expect(start).toBeVisible();
+    await start.tap();
     await expect(page.locator('[data-workout-v2-workset-stage]')).toBeVisible({timeout: 30_000});
     await expect(page.locator('[data-workout-v2-record-rep]')).toBeVisible();
     await expect(page.locator('[data-workout-v2-set-progress]')).toBeVisible();
