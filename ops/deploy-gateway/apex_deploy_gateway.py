@@ -1017,8 +1017,11 @@ def _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, le
 
 
 def _repository_production_authority(proof, rollback_path, rollback_ref):
-    ledger = github_text("docs/PRODUCTION_CHECKPOINTS.md", proof["source_sha"])
-    return _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, ledger)
+    ledger_ref = remote_main()
+    ledger = github_text("docs/PRODUCTION_CHECKPOINTS.md", ledger_ref)
+    evidence = _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, ledger)
+    evidence["ledger_ref"] = ledger_ref
+    return evidence
 
 
 def _authority_from_state(environment, compose_path, app_prefix):
