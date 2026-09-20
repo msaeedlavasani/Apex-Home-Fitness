@@ -71,6 +71,7 @@ test('storage hygiene is a bounded gateway action with five fail-closed classes'
   assert.match(source, /_disk_admission\("beta-release"\)/);
   assert.match(source, /Beta schema migration preflight produced no schema change/);
   assert.match(source, /"db_changed": db_change/);
+  assert.match(source, /ahf-beta-migrate/);
 });
 
 test('Beta QA operation uses canonical phone normalization and canonical data only', () => {
