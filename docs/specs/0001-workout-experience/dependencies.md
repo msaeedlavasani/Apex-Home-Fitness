@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `EXECUTION STRATEGY COMPLETENESS RECOVERY ACTIVE — historical checkpoint evidence preserved, downstream release authority blocked until reachability is proven` |
+| STATUS | `CANONICAL WORK RECONCILIATION ACTIVE — historical checkpoint evidence preserved; successor generic-entry, capability-readiness, QA-oracle, and deployed-evidence work is DAG-governed before RUN-5` |
 | SPEC | [`spec.md`](./spec.md) · PLAN: [`plan.md`](./plan.md) · WORK PACKAGES: [`tasks.md`](./tasks.md) |
 | Date | 2026-09-15 · Baseline: fresh main `897e376` |
 | IMPLEMENTATION | **AUTHORIZED by parent admission; WP-06/WP-07 Run 1 CLOSED/FROZEN** |
@@ -60,9 +60,15 @@ WP-11 Convergence & release path — (hard) depends on all implementing WPs and 
     {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","dependsOn":["WP-17"],"kind":"HUMAN_GATE","readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"ownerDecisionRequired":false,"ownerVisualGate":false,"gateScope":"SKIP_ALL_COMPLETION_SEMANTICS","verification":"PASS","providesCapabilities":["V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1"]},
     {"id":"WP-20","dependsOn":["WP-17","SKIP-ALL-COMPLETION-SEMANTICS-DECISION"],"kind":"WORK_PACKAGE","workstream":"SKIP_ALL_TERMINAL_NON_CREDIT_OUTCOME","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-20.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_LIFECYCLE_PRESENTATION_BINDING_V1","provider":"WP-17"},{"id":"V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1","provider":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION"}],"providesCapabilities":["V2_SKIP_ALL_TERMINAL_NON_CREDIT_V1"]},
     {"id":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","dependsOn":["WP-13","WP-15","WP-18"],"kind":"WORK_PACKAGE","workstream":"EXECUTION_STRATEGY_COMPLETENESS_RECOVERY","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":false,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json","requiresHistoricalReconciliation":["WP-03","WP-06","WP-09","WP-15","WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"providesCapabilities":["V2_EXECUTION_STRATEGY_BOUNDARY_V1","V2_PRE_WORKOUT_CAPABILITY_GATE_V1","V2_NORMALIZED_MOVEMENT_EVIDENCE_V1","V2_SESSION_MENTOR_LIFECYCLE_V1"],"verification":"PASS"},
-    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","WP-20","SKIP-ALL-COMPLETION-SEMANTICS-DECISION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","knownGoodSha":"87809f169a3d67d2f415dbc1e89583287344647c"},
-    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
-    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","WP-20","SKIP-ALL-COMPLETION-SEMANTICS-DECISION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","knownGoodSha":"87809f169a3d67d2f415dbc1e89583287344647c"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","dependsOn":["WP-13","WP-15","WP-18","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"WORK_PACKAGE","workstream":"CANONICAL_ENTRY_PASSPORT_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION.admission.json","providesCapabilities":["V2_CANONICAL_ENTRY_PASSPORT_RESOLUTION_V1"]},
+    {"id":"WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","dependsOn":["WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","WP-15"],"kind":"WORK_PACKAGE","workstream":"CAPABILITY_READINESS_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION.admission.json","providesCapabilities":["V2_TRACKING_CAPABILITY_READINESS_V1"]},
+    {"id":"WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","dependsOn":["WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","WP-16","WP-19"],"kind":"WORK_PACKAGE","workstream":"QA_FIXTURE_DERIVED_ORACLE_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"STANDARD","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION.admission.json","requiresCapabilities":[{"id":"V2_CANONICAL_ENTRY_PASSPORT_RESOLUTION_V1","provider":"WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION"}],"providesCapabilities":["V2_DERIVED_QA_ORACLE_V1"]},
+    {"id":"WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION","dependsOn":["WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"WORK_PACKAGE","workstream":"EVIDENCE_AND_DEPLOYED_JOURNEY_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"PLANNED","frozen":false,"admissionRequired":true,"taskProfile":"CRITICAL","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION.admission.json","requiresCapabilities":[{"id":"V2_DERIVED_QA_ORACLE_V1","provider":"WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION"}],"providesCapabilities":["V2_STRICT_EVIDENCE_PROVENANCE_V1","V2_DEPLOYED_AUTHENTICATED_JOURNEY_PROOF_V1"]},
+    {"id":"WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","dependsOn":["WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CANONICAL-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CANONICAL-INTEGRATION-01.json","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","ownerVisualGate":false,"admissionRequired":false,"verification":"PENDING"},
+    {"id":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01.json","status":"PLANNED","frozen":false,"readinessRule":"DAG_DERIVED","deploymentScope":"BETA_ONLY","ownerVisualGate":false,"admissionRequired":false,"verification":"PENDING","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
   ]
 }
 ```
@@ -125,6 +131,36 @@ execution-strategy recovery ───────────────► cor
 corrected integration checkpoint ──────────► corrected Beta deployment
 corrected Beta deployment ─────────────────► RUN-5 Human Gate
 ```
+
+### 2.4 Canonical work reconciliation (Owner-authorized 2026-09-20)
+
+The QA-contract forensic audit and clarified Owner decisions expose a second
+boundary correction after execution-strategy recovery. Historical `WP-18`,
+`WP-19`, integration, and Beta PASS receipts remain CLOSED/FROZEN evidence for
+their admitted scopes; they are not rewritten or reopened. Their claims are
+insufficient for the clarified generic Entry/Passport identity, repeated
+canonical-Exercise obligations, derived QA oracle, capability readiness, and
+strict evidence-provenance requirements.
+
+The successor graph is:
+
+```text
+WP-13 + WP-15 + WP-18 + execution recovery
+  └─► canonical Entry/Passport resolution ─┐
+                                           ├─► derived QA fixture/oracle ─┐
+execution recovery + WP-15 ─► capability readiness ──────────────────────┤
+execution recovery + capability readiness ─► evidence/deployed journey ──┤
+                                                                         └─► canonical integration checkpoint
+BETA-DEPLOYMENT-CAPABILITY + canonical integration ─► canonical Beta checkpoint
+canonical Beta checkpoint ─► RUN-5 complete-flow Owner gate
+```
+
+The two independent DAG-derived candidates after this reconciliation are the
+canonical Entry/Passport reconciliation and the capability-readiness
+reconciliation. The QA fixture/oracle, evidence, integration, Beta, and RUN-5
+nodes remain blocked until their declared providers are verified. This is
+architectural dependency ordering, not the conversational order of the Owner
+clarifications.
 
 Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required
 child admissions, task-scoped verification, and report validation. The

@@ -95,6 +95,25 @@ remain deferred by the canonical contract; an unrecoverable transition must
 receive an explicit remaining-time value and may not invent one. The QA
 fixture and arbitrary-N orchestration contract are unchanged.
 
+### 5.3 Canonical work reconciliation (2026-09-20)
+
+The current implementation contains an Exercise Passport adapter and a
+Program-to-Workout identity propagation seam, but the accepted QA contract now
+requires an explicit generic boundary: Program/Prescription Entry → canonical
+Exercise identity → Exercise Passport → resolved prescribed Entry → Session
+Orchestrator. A plan-position/Entry key remains distinct from the canonical
+Exercise identity, so repeated Bodyweight Squat Entries are valid distinct
+obligations. The current broad Squat-family token matcher is not sufficient as
+canonical identity proof.
+
+The current QA fixture and fixed-count assertions are therefore historical
+correction evidence, not the final canonical QA input. Successor DAG work must
+reconcile the explicit Bodyweight Squat two-Entry fixture and derive its
+2-INTRO/4-SET/4-SET_RESULT/3-REST oracle from resolved data. It must also
+separate simulated normalized-sensor reachability from real camera, pose,
+calibration, rep-detection, and device evidence. RUN-5 remains downstream of
+the resulting integration and deployed-authenticated-flow checkpoints.
+
 ## 4. Prescription contract
 
 - `EXERCISE_IDENTITY != WORKOUT_PRESCRIPTION`: identity says *what movement*; the prescription says *how it is prescribed here*.

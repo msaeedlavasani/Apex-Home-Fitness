@@ -1,0 +1,23 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01",
+  "CHECKPOINT_KIND": "DEPLOYMENT",
+  "STATUS": "PENDING",
+  "KNOWN_GOOD_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "VERIFIED_SOURCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "CHECKPOINT_EVIDENCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PENDING",
+    "COMMIT_SHA": "e91830fec818b610da0745d80694678b7826e630",
+    "RUN_ID": "PENDING",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"beta-deployment","COMMAND":"pending canonical integration checkpoint and governed Beta release","STATUS":"PENDING","SUMMARY":"The clarified source, authenticated complete journey, rollback, and storage-hygiene evidence are not yet verified."}
+  ],
+  "WORKTREE_CLEAN": "PENDING",
+  "LOCAL_REMOTE_PARITY": "PENDING",
+  "DEPLOYMENT_AUTHORIZED": "YES",
+  "DEPLOYMENT_IDENTITY": {"STATUS":"PENDING","DEPLOYED_SHA":"PENDING"}
+}

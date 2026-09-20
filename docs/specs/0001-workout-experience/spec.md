@@ -74,6 +74,14 @@ This illustration must not imply exactly 3 sets, mandatory REST after every set,
 
 **CONFIRMED — authority boundaries.** Program/Prescription owns *what is prescribed*. The Workout Session Orchestrator owns *where the session is and what comes next*. The Execution Engine owns *how the current Set executes*. The Pose/Skeleton Harness supplies physical movement evidence. Presentation modules render resolved state and do not own global sequencing.
 
+**CONFIRMED — prescribed Entry versus canonical Exercise identity.** A
+prescribed Exercise Entry is a distinct session obligation identified by its
+plan position/entry key. Multiple prescribed Entries may reference the same
+canonical Exercise identity. Exercise Passport owns stable exercise knowledge;
+Program/Prescription owns the Entry's order, set count, mode, targets,
+fallback duration, and rest context. Workout consumes the resolved Entry and
+must not infer QA topology or exercise-specific behavior.
+
 **CONFIRMED — program-driven composition.** Workout Experience V2 is the current product implementation. It consumes a resolved Workout Program through the reusable shared contract; it is not a manually authored sequence of screens, Sets, Rests, or exercise-specific routes. The Orchestrator derives runtime topology from the resolved Program and reuses the same `INTRO`, `SET`, `SET_RESULT`, and `REST` capabilities for every Exercise and Set. Changing only resolved program/prescription data must be capable of changing the executed topology without adding capability or exercise-number-specific flow components.
 
 **CONFIRMED — asymmetric validation fixture.** Product integration must validate with a small persisted QA Program containing multiple Exercises, asymmetric Set counts, both `REP_BASED` and `TIME_BASED` prescriptions, and applicable between-set/between-exercise rest. A second program-only variant must be able to change topology without changing presentation components. These are validation inputs, not architectural constants; exercise identity, order, mode, targets, duration, fallback duration and Set counts remain resolved from the Program/Prescription.
@@ -102,9 +110,14 @@ authority, not a duplicate Exercise store. Program/Prescription still owns
 exercise order and dosage; Workout consumes the Passport and resolved
 prescription.
 
-**CONFIRMED — controlled QA fixture.** The next visual-validation input is
-exactly two ordered entries, both resolving through the supported Squat Mentor
-path. This is fixture data only and does not constrain arbitrary-N Programs or
+**CONFIRMED — controlled QA fixture.** The RUN-5 validation input is exactly
+two distinct ordered prescribed Exercise Entries, both referencing the
+canonical Bodyweight Squat Exercise. Each Entry contains Set 1
+`REP_BASED`/8 performed reps/45-second fallback and Set 2
+`TIME_BASED`/30 seconds. The expected QA path is derived from this resolved
+fixture: 2 INTRO, 4 SET, 4 SET_RESULT, 3 REST transitions (2 between sets and
+1 between exercises), and no terminal REST. This is fixture data only and does
+not constrain arbitrary-N Programs, repeated canonical Exercise identities, or
 independently resolved set counts/modes.
 
 **RESOLVED OWNER DECISION — skip-all outcome credit.** When every required

@@ -1,0 +1,22 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-CANONICAL-INTEGRATION-01",
+  "CHECKPOINT_KIND": "INTEGRATION",
+  "STATUS": "PENDING",
+  "KNOWN_GOOD_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "VERIFIED_SOURCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "CHECKPOINT_EVIDENCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PENDING",
+    "COMMIT_SHA": "e91830fec818b610da0745d80694678b7826e630",
+    "RUN_ID": "PENDING",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"canonical-reconciliation","COMMAND":"pending implementation and authoritative CI","STATUS":"PENDING","SUMMARY":"Generic Entry/Passport resolution, derived QA oracle, capability readiness, and strict evidence provenance are not yet verified."}
+  ],
+  "WORKTREE_CLEAN": "PENDING",
+  "LOCAL_REMOTE_PARITY": "PENDING",
+  "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE"
+}

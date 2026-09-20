@@ -371,6 +371,106 @@ the DAG and remain subject to the existing admission and checkpoint contracts.
   Production deployment or database mutation, schema push, gateway bypass,
   PR #72 merge, raw-frame orchestration authority, or legacy player reuse.
 
+## Canonical work reconciliation — Owner-authorized 2026-09-20
+
+The following successor packages reconcile newly clarified authority without
+reopening historical CLOSED/FROZEN packages or rewriting their receipts. They
+are selected by the DAG, not by conversational ordering.
+
+### WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION — generic prescribed Entry authority *(CRITICAL; code/no-deploy)*
+
+- **Purpose:** establish and machine-verify the actual generic chain
+  `Program/Prescription Entry → canonical Exercise identity → Exercise Passport → resolved Workout Exercise Entry → Session Orchestrator`.
+- **Dependencies:** WP-13, WP-15, WP-18, and
+  `WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY`.
+- **Required boundary:** a prescribed Entry/plan-position key is distinct from
+  canonical `Exercise.id`/slug; repeated references to one canonical Exercise
+  remain distinct obligations. Program/Prescription owns dosage/context;
+  Passport owns stable exercise knowledge and capability references.
+- **Required evidence:** exact canonical identity resolution, Passport
+  resolution from existing Exercise authority, no broad token/name matcher as
+  canonical identity proof, arbitrary-N preservation, and runtime consumers
+  using resolved Entries rather than QA names or positions.
+- **Prohibited scope:** duplicate Exercise storage, fixed QA topology, moving
+  dosage into Passport, new runtime strategy, Production mutation, schema push,
+  or reopening WP-18's historical receipt.
+
+### WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION — canonical QA input and derived acceptance *(STANDARD; data/test/no-deploy)*
+
+- **Purpose:** reconcile the RUN-5 QA input to two distinct prescribed Entries
+  both referencing canonical Bodyweight Squat, with two Sets per Entry:
+  `REP_BASED`/8/fallback 45 seconds followed by `TIME_BASED`/30 seconds.
+- **Dependencies:** `WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION`,
+  WP-16, and WP-19 as preserved historical fixture evidence.
+- **Required evidence:** fixture data remains outside generic runtime; the
+  machine oracle derives 2 INTRO, 4 SET, 4 SET_RESULT, 2 between-set REST and
+  1 between-exercise REST from the resolved fixture; no terminal REST; the
+  repeated canonical Exercise identity still yields two Intro obligations.
+- **Prohibited scope:** hardcoded counts in Workout/presentation, fixture
+  identity shortcuts, Jump Squats as canonical Bodyweight Squat evidence,
+  architecture narrowing, Production data, or changing the general Program
+  contract.
+
+### WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION — pre-workout readiness boundary *(CRITICAL; code/no-deploy)*
+
+- **Purpose:** reconcile the gate's actual readiness semantics so Camera
+  permission alone cannot produce `TRACKING_CAPABLE`.
+- **Dependencies:** `WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY`,
+  WP-15, and the existing CP-04/CP-05 camera boundary evidence.
+- **Required boundary:** `permission → Pose/Skeleton Harness initialization →
+  Skeleton Calibration → READY/TRACKING_CAPABLE → START`; declined,
+  unavailable, or failed calibration resolves `NO_TRACKING` before START.
+- **Required evidence:** real gate state distinguishes permission, harness,
+  calibration, and tracking capability; `TRACKED_REP`, `TIMED_FALLBACK`, and
+  `TIMED` remain generic; normalized evidence is the SET input; no raw-frame
+  orchestration authority; tracking-loss policy remains unresolved where the
+  canonical contract says it is unresolved.
+- **Prohibited scope:** inventing thresholds, MANUAL_REP, camera provider lock-in,
+  QA identity logic, Production mutation, or real-device acceptance claims from
+  simulated evidence.
+
+### WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION — claim-scope and authenticated flow *(CRITICAL; governance/evidence/no-deploy)*
+
+- **Purpose:** correct checkpoint evidence scope and define the minimum proof
+  required before a deployed Beta claim can support RUN-5.
+- **Dependencies:** `WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION`,
+  `WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION`, and the historical corrected
+  integration/Beta receipts.
+- **Required evidence taxonomy:** STATIC, UNIT, INTEGRATION,
+  SIMULATED_SENSOR, REAL_CAMERA, REAL_POSE_RUNTIME, REAL_CALIBRATION,
+  REAL_DEVICE, and DEPLOYED_BETA_RUNTIME must remain distinct. Source identity
+  and simulated normalized evidence cannot be recorded as a complete deployed
+  authenticated workout.
+- **Required journey proof:** normal authenticated Dashboard → Program →
+  Workout path against the deployed Beta, with exact source identity, derived
+  fixture oracle, result/exit persistence, and explicit separation of machine
+  reachability from real-device Owner acceptance.
+- **Prohibited scope:** deployment, Production mutation, PR #72 merge, gateway
+  bypass, or changing product behavior merely to satisfy evidence.
+
+### WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT — post-reconciliation machine gate
+
+- **Dependencies:** `WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION`,
+  `WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION`,
+  `WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION`, and
+  `WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION`.
+- **Scope:** authoritative CI, generic Entry/Passport resolution, derived QA
+  oracle, SET_RESULT/REST/INTRO routing, capability readiness, arbitrary-N
+  behavior, Mentor lifecycle/presentation claims, and evidence taxonomy.
+- **Rule:** historical PASS receipts remain preserved; this checkpoint creates
+  the new known-good source authority for the clarified contract.
+
+### WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT — post-reconciliation Beta gate
+
+- **Dependencies:** `WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT` and
+  `BETA-DEPLOYMENT-CAPABILITY`.
+- **Scope:** exact CI-verified source through gateway v5, Beta build identity,
+  authenticated normal product journey, derived fixture oracle, rollback,
+  storage hygiene, and Production non-interference. No Production deployment
+  or database mutation.
+- **Rule:** PASS is required before RUN-5. It does not itself close Owner
+  visual/device acceptance.
+
 ### WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT — complete corrected-flow machine gate
 
 - **Dependencies:** WP-17, WP-18, WP-19, WP-20, SKIP-ALL-COMPLETION-SEMANTICS-DECISION.

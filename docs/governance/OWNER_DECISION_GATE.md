@@ -93,6 +93,44 @@
   determines them; implementation must fail closed rather than invent values.
 - **Canonical package:** [`../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json`](../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json) and the recovery node in [`../specs/0001-workout-experience/dependencies.md`](../specs/0001-workout-experience/dependencies.md).
 
+### WORKOUT-V2-CANONICAL-WORK-RECONCILIATION-01 — generic entry, QA, capability, and evidence boundaries (2026-09-20)
+
+- **Owner clarification:** Workout Experience remains generic and
+  Program/Prescription-driven. It must consume resolved prescribed Exercise
+  Entries and must not know QA cardinality, exercise names, ordering, or the
+  current fixture's modes.
+- **Binding identity rule:** a prescribed Exercise Entry is a distinct session
+  obligation identified by its plan position/entry key. Multiple entries may
+  reference the same canonical Exercise identity. Exercise Passport owns stable
+  exercise knowledge; Program/Prescription owns today's dosage and context.
+- **Canonical QA input:** the RUN-5 fixture is two distinct prescribed entries,
+  both referencing canonical Bodyweight Squat. Each entry has two Sets: Set 1
+  `REP_BASED` / 8 performed reps / 45-second fallback, and Set 2 `TIME_BASED`
+  / 30 seconds. This is validation data only.
+- **Derived oracle:** the fixture's expected happy path is derived from the
+  resolved input: 2 INTRO, 4 SET, 4 SET_RESULT, and 3 REST transitions (2
+  between sets and 1 between exercises), with no terminal REST. These counts
+  must not enter generic runtime or presentation code.
+- **Capability boundary:** Camera permission is not tracking readiness. The
+  camera-enabled path requires permission, Pose/Skeleton Harness initialization,
+  Skeleton Calibration, and `TRACKING_CAPABLE` before `START`; otherwise the
+  resolved capability is `NO_TRACKING` before `START`.
+- **Evidence boundary:** simulated normalized sensing proves orchestration
+  reachability only. It does not prove a real camera, pose runtime,
+  calibration, rep detection, or real-device acceptance. Deployed source
+  identity does not prove a complete authenticated deployed workout.
+- **Canonical work:** successor reconciliation packages and their integration
+  and Beta checkpoint nodes are recorded in the Workout V2 DAG. Historical PASS
+  receipts remain preserved evidence and are not rewritten.
+- **Authorized successor packages:**
+  `WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION`,
+  `WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION`,
+  `WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION`, and
+  `WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION` are authorized
+  within the existing Spec Kit, admission, and DAG authorities. Their order is
+  repository-derived; no implementation is authorized outside their declared
+  scopes.
+
 ### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved Owner product decision (2026-09-20)
 
 - **Decision:** When every required Exercise obligation reaches

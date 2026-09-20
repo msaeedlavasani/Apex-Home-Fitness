@@ -1,0 +1,19 @@
+{
+  "TASK_ID": "WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION",
+  "TASK_CLASS": "STANDARD",
+  "SCOPE_SUMMARY": "Reconcile the RUN-5 QA fixture to two Bodyweight Squat prescribed Entries and derive its machine oracle from resolved data without adding QA facts to generic Workout runtime.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "EVOLVED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/TASKS.md",
+  "ARCHITECTURE_PLAN_REQUIRED": "YES",
+  "ARCHITECTURE_PLAN_PATH": "docs/specs/0001-workout-experience/plan.md",
+  "ARCHITECTURE_PLAN_STATUS": "READY",
+  "WORK_PACKAGES_PATH": "docs/specs/0001-workout-experience/tasks.md",
+  "WORK_PACKAGES_STATUS": "READY",
+  "DEPENDENCY_ANALYSIS_PATH": "docs/specs/0001-workout-experience/dependencies.md",
+  "DEPENDENCY_ANALYSIS_STATUS": "READY"
+}

@@ -27,35 +27,23 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const output = run('workout-v2-ready');
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
   const state = readTaggedJson(path.join(root, 'docs/TASKS.md'), 'WORKOUT_V2_AUTONOMOUS_STATE').value;
-  const betaCapabilityClosed = state.items.find((item) => item.id === 'BETA-DEPLOYMENT-CAPABILITY')?.status === 'CLOSED';
-  const checkpointPass = result.checkpointGates[0]?.status === 'PASS';
-  const productCheckpointPass = result.checkpointGates.find((gate) => gate.id === 'PRODUCT-INTEGRATION-CHECKPOINT')?.status === 'PASS';
-  const correctionReady = state.items
-    .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
-    .map((item) => item.id);
-  const correctionCheckpointReady = correctionReady.length === 0
-    ? state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
-      ? ['WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT']
-      : state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT')?.status !== 'CLOSED'
-        ? ['WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT']
-        : []
-    : [];
-  const legacyReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
-  const expectedReady = [...legacyReady, ...correctionReady, ...correctionCheckpointReady];
+  const expectedReady = [
+    'WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION',
+    'WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION',
+  ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), expectedReady.map(() => 'READY_DERIVED'));
   assert.deepEqual(result.nextAdmissionCandidates, result.readyTasks.filter((task) => task.admissionRequired).map((task) => task.id));
   assert.equal(result.ownerPromptRequiredToSelectNextTask, 'NO');
   assert.equal(result.selectionOnly, true);
-  assert.equal(result.checkpointGates[0]?.status, checkpointPass ? 'PASS' : 'UNSATISFIED');
+  assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
   assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('COMPLETE_FLOW_OWNER_GATE'));
   assert.equal(blocked.has('BETA-DEPLOYMENT-AUTHORIZATION'), false, 'accepted Beta authorization is not a remaining scheduling gate');
   assert.equal(blocked.has('BETA-DEPLOYMENT-CAPABILITY'), false, 'authorized Beta capability is derived READY when product prerequisites pass');
-  if (!betaCapabilityClosed) {
-    assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
-    assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
-  }
+  assert.ok(blocked.get('WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION')?.includes('DEPENDENCIES_UNSATISFIED=WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION'));
+  assert.ok(blocked.get('WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION,WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION,WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION,WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION'));
+  assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT'));
   assert.equal(blocked.has('RUN-4-PROGRAM-COMPOSITION'), false, 'former Run labels do not stop selection');
 });
 function baseCheckpoint(overrides = {}) {
@@ -125,15 +113,11 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const dagFile = tempText(replaceTaggedJson(dagSource.content, 'WORKOUT_V2_AUTONOMOUS_DAG', dag));
   const output = runWithEnv(['workout-v2-ready'], {WORKOUT_V2_STATE_FILE: stateFile, WORKOUT_V2_DAG_FILE: dagFile});
   const result = JSON.parse(output.replace(/\nGOVERNANCE_PASS\s*$/, ''));
-  const expectedCorrectionReady = state.items
-    .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
-    .map((item) => item.id);
-  const expectedDownstreamCorrection = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
-    ? 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT'
-    : 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT';
-  const correctionCheckpointState = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT');
-  const expectedReady = ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady,
-    ...(correctionCheckpointState?.status === 'CLOSED' ? [] : [expectedDownstreamCorrection])];
+  const expectedReady = [
+    'PRODUCT-INTEGRATION-CHECKPOINT',
+    'WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION',
+    'WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION',
+  ];
   assert.deepEqual(result.readyTasks.map((task) => task.id), expectedReady);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
@@ -143,7 +127,7 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   if (!betaCapabilityWasClosed) {
     assert.ok(blocked.get('BETA-DEPLOYMENT-CAPABILITY')?.includes('CHECKPOINT_UNSATISFIED=PRODUCT-INTEGRATION-CHECKPOINT'));
     assert.ok(blocked.get('BETA-DEPLOYMENT-CHECKPOINT')?.includes('DEPENDENCIES_UNSATISFIED=BETA-DEPLOYMENT-CAPABILITY'));
-    assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=BETA-DEPLOYMENT-CHECKPOINT'));
+    assert.ok(blocked.get('RUN-5-OWNER-ACCEPTANCE')?.includes('CHECKPOINT_UNSATISFIED=WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT'));
   }
 });
 test('WP-08 cannot become READY when its provider is closed but the capability is absent', () => {
