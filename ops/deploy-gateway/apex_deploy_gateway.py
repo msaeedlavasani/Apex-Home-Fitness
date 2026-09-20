@@ -1200,6 +1200,10 @@ def _recognized_owner_tag(owner, tag):
     return False
 
 
+def _is_transaction_tag(tag):
+    return ":migrate-" in tag or ":dbop-" in tag or ":beta-migrate-" in tag or tag.startswith("ahf-beta-migrate:")
+
+
 def _lock_state():
     if not OP_LOCK.exists():
         return "ABSENT"
@@ -1307,7 +1311,14 @@ def _disk_admission(operation):
     policy = audit_result["policy"]
     images = [item for item in audit_result["artifacts"] if item["kind"] == "image"]
     app_sizes = [item["size_bytes"] for item in images if any(tag.startswith(("apex-home-fit:release-", "ahf-home-fit:beta-")) and "migrate-" not in tag for tag in item.get("tags", []))]
-    transaction_sizes = [item["size_bytes"] for item in images if any(":migrate-" in tag or ":dbop-" in tag for tag in item.get("tags", []))]
+    transaction_sizes = [item["size_bytes"] for item in images if any(_is_transaction_tag(tag) for tag in item.get("tags", []))]
+    calibration = policy.get("calibration") or {}
+    calibrated_app = calibration.get("largest_observed_app_image_bytes")
+    calibrated_transaction = calibration.get("largest_observed_transaction_image_bytes")
+    if not app_sizes and isinstance(calibrated_app, int) and calibrated_app > 0:
+        app_sizes = [calibrated_app]
+    if not transaction_sizes and isinstance(calibrated_transaction, int) and calibrated_transaction > 0:
+        transaction_sizes = [calibrated_transaction]
     if not app_sizes or not transaction_sizes:
         raise GateError(f"disk admission blocked for {operation}: candidate size evidence is incomplete")
     retained_ids = {item["identity"] for item in images if item["class"] in ("RETAIN_CURRENT", "RETAIN_ROLLBACK")}
@@ -1701,6 +1712,7 @@ def self_test():
     check("storage hygiene invalid mode rejected", lambda: invalid({"action": "storage-hygiene", "schema_version": 1, "mode": "delete-all"}))
     check("storage recognizes only governed Production tags", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("production", "apex-home-fit:migrate-a") or _recognized_owner_tag("production", "apex-home-fit:latest") else None)
     check("storage recognizes Beta migration namespaces", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("beta", "ahf-home-fit:beta-migrate-a") or not _artifact_owner(["ahf-beta-migrate"]) else None)
+    check("storage recognizes Beta migration transaction size", lambda: (_ for _ in ()).throw(AssertionError()) if not _is_transaction_tag("ahf-home-fit:beta-migrate-a") else None)
     check("storage has exactly five operational classes", lambda: (_ for _ in ()).throw(AssertionError()) if set(STORAGE_CLASSES) != {"RETAIN_CURRENT", "RETAIN_ROLLBACK", "RETAIN_ACTIVE_TRANSACTION", "SAFE_TO_DELETE", "AMBIGUOUS_DO_NOT_DELETE"} else None)
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)

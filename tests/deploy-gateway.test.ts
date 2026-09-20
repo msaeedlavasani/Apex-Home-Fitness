@@ -73,6 +73,7 @@ test('storage hygiene is a bounded gateway action with five fail-closed classes'
   assert.match(source, /Beta schema migration preflight produced no schema change/);
   assert.match(source, /"db_changed": db_change/);
   assert.match(source, /ahf-beta-migrate/);
+  assert.match(source, /largest_observed_transaction_image_bytes/);
   assert.match(source, /repository-production-checkpoint-ledger/);
   assert.match(source, /required_environment/);
   assert.match(source, /AMBIGUOUS_DO_NOT_DELETE.*RETAIN_ACTIVE_TRANSACTION/);
