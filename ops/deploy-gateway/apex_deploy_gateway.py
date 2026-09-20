@@ -990,9 +990,9 @@ def _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, le
     _, current_body = current_section
     if not re.search(r"(?im)^-\s+\*\*Status:\*\*\s+PASS\b", current_body):
         raise GateError("repository Production current checkpoint is not PASS")
-    if not re.search(rf"(?m)^-\s+\*\*Source:\*\*\s+{re.escape(source_sha)}\b", current_body):
+    if not re.search(rf"(?m)^-\s+\*\*Source:\*\*\s+`?{re.escape(source_sha)}(?:`|\s|$)", current_body):
         raise GateError("repository Production source evidence does not match release proof")
-    if not re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+{re.escape(current_image)}(?:\s|\(|$)", current_body):
+    if not re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+`?{re.escape(current_image)}(?:`|\s|\(|$)", current_body):
         raise GateError("repository Production image evidence does not match runtime proof")
     if rollback_path.name not in current_body:
         raise GateError("repository Production rollback snapshot is not named by current checkpoint")
@@ -1000,7 +1000,7 @@ def _parse_production_checkpoint_evidence(proof, rollback_path, rollback_ref, le
     for heading, body in sections:
         if _checkpoint_key(heading) == _checkpoint_key(release_id):
             continue
-        if re.search(r"(?im)^-\s+\*\*Status:\*\*\s+PASS\b", body) and re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+{re.escape(rollback_ref)}(?:\s|\(|$)", body):
+        if re.search(r"(?im)^-\s+\*\*Status:\*\*\s+PASS\b", body) and re.search(rf"(?m)^-\s+\*\*Image:\*\*\s+`?{re.escape(rollback_ref)}(?:`|\s|\(|$)", body):
             rollback_checkpoint = heading.strip()
             break
     if not rollback_checkpoint:
