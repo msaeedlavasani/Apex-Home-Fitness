@@ -33,9 +33,12 @@ test('Workout V2 ready-work selection is repository-driven and selection-only', 
   const correctionReady = state.items
     .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
     .map((item) => item.id);
-  const correctionCheckpointReady = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
-    && correctionReady.length === 0
-    ? ['WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT']
+  const correctionCheckpointReady = correctionReady.length === 0
+    ? state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
+      ? ['WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT']
+      : state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT')?.status !== 'CLOSED'
+        ? ['WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT']
+        : []
     : [];
   const legacyReady = betaCapabilityClosed ? [] : productCheckpointPass ? ['BETA-DEPLOYMENT-CAPABILITY'] : checkpointPass ? ['PRODUCT-INTEGRATION-CHECKPOINT'] : ['INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW'];
   const expectedReady = [...legacyReady, ...correctionReady, ...correctionCheckpointReady];
@@ -125,7 +128,10 @@ test('checkpoint completion recalculates readiness and leaves the Human Gate dow
   const expectedCorrectionReady = state.items
     .filter((item) => ['WP-17', 'WP-18', 'WP-20'].includes(item.id) && item.status !== 'CLOSED')
     .map((item) => item.id);
-  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady, 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT']);
+  const expectedDownstreamCorrection = state.items.find((item) => item.id === 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT')?.status !== 'CLOSED'
+    ? 'WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT'
+    : 'WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT';
+  assert.deepEqual(result.readyTasks.map((task) => task.id), ['PRODUCT-INTEGRATION-CHECKPOINT', ...expectedCorrectionReady, expectedDownstreamCorrection]);
   assert.deepEqual(result.readyTasks.map((task) => task.eligibility), result.readyTasks.map(() => 'READY_DERIVED'));
   assert.equal(result.checkpointGates[0]?.status, 'PASS');
   const blocked = new Map(result.blockedWork.map((item) => [item.id, item.blockers]));
