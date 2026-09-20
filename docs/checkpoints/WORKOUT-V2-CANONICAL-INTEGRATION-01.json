@@ -1,20 +1,33 @@
 {
   "CHECKPOINT_ID": "WORKOUT-V2-CANONICAL-INTEGRATION-01",
   "CHECKPOINT_KIND": "INTEGRATION",
-  "STATUS": "PENDING",
-  "KNOWN_GOOD_SHA": "e91830fec818b610da0745d80694678b7826e630",
-  "VERIFIED_SOURCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
-  "CHECKPOINT_EVIDENCE_SHA": "e91830fec818b610da0745d80694678b7826e630",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
+  "VERIFIED_SOURCE_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
+  "CHECKPOINT_EVIDENCE_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
   "AUTHORITATIVE_CI": {
     "PROVIDER": "GITHUB_ACTIONS",
     "WORKFLOW": "CI",
-    "STATUS": "PENDING",
-    "COMMIT_SHA": "e91830fec818b610da0745d80694678b7826e630",
-    "RUN_ID": "PENDING",
-    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions"
+    "STATUS": "PASS",
+    "COMMIT_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
+    "RUN_ID": "35533061529",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533061529",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
+    "BRANCH_RUN_ID": "35533061529",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533061529",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "70bb270c4c33c97c62a43437991c12bd67b70588",
+    "PR_RUN_ID": "35533064035",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35533064035"
   },
   "VERIFICATION_EVIDENCE": [
-    {"ID":"canonical-reconciliation","COMMAND":"pending implementation and authoritative CI","STATUS":"PENDING","SUMMARY":"Generic Entry/Passport resolution, derived QA oracle, capability readiness, and strict evidence provenance are not yet verified."}
+    {"ID":"canonical-reconciliation","COMMAND":"npm run governance:check && npm run admission:check && npm run governance:test && npm run admission:test","STATUS":"PASS","SUMMARY":"Canonical governance, admission, selector, checkpoint fail-closed, and dependency regression suites pass."},
+    {"ID":"entry-passport","COMMAND":"node --import tsx --test tests/identity-propagation.test.ts tests/mentor-binding.test.ts tests/workout-v2-product-integration.test.ts","STATUS":"PASS","SUMMARY":"Explicit canonical Bodyweight Squat identity gates Passport Mentor capability; repeated prescribed entries remain distinct and no V2 QA substitution remains."},
+    {"ID":"capability-readiness","COMMAND":"node --import tsx --test tests/workout-v2-capability-readiness.test.ts tests/workout-v2-execution-strategy.test.ts","STATUS":"PASS","SUMMARY":"Pre-workout initialization/calibration readiness is explicit; usable tracking, no-tracking fallback, and native TIME_BASED strategy remain reachable."},
+    {"ID":"qa-oracle","COMMAND":"node --import tsx --test tests/workout-v2-qa-program.test.ts","STATUS":"PASS","SUMMARY":"Two canonical Bodyweight Squat Entries resolve mixed per-set dosage and derive 2 INTRO, 4 SET, 4 SET_RESULT, 3 REST, and no terminal REST."},
+    {"ID":"evidence-provenance","COMMAND":"node --import tsx --test tests/workout-v2-evidence-provenance.test.ts","STATUS":"PASS","SUMMARY":"Evidence classes remain distinct; simulated sensing and source identity are not promoted to real-device or deployed-runtime proof."},
+    {"ID":"authoritative-ci","COMMAND":"GitHub Actions CI branch + PR synchronization","STATUS":"PASS","SUMMARY":"Push branch run 35533061529 and PR run 35533064035 both pass for exact SHA 70bb270c4c33c97c62a43437991c12bd67b70588."}
   ],
   "WORKTREE_CLEAN": "PENDING",
   "LOCAL_REMOTE_PARITY": "PENDING",
