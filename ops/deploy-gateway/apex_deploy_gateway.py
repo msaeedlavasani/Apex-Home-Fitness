@@ -1102,7 +1102,7 @@ def _docker_container_records():
 def _artifact_owner(tags):
     if any(tag.startswith(("apex-home-fit:", "apex-home-fit/")) for tag in tags):
         return "production"
-    if any(tag.startswith(("ahf-home-fit:", "ahf-beta-app:", "ahf-beta-migrate:")) for tag in tags):
+    if any(tag.startswith("ahf-home-fit:") or tag.startswith(("ahf-beta-app:", "ahf-beta-migrate:")) or tag in ("ahf-beta-app", "ahf-beta-migrate") for tag in tags):
         return "beta"
     return None
 
@@ -1111,7 +1111,7 @@ def _recognized_owner_tag(owner, tag):
     if owner == "production":
         return tag.startswith(("apex-home-fit:release-", "apex-home-fit:migrate-", "apex-home-fit:dbop-"))
     if owner == "beta":
-        return tag.startswith(("ahf-home-fit:beta-", "ahf-beta-app:", "ahf-beta-migrate:"))
+        return tag.startswith(("ahf-home-fit:beta-", "ahf-beta-app:", "ahf-beta-migrate:")) or tag in ("ahf-beta-app", "ahf-beta-migrate")
     return False
 
 
@@ -1591,7 +1591,7 @@ def self_test():
     check("storage hygiene cleanup valid", lambda: valid({"action": "storage-hygiene", "schema_version": 1, "mode": "cleanup"}))
     check("storage hygiene invalid mode rejected", lambda: invalid({"action": "storage-hygiene", "schema_version": 1, "mode": "delete-all"}))
     check("storage recognizes only governed Production tags", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("production", "apex-home-fit:migrate-a") or _recognized_owner_tag("production", "apex-home-fit:latest") else None)
-    check("storage recognizes Beta migration namespaces", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("beta", "ahf-home-fit:beta-migrate-a") or not _artifact_owner(["ahf-beta-migrate:latest"]) else None)
+    check("storage recognizes Beta migration namespaces", lambda: (_ for _ in ()).throw(AssertionError()) if not _recognized_owner_tag("beta", "ahf-home-fit:beta-migrate-a") or not _artifact_owner(["ahf-beta-migrate"]) else None)
     check("storage has exactly five operational classes", lambda: (_ for _ in ()).throw(AssertionError()) if set(STORAGE_CLASSES) != {"RETAIN_CURRENT", "RETAIN_ROLLBACK", "RETAIN_ACTIVE_TRANSACTION", "SAFE_TO_DELETE", "AMBIGUOUS_DO_NOT_DELETE"} else None)
     check("allowlist exact", lambda: (_ for _ in ()).throw(AssertionError()) if set(OPERATION_ALLOWLIST) != {"s02e-exercise-identity-backfill", "mg09-movement-graph-adopt", "prisma-migrate-deploy"} else None)
     check("evidence sha format", lambda: (_ for _ in ()).throw(AssertionError()) if not re.fullmatch(r"[0-9a-f]{64}", "b" * 64) else None)
