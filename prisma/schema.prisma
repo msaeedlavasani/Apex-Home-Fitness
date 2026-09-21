@@ -393,6 +393,8 @@ model WorkoutSession {
 model WorkoutSessionExercise {
   sessionId       String
   exerciseId      String
+  // Session entry position is the independently addressable obligation.
+  // Multiple prescribed entries may reference the same canonical Exercise.
   order           Int
   completed       Boolean    @default(false)
   actualSets      Int?
@@ -402,8 +404,9 @@ model WorkoutSessionExercise {
   session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   exercise Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
 
-  @@id([sessionId, exerciseId])
+  @@id([sessionId, order])
   @@index([exerciseId])
+  @@index([sessionId, exerciseId])
   // Analytics reads volume/calorie inputs for a user's completed sessions via
   // `where: { completed: true, session: { userId, completedAt: { not: null } } }`
   // — (sessionId, completed) serves the session-scoped scan + completion filter.

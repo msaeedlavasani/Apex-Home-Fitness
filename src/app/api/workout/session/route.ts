@@ -1,14 +1,8 @@
 import {NextResponse} from 'next/server';
 import {prisma} from '@/lib/prisma';
 import {isWorkoutCompletionKind, type WorkoutCompletionKind} from '@/lib/outcomes';
-import {resolveWorkoutExercises} from '@/services/movementGraphStore';
+import {normalizeRequestedExerciseNames, resolveWorkoutExercises} from '@/services/movementGraphStore';
 import {getSupabaseAuthUser, syncUserWithSupabase, UnauthenticatedError} from '@/services/userService';
-
-function strings(value: unknown): string[] {
-  return Array.isArray(value)
-    ? [...new Set(value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim()))]
-    : [];
-}
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +10,7 @@ export async function POST(request: Request) {
     const user = await syncUserWithSupabase(authUser);
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
     const action = body?.action;
-    const exerciseNames = strings(body?.exerciseNames);
+    const exerciseNames = normalizeRequestedExerciseNames(body?.exerciseNames);
 
     if (action === 'start') {
       if (exerciseNames.length === 0) return NextResponse.json({error: 'WORKOUT_EXERCISES_REQUIRED'}, {status: 400});

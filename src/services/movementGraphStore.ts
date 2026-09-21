@@ -29,6 +29,15 @@ export interface WorkoutExerciseRef {
   name: string;
 }
 
+/** Normalize request values without collapsing repeated prescribed entries. */
+export function normalizeRequestedExerciseNames(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .map((item) => item.trim())
+    : [];
+}
+
 /**
  * True when the Movement Graph tables exist AND hold rows. Fail-safe: any
  * error (missing table, DB unavailable) returns false.
@@ -60,6 +69,18 @@ async function resolveLegacy(
   });
 }
 
+/** Re-expands unique resolver rows to the ordered prescribed entry list. */
+export function preserveRequestedEntryOrder(
+  names: readonly string[],
+  resolved: readonly WorkoutExerciseRef[],
+): WorkoutExerciseRef[] {
+  const byName = new Map(resolved.map((exercise) => [exercise.name, exercise]));
+  return names.flatMap((name) => {
+    const exercise = byName.get(name);
+    return exercise ? [{...exercise, name}] : [];
+  });
+}
+
 /**
  * Resolves workout exercise names for session creation. When the Movement
  * Graph is adopted, canonical names resolve through the graph's linked
@@ -72,7 +93,8 @@ export async function resolveWorkoutExercises(
 ): Promise<WorkoutExerciseRef[]> {
   if (names.length === 0) return [];
   if (!(await isMovementGraphAdopted())) {
-    return resolveLegacy(names, programId);
+    const resolved = await resolveLegacy([...new Set(names)], programId);
+    return preserveRequestedEntryOrder(names, resolved);
   }
 
   const movements = await prisma.movement.findMany({
@@ -115,9 +137,11 @@ export async function resolveWorkoutExercises(
   }
 
   if (legacyNames.length > 0) {
-    const legacy = await resolveLegacy(legacyNames, programId);
-    // Merge in input order: graph rows first, legacy rows appended.
-    resolved.push(...legacy);
+    const legacy = await resolveLegacy([...new Set(legacyNames)], programId);
+    const legacyByName = new Map(legacy.map((exercise) => [exercise.name, exercise]));
+    for (const name of names) {
+      if (legacyByName.has(name)) resolved.push({...legacyByName.get(name)!, name});
+    }
   }
-  return resolved;
+  return preserveRequestedEntryOrder(names, resolved);
 }
