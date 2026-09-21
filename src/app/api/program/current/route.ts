@@ -13,7 +13,7 @@ export async function GET() {
       include: {
         exercises: {
           orderBy: {order: 'asc'},
-          include: {exercise: true},
+          include: {exercise: {include: {movement: {select: {coachingCues: true}}}}},
         },
         workoutSessions: {
           where: {completedAt: {not: null}},

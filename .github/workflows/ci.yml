@@ -39,7 +39,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # The checkpoint validator proves recorded SHAs against Git history.
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Use Node.js 22
       uses: actions/setup-node@v4
@@ -117,6 +120,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Use Node.js 22
       uses: actions/setup-node@v4

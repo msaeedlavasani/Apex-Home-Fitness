@@ -20,6 +20,169 @@
 - **Admission transition:** `IMPLEMENTATION_AUTHORIZATION = OWNER_AUTHORIZED` with `AUTHORIZATION_SOURCE = docs/governance/OWNER_DECISION_GATE.md`.
 - **No new product decisions** are introduced by this record; it references the canonical package rather than restating product requirements.
 
+### WORKOUT-V2-PRODUCT-INTEGRATION-01 — normal product path and QA Program authorization (2026-09-19)
+
+- **Owner decision:** AUTHORIZE the downstream Workout V2 product-integration work packages `WP-15` and `WP-16`. The existing Run-4 implementation is the current Workout Experience V2 product implementation, not disposable prototype code.
+- **Required product path:** the normal authenticated Dashboard/Program/workout route must launch the shared V2 ExperienceShell through the existing Program/Prescription domain path; an isolated `/workout/v2` route may remain only as historical compatibility/evidence and is not an acceptance path.
+- **Required QA path:** a small persisted QA Program/fixture may be used for verification, but it must use the existing Program/Prescription persistence and resolution path. No phone, user, account, or test-identity conditional may enter product behavior.
+- **Binding boundary:** Program/Prescription owns exercise identity/order, set count, mode/targets, fallback duration, and rest semantics. Workout consumes the shared WP-13 contract; orchestration derives presentation topology.
+- **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate after the new product-integration checkpoint. No per-task visual acceptance is introduced. Production remains unauthorized. Beta remains a separate deployment-authority decision under the permanent checkpoint policy.
+- **Canonical work packages:** `WP-15-REAL-PRODUCT-ENTRY-INTEGRATION` and `WP-16-QA-PROGRAM-DOMAIN-PATH` are authorized only within the existing Spec Kit, DAG, admission, and checkpoint authorities.
+
+### WORKOUT-V2-BETA-DEPLOYMENT-01 — Beta deployment authorization (2026-09-19)
+
+- **Owner decision:** AUTHORIZE deployment of the current verified Workout Experience V2 candidate to the existing AHF Beta environment for complete-flow validation and RUN-5 Owner acceptance.
+- **Scope:** Beta only. Production deployment remains unauthorized, PR #72 remains unmerged, and all existing CI, rollback, security, deployment-checkpoint, and verification requirements remain binding.
+- **Canonical acceptance path:** authenticated application → normal Dashboard → assigned QA Program/workout → normal localized workout route → Workout Experience V2 → complete Program-derived workout → Workout Result/Exit → Dashboard.
+- **Reconciliation result:** the repository contains no Beta deployment workflow, GitHub environment, deployment record, target mapping, or Beta-capable deployment gateway. The existing gateway is Production-only: it requires authoritative `main` HEAD and the Production compose/volume allowlist. The authorization is therefore persisted as accepted, but the derived Beta deployment capability remains BLOCKED until a canonical Beta path is established within deployment governance.
+- **No inference:** this decision does not authorize Production, PR merge, a new deployment authority, arbitrary host/compose/secret values, or bypass of the existing Production gateway security model.
+
+### WORKOUT-V2-BETA-CAPABILITY-01 — Establish canonical Beta deployment path (2026-09-19)
+
+- **Owner decision:** AUTHORIZE `BETA-DEPLOYMENT-CAPABILITY` to design, implement, configure, and verify the minimum governed AHF Beta deployment path required for Workout Experience V2 validation.
+- **Canonical target:** `beta.apexhomefit.ir` on the existing AHF host, with explicit Beta-only Compose, loopback port, persistent volume, environment boundary, deployment source/build identity, and rollback evidence.
+- **Reuse boundary:** extend the existing constrained Deployment Gateway and host patterns; do not create a parallel scheduler, weaken Production safeguards, or target Production resources.
+- **Safety boundary:** Beta must fail closed on ambiguous target identity, must preserve the Production app/volume/configuration, and must not expose secret values.
+- **Scope:** Beta only; Production deployment, PR #72 merge, and any bypass of CI/admission/checkpoint/rollback requirements remain unauthorized.
+
+### WORKOUT-V2-RUN-5-CORRECTION-01 — consolidated Owner acceptance correction cycle (2026-09-20)
+
+- **Owner decision:** REJECT the first integrated Desktop + real-iPhone RUN-5 review and authorize one consolidated correction cycle before the next complete-flow acceptance. The current Workout Experience V2 implementation remains the product implementation; historical work packages remain CLOSED/FROZEN.
+- **Canonical correction scope:** derive and execute repository-owned correction work for the INTRO→SET orchestration boundary and state binding, the existing Exercise/Movement authority extension into an Exercise Passport read-model, protected Mentor-stage/adaptive composition invariants, the controlled two-entry Squat-only QA validation fixture, and the required integrated machine regression/deployment checkpoints.
+- **Authorized correction work packages:** `WP-17`, `WP-18`, and `WP-19` are authorized within the existing Spec Kit, DAG, admission, and checkpoint authorities; their order is repository-derived, not prompt-scheduled.
+- **Preserved boundaries:** Program/Prescription owns WHAT; the Session Orchestrator owns sequencing and lifecycle; Workout Experience owns HOW/presentation; no test-identity conditional, fixed topology, parallel scheduler, second Exercise authority, Production deployment, or PR #72 merge is authorized.
+- **MENTOR_STAGE_ANCHOR_AND_ADAPTIVE_COMPOSITION:** ACCEPTED for this correction cycle. Within a layout class, the Mentor stage is a protected centered/grounded composition zone; secondary UI reflows/compacts/collapses/overlays before changing that anchor. Breakpoints may define different valid geometries; runtime control changes may not translate the anchor within one class.
+- **EXERCISE_PASSPORT:** ACCEPTED as a semantic extension of the existing canonical Exercise/Movement authority, not a duplicate database. Stable exercise identity, coaching/setup metadata, Mentor capability, and future sensing references belong to that authority; Program/Prescription remains dosage/order authority.
+- **QA visual fixture:** ACCEPTED as validation data only: exactly two exercise entries, both resolving through the supported Squat Mentor path. This does not constrain arbitrary Program topology.
+- **Skip-all completion semantics:** **OWNER DECISION REQUIRED.** Existing authorities distinguish terminal session obligation resolution from outcome completion kinds, but the persisted product path currently has no canonical `RESOLVED/ENDED` state distinct from success/adherence credit. Do not infer whether an all-skipped session should be recorded as an ended non-credit session, `DID_NOT_START`, `ABANDONED`, or another product outcome. The correction DAG must fail closed at this decision and must not begin RUN-5 acceptance until resolved.
+- **Acceptance boundary:** RUN-5 remains one complete-flow Human Gate. No per-task visual review is introduced. Production remains unauthorized and PR #72 remains unmerged.
+
+### GOVERNED-SERVER-STORAGE-HYGIENE-01 — release-integrated storage hygiene (2026-09-20)
+
+- **Owner instruction:** AUTHORIZE implementation of the governed server-storage
+  hygiene capability described by the consolidated execution delta. Extend the
+  existing constrained Deployment Gateway only; do not create a parallel
+  deployment authority.
+- **Safety boundary:** Production runtime and database remain unchanged, both
+  database volumes are outside deletion scope, PR #72 remains unmerged, and
+  cleanup must fail closed on missing/ambiguous current or verified rollback
+  authority. The provided host `df` state is authoritative over dashboard
+  percentages.
+- **Execution boundary:** host cleanup may delete only artifacts classified
+  `SAFE_TO_DELETE` by the gateway. Application release status and storage
+  hygiene status remain separate. The corrected Beta candidate remains blocked
+  until storage authority is reconciled and its separate schema-migration gate
+  is satisfied.
+- **Canonical package:** [`../specs/0002-governed-storage-hygiene/spec.md`](../specs/0002-governed-storage-hygiene/spec.md), with the existing gateway and release policy as implementation authorities.
+
+### WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY — runtime boundary recovery (2026-09-20)
+
+- **Owner decision:** AUTHORIZE the minimum code/no-deploy recovery required by
+  the accepted execution-path provenance audit. Historical close-outs and
+  checkpoint receipts remain preserved evidence; they no longer authorize a
+  downstream Beta release or RUN-5 while the execution contract is unreachable.
+- **Canonical scope:** extend the existing shared prescription, session
+  orchestrator, SET capability, camera/MoveNet boundary, consent path, and
+  Mentor lifecycle. Resolve only `TRACKED_REP`, `TIMED_FALLBACK`, and `TIMED`;
+  do not create `MANUAL_REP` as a canonical runtime strategy.
+- **Required safety:** normalized movement evidence, no raw-frame orchestration
+  authority, no QA fixture change, no Production deployment or database
+  mutation, no schema push, no gateway bypass, and no PR #72 merge.
+- **Deferred boundary:** exact confidence/timeout thresholds and mid-set
+  fallback remaining-time policy remain unresolved unless existing authority
+  determines them; implementation must fail closed rather than invent values.
+- **Canonical package:** [`../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json`](../admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json) and the recovery node in [`../specs/0001-workout-experience/dependencies.md`](../specs/0001-workout-experience/dependencies.md).
+
+### WORKOUT-V2-CANONICAL-WORK-RECONCILIATION-01 — generic entry, QA, capability, and evidence boundaries (2026-09-20)
+
+- **Owner clarification:** Workout Experience remains generic and
+  Program/Prescription-driven. It must consume resolved prescribed Exercise
+  Entries and must not know QA cardinality, exercise names, ordering, or the
+  current fixture's modes.
+- **Binding identity rule:** a prescribed Exercise Entry is a distinct session
+  obligation identified by its plan position/entry key. Multiple entries may
+  reference the same canonical Exercise identity. Exercise Passport owns stable
+  exercise knowledge; Program/Prescription owns today's dosage and context.
+- **Canonical QA input:** the RUN-5 fixture is two distinct prescribed entries,
+  both referencing canonical Bodyweight Squat. Each entry has two Sets: Set 1
+  `REP_BASED` / 8 performed reps / 45-second fallback, and Set 2 `TIME_BASED`
+  / 30 seconds. This is validation data only.
+- **Derived oracle:** the fixture's expected happy path is derived from the
+  resolved input: 2 INTRO, 4 SET, 4 SET_RESULT, and 3 REST transitions (2
+  between sets and 1 between exercises), with no terminal REST. These counts
+  must not enter generic runtime or presentation code.
+- **Capability boundary:** Camera permission is not tracking readiness. The
+  camera-enabled path requires permission, Pose/Skeleton Harness initialization,
+  Skeleton Calibration, and `TRACKING_CAPABLE` before `START`; otherwise the
+  resolved capability is `NO_TRACKING` before `START`.
+- **Evidence boundary:** simulated normalized sensing proves orchestration
+  reachability only. It does not prove a real camera, pose runtime,
+  calibration, rep detection, or real-device acceptance. Deployed source
+  identity does not prove a complete authenticated deployed workout.
+- **Canonical work:** successor reconciliation packages and their integration
+  and Beta checkpoint nodes are recorded in the Workout V2 DAG. Historical PASS
+  receipts remain preserved evidence and are not rewritten.
+- **Authorized successor packages:**
+  `WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION`,
+  `WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION`,
+  `WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION`, and
+  `WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION` are authorized
+  within the existing Spec Kit, admission, and DAG authorities. Their order is
+  repository-derived; no implementation is authorized outside their declared
+  scopes.
+
+### SKIP-ALL-COMPLETION-SEMANTICS-DECISION — resolved Owner product decision (2026-09-20)
+
+- **Decision:** When every required Exercise obligation reaches
+  `SKIPPED_FOR_SESSION` and zero Sets are completed, the session is terminal /
+  resolved but is **not** a successfully completed workout.
+- **Canonical outcome:** record `ENDED_WITHOUT_COMPLETION` as the session
+  outcome. Preserve the per-session skipped Exercise outcomes for history,
+  analytics, and future adaptation; do not award completed-workout or
+  adherence credit and do not increment Dashboard completed-session counts.
+- **Lifecycle boundary:** `SESSION_TERMINALITY != WORKOUT_COMPLETION_CREDIT`.
+  The persisted session must be terminal without using the success-credit
+  marker. The outcome vocabulary therefore distinguishes
+  `COMPLETED_FULLY`, `COMPLETED_PARTIALLY`, and
+  `ENDED_WITHOUT_COMPLETION`.
+- **Scope limit:** this decision resolves only the all-skipped + zero-set
+  case. It does not define a new PARTIAL classification or adherence policy;
+  existing PARTIAL behavior remains unchanged unless a later canonical
+  decision changes it.
+- **Execution authorization:** the bounded downstream capability work needed
+  to persist and project this distinction is authorized through the existing
+  Spec Kit / DAG / admission / checkpoint authorities. No Production deploy,
+  PR #72 merge, or per-task Owner visual gate is authorized.
+- **Canonical work package:** `WP-20` is the repository-derived bounded
+  implementation package for this decision; it may be admitted only within
+  the existing Development Admission Gate and remains downstream of this
+  resolved decision.
+
+### WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION — generic repeated-entry persistence (2026-09-21)
+
+- **Owner direction:** AUTHORIZE the smallest governed persistence correction
+  required by the already-resolved Workout V2 Entry/Exercise identity contract.
+  This is technical remediation, not a new product decision.
+- **Established blocker:** the governed Beta QA repair failed closed because
+  `ProgramExercise @@id([programId, exerciseId])` cannot represent two distinct
+  prescribed Entries referencing one canonical Exercise.
+- **Binding invariant:** prescribed Entry identity is independent from canonical
+  Exercise identity. The correction must support repeated canonical references,
+  deterministic ordering, independent per-entry dosage/context, entry-scoped
+  session semantics where applicable, canonical Passport resolution, arbitrary-N
+  topology, compatibility with unique-exercise Programs, and auditable migration
+  or backfill behavior. It must not duplicate canonical Exercise rows, special-
+  case QA, or restore a different exercise identity.
+- **Execution boundary:** use the existing admission, migration, Beta gateway,
+  and QA data-operation authorities only. Production mutation/deployment, PR #72
+  merge, manual SQL, and gateway bypass remain unauthorized.
+- **Canonical package:**
+  `WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION` in the Workout V2 DAG and
+  `docs/admissions/WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION.admission.json`.
+- **Downstream rule:** the canonical Beta checkpoint remains unsatisfied until
+  this capability is delivered and governed Beta QA persistence verification
+  proves the approved two-entry fixture without fake Exercise identities.
+
 ### Stage 4 pilot — product decision phase complete (2026-09-14)
 
 - **Workout Experience: `SPEC_READINESS = READY`.** The spec is finalized (`docs/specs/0001-workout-experience/`), with all accumulated owner product decisions integrated into canonical sections and all deferred items marked **NON_BLOCKING · DEFERRED · NON-AUTHORIZING**.

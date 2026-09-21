@@ -28,5 +28,6 @@ test('selected rest days cannot be returned as player exercises', () => {
     reps: 8,
     durationSeconds: null,
     restSeconds: 30,
+    fallbackDurationSeconds: null,
   });
 });

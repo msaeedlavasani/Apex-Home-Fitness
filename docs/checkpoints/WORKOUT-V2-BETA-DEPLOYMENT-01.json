@@ -1,0 +1,39 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-BETA-DEPLOYMENT-01",
+  "CHECKPOINT_KIND": "DEPLOYMENT",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+  "VERIFIED_SOURCE_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+  "CHECKPOINT_EVIDENCE_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+    "RUN_ID": "35468540645",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35468540645",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+    "BRANCH_RUN_ID": "35468540645",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35468540645",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "0260074ced5dc9b491923fa5060cbed593e4173c",
+    "PR_RUN_ID": "35468542247",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35468542247"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"gateway-source-ci","COMMAND":"apex-deploy beta-release beta-qa-0260074","STATUS":"PASS","SUMMARY":"The constrained gateway accepted only branch feat/workout-v2-first-slice, PR #72, source 0260074ced5dc9b491923fa5060cbed593e4173c, and matching successful branch/PR CI."},
+    {"ID":"beta-deployment","COMMAND":"apex-deploy beta-release beta-qa-0260074","STATUS":"PASS","SUMMARY":"AHF Beta deployed image ahf-home-fit:beta-0260074ced5d from the exact source SHA with build identity SJsqLLRd3JYXxnmsG1BRq; health passed and production_untouched=true."},
+    {"ID":"beta-rollback","COMMAND":"apex-deploy beta-verify-rollback beta-qa-0260074","STATUS":"PASS","SUMMARY":"The canonical Beta rollback compose identity and preserved previous Beta image were available and verified without restarting Production."},
+    {"ID":"beta-database","COMMAND":"Beta deployment and bounded QA operation database SHA-256 comparison","STATUS":"PASS","SUMMARY":"The non-DB deployment preserved the Beta database before/after hash 98b98d674f9dad7167869721a7dead75900bdcc12c5720348e1df4113cf67c5e; the authorized bounded QA operation changed it to 91535a7c0dc7cc1418a90eae86c5a10821fb00996133cf8b821eecefba1062bb and verified the canonical records."},
+    {"ID":"beta-qa-operation","COMMAND":"apex-deploy beta-db-operation beta-qa-program-assign dry-run then apply","STATUS":"PASS","SUMMARY":"Dry-run evidence 8243dcdcf12a94c15b6be2ee193362364dbf4da8cdbadca781f1bf17c84ebe8b was required and accepted; the isolated operation provisioned canonical QA exercises and Program ownership with owner_matches=true and program_shape_valid=true."},
+    {"ID":"beta-authenticated-entry","COMMAND":"Authenticated Beta request-code/verify then /api/program/current, /en/dashboard, /en/workout","STATUS":"PASS","SUMMARY":"The protected QA account authenticated through the normal path; current Program resolved to Apex Workout V2 QA Program with 3 exercises, Dashboard and localized Workout route returned 200, and data-workout-v2-surface was present."},
+    {"ID":"beta-runtime","COMMAND":"HTTPS Beta localized routes, redirect, manifest, service worker, CSP, Nginx, and container boundary checks","STATUS":"PASS","SUMMARY":"/en and /fa returned 200; HTTP redirected with 301; manifest.json and service-worker.js returned 200; CSP and HSTS were present; Nginx configuration passed; Beta remained on 127.0.0.1:3100/ahf_beta_db while Production remained on 127.0.0.1:3000 and apex-home-fit:release-4ada1dae2c3e."},
+    {"ID":"beta-build-identity","COMMAND":"Beta marker and Docker identity inspection","STATUS":"PASS","SUMMARY":"/opt/ahf-beta/.deployed-commit, the running Beta container, image ID sha256:1391059a497227283ac74a074eabf06834eeee33be37c72fb82666e488608191, and build identity SJsqLLRd3JYXxnmsG1BRq all matched the deployment proof."},
+    {"ID":"local-remote-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"The exact deployed candidate was CI-verified and pushed before Beta deployment; this checkpoint record is evidence-only close-out above the immutable deployed known-good source SHA."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_AUTHORIZED": "YES",
+  "DEPLOYMENT_IDENTITY": {"STATUS":"PASS","DEPLOYED_SHA":"0260074ced5dc9b491923fa5060cbed593e4173c","ENVIRONMENT":"AHF_BETA","URL":"https://beta.apexhomefit.ir","BUILD_ID":"SJsqLLRd3JYXxnmsG1BRq","IMAGE":"ahf-home-fit:beta-0260074ced5d","IMAGE_ID":"sha256:1391059a497227283ac74a074eabf06834eeee33be37c72fb82666e488608191","MIGRATION_IMAGE":"ahf-home-fit:beta-migrate-0260074ced5d","MIGRATION_IMAGE_ID":"sha256:2f3e2ef319ce4763000a52b01c81f3078a08e5461ae3e9b8398bb4ed9884f5e8","ROLLBACK":"compose.yml.rollback-beta-qa-0260074","ROLLBACK_VERIFIED":"YES","PRODUCTION_UNTOUCHED":"YES"}
+}

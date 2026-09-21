@@ -274,8 +274,9 @@ test('skipRest and completing the final set reach COMPLETED with correct summary
 // Hydrate (restore from IndexedDB)
 // ---------------------------------------------------------------------------
 
-test('hydrate restores position paused, exactly where the snapshot left off', () => {
-  const { holder } = mount(PLAN);
+test('hydrate restores position paused, exactly where the snapshot left off', (t) => {
+  const { holder, renderer } = mount(PLAN);
+  t.after(() => { act(() => renderer.unmount()); });
   assert.equal(holder.engine!.phase, 'READY');
 
   act(() =>
@@ -317,8 +318,9 @@ test('hydrate is a no-op once the workout has started', (t) => {
   assert.equal(holder.engine!.phase, 'EXERCISING');
 });
 
-test('hydrate clamps out-of-range position and keeps at least one tick of countdown', () => {
-  const { holder } = mount(PLAN);
+test('hydrate clamps out-of-range position and keeps at least one tick of countdown', (t) => {
+  const { holder, renderer } = mount(PLAN);
+  t.after(() => { act(() => renderer.unmount()); });
 
   act(() =>
     holder.engine!.hydrate({
@@ -337,8 +339,9 @@ test('hydrate clamps out-of-range position and keeps at least one tick of countd
   assert.equal(holder.engine!.secondsLeft, 1); // at least one tick remains
 });
 
-test('hydrate of a COMPLETED snapshot restores the finished state', () => {
-  const { holder } = mount(PLAN, { now: () => 9_000_000 });
+test('hydrate of a COMPLETED snapshot restores the finished state', (t) => {
+  const { holder, renderer } = mount(PLAN, { now: () => 9_000_000 });
+  t.after(() => { act(() => renderer.unmount()); });
 
   act(() =>
     holder.engine!.hydrate({
@@ -358,8 +361,9 @@ test('hydrate of a COMPLETED snapshot restores the finished state', () => {
   assert.equal(holder.engine!.state.totalElapsedSeconds, 600);
 });
 
-test('hydrate of RESTING after the last set advances to the next exercise when rest ends', () => {
-  const { holder } = mount(PLAN);
+test('hydrate of RESTING after the last set advances to the next exercise when rest ends', (t) => {
+  const { holder, renderer } = mount(PLAN);
+  t.after(() => { act(() => renderer.unmount()); });
 
   // ex-1 has 3 sets; RESTING with currentSet=3 means the last set just finished.
   act(() =>

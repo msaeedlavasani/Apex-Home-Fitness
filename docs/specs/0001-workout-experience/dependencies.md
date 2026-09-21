@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| STATUS | `READY — dependency analysis for CRITICAL admission` |
+| STATUS | `CANONICAL WORK RECONCILIATION ACTIVE — historical checkpoint evidence preserved; successor generic-entry, capability-readiness, QA-oracle, and deployed-evidence work is DAG-governed before RUN-5` |
 | SPEC | [`spec.md`](./spec.md) · PLAN: [`plan.md`](./plan.md) · WORK PACKAGES: [`tasks.md`](./tasks.md) |
 | Date | 2026-09-15 · Baseline: fresh main `897e376` |
-| IMPLEMENTATION | **NOT AUTHORIZED** |
+| IMPLEMENTATION | **AUTHORIZED by parent admission; WP-06/WP-07 Run 1 CLOSED/FROZEN** |
 
 ## 1. Dependency graph (design graph — not a required code shape)
 
@@ -14,25 +14,232 @@ WP-01 Session-core contract extension
   └── (hard) ─► WP-02 Orchestration layer
                    ├── design output: presentation view-model contract (frozen when WP-02 starts its design; not a WP-02 completion dependency)
                    ├── (hard) ─► WP-04 Experience shell  ── (hard) ─► WP-05 START + PREPARING (first planned slice)
-                   ├── (hard) ─► WP-06 WORK_SET + mode-aware progress
-                   ├── (hard) ─► WP-07 REST / EXERCISE_TRANSITION / Exercise-Block lifecycle
-                   ├── (hard) ─► WP-08 Controls surface + outcome consumption
+                   ├── (hard) ─► WP-06 SET + SET_RESULT + mode-aware progress (Run 1 / Workstream A)
+                   ├── (hard) ─► WP-07 REST (Run 1 / Workstream B)
+                   ├── (hard) ─► WP-14 Orchestration control-state reconciliation
+                   ├── (hard) ─► WP-08 Controls surface + outcome consumption (after WP-14)
                    └── (soft) ─► WP-09 Mentor presentation boundary + degraded mode (consumes the view-model)
 WP-03 Prescription resolution contract ── (hard) ─► consumed by WP-06 / WP-07
+WP-03 ── (hard) ─► WP-13 Shared Program ↔ Workout prescription contract
 WP-10 Audio cues + accessibility — (software/cross-cutting) asserts on every stage WP
-WP-11 Convergence & release path — (hard) depends on all implementing WPs
+WP-12 WORKOUT_RESULT + EXIT ── (hard) ─► after accepted WP-06 + WP-07 + WP-13
+GATE-01 Block-Completeness Audit ── (hard) ─► after accepted WP-05/06/07/12; audits all required capabilities
+WP-11 Convergence & release path — (hard) depends on all implementing WPs and GATE-01
 ```
 
-Cross-cutting capabilities: **Session Controls** (WP-08) · **Progress** (WP-06) · **Mentor Presentation** (WP-09) · **Functional Audio** (WP-10) · **Accessibility** (WP-10, asserted per stage) · **Persistence/Resume** (existing snapshot contract; WP-01 must keep it intact).
+<!-- WORKOUT_V2_AUTONOMOUS_DAG:BEGIN -->
+```json
+{
+  "schema": 1,
+  "nodes": [
+    {"id":"WP-01","dependsOn":[],"kind":"WORK_PACKAGE"},
+    {"id":"WP-02","dependsOn":["WP-01"],"kind":"WORK_PACKAGE","providesCapabilities":["V2_PRESENTATION_VIEW_MODEL_V1"]},
+    {"id":"WP-03","dependsOn":[],"kind":"WORK_PACKAGE","providesCapabilities":["V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1"]},
+    {"id":"WP-04","dependsOn":["WP-02"],"kind":"WORK_PACKAGE"},
+    {"id":"WP-05","dependsOn":["WP-02","WP-04"],"kind":"WORK_PACKAGE","providesCapabilities":["V2_START_PREPARING_INTRO_SURFACES_V1"]},
+    {"id":"WP-06","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"A","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-06.admission.json","verification":"PASS","providesCapabilities":["V2_SET_RESULT_CAPABILITY_V1"]},
+    {"id":"WP-07","dependsOn":["WP-02","WP-03","WP-05"],"kind":"WORK_PACKAGE","workstream":"B","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-07.admission.json","verification":"PASS","providesCapabilities":["V2_REST_CAPABILITY_V1"]},
+    {"id":"WP-14","dependsOn":["WP-02","WP-06","WP-07"],"kind":"WORK_PACKAGE","workstream":"ORCHESTRATION_RECONCILIATION","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-14.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}],"providesCapabilities":["V2_SESSION_CONTROL_ACTIONS_V1","V2_DEFERRED_SKIPPED_STATE_V1","V2_COMPLETION_ELIGIBILITY_V1","V2_EXIT_ORCHESTRATION_ACTION_V1"]},
+    {"id":"WP-08","dependsOn":["WP-02","WP-06","WP-07","WP-14"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-08.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_SESSION_CONTROL_ACTIONS_V1","provider":"WP-14"},{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SET_RESULT_CAPABILITY_V1","provider":"WP-06"},{"id":"V2_REST_CAPABILITY_V1","provider":"WP-07"}]},
+    {"id":"WP-09","dependsOn":["WP-02"],"softDependsOn":["WP-06"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-09.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"}]},
+    {"id":"WP-10","dependsOn":["WP-05"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-10.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_START_PREPARING_INTRO_SURFACES_V1","provider":"WP-05"}],"providesCapabilities":["V2_FUNCTIONAL_AUDIO_ACCESSIBILITY_V1"]},
+    {"id":"WP-12","dependsOn":["WP-06","WP-07","WP-13","WP-14"],"kind":"WORK_PACKAGE","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-12.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_DEFERRED_SKIPPED_STATE_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}]},
+    {"id":"WP-13","dependsOn":["WP-03"],"kind":"WORK_PACKAGE","workstream":"SHARED_CONTRACT","ownerVisualGate":false,"status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-13.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESCRIPTION_RESOLUTION_AUTHORITY_V1","provider":"WP-03"}],"providesCapabilities":["V2_SHARED_PRESCRIPTION_CONTRACT_V1"]},
+    {"id":"GATE-01","dependsOn":["WP-05","WP-06","WP-07","WP-12"],"kind":"GATE","status":"CLOSED","frozen":true,"verification":"PASS","reportPath":"reports/workout-v2-impl-01/GATE-01-completeness.json","blockCompleteness":"PASS"},
+    {"id":"RUN-4-PROGRAM-COMPOSITION","dependsOn":["GATE-01"],"kind":"COMPOSITION","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/RUN-4-PROGRAM-COMPOSITION.admission.json","verification":"PASS","providesCapabilities":["V2_PROGRAM_DRIVEN_COMPOSITION_V1"]},
+    {"id":"INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW","dependsOn":["RUN-4-PROGRAM-COMPOSITION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS"},
+    {"id":"WP-15","dependsOn":["RUN-4-PROGRAM-COMPOSITION","WP-13"],"kind":"WORK_PACKAGE","workstream":"REAL_PRODUCT_ENTRY","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-15.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PASS","requiresCapabilities":[{"id":"V2_PROGRAM_DRIVEN_COMPOSITION_V1","provider":"RUN-4-PROGRAM-COMPOSITION"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}],"providesCapabilities":["V2_NORMAL_PRODUCT_ENTRY_V1","V2_REAL_PROGRAM_LAUNCH_V1"]},
+    {"id":"WP-16","dependsOn":["WP-15","WP-13"],"kind":"WORK_PACKAGE","workstream":"QA_PROGRAM_DOMAIN_PATH","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionPath":"docs/admissions/WP-16.admission.json","taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PASS","requiresCapabilities":[{"id":"V2_NORMAL_PRODUCT_ENTRY_V1","provider":"WP-15"},{"id":"V2_SHARED_PRESCRIPTION_CONTRACT_V1","provider":"WP-13"}],"providesCapabilities":["V2_QA_PROGRAM_DOMAIN_PATH_V1","V2_QA_PRESCRIPTION_COVERAGE_V1"]},
+    {"id":"PRODUCT-INTEGRATION-CHECKPOINT","dependsOn":["WP-15","WP-16","INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-REAL-PRODUCT-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS"},
+    {"id":"BETA-DEPLOYMENT-AUTHORIZATION","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":false,"ownerDecisionRequired":false,"readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"verification":"PASS","gateScope":"BETA_DEPLOYMENT_AUTHORITY"},
+    {"id":"BETA-DEPLOYMENT-CAPABILITY","dependsOn":["PRODUCT-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-AUTHORIZATION"],"kind":"WORK_PACKAGE","workstream":"BETA_DEPLOYMENT","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"RELEASE","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"verification":"PASS","providesCapabilities":["V2_BETA_DEPLOYMENT_PATH_V1"]},
+    {"id":"BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"WP-17","dependsOn":["WP-14","WP-12","WP-15"],"kind":"WORK_PACKAGE","workstream":"INTRO_SET_AND_LIFECYCLE_CORRECTION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-17.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_SESSION_CONTROL_ACTIONS_V1","provider":"WP-14"},{"id":"V2_COMPLETION_ELIGIBILITY_V1","provider":"WP-14"},{"id":"V2_EXIT_ORCHESTRATION_ACTION_V1","provider":"WP-14"},{"id":"V2_REAL_PROGRAM_LAUNCH_V1","provider":"WP-15"}],"providesCapabilities":["V2_INTRO_SET_EXECUTION_V2","V2_LIFECYCLE_PRESENTATION_BINDING_V1"]},
+    {"id":"WP-18","dependsOn":["WP-02","WP-09","WP-15"],"kind":"WORK_PACKAGE","workstream":"EXERCISE_PASSPORT_AND_COMPOSITION_CORRECTION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-18.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_PRESENTATION_VIEW_MODEL_V1","provider":"WP-02"},{"id":"V2_NORMAL_PRODUCT_ENTRY_V1","provider":"WP-15"}],"providesCapabilities":["V2_EXERCISE_PASSPORT_V1","V2_MENTOR_STAGE_COMPOSITION_V2"]},
+    {"id":"WP-19","dependsOn":["WP-16","WP-18"],"kind":"WORK_PACKAGE","workstream":"QA_VISUAL_FIXTURE_CORRECTION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-19.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_QA_PROGRAM_DOMAIN_PATH_V1","provider":"WP-16"},{"id":"V2_EXERCISE_PASSPORT_V1","provider":"WP-18"}],"providesCapabilities":["V2_QA_VISUAL_FIXTURE_V2"]},
+    {"id":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION","dependsOn":["WP-17"],"kind":"HUMAN_GATE","readinessRule":"EXPLICIT","autonomousEligibility":"NOT_YET","status":"CLOSED","frozen":true,"ownerDecisionRequired":false,"ownerVisualGate":false,"gateScope":"SKIP_ALL_COMPLETION_SEMANTICS","verification":"PASS","providesCapabilities":["V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1"]},
+    {"id":"WP-20","dependsOn":["WP-17","SKIP-ALL-COMPLETION-SEMANTICS-DECISION"],"kind":"WORK_PACKAGE","workstream":"SKIP_ALL_TERMINAL_NON_CREDIT_OUTCOME","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WP-20.admission.json","verification":"PASS","requiresCapabilities":[{"id":"V2_LIFECYCLE_PRESENTATION_BINDING_V1","provider":"WP-17"},{"id":"V2_SKIP_ALL_NON_CREDIT_OUTCOME_DECISION_V1","provider":"SKIP-ALL-COMPLETION-SEMANTICS-DECISION"}],"providesCapabilities":["V2_SKIP_ALL_TERMINAL_NON_CREDIT_V1"]},
+    {"id":"WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","dependsOn":["WP-13","WP-15","WP-18"],"kind":"WORK_PACKAGE","workstream":"EXECUTION_STRATEGY_COMPLETENESS_RECOVERY","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":false,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY.admission.json","requiresHistoricalReconciliation":["WP-03","WP-06","WP-09","WP-15","WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT"],"providesCapabilities":["V2_EXECUTION_STRATEGY_BOUNDARY_V1","V2_PRE_WORKOUT_CAPABILITY_GATE_V1","V2_NORMALIZED_MOVEMENT_EVIDENCE_V1","V2_SESSION_MENTOR_LIFECYCLE_V1"],"verification":"PASS"},
+    {"id":"WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","dependsOn":["WP-17","WP-18","WP-19","WP-20","SKIP-ALL-COMPLETION-SEMANTICS-DECISION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CORRECTION-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-INTEGRATION-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","knownGoodSha":"87809f169a3d67d2f415dbc1e89583287344647c"},
+    {"id":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CORRECTION-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"verification":"PASS","supersededBy":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT","deploymentScope":"BETA_ONLY","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"}]},
+    {"id":"WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","dependsOn":["WP-13","WP-15","WP-18","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"WORK_PACKAGE","workstream":"CANONICAL_ENTRY_PASSPORT_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION.admission.json","providesCapabilities":["V2_CANONICAL_ENTRY_PASSPORT_RESOLUTION_V1"],"verification":"PASS","evidencePath":"reports/workout-v2-canonical/WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION-closeout.json"},
+    {"id":"WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","dependsOn":["WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY","WP-15"],"kind":"WORK_PACKAGE","workstream":"CAPABILITY_READINESS_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CODE_NO_DEPLOY","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION.admission.json","providesCapabilities":["V2_TRACKING_CAPABILITY_READINESS_V1"],"verification":"PASS","evidencePath":"reports/workout-v2-canonical/WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION-closeout.json"},
+    {"id":"WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","dependsOn":["WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","WP-16","WP-19"],"kind":"WORK_PACKAGE","workstream":"QA_FIXTURE_DERIVED_ORACLE_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"STANDARD","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION.admission.json","requiresCapabilities":[{"id":"V2_CANONICAL_ENTRY_PASSPORT_RESOLUTION_V1","provider":"WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION"}],"providesCapabilities":["V2_DERIVED_QA_ORACLE_V1"],"verification":"PASS","evidencePath":"reports/workout-v2-canonical/WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION-closeout.json"},
+    {"id":"WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION","dependsOn":["WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY"],"kind":"WORK_PACKAGE","workstream":"EVIDENCE_AND_DEPLOYED_JOURNEY_RECONCILIATION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"CRITICAL","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION.admission.json","requiresCapabilities":[{"id":"V2_DERIVED_QA_ORACLE_V1","provider":"WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION"}],"providesCapabilities":["V2_STRICT_EVIDENCE_PROVENANCE_V1","V2_DEPLOYED_AUTHENTICATED_JOURNEY_PROOF_V1"],"verification":"PASS","evidencePath":"reports/workout-v2-canonical/WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION-closeout.json"},
+    {"id":"WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","dependsOn":["WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION","WORKOUT-V2-CAPABILITY-READINESS-RECONCILIATION","WORKOUT-V2-EVIDENCE-AND-DEPLOYED-JOURNEY-RECONCILIATION"],"kind":"INTEGRATION","checkpointId":"WORKOUT-V2-CANONICAL-INTEGRATION-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CANONICAL-INTEGRATION-01.json","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","ownerVisualGate":false,"admissionRequired":false,"verification":"PASS","knownGoodSha":"70bb270c4c33c97c62a43437991c12bd67b70588"},
+{"id":"WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION","dependsOn":["WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION","WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION"],"kind":"WORK_PACKAGE","workstream":"PERSISTED_ENTRY_IDENTITY_CORRECTION","readinessRule":"DAG_DERIVED","status":"CLOSED","frozen":true,"admissionRequired":true,"taskProfile":"DB_CHANGE","parallelSafety":"SERIAL_ONLY","ownerVisualGate":false,"admissionPath":"docs/admissions/WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION.admission.json","requiresCapabilities":[{"id":"V2_CANONICAL_ENTRY_PASSPORT_RESOLUTION_V1","provider":"WORKOUT-V2-CANONICAL-ENTRY-PASSPORT-RECONCILIATION"},{"id":"V2_DERIVED_QA_ORACLE_V1","provider":"WORKOUT-V2-QA-FIXTURE-DERIVED-ORACLE-RECONCILIATION"}],"providesCapabilities":["V2_REPEATED_PRESCRIBED_ENTRY_PERSISTENCE_V1"],"verification":"PASS","knownGoodSha":"3e921cd5b7169714d40976243def7c392fce5afe","evidencePath":"reports/workout-v2-canonical/WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION-closeout.json"},
+{"id":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT","dependsOn":["WORKOUT-V2-CANONICAL-INTEGRATION-CHECKPOINT","BETA-DEPLOYMENT-CAPABILITY","WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION"],"kind":"DEPLOYMENT","checkpointId":"WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01","checkpointEvidencePath":"docs/checkpoints/WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01.json","status":"CLOSED","frozen":true,"readinessRule":"DAG_DERIVED","deploymentScope":"BETA_ONLY","ownerVisualGate":false,"admissionRequired":false,"verification":"PASS","knownGoodSha":"bcdaefd4d9d4dffd67b3bffda45e51ebd39026c0","evidencePath":"docs/checkpoints/WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-01.json","requiresCapabilities":[{"id":"V2_BETA_DEPLOYMENT_PATH_V1","provider":"BETA-DEPLOYMENT-CAPABILITY"},{"id":"V2_REPEATED_PRESCRIBED_ENTRY_PERSISTENCE_V1","provider":"WORKOUT-V2-PERSISTED-ENTRY-IDENTITY-CORRECTION"}]},
+    {"id":"RUN-5-OWNER-ACCEPTANCE","dependsOn":["WORKOUT-V2-CANONICAL-BETA-DEPLOYMENT-CHECKPOINT"],"kind":"HUMAN_GATE","ownerVisualGate":true,"gateScope":"COMPLETE_FLOW"}
+  ]
+}
+```
+<!-- WORKOUT_V2_AUTONOMOUS_DAG:END -->
+
+Cross-cutting capabilities: **Session Controls** (WP-14 orchestration authority + WP-08 surface) · **Progress** (WP-06) · **Mentor Presentation** (WP-09) · **Functional Audio** (WP-10) · **Shared Program ↔ Workout prescription contract** (WP-13) · **Accessibility** (WP-10, asserted per stage) · **Persistence/Resume** (existing snapshot contract; WP-01 must keep it intact).
+
+Owner visual acceptance is a milestone gate, not a work-package dependency:
+WP-06 and WP-07 have no Owner visual gate. The only Owner visual gate in this
+DAG is `RUN-5-OWNER-ACCEPTANCE`, and its scope is the complete program-driven
+experience after composition and machine/integration verification.
+
+### 2.2 Consolidated RUN-5 correction dependencies (Owner-authorized 2026-09-20)
+
+The rejected integrated review is represented as downstream correction work;
+historical CLOSED/FROZEN nodes are not reopened. `WP-17` owns the missing
+INTRO→SET orchestration handoff and lifecycle/read-model binding. `WP-18`
+extends the existing Exercise/Movement authority into the minimum Exercise
+Passport and protects the Mentor composition zone. `WP-19` reconciles only the
+controlled QA visual fixture. The explicit
+`SKIP-ALL-COMPLETION-SEMANTICS-DECISION` Human Gate is a genuine product
+decision because current persistence exposes `completedAt` but no canonical
+ended/non-credit state distinct from successful completion/adherence credit.
+The corrected integration checkpoint and corrected Beta deployment checkpoint
+are downstream of that gate, so RUN-5 cannot become the next Human Gate until
+the semantics are resolved and the machine evidence is regenerated.
+
+Capability chain:
+
+```
+WP-17 INTRO/SET + lifecycle correction ─┐
+WP-18 Exercise Passport + Mentor map ───┼─► WP-19 QA visual fixture
+                                        └─► SKIP-ALL decision gate
+all correction prerequisites ─────────────► corrected integration checkpoint
+corrected integration checkpoint ─────────► corrected Beta deployment checkpoint
+corrected Beta checkpoint ────────────────► RUN-5 complete-flow Human Gate
+```
+
+### 2.3 Execution-strategy completeness recovery (Owner-authorized 2026-09-20)
+
+The accepted manual-rep provenance audit proved that the earlier CLOSED/PASS
+claims covered a presentation/set scaffold but not the required runtime
+strategy boundary. Historical close-out reports and checkpoint receipts remain
+unchanged evidence; they are not deleted or rewritten. The new
+`WORKOUT-V2-EXECUTION-STRATEGY-COMPLETENESS-RECOVERY` node therefore owns the
+minimum additive recovery of the pre-workout capability gate, runtime strategy
+resolution, normalized movement evidence, session-owned Mentor lifecycle, and
+active-SET presentation semantics. The corrected integration and Beta
+deployment checkpoint projections remain historically superseded until this
+node is verified. The recovery is now verified locally; the corrected
+integration checkpoint is the next DAG-derived revalidation node and still
+requires exact-commit authoritative branch/PR CI. RUN-5 is not ready while
+that release evidence is absent.
+
+```text
+historical WP-03/WP-06/WP-09/WP-15 evidence ─┐
+                                            ├─► execution-strategy recovery
+historical corrected checkpoints ──────────┘
+execution-strategy recovery ───────────────► corrected integration checkpoint
+corrected integration checkpoint ──────────► corrected Beta deployment
+corrected Beta deployment ─────────────────► RUN-5 Human Gate
+```
+
+### 2.4 Canonical work reconciliation (Owner-authorized 2026-09-20)
+
+The QA-contract forensic audit and clarified Owner decisions expose a second
+boundary correction after execution-strategy recovery. Historical `WP-18`,
+`WP-19`, integration, and Beta PASS receipts remain CLOSED/FROZEN evidence for
+their admitted scopes; they are not rewritten or reopened. Their claims are
+insufficient for the clarified generic Entry/Passport identity, repeated
+canonical-Exercise obligations, derived QA oracle, capability readiness, and
+strict evidence-provenance requirements.
+
+The successor graph is:
+
+```text
+WP-13 + WP-15 + WP-18 + execution recovery
+  └─► canonical Entry/Passport resolution ─┐
+                                           ├─► derived QA fixture/oracle ─┐
+execution recovery + WP-15 ─► capability readiness ──────────────────────┤
+execution recovery + capability readiness ─► evidence/deployed journey ──┤
+                                                                         └─► canonical integration checkpoint
+BETA-DEPLOYMENT-CAPABILITY + canonical integration ─► canonical Beta checkpoint
+canonical Beta checkpoint ─► RUN-5 complete-flow Owner gate
+```
+
+The two independent DAG-derived candidates after this reconciliation are the
+canonical Entry/Passport reconciliation and the capability-readiness
+reconciliation. The QA fixture/oracle, evidence, integration, Beta, and RUN-5
+nodes remain blocked until their declared providers are verified. This is
+architectural dependency ordering, not the conversational order of the Owner
+clarifications.
+
+Run 1 close-out: `WP-06` and `WP-07` are CLOSED/FROZEN after their required
+child admissions, task-scoped verification, and report validation. The
+previous selector incorrectly treated manually assigned `NOT_YET` fields as
+independent gates even after dependencies were satisfied. The selector now
+derives readiness for ordinary autonomous nodes from the DAG, capability
+providers, and governance state. `WP-02` remains historically CLOSED/FROZEN
+for its admitted scope; it does not claim the later control-state
+capabilities. `WP-14` is the explicit follow-up prerequisite for those
+capabilities, so `WP-08` is not READY until WP-14 is verified and frozen. The
+current derived candidate is `RUN-4-PROGRAM-COMPOSITION`; `WP-14` is
+CLOSED/FROZEN and its capabilities were consumed by the now CLOSED/FROZEN
+WP-08 and remain available to WP-12. WP-09 is also CLOSED/FROZEN after
+verification of the existing Mentor presentation boundary. WP-10 is
+CLOSED/FROZEN after verifying functional supplementary audio and the stage
+accessibility contract. WP-13 is CLOSED/FROZEN and its shared contract is now
+available to WP-12. WP-12 is CLOSED/FROZEN after implementing the semantic
+WORKOUT_RESULT and confirmed EXIT boundary. Evidence: [`WP-06-closeout.json`](../../../reports/workout-v2-impl-01/WP-06-closeout.json),
+[`WP-07-closeout.json`](../../../reports/workout-v2-impl-01/WP-07-closeout.json),
+[`WP-14-closeout.json`](../../../reports/workout-v2-impl-01/WP-14-closeout.json),
+[`WP-08-closeout.json`](../../../reports/workout-v2-impl-01/WP-08-closeout.json),
+[`WP-09-closeout.json`](../../../reports/workout-v2-impl-01/WP-09-closeout.json),
+[`WP-10-closeout.json`](../../../reports/workout-v2-impl-01/WP-10-closeout.json),
+[`WP-13-closeout.json`](../../../reports/workout-v2-impl-01/WP-13-closeout.json),
+[`WP-12-closeout.json`](../../../reports/workout-v2-impl-01/WP-12-closeout.json),
+and [`GATE-01-completeness.json`](../../../reports/workout-v2-impl-01/GATE-01-completeness.json).
+
+`GATE-01` is CLOSED/FROZEN with `BLOCK_COMPLETENESS=PASS`; it found no
+missing reusable capability. `RUN-4-PROGRAM-COMPOSITION` was then admitted,
+implemented, and verified by the asymmetric 2/3 and 3/1 topology proof. The
+route now preserves Program-owned exercise order and passes the resolved
+prescription directly into the reusable shell/orchestrator path; no numbered
+or fixture-specific presentation flow was added. Its close-out is
+[`RUN-4-PROGRAM-COMPOSITION-closeout.json`](../../../reports/workout-v2-impl-01/RUN-4-PROGRAM-COMPOSITION-closeout.json).
+The canonical `INTEGRATION-CHECKPOINT-WORKOUT-V2-COMPLETE-FLOW` gate remains the
+historical Run-4 machine boundary. The downstream product-integration packages
+`WP-15` and `WP-16` now sit before a second complete-flow machine checkpoint;
+that checkpoint owns the machine evidence
+and `KNOWN_GOOD_SHA` in
+[`docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json`](../../../docs/checkpoints/WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01.json).
+The complete-flow Owner visual gate remains downstream and has not been
+satisfied by this machine execution. The Owner authorized establishment of the
+governed Beta path on 2026-09-19. The capability is now CLOSED/FROZEN after
+reconciling the existing host, `beta.apexhomefit.ir` DNS/TLS/reverse-proxy
+path, isolated `ahf_beta_db` volume, constrained gateway extension, exact-SHA
+deployment, rollback, and authenticated QA Program entry evidence into
+canonical repository work. Production remains unauthorized; RUN-5 remains the
+downstream complete-flow Human Gate.
 
 ## 2. Hard dependencies
 
 - WP-02 requires WP-01 (orchestration needs the extended module/phase contract).
 - WP-04 requires the **presentation view-model contract** (a design output that WP-02 freezes when its design starts — see §5).
 - WP-05 requires WP-02 (orchestration actions/state) **and** WP-04 (the shell it presents inside).
-- WP-06/07/08 require WP-02 (they consume orchestration state/actions, never sequence themselves).
+- WP-06/07 require WP-02 (they consume orchestration state/actions, never sequence themselves).
+- WP-14 is a narrowly scoped follow-up owned by the orchestration authority. It extends the frozen WP-02 boundary with the approved session-control actions, deferred/skipped state, completion eligibility, and exit action contract; it does not reopen or rewrite WP-02's historical close-out.
+- WP-08 requires WP-14 plus the frozen SET/SET_RESULT and REST capability contracts. WP-08 remains a consumer/control-surface task and does not own any orchestration state or transitions.
 - WP-06/07 require WP-03 (mode + targets must be explicit on the resolved prescription).
-- WP-11 requires every implementing WP terminal.
+- WP-13 requires the existing WP-03 resolution authority and establishes the shared, versioned Program ↔ Workout resolved-prescription boundary before later integration.
+- WP-12 requires accepted Run 1 capabilities (WP-06 + WP-07), **WP-13**, and the verified WP-14 control-state capability; it owns neither Run 1 capability and consumes orchestration actions rather than owning control sequencing.
+- GATE-01 requires the accepted START/PREPARING/INTRO boundary plus accepted Run 1/Run 2 blocks; it audits every required reusable/cross-cutting capability, does not assume missing capabilities are complete, and does not itself implement or admit a missing capability.
+- WP-11 requires every implementing WP terminal and GATE-01 PASS.
+
+### 2.1 Capability-readiness audit
+
+Readiness now distinguishes a named predecessor from the capability contract
+that predecessor actually provides:
+
+| Node | Required capability boundary | Canonical provider | Readiness result |
+|---|---|---|---|
+| WP-08 | control actions, deferred/skipped state, completion eligibility, exit action | WP-14 | satisfied after WP-14 CLOSED/FROZEN; WP-02 alone was insufficient |
+| WP-09 | frozen presentation view-model | WP-02 | satisfied; mentor remains a consumer and owns no session logic |
+| WP-10 | existing START/PREPARING/INTRO stage surfaces | WP-05 | satisfied; later-stage assertions remain soft freeze evidence, not a hidden start blocker |
+| WP-13 | prescription-resolution authority | WP-03 | satisfied; this task does not add orchestration ownership |
+| WP-12 | deferred/skipped state, completion eligibility, exit action, shared prescription contract | WP-14 + WP-13 | blocked only until WP-13 closes |
+
+This prevents a task from becoming `READY_DERIVED` merely because a historical
+predecessor is CLOSED when the required capability is absent or unrepresented.
 
 ## 3. Soft dependencies
 
@@ -51,14 +258,18 @@ Cross-cutting capabilities: **Session Controls** (WP-08) · **Progress** (WP-06)
 |---|---|---|
 | 1 | WP-01 · WP-03 | no shared files; distinct contracts; both available immediately |
 | 2 | WP-02 (after WP-01) · WP-04 (after the view-model contract freeze) · WP-09 (after the view-model contract freeze) | WP-04 and WP-09 consume WP-02's frozen view-model contract; WP-09 must not depend on WP-02 completion (degraded-first) |
-| 3 | WP-05 (after WP-02 + WP-04) → then WP-06 ∥ WP-07 (after WP-03 + WP-02) | distinct modules; orchestration contract frozen before stages |
-| 4 | WP-08 · WP-10 | controls surface + audio/a11y; both consume frozen stage contracts |
+| 3 | WP-05 (after WP-02 + WP-04) → then WP-06 ∥ WP-07 (after WP-03 + WP-02) | Run 1 Workstream A/B remain independent; orchestration contract is frozen before stages |
+| 4 | WP-09 · WP-10 ∥ WP-13 ∥ WP-14 | mentor/a11y assertions and the shared prescription contract remain independently scoped; WP-14 reconciles the missing orchestration control-state boundary |
+| 5 | WP-08 (after WP-14) | controls consume the verified orchestration capability plus frozen SET/REST contracts |
+| 6 | WP-12 (after WP-06 + WP-07 + WP-13 + WP-14) | Run 2 result/Exit block follows the frozen Run 1 capabilities, shared contract, and control-state authority |
+| 7 | GATE-01 → program-driven Product Composition only after PASS | completeness is audited explicitly before composition |
+| 8 | WP-15 → WP-16 → PRODUCT-INTEGRATION-CHECKPOINT → BETA-DEPLOYMENT-AUTHORIZATION → BETA-DEPLOYMENT-CAPABILITY → BETA-DEPLOYMENT-CHECKPOINT → RUN-5 | normal product entry, QA domain-path evidence, explicit Beta authorization, governed Beta capability, and deployed-runtime evidence are separate downstream gates |
 
 Parallel work must never edit the same contract file concurrently; contract changes go through the owning WP. WP-04/WP-09 may start in wave 2 **only** because the view-model contract is a design output frozen at WP-02's design start — if that freeze slips, they wait (they never invent their own view-model).
 
 ## 6. Conflict / resource boundaries
 
-- **Orchestration is a single writer** — WP-02 owns `orchestration` contract; other WPs consume it.
+- **Orchestration is a single writer** — WP-02 owns the frozen base orchestration contract; WP-14 is the only follow-up extension authority for the explicitly missing control-state capability. Other WPs consume both contracts and do not sequence.
 - **Session core is a single writer** — WP-01 owns the core extension; later WPs consume.
 - **Presentation modules must not import each other's internals**; shared view-model lives with the presentation contract.
 - **No WP may write the canonical prescription** (controls are session-scoped).
@@ -66,4 +277,4 @@ Parallel work must never edit the same contract file concurrently; contract chan
 
 ## 7. Sufficiency statement (for CRITICAL admission)
 
-This analysis identifies: hard dependencies (WP-01→02→{05,06,07,08}, WP-03→{06,07}, all→11), soft dependencies (WP-04/09 on the view-model shape), independently implementable work (WP-01, WP-03, WP-04, WP-09), safe parallelism (four waves above), and conflict boundaries (single-writer contracts, no prescription writes, DB change isolated to WP-03). It is sufficient for CRITICAL preparation: every work package can be sequenced, parallelized or serialized without re-deciding architecture, and every dependency terminates in an artifact that this preparation defines.
+This analysis identifies: hard dependencies (WP-01→02→{05,06,07,14}→08, WP-03→{06,07,13}, {06,07,13,14}→12→GATE-01→composition), explicit capability providers/consumers, soft dependencies (WP-04/09 on the view-model shape), independently implementable Run 1 workstreams (WP-06 and WP-07), safe parallelism, and conflict boundaries (single-writer orchestration, no prescription writes, DB change isolated to WP-03). It is sufficient for preparation: each roadmap stage is explicit, WP-02's historical freeze is preserved, missing control-state capability is represented as WP-14, and full composition is gated by an explicit completeness PASS.

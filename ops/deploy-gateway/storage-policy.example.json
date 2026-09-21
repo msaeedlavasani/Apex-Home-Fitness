@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "filesystem": "/",
+  "builder": "default",
+  "builder_scope": "AHF_ONLY",
+  "emergency_headroom_bytes": 0,
+  "temporary_docker_overhead_bytes": 0,
+  "max_build_cache_growth_bytes": 0,
+  "max_cache_bytes": 0,
+  "reserved_cache_bytes": 0,
+  "cache_retention_hours": 168,
+  "pressure_cache_retention_hours": 24,
+  "calibration_required": true,
+  "calibration_note": "Replace zero placeholders only after host-specific AHF builder-scope and peak-size evidence is recorded. The gateway rejects this example until calibrated."
+}

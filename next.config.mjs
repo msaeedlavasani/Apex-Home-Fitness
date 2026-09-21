@@ -71,7 +71,12 @@ const nextConfig = {
               "img-src 'self' data: blob: https://*.supabase.co https://commondatastorage.googleapis.com",
               "font-src 'self' data:",
               "media-src 'self' blob: https:",
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev https://${runtimeScriptHost}`,
+              // `blob:` in connect-src: three's GLTFLoader decodes embedded GLB
+              // texture images into blob: URLs and fetches them — blocking
+              // connect-src blob: silently strips every Mentor material
+              // texture (white/untextured character). Same-origin blobs only,
+              // so the CSP surface is unchanged for remote origins.
+              `connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.mux.dev https://${runtimeScriptHost}`,
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",

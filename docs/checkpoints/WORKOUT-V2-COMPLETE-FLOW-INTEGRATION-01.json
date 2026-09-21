@@ -1,0 +1,42 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-COMPLETE-FLOW-INTEGRATION-01",
+  "CHECKPOINT_KIND": "INTEGRATION",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "d627c864df62e37e4c788b074820bfe65cd936cf",
+  "VERIFIED_SOURCE_SHA": "a20e31f5979fae681cf0a1a4a6a44aa99a32a247",
+  "CHECKPOINT_EVIDENCE_SHA": "eb87be8905f11d76cd51fd6342e5e04fcc8fc4a3",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "d627c864df62e37e4c788b074820bfe65cd936cf",
+    "RUN_ID": "35453034454",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35453034454",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "d627c864df62e37e4c788b074820bfe65cd936cf",
+    "BRANCH_RUN_ID": "35453034454",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35453034454",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "d627c864df62e37e4c788b074820bfe65cd936cf",
+    "PR_RUN_ID": "35453036141",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35453036141"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"governance","COMMAND":"npm run governance:check","STATUS":"PASS","SUMMARY":"Canonical docs and UI governance checks passed."},
+    {"ID":"admission","COMMAND":"npm run admission:check","STATUS":"PASS","SUMMARY":"10 canonical admission records granted; 0 denied."},
+    {"ID":"governance-tests","COMMAND":"npm run governance:test","STATUS":"PASS","SUMMARY":"25 governance runtime tests passed, including branch/PR checkpoint and readiness negative paths."},
+    {"ID":"admission-tests","COMMAND":"npm run admission:test","STATUS":"PASS","SUMMARY":"38 admission runtime tests passed."},
+    {"ID":"static","COMMAND":"npm run typecheck && npm run lint","STATUS":"PASS","SUMMARY":"Typecheck passed; lint passed with five pre-existing warnings."},
+    {"ID":"build","COMMAND":"npm run build","STATUS":"PASS","SUMMARY":"Production build completed successfully; only existing lint and workspace-root warnings remained."},
+    {"ID":"asset-audit","COMMAND":"npm run audit:assets","STATUS":"PASS","SUMMARY":"Asset audit passed with documented future-asset informational entries only."},
+    {"ID":"workout-v2-unit","COMMAND":"node --import tsx --test tests/workout-v2-orchestration.test.ts tests/workout-v2-program-composition.test.ts tests/workout-v2-prescription-contract.test.ts tests/workout-v2-run1.test.ts tests/workout-v2-experience.test.ts tests/workout-v2-run1-ui.test.tsx tests/workout-v2-first-slice.test.tsx","STATUS":"PASS","SUMMARY":"64 Workout V2 unit, contract, orchestration, UI, and composition tests passed."},
+    {"ID":"workout-v2-browser","COMMAND":"PLAYWRIGHT_PORT=52701 npx playwright test --config=infra/config/playwright.config.ts tests/workout-v2-start-reliability.spec.ts --workers=1","STATUS":"PASS","SUMMARY":"26 integrated Workout V2 browser reliability tests passed serially in EN and FA, including START, INTRO, Mentor, controls, responsive geometry, and theme checks."},
+    {"ID":"git-parity","COMMAND":"git rev-parse HEAD && git rev-parse @{upstream} && git rev-list --left-right --count HEAD...@{upstream} && git status --short","STATUS":"PASS","SUMMARY":"The CI-verified reconciliation candidate d627c864df62e37e4c788b074820bfe65cd936cf was pushed; the evidence-only closeout will preserve it as the known-good baseline."},
+    {"ID":"github-ci","COMMAND":"GitHub Actions CI for branch push 35453034454 and PR synchronization 35453036141","STATUS":"PASS","SUMMARY":"Both authoritative CI runs passed governance, admission, unit, build, auth E2E, and smoke E2E for d627c864df62e37e4c788b074820bfe65cd936cf."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_IDENTITY": "NOT_APPLICABLE",
+  "BETA_DEPLOYMENT_AUTHORIZED": "NO",
+  "BETA_DEPLOYMENT_CHECKPOINT": "NOT_AUTHORIZED"
+}

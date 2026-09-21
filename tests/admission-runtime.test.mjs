@@ -279,7 +279,10 @@ test('CHECK A — CRITICAL report without an admission record fails closed (clos
 test('admissions bulk: valid records pass and GRANTED records do not fail the repo check', () => {
   const out = run('admissions', 'docs/admissions');
   assert.match(out, /ADMISSIONS_PASS \d+ records/);
-  assert.match(out, /granted: 1/); // WORKOUT-V2-IMPL-01 (owner-authorized 2026-09-15)
+  assert.match(out, /ADMISSION_GRANTED WORKOUT-V2-IMPL-01/);
+  assert.match(out, /ADMISSION_GRANTED WP-06/);
+  assert.match(out, /ADMISSION_GRANTED WP-07/);
+  assert.match(out, /granted: 24/); // parent + admitted Workout V2 work packages + canonical reconciliation successors + governed Beta capability + storage hygiene + persistence correction
 });
 test('admissions bulk: malformed record fails closed', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'admissions-'));

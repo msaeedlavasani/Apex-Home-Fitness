@@ -1,13 +1,27 @@
 # Workout Experience V2 — Open Product & Architecture Questions
 
-> **STATUS: OPEN QUESTIONS — FOR PRODUCT OWNER DISCUSSION**
+> **STATUS: HISTORICAL / SUPERSEDED FOR RESOLVED CONTRACTS — DEFERRED ENTRIES RETAINED**
 >
-> These questions must be answered (or explicitly deferred) by the product owner
-> before a Technical Specification is written. Nothing here is decided; do not
-> treat any option as a chosen direction.
+> The finalized normative contract is [`../specs/0001-workout-experience/spec.md`](../specs/0001-workout-experience/spec.md), with implementation architecture in [`../specs/0001-workout-experience/plan.md`](../specs/0001-workout-experience/plan.md). This file is retained as the historical question register. Its conflicting alternatives are not an active source of truth; they are **SUPERSEDED** by the canonical contract below. Entries not resolved there remain implementation-deferred and non-authorizing.
 
 Related: [WORKOUT-EXPERIENCE-V2.md](./WORKOUT-EXPERIENCE-V2.md) — the product
 vision this document supports.
+
+### Canonical resolution map
+
+| Historical question/alternative | Canonical status |
+|---|---|
+| `HOLD` as a third execution mode | **SUPERSEDED** — static holds use `TIME_BASED` with hold-specific coaching semantics. |
+| REP→seconds conversion or a magic multiplier | **SUPERSEDED** — `REP_BASED` camera-less execution requires resolved `fallbackDuration`; the Workout Experience does not invent conversion. |
+| Fixed phase/set topology, Intro between same-Exercise Sets, or same-Exercise `REST_NEXT_PREVIEW` | **SUPERSEDED** — reusable `START`, `PREPARING`, `INTRO`, `SET`, `SET_RESULT`, `REST`, `WORKOUT_RESULT`, `EXIT`; Intro occurs once per new Exercise identity. |
+| Presentation-owned sequencing or an independent `EXERCISE_TRANSITION` module | **SUPERSEDED** — the Orchestrator owns sequencing and exercise-boundary semantics. |
+| Skip Set / Extend Rest / Reduce Rest as approved controls | **SUPERSEDED** — the approved control set excludes them. |
+| Camera permission, calibration, readiness and no-camera behavior | **RESOLVED** — `PRE_WORKOUT_CAPABILITY_GATE`; see spec §5.12 and CP-04 §4.4. |
+| Exit, checkpoint, refresh/interruption recovery, deferred and skipped Exercises | **RESOLVED** — see spec §§5.10 and 5.13. |
+
+The remaining questions are retained only to record deferred implementation/product
+detail (for example exact timings, visual treatment, schema, thresholds, algorithms,
+and future adaptation). They do not reopen or override the resolved contracts.
 
 ---
 

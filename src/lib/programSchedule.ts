@@ -1,5 +1,7 @@
 import {isRestDay, weekdayOf} from '@/lib/ai/restDays';
 import type { ExerciseId, ExerciseSlug } from '@/lib/exercise';
+import {exercisePassportFromAuthority, exerciseSupportsSquatMentor} from '@/lib/exercise/passport';
+import type {SessionExercise, SessionSetPrescription} from '@/lib/workout/sessionContracts';
 
 export type PersistedScheduleExercise = {
   id?: unknown;
@@ -10,6 +12,8 @@ export type PersistedScheduleExercise = {
   reps?: unknown;
   duration_seconds?: unknown;
   rest_seconds?: unknown;
+  fallback_duration_seconds?: unknown;
+  set_prescriptions?: unknown;
 };
 
 export type PersistedScheduleSession = {
@@ -37,6 +41,25 @@ function toReps(value: unknown): number | null {
   if (typeof value !== 'string') return null;
   const match = /^\s*(\d+)/.exec(value);
   return match ? Number(match[1]) : null;
+}
+
+function setPrescriptions(value: unknown): readonly SessionSetPrescription[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const resolved = value.flatMap((item): SessionSetPrescription[] => {
+    if (!item || typeof item !== 'object') return [];
+    const raw = item as Record<string, unknown>;
+    const mode = raw.execution_mode === 'TIME_BASED' || raw.executionMode === 'TIME_BASED' ? 'TIME_BASED' :
+      raw.execution_mode === 'REP_BASED' || raw.executionMode === 'REP_BASED' ? 'REP_BASED' : null;
+    if (!mode) return [];
+    return [{
+      executionMode: mode,
+      reps: toReps(raw.reps),
+      durationSeconds: toPositiveInt(raw.duration_seconds, 0) || null,
+      fallbackDurationSeconds: toPositiveInt(raw.fallback_duration_seconds, 0) || null,
+      restSeconds: toPositiveInt(raw.rest_seconds, 0) || null,
+    }];
+  });
+  return resolved.length === value.length ? resolved : undefined;
 }
 
 export function dashboardPlanFromSchedule(
@@ -78,6 +101,7 @@ export function workoutExercisesFromSchedule(
 }
 
 export function generatedExerciseDefaults(exercise: PersistedScheduleExercise, index: number) {
+  const resolvedSetPrescriptions = setPrescriptions(exercise.set_prescriptions);
   return {
     id: typeof exercise.id === 'string' ? exercise.id : `generated-${index}`,
     name: typeof exercise.name === 'string' && exercise.name.trim() ? exercise.name : `Exercise ${index + 1}`,
@@ -85,7 +109,35 @@ export function generatedExerciseDefaults(exercise: PersistedScheduleExercise, i
     reps: toReps(exercise.reps),
     durationSeconds: toPositiveInt(exercise.duration_seconds, 0) || null,
     restSeconds: toPositiveInt(exercise.rest_seconds, 30) || null,
+    fallbackDurationSeconds: toPositiveInt(exercise.fallback_duration_seconds, 0) || null,
+    ...(resolvedSetPrescriptions ? {setPrescriptions: resolvedSetPrescriptions} : {}),
   };
+}
+
+/**
+ * Canonical Program → Workout route adapter. It preserves Program schedule
+ * order and prescription-owned values, then adds canonical Exercise identity
+ * only where the persisted relational ProgramExercise join resolves it.
+ */
+export function workoutSessionExercisesFromProgram(
+  schedule: unknown,
+  weekday: string,
+  restDays: readonly string[],
+  identityIndex: ExerciseIdentityIndex,
+): SessionExercise[] {
+  const exercises = workoutExercisesFromSchedule(schedule, weekday, restDays);
+  const enriched = enrichScheduleExercises(exercises, identityIndex);
+  return exercises.map((exercise, index) => {
+    const base = generatedExerciseDefaults(exercise, index);
+    const identity = enriched[index];
+    const authority = identityIndex.byName.get(base.name) ??
+      (typeof exercise.slug === 'string' ? identityIndex.bySlug.get(exercise.slug) : undefined);
+    return {
+      ...base,
+      ...(identity?.exerciseId || identity?.slug ? {exerciseId: identity.exerciseId, slug: identity.slug} : {}),
+      ...(authority ? {exercisePassport: passportForRelationalExercise(authority)} : {}),
+    };
+  });
 }
 
 export function scheduleHasRestDayViolation(schedule: unknown, restDays: readonly string[]): boolean {
@@ -135,6 +187,8 @@ export type RelationalExercise = {
     name: string;
     /** Canonical resolution slug when the row has been resolved (S02-C). */
     slug?: string | null;
+    instructions?: unknown;
+    movement?: {coachingCues?: unknown} | null;
   };
 };
 
@@ -231,4 +285,18 @@ export function enrichScheduleExercises(
   return scheduleExercises.map((exercise, index) =>
     enrichExerciseIdentity(exercise, index, identityIndex),
   );
+}
+
+/** Adds the Exercise Passport projection without mixing it with prescription. */
+export function passportForRelationalExercise(
+  exercise: RelationalExercise['exercise'],
+): ReturnType<typeof exercisePassportFromAuthority> {
+  return exercisePassportFromAuthority({
+    exerciseId: exercise.id as ExerciseId,
+    slug: exercise.slug ? exercise.slug as ExerciseSlug : undefined,
+    name: exercise.name,
+    instructions: exercise.instructions,
+    coachingCues: exercise.movement?.coachingCues,
+    mentorSupported: exerciseSupportsSquatMentor({name: exercise.name, slug: exercise.slug ?? undefined}),
+  });
 }

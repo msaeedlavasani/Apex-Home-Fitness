@@ -1,0 +1,665 @@
+'use client';
+
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {cn} from '@/lib/cn';
+import {useTranslations} from 'next-intl';
+import {useRouter} from '@/i18n/navigation';
+import {BrandIcon} from '@/components/layout/BrandIcon';
+import {useTheme} from '@/components/providers/ThemeProvider';
+import {useWorkoutSession} from '@/components/workout/useWorkoutSession';
+import {useWorkoutCapabilityGate} from '@/components/workout/useWorkoutCapabilityGate';
+import {ConsentGatedCameraRuntime} from '@/services/cameraRuntime';
+import {PREPARING_DURATION_SECONDS} from '@/lib/workout/orchestration';
+import type {SessionExercise} from '@/lib/workout/sessionContracts';
+import {
+  deriveExerciseDetails,
+  exerciseDetailFields,
+} from '@/lib/workout/experience/exerciseDetails';
+import {createWorkoutMusic,
+  type WorkoutMusicController,
+} from '@/lib/workout/experience/sessionMusic';
+import {
+  disposeMentorPreparation,
+  prepareMentorAsset,
+} from './mentor/mentorPreparation';
+import {deriveReadinessTips} from './readiness';
+import {BackstageBackdrop} from './BackstageBackdrop';
+import {ExerciseDetailsSheet} from './ExerciseDetailsSheet';
+import {StartStage} from './StartStage';
+import {PreparingStage} from './PreparingStage';
+import {IntroStage} from './IntroStage';
+import {MentorStage} from './mentor/MentorStage';
+import {WorkSetStage} from './WorkSetStage';
+import {RestStage} from './RestStage';
+import {SessionControlSurface} from './SessionControlSurface';
+import {SessionOutcomeSummary} from './SessionOutcomeSummary';
+import {WorkoutResultStage} from './WorkoutResultStage';
+import {ExitConfirmation} from './ExitConfirmation';
+import {
+  WorkoutV2ExitControl,
+  WorkoutV2LanguageControl,
+  WorkoutV2ThemeControl,
+} from './ShellControls';
+import type {SessionOrchestrationEffect, WorkoutResultSummary} from '@/lib/workout/sessionV2Contracts';
+
+function markExperiencePerformance(name: string): void {
+  if (typeof performance === 'undefined') return;
+  if (performance.getEntriesByName(name).length === 0) performance.mark(name);
+}
+
+/**
+ * ExperienceShell (WP-04) — the full-surface V2 experience shell,
+ * conformed to the OWNER VISUAL CORRECTION (WORKOUT-V2-IMPL-01: the four
+ * Start/Preparing Dark references are the geometry authority).
+ *
+ * TOP SHELL (correction §5): [Brand] …… [Language] | [Theme] | [Exit] —
+ * three compact 44px circular controls of one design family in the trailing
+ * corner (visually secondary, never dominant; no giant navigation capsule).
+ * Direction mirrors logically under RTL. The controls are the two-state
+ * owner overrides (§4.1 Language FA⇄EN single-tap, §4.2 Theme Dark⇄Light,
+ * SYSTEM never offered on this surface) and the restored Exit (§4.3) with
+ * REAL navigation semantics through the existing product routing — see
+ * `ShellControls.tsx`.
+ *
+ * COMPOSITION LAW (§9): 100vw/100dvh surface, safe areas, mobile gutter 16px
+ * / sm+ 24px, ONE central composition axis — the shell centers content, so
+ * hero and CTA resolve to the viewport center; asymmetric Backstage objects
+ * never shift UI. The top bar and the details sheet are overlays, not
+ * primary layout.
+ *
+ * OWNERSHIP (plan §3/§11): this shell is a CONSUMER of the orchestration
+ * view-model. It dispatches start/pause/resume through the adapter and
+ * renders stage components — it NEVER sequences. PREPARING presentation is
+ * fully text-rendered (non-animation-only, spec §5.8).
+ *
+ * MUSIC (§28–§33): the session-layer music controller is created ONCE per
+ * session (lazy, ref-stable) and survives countdown ticks, theme switches,
+ * stage transitions and More open/close. Playback starts only through the
+ * Start Workout user gesture (autoplay policy respected, §30); rejections
+ * are handled and never reported as playing.
+ *
+ * MORE (§34–§40): opens the real Exercise Details surface. Opening reuses
+ * the EXISTING pause authority so the PREPARING countdown cannot finish
+ * silently while the user reads (§39); closing resumes the preserved
+ * remaining time — no reset, no second timer.
+ *
+ * THEME (§8 + correction §17): Dark/Light differ ONLY via canonical tokens
+ * + the purpose-built Backstage asset + the environment-focus treatment —
+ * never geometry (THEME_VARIANT = TRANSFORMATION, NOT REGENERATION).
+ *
+ * PREPARING depth (correction §14): a mild veil recedes the environment so
+ * the foreground UI becomes primary — no blur, no modal backdrop, UI stays
+ * sharp. Reduced motion: the veil is an opacity transition carrying no
+ * information; stage swaps use the CSS-gated `animate-phase-enter`.
+ *
+ * SHELL CONTROL CONTRAST (owner polish delta §B): the compact shell controls
+ * are a low-contrast overlay over the bright Backstage on DESKTOP LIGHT —
+ * the brand wordmark and `CONTROL_BASE` surface/border tokens are too faint
+ * there. The shared shell therefore carries a `data-workout-theme` attribute
+ * and two DESKTOP-ONLY scrim utilities (a localized top veil + a strengthened
+ * control surface token) that activate only on `sm:`+ screens in the LIGHT
+ * theme: geometry, radii, touch targets and positions are untouched, Mobile
+ * Light and Dark themes are unaffected, and START/PREPARING/INTRO share ONE
+ * treatment (never state-specific copies).
+ */
+
+export interface ExperienceShellProps {
+  /** The workout plan for this session (prescription-resolved inside the adapter). */
+  exercises: readonly SessionExercise[];
+  /** Localized workout name for the START hero (route-adapter supplied). */
+  sessionTitle?: string;
+  /** Fired when START commits (after the orchestration transition succeeds). */
+  onSessionStarted?: () => void;
+  /** Fired once the orchestration enters the semantic result boundary. */
+  onWorkoutResultReady?: (summary: WorkoutResultSummary) => void;
+  /** Extra classes on the shell surface. */
+  className?: string;
+}
+
+export function ExperienceShell({
+  exercises,
+  sessionTitle,
+  onSessionStarted,
+  onWorkoutResultReady,
+  className,
+}: ExperienceShellProps) {
+  const t = useTranslations('WorkoutV2');
+  const router = useRouter();
+  const {resolvedTheme} = useTheme();
+  const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const capabilityGate = useWorkoutCapabilityGate(exercises);
+
+  const {
+    viewModel,
+    startSession,
+    pause,
+    resume,
+    submitMovementEvidence,
+    markTrackingLost,
+    markTrackingReacquired,
+    markTrackingUnrecoverable,
+    beginWorkSet,
+    skipRest,
+    exitWorkout,
+    confirmExit,
+    cancelExit,
+    restartCurrentSet,
+    deferExercise,
+    resolveDeferredExercise,
+    skipExercise,
+  } = useWorkoutSession(exercises, {
+    executionCapability: capabilityGate.state.capability,
+    onEffect: useMemo(() => {
+      const handler = (effect: SessionOrchestrationEffect) => {
+        if (effect.kind === 'SESSION_STARTED') onSessionStarted?.();
+        if (effect.kind === 'WORKOUT_RESULT_READY') onWorkoutResultReady?.(effect.summary);
+        if (effect.kind === 'EXIT_CONFIRMED') router.push('/dashboard');
+      };
+      return handler;
+    }, [onSessionStarted, onWorkoutResultReady, router]),
+  });
+
+  // HANDOFF INSTRUMENTATION (owner device correction §1): performance marks
+  // for the real-device freeze evidence — T1 PREPARING countdown completion
+  // (last rendered tick), T2 the orchestration transition render (INTRO
+  // content attached), T3 the first INTRO paint (double rAF after T2), and
+  // T4 the Mentor visible-ready (wired via markMentorReady below). Pure
+  // marks only — never gates behavior.
+  useEffect(() => {
+    if (typeof performance === 'undefined') return;
+    if (viewModel.lifecycle === 'READY_TO_START' && viewModel.activeModule === 'START') {
+      performance.clearMarks();
+    }
+    if (viewModel.lifecycle === 'PREPARING') {
+      // Preserve the legacy countdown mark for existing diagnostics. The
+      // canonical A mark is emitted by the orchestration handoff itself.
+      if (viewModel.preparingSecondsRemaining !== null && viewModel.preparingSecondsRemaining <= 1) {
+        if (performance.getEntriesByName('v2:t1-preparing-countdown-end').length === 0) {
+          performance.mark('v2:t1-preparing-countdown-end');
+        }
+      }
+    }
+    if (viewModel.activeModule === 'EXERCISE_INTRO') {
+      markExperiencePerformance('B_INTRO_STATE_COMMITTED');
+      if (performance.getEntriesByName('v2:t2-intro-transition').length === 0) {
+        performance.mark('v2:t2-intro-transition');
+      }
+      // First VISIBLE paint of INTRO: two frames after the transition commit.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          markExperiencePerformance('C_INTRO_DOM_FIRST_PAINT');
+          if (performance.getEntriesByName('v2:t3-intro-first-paint').length === 0) {
+            performance.mark('v2:t3-intro-first-paint');
+          }
+          if (performance.getEntriesByName('INTRO_FIRST_VISIBLE').length === 0) {
+            performance.mark('INTRO_FIRST_VISIBLE');
+          }
+        }),
+      );
+    }
+  }, [viewModel.lifecycle, viewModel.activeModule, viewModel.preparingSecondsRemaining]);
+
+  // Resolved session facts for the PREPARING context block (§18: displayed
+  // counts represent ACTUAL resolved data — derived from the same plan the
+  // adapter resolves, never a hardcoded fixture).
+  const sessionFacts = useMemo(() => {
+    const setCount = exercises.reduce((sum, exercise) => sum + Math.max(1, Math.floor(exercise.sets ?? 1)), 0);
+    return {exercises: exercises.length, sets: setCount};
+  }, [exercises]);
+
+  // Mentor support is presentation capability, not prescription authority.
+  // Unsupported resolved identities use the canonical degraded mode; they are
+  // never renamed or silently bound to the Squat demonstration.
+  const mentorSupportedForActiveExercise = useMemo(() => {
+    const exercise = viewModel.introExercise ?? viewModel.activeExercise;
+    return exercise?.exercise.exercisePassport?.mentor.supported === true;
+  }, [viewModel.introExercise, viewModel.activeExercise]);
+
+  const introCues = useMemo(() => {
+    const exercise = viewModel.introExercise ?? viewModel.activeExercise;
+    return exercise?.exercise.exercisePassport?.introCues ?? [];
+  }, [viewModel.introExercise, viewModel.activeExercise]);
+
+  const introPosition = viewModel.activeExerciseIndex == null
+    ? t('intro.firstExercise')
+    : t('intro.exerciseOf', {
+      current: viewModel.activeExerciseIndex + 1,
+      total: viewModel.exerciseOutcomes.length,
+    });
+
+  // Prescription context for the restored pill (correction §11): derived
+  // from the RESOLVED exercise — the canonical plan contract carries no
+  // equipment field, so a resolved exercise IS bodyweight by data. The
+  // localized label comes from the message layer; the CONDITION is real
+  // resolved data. Omitted (never faked) when no exercise is resolved.
+  const prescriptionContext = useMemo(() => {
+    if (!viewModel.activeExercise) return null;
+    return t('preparing.bodyweight');
+  }, [viewModel.activeExercise, t]);
+
+  // Readiness guidance — two generic tips + the prescription-derived third
+  // row (correction §13: THREE items for the bodyweight fixture, driven by
+  // the resolved prescription, never a hardcoded count).
+  const tips = useMemo(
+    () =>
+      deriveReadinessTips(
+        {
+          clearSpaceTitle: t('readiness.clearSpaceTitle'),
+          clearSpaceDetail: t('readiness.clearSpaceDetail'),
+          goodPostureTitle: t('readiness.goodPostureTitle'),
+          goodPostureDetail: t('readiness.goodPostureDetail'),
+          noEquipmentTitle: t('readiness.noEquipmentTitle'),
+          noEquipmentDetail: t('readiness.noEquipmentDetail'),
+        },
+        viewModel.activeExercise,
+      ),
+    [t, viewModel.activeExercise],
+  );
+
+  // ---- Music (session-owned, single instance, §28–§33) -------------------
+  const musicRef = useRef<WorkoutMusicController | null>(null);
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const getMusic = useCallback((): WorkoutMusicController => {
+    if (!musicRef.current) musicRef.current = createWorkoutMusic();
+    return musicRef.current;
+  }, []);
+  useEffect(() => {
+    // Session teardown only — release the single audio instance.
+    return () => {
+      musicRef.current?.dispose();
+      musicRef.current = null;
+    };
+  }, []);
+
+  // Mentor PREPARE ONCE → REUSE (mentorPreparation.ts): the preparation
+  // window is the WHOLE pre-INTRO session — the single fetch/parse of the
+  // canonical Mentor GLB starts when the session shell first mounts (START
+  // screen) so the monolithic GLTFLoader parse (2-4s desktop, longer on
+  // mobile networks) has the maximum possible lead before the PREPARING
+  // countdown completes (owner device correction §1: the parse long-task
+  // must not straddle the PREPARING→INTRO transition). Fire-and-forget: no
+  // UI ever blocks on it. INTRO's stage later ACQUIRES the same in-flight
+  // /settled preparation (no second request, no reparse). Resources are
+  // released at session teardown if INTRO never consumed them.
+  const mentorPreloadStartedRef = useRef(false);
+  const mentorLifecycleRef = useRef(0);
+  useEffect(() => {
+    const lifecycle = mentorLifecycleRef.current + 1;
+    mentorLifecycleRef.current = lifecycle;
+    if (!mentorPreloadStartedRef.current) {
+      mentorPreloadStartedRef.current = true;
+      void prepareMentorAsset().catch(() => undefined);
+    }
+    return () => {
+      // React replays passive effects in development. Defer teardown one
+      // microtask so replay cleanup cannot invalidate the session-wide
+      // preparation before the replayed setup rejoins it. A real unmount has
+      // no subsequent lifecycle value and still disposes promptly.
+      queueMicrotask(() => {
+        if (mentorLifecycleRef.current === lifecycle) disposeMentorPreparation();
+      });
+    };
+  }, []);
+
+  // T4 = Mentor visible-ready (wired from the stage's readiness callback —
+  // fires after the first real canvas frame containing the framed Mentor).
+  const markMentorReady = useCallback(() => {
+    if (typeof performance === 'undefined') return;
+    if (performance.getEntriesByName('v2:t4-mentor-ready').length === 0) {
+      performance.mark('v2:t4-mentor-ready');
+    }
+  }, []);
+
+  // The stage reports readiness only; the orchestrator owns the global
+  // INTRO→SET transition. This keeps degraded Mentor mode usable while
+  // preventing presentation code from routing the session itself.
+  const enterWorkSetFromIntro = useCallback(() => {
+    markMentorReady();
+    beginWorkSet();
+  }, [beginWorkSet, markMentorReady]);
+
+  const handleStart = useCallback(() => {
+    // START dispatch (§25) — the session's first, gesture-backed user
+    // interaction: the approved playback unlock for the music controller.
+    startSession();
+    // §30: the Start Workout gesture is the valid playback interaction.
+    void getMusic()
+      .play()
+      .then((state) => setMusicPlaying(state === 'PLAYING'))
+      .catch(() => setMusicPlaying(false));
+  }, [startSession, getMusic]);
+
+  const handleToggleMusic = useCallback(() => {
+    const music = getMusic();
+    const next = music.getState() === 'PLAYING' ? music.mute() : music.unmute();
+    void next.then((state) => setMusicPlaying(state === 'PLAYING'));
+  }, [getMusic]);
+
+  // ---- More → Exercise Details (§34–§40) ---------------------------------
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsOpenRef = useRef(false);
+  const detailsPausedRef = useRef(false);
+  const lifecycleRef = useRef(viewModel.lifecycle);
+  lifecycleRef.current = viewModel.lifecycle;
+  const shellRef = useRef<HTMLElement>(null);
+
+  const openDetails = useCallback(() => {
+    if (detailsOpenRef.current) return;
+    detailsOpenRef.current = true;
+    setDetailsOpen(true);
+    // §39: reuse the EXISTING pause authority — countdown may not finish
+    // silently while details are read. Only pause what we will resume.
+    if (lifecycleRef.current === 'PREPARING') {
+      detailsPausedRef.current = true;
+      pause();
+    }
+  }, [pause]);
+
+  const closeDetails = useCallback(() => {
+    if (!detailsOpenRef.current) return;
+    detailsOpenRef.current = false;
+    setDetailsOpen(false);
+    if (detailsPausedRef.current) {
+      detailsPausedRef.current = false;
+      resume(); // authority no-ops unless PAUSED; remaining time preserved
+    }
+    // §38: focus returns to the triggering control after close.
+    requestAnimationFrame(() => {
+      shellRef.current?.querySelector<HTMLButtonElement>('[data-workout-v2-more]')?.focus();
+    });
+  }, [resume]);
+
+  const activeModule = viewModel.activeModule;
+  const motionClass = 'animate-phase-enter'; // CSS gates it under reduced motion.
+  const stageKey = `${viewModel.lifecycle}-${activeModule ?? 'none'}`;
+  const preparing = activeModule === 'PREPARING';
+
+  // The provider-specific camera runtime is consumed only through its
+  // normalized evidence callback. It never receives orchestration authority
+  // and raw frames never cross this boundary.
+  const cameraRuntimeRef = useRef<ConsentGatedCameraRuntime | null>(null);
+  useEffect(() => {
+    cameraRuntimeRef.current?.stop();
+    cameraRuntimeRef.current = null;
+    const progress = viewModel.setProgress;
+    const exercise = viewModel.activeExercise;
+    if (
+      activeModule !== 'WORK_SET'
+      || progress?.runtimeStrategy !== 'TRACKED_REP'
+      || !capabilityGate.state.consented
+      || !exercise
+    ) return;
+    const runtime = new ConsentGatedCameraRuntime({
+      consented: capabilityGate.state.consented,
+      scope: 'poseTracking:squat',
+      exerciseIndex: viewModel.activeExerciseIndex ?? 0,
+      set: progress.setNumber,
+      plannedReps: progress.targetReps,
+      exerciseId: exercise.exercise.exerciseId,
+      slug: exercise.exercise.slug,
+      onUpdate: (update) => {
+        if (update.evidence) {
+          markTrackingReacquired();
+          submitMovementEvidence(update.evidence);
+        } else if (update.status === 'uncertain') {
+          markTrackingLost();
+        } else if (update.status === 'active') {
+          markTrackingReacquired();
+        } else if (update.status === 'error' || update.status === 'unsupported') {
+          const fallback = exercise.exercise.fallbackDurationSeconds;
+          if (typeof fallback === 'number' && fallback > 0) markTrackingUnrecoverable(fallback);
+        }
+      },
+    });
+    cameraRuntimeRef.current = runtime;
+    void runtime.start();
+    return () => {
+      runtime.stop();
+      if (cameraRuntimeRef.current === runtime) cameraRuntimeRef.current = null;
+    };
+  }, [activeModule, capabilityGate.state.consented, markTrackingLost, markTrackingReacquired, markTrackingUnrecoverable, submitMovementEvidence, viewModel.activeExercise, viewModel.activeExerciseIndex, viewModel.setProgress]);
+
+  // PREPARING depth treatment (correction §14): a MILD veil recedes the
+  // environment — the UI stays sharp, no blur, no modal surface. This is
+  // the START↔PREPARING focus delta the references show.
+  const veilStyle = useMemo(
+    () =>
+      theme === 'dark'
+        ? {background: 'rgb(0 0 0 / 0.38)'}
+        : {background: 'rgb(255 255 255 / 0.2)'},
+    [theme],
+  );
+
+  const detailsModel = useMemo(
+    () => (viewModel.activeExercise ? deriveExerciseDetails(viewModel.activeExercise) : null),
+    [viewModel.activeExercise],
+  );
+
+  if (capabilityGate.state.status !== 'READY') {
+    return (
+      <section data-workout-v2-capability-gate="" className="flex min-h-[100dvh] items-center justify-center bg-[color:var(--app-background)] px-4">
+        <div className="w-full max-w-lg">{capabilityGate.gate}</div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      ref={shellRef}
+      data-workout-v2-shell=""
+      aria-label={t('shellLabel')}
+      className={cn(
+        'relative isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[color:var(--app-background)]',
+        className,
+      )}
+    >
+      <BackstageBackdrop theme={theme} />
+      {/* PREPARING depth veil (correction §14) — environment recedes mildly,
+          UI stays sharp. No blur anywhere; nothing informational moves. */}
+      <div
+        aria-hidden="true"
+        style={veilStyle}
+        className={cn(
+          'pointer-events-none absolute inset-0 z-[5] transition-opacity duration-500',
+          preparing ? 'opacity-100' : 'opacity-0',
+        )}
+      />
+
+      {/* TOP SHELL (correction §5): [Brand] …… [Language] | [Theme] | [Exit] —
+          compact corner controls, one design family, no dominating capsule.
+          RTL mirrors naturally through flexbox row direction.
+          `data-workout-theme` scopes the desktop-light scrim CSS (delta §B):
+          a sm:-only top veil restores text/icon contrast on the bright
+          Backstage; geometry/touch targets are untouched. */}
+      <header
+        data-workout-theme={theme}
+        className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6"
+      >
+        <BrandIcon size="h-9 w-9" iconClass="h-5 w-5" wordmark />
+        <div
+          data-workout-v2-top-controls=""
+          className="flex items-center gap-2"
+        >
+          <WorkoutV2LanguageControl />
+          <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
+          <WorkoutV2ThemeControl />
+          <span aria-hidden="true" className="h-6 w-px bg-[color:var(--apex-border)]" />
+          <WorkoutV2ExitControl onExit={exitWorkout} />
+        </div>
+      </header>
+
+      {/* Session-owned Mentor: one renderer/asset lifecycle per exercise
+          identity, retained through INTRO → SET. The host is hidden during
+          SET but remains mounted so the parsed asset is not reloaded or
+          reparsed at the handoff. */}
+      {viewModel.activeExercise && ['EXERCISE_INTRO', 'WORK_SET', 'SET_RESULT'].includes(activeModule ?? '') && (
+        <div
+          key={`mentor-${viewModel.activeExerciseIndex ?? 'none'}`}
+          data-workout-v2-session-mentor=""
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-16 bottom-0 z-0 sm:top-14',
+            activeModule === 'EXERCISE_INTRO' ? 'opacity-100' : 'opacity-0',
+          )}
+          aria-hidden={activeModule !== 'EXERCISE_INTRO'}
+        >
+          <MentorStage
+            paused={viewModel.lifecycle === 'PAUSED'}
+            enabled={mentorSupportedForActiveExercise}
+            strings={{
+              ariaLabel: t('intro.mentorAria'),
+              loading: t('intro.mentorLoading'),
+              unavailable: t('intro.mentorUnavailable'),
+            }}
+            onReady={enterWorkSetFromIntro}
+            onFailed={beginWorkSet}
+          />
+        </div>
+      )}
+
+      {/* STAGE — consumer of the orchestration view-model; central axis. */}
+      <div
+        key={stageKey}
+        className={cn(
+          'relative z-10 flex min-h-0 flex-1 flex-col pt-[max(4.5rem,calc(env(safe-area-inset-top)+4rem))]',
+          motionClass,
+        )}
+      >
+        {activeModule === 'START' && (
+          <StartStage
+            viewModel={viewModel}
+            eyebrow={t('start.eyebrow')}
+            headline={t('start.headline')}
+            supporting={t('start.supporting')}
+            ctaLabel={t('start.cta')}
+            onStart={handleStart}
+          />
+        )}
+        {preparing && (
+          <PreparingStage
+            viewModel={viewModel}
+            workoutContext={t('preparing.workoutContext')}
+            sessionStructure={t('preparing.sessionStructure', sessionFacts)}
+            label={t('preparing.label')}
+            firstUp={t('preparing.firstUp')}
+            readinessMessage={t('preparing.readinessMessage')}
+            readinessGuidance={t('preparing.readinessGuidance')}
+            announcement={t('preparing.announcement', {seconds: viewModel.preparingSecondsRemaining ?? 0})}
+            secondsUnit={t('preparing.secondsUnit')}
+            countdownTotalSeconds={PREPARING_DURATION_SECONDS}
+            musicOnLabel={t('actions.musicOnShort')}
+            musicOffLabel={t('actions.musicOffShort')}
+            moreLabel={t('actions.more')}
+            prescriptionContext={prescriptionContext}
+            tips={tips}
+            onToggleMusic={handleToggleMusic}
+            musicPlaying={musicPlaying}
+            onMore={openDetails}
+          />
+        )}
+        {activeModule === 'EXERCISE_INTRO' && (
+          <IntroStage
+            viewModel={viewModel}
+            mentorSupported={mentorSupportedForActiveExercise}
+            firstExerciseLabel={introPosition}
+            equipment={t('preparing.bodyweight')}
+            cues={introCues}
+            mentorUnavailableLabel={t('intro.mentorUnavailable')}
+            mentorLoadingLabel={t('intro.mentorLoading')}
+            mentorAriaLabel={t('intro.mentorAria')}
+            renderMentor={false}
+            onMentorReady={enterWorkSetFromIntro}
+            onMentorFailed={beginWorkSet}
+            onDeferExercise={deferExercise}
+            onSkipExercise={skipExercise}
+            onResolveDeferredExercise={resolveDeferredExercise}
+            doLaterLabel={t('actions.doLater')}
+            skipExerciseLabel={t('actions.skipExercise')}
+            performNowLabel={t('actions.performNow')}
+            skipDeferredLabel={t('actions.skipDeferred')}
+          />
+        )}
+        {(activeModule === 'WORK_SET' || activeModule === 'SET_RESULT') && (
+          <WorkSetStage
+            viewModel={viewModel}
+            setLabel={t('set.setLabel')}
+            repsLabel={t('set.reps')}
+            secondsLabel={t('set.seconds')}
+            trackingLabel={t('set.tracking')}
+            resultLabel={t('set.result')}
+            restartCurrentSet={restartCurrentSet}
+            restartSetLabel={t('actions.restartSet')}
+          />
+        )}
+        {activeModule === 'REST' && (
+          <RestStage
+            viewModel={viewModel}
+            onSkipRest={skipRest}
+            restLabel={t('rest.label')}
+            betweenSetsLabel={t('rest.betweenSets')}
+            betweenExercisesLabel={t('rest.betweenExercises')}
+            skipRestLabel={t('rest.skip')}
+          />
+        )}
+        {activeModule === 'WORKOUT_RESULT' && (
+          <WorkoutResultStage
+            viewModel={viewModel}
+            title={t('result.title')}
+            subtitle={t('result.subtitle')}
+            completedSetsLabel={t('result.completedSets')}
+            exercisesLabel={t('result.exercises')}
+            skippedLabel={t('result.skipped')}
+            exitLabel={t('result.exit')}
+            onExit={exitWorkout}
+          />
+        )}
+        {activeModule === null && (
+          <div role="status" className="flex flex-1 items-center justify-center px-4 text-center">
+            <p className="text-sm text-[color:var(--apex-text-secondary)]">{t('sessionLive')}</p>
+          </div>
+        )}
+        <SessionOutcomeSummary
+          viewModel={viewModel}
+          completedLabel={t('outcomes.completed')}
+          deferredLabel={t('outcomes.deferred')}
+          skippedLabel={t('outcomes.skipped')}
+        />
+        <SessionControlSurface
+          viewModel={viewModel}
+          onPause={pause}
+          onResume={resume}
+          pauseLabel={t('actions.pause')}
+          resumeLabel={t('actions.resume')}
+        />
+      </div>
+
+      {viewModel.exitRequested && (
+        <ExitConfirmation
+          title={viewModel.pausedFromModule === 'WORKOUT_RESULT' ? t('result.exitTitle') : t('actions.confirmExitTitle')}
+          description={viewModel.pausedFromModule === 'WORKOUT_RESULT' ? t('result.exitDescription') : t('actions.confirmExitDescription')}
+          cancelLabel={t('actions.cancelExit')}
+          confirmLabel={t('actions.confirmExit')}
+          onCancel={cancelExit}
+          onConfirm={confirmExit}
+        />
+      )}
+
+      {/* MORE → Exercise Details (§34–§40): real surface, real data. */}
+      {detailsOpen && detailsModel != null && (
+        <ExerciseDetailsSheet
+          title={t('exerciseDetails.title')}
+          closeLabel={t('exerciseDetails.close')}
+          fields={exerciseDetailFields(detailsModel).map((field) => ({
+            label: t(`exerciseDetails.fields.${field.key}`),
+            value:
+              field.key === 'mode' && detailsModel.mode != null
+                ? t(`exerciseDetails.mode.${detailsModel.mode}`)
+                : field.value,
+          }))}
+          onClose={closeDetails}
+        />
+      )}
+    </section>
+  );
+}
+
+export default ExperienceShell;

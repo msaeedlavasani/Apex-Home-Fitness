@@ -1,0 +1,50 @@
+{
+  "CHECKPOINT_ID": "WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01",
+  "CHECKPOINT_KIND": "DEPLOYMENT",
+  "STATUS": "PASS",
+  "KNOWN_GOOD_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+  "VERIFIED_SOURCE_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+  "CHECKPOINT_EVIDENCE_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+  "AUTHORITATIVE_CI": {
+    "PROVIDER": "GITHUB_ACTIONS",
+    "WORKFLOW": "CI",
+    "STATUS": "PASS",
+    "COMMIT_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+    "RUN_ID": "35524188107",
+    "URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35524188107",
+    "BRANCH_STATUS": "PASS",
+    "BRANCH_COMMIT_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+    "BRANCH_RUN_ID": "35524188107",
+    "BRANCH_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35524188107",
+    "PR_STATUS": "PASS",
+    "PR_COMMIT_SHA": "033bb6748002e3df42445a5e2f014e855f4ff387",
+    "PR_RUN_ID": "35524191019",
+    "PR_URL": "https://github.com/msaeedlavasani/Apex-Home-Fitness/actions/runs/35524191019"
+  },
+  "VERIFICATION_EVIDENCE": [
+    {"ID":"beta-deployment","COMMAND":"apex-deploy beta-release beta-correction-033bb67","STATUS":"PASS","SUMMARY":"Exact post-recovery source deployed through gateway v5; disk admission PASS, health PASS, db_change=false, database hashes unchanged, and production_untouched=true."},
+    {"ID":"beta-build-identity","COMMAND":"gateway proof and running-container identity","STATUS":"PASS","SUMMARY":"Gateway proof matches source SHA, current and migration image identities, immutable image IDs, and build identity kKR81DSfImDKxL2QYt3Hm."},
+    {"ID":"beta-rollback","COMMAND":"apex-deploy beta-verify-rollback beta-correction-033bb67","STATUS":"PASS","SUMMARY":"Gateway verified the preserved ce1da7b Beta compose/image as rollback without restarting Production; storage hygiene completed afterward."},
+    {"ID":"runtime-source-equivalence","COMMAND":"git diff 87809f169a3d67d2f415dbc1e89583287344647c..033bb6748002e3df42445a5e2f014e855f4ff387","STATUS":"PASS","SUMMARY":"The deployable head differs from the CI-verified corrected runtime only by governance/DAG reconciliation; no application or schema source changed after the corrected integration checkpoint."},
+    {"ID":"runtime-reachability","COMMAND":"corrected integration checkpoint plus exact deployed source proof","STATUS":"PASS","SUMMARY":"Preserved corrected-flow machine evidence proves capability-gate wiring, TRACKED_REP, TIMED_FALLBACK with resolved fallbackDuration, native TIMED, normalized evidence progression, session Mentor lifecycle, no Record rep/active Completed: 0, and no legacy execution dependency; the deployed image is the exact source-equivalent post-recovery build."},
+    {"ID":"beta-runtime","COMMAND":"HTTPS Beta route, PWA, isolation, and container checks","STATUS":"PASS","SUMMARY":"Beta /en returned 200; /en/workout redirected to the normal auth boundary; Beta runs on ahf_beta_db and 127.0.0.1:3100, while Production remains on its original runtime."},
+    {"ID":"storage-cleanup","COMMAND":"apex-deploy beta-verify-rollback beta-correction-033bb67 storage-hygiene cleanup","STATUS":"PASS","SUMMARY":"Storage hygiene reclaimed 631967102 bytes by removing only the superseded Beta application/migration rollback generation; current/rollback/ambiguous artifacts and both database volumes were protected."},
+    {"ID":"final-host-state","COMMAND":"df -B1 /; docker volume inspect; docker inspect","STATUS":"PASS","SUMMARY":"Final root filesystem: total 61438382080, used 21219700736, available 37571457024, utilization 37%; both database volumes exist and remain mounted to their original environment containers."}
+  ],
+  "WORKTREE_CLEAN": "YES",
+  "LOCAL_REMOTE_PARITY": "YES",
+  "DEPLOYMENT_AUTHORIZED": "YES",
+  "DEPLOYMENT_IDENTITY": {
+    "STATUS":"PASS",
+    "DEPLOYED_SHA":"033bb6748002e3df42445a5e2f014e855f4ff387",
+    "ENVIRONMENT":"AHF_BETA",
+    "URL":"https://beta.apexhomefit.ir",
+    "BUILD_ID":"kKR81DSfImDKxL2QYt3Hm",
+    "IMAGE":"ahf-home-fit:beta-033bb6748002",
+    "MIGRATION_IMAGE":"ahf-home-fit:beta-migrate-033bb6748002",
+    "ROLLBACK":"compose.yml.rollback-beta-correction-033bb67",
+    "ROLLBACK_VERIFIED":"YES",
+    "PRODUCTION_UNTOUCHED":"YES",
+    "DATABASE_CHANGED":"NO"
+  }
+}

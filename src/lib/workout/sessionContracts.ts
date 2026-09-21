@@ -30,6 +30,7 @@
  */
 
 import type {ExerciseId, ExerciseSlug} from '../exercise';
+import type {ExercisePassport} from '../exercise/passport';
 
 /** Canonical Exercise identity (S02): opaque branded `Exercise.id`/`Exercise.slug`. */
 
@@ -51,10 +52,25 @@ export interface SessionExercise {
   durationSeconds?: number | null;
   /** Rest time after each set in seconds. Omit/null to skip rest. */
   restSeconds?: number | null;
+  /** Program-owned fallback duration for camera-less REP_BASED execution. */
+  fallbackDurationSeconds?: number | null;
+  /** Optional per-set dosage; absent means the exercise-level fields repeat. */
+  setPrescriptions?: readonly SessionSetPrescription[];
   /** Canonical Exercise identity: Prisma `Exercise.id` (branded). Present for program-derived plans. */
   exerciseId?: ExerciseId;
   /** Canonical Exercise identity: `Exercise.slug` (branded). Present for program-derived plans. */
   slug?: ExerciseSlug;
+  /** Stable Exercise knowledge consumed by presentation; never prescription data. */
+  exercisePassport?: ExercisePassport;
+}
+
+/** Program-owned dosage for one prescribed set. */
+export interface SessionSetPrescription {
+  readonly executionMode: 'REP_BASED' | 'TIME_BASED';
+  readonly reps?: number | null;
+  readonly durationSeconds?: number | null;
+  readonly fallbackDurationSeconds?: number | null;
+  readonly restSeconds?: number | null;
 }
 
 /** Current phases ONLY (no PREPARE/TRANSITION — V2 product questions open). */

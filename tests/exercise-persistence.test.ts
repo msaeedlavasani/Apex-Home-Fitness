@@ -168,6 +168,22 @@ test('resolved canonical exercise persists a new row WITH the canonical slug', a
   assert.equal(slug, 'push-up');
 });
 
+test('repeated canonical references persist as distinct ordered prescribed Entries', async () => {
+  const input = programWith(['Push-Up', 'Push-Up']);
+  input.program.weekly_schedule[0]!.exercises[0]!.sets = 2;
+  input.program.weekly_schedule[0]!.exercises[0]!.reps = '8';
+  input.program.weekly_schedule[1]!.exercises[0]!.sets = 4;
+  input.program.weekly_schedule[1]!.exercises[0]!.reps = '12';
+
+  const program = await programService.persistProgramForUser(userId, input);
+  assert.equal(program.exercises.length, 2);
+  assert.deepEqual(program.exercises.map((entry) => entry.order), [1, 2]);
+  assert.deepEqual(program.exercises.map((entry) => entry.sets), [2, 4]);
+  assert.deepEqual(program.exercises.map((entry) => entry.reps), [8, 12]);
+  assert.equal(program.exercises[0]!.exercise.id, program.exercises[1]!.exercise.id);
+  assert.notEqual(program.exercises[0]!.id, program.exercises[1]!.id);
+});
+
 test('a resolved alias ("pushups" -> Push-Up) reuses the same canonical row by slug', async () => {
   // Persist the alias first — row "pushups" is created with slug `push-up`.
   const viaAlias = await persistExercise('pushups');

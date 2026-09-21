@@ -1,0 +1,12 @@
+{
+  "TASK_ID": "WP-06",
+  "TASK_CLASS": "STANDARD",
+  "SCOPE_SUMMARY": "Workout V2 WP-06 — implement the single reusable SET + SET_RESULT capability with mode-aware REP_BASED/TIME_BASED progress, consuming the canonical V2 orchestration and resolved-prescription contracts; no REST, global sequencing, schema, dependency, or deployment changes.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "REUSED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/TASKS.md"
+}

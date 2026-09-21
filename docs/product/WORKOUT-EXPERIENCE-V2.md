@@ -19,8 +19,24 @@ Open Questions document) followed by a technical specification.
   behind the React adapter; persistence and audio/haptic presentation seams also
   exist. V2 builds on those foundations rather than replacing them.
 - **Related document:** [WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md](./WORKOUT-EXPERIENCE-V2-OPEN-QUESTIONS.md)
-  — the structured list of open product/architecture questions that must be
-  resolved with the product owner before any implementation.
+  — the historical question register; resolved contracts are superseded by the
+  canonical Spec Kit contract linked below, while genuinely deferred details
+  remain non-authorizing.
+
+> **CANONICAL CONTRACT NOTE — HISTORICAL EVIDENCE / SUPERSEDED WHERE CONFLICTING**
+>
+> This document remains the registered product/UX vision and historical analysis.
+> The finalized normative contract is [`../specs/0001-workout-experience/spec.md`](../specs/0001-workout-experience/spec.md), with its architecture plan in [`../specs/0001-workout-experience/plan.md`](../specs/0001-workout-experience/plan.md).
+> Where older examples or prototype analysis below conflict with those authorities,
+> the older behavior is retained as evidence only and is **SUPERSEDED**: fixed
+> three-Set or single-Exercise topology; `HOLD` as an independent prescription
+> mode; `EXERCISE_TRANSITION` as a required top-level module; Intro between Sets
+> of the same Exercise; same-Exercise `REST_NEXT_PREVIEW`; invented REP→seconds
+> conversion; presentation-owned global sequencing; and controls such as Skip Set,
+> Extend Rest, or Reduce Rest as V2 requirements. The current 2×2 flow is a
+> validation fixture only, never an architecture constant. Resolved fallback,
+> capability-gate, tracking-loss, result, checkpoint, Exit, and deferred/skip
+> contracts are owned by the finalized spec, not by the historical examples here.
 
 ---
 

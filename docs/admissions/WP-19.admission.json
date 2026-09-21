@@ -1,0 +1,12 @@
+{
+  "TASK_ID": "WP-19",
+  "TASK_CLASS": "STANDARD",
+  "SCOPE_SUMMARY": "Reconcile the controlled Workout V2 QA visual-validation fixture to exactly two ordered Squat-path entries and verify all related prescription and schedule metadata through the existing persisted Program path.",
+  "SPEC_REQUIRED": "YES",
+  "SPEC_FIND_BEFORE_CREATE": "EVOLVED_EXISTING_SPEC",
+  "SPEC_PATH": "docs/specs/0001-workout-experience/spec.md",
+  "SPEC_STATUS": "READY",
+  "BLOCKING_OWNER_DECISIONS": "NONE",
+  "IMPLEMENTATION_AUTHORIZATION": "OWNER_AUTHORIZED",
+  "AUTHORIZATION_SOURCE": "docs/TASKS.md"
+}

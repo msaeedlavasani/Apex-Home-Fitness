@@ -1,0 +1,15 @@
+{
+  "ARCHIVE_OF": "WORKOUT-V2-CORRECTION-BETA-DEPLOYMENT-01",
+  "HISTORICAL_RECEIPT_STATUS": "PASS",
+  "HISTORICAL_ROLE": "CURRENT_DEPLOYED_BETA / HISTORICAL_PRE_RECOVERY_CANDIDATE",
+  "DEPLOYED_SHA": "ce1da7b5720c26e44c6ceaa741db72bf190caf13",
+  "IMAGE": "ahf-home-fit:beta-ce1da7b5720c",
+  "MIGRATION_IMAGE": "ahf-home-fit:beta-migrate-ce1da7b5720c",
+  "BUILD_ID": "uigfNOaT1Nw0ZKwtHpj90",
+  "ROLLBACK": "compose.yml.rollback-beta-correction-ce1da7b",
+  "ROLLBACK_VERIFIED": "YES",
+  "DATABASE_CHANGED": "YES",
+  "PRODUCTION_UNTOUCHED": "YES",
+  "SUPERSEDED_BY": "033bb6748002e3df42445a5e2f014e855f4ff387",
+  "NOTE": "Preserved historical receipt. This source predates execution-strategy completeness recovery and is not the corrected deployment candidate."
+}
